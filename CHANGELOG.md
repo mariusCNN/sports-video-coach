@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.2.1 - 2026-10-23
+
 ### Fixed
 
 - The explained video's title card on a generic unit shows the report's heading instead of the folder name.
