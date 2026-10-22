@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Added
+
+- The demo's output is online (GitHub Pages, rebuilt by CI from `sports-video-coach demo`): the coaching page with clips and narration, and the explained videos. The README links it, so you can see the deliverables before installing.
+
 ## 0.2.1 - 2026-10-23
 
 ### Fixed

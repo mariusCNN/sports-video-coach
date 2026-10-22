@@ -20,6 +20,8 @@ service; it runs on your machine.
 
 ## Try it in a minute
 
+**No install:** [open the demo's coaching page](https://mariusding.github.io/sports-video-coach/) (clips, narration) and its explained video ([English](https://mariusding.github.io/sports-video-coach/film.en.mp4), [中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)). CI rebuilds them from the `demo` command below.
+
 ```bash
 uv tool install git+https://github.com/mariusDing/sports-video-coach   # needs ffmpeg on PATH
 sports-video-coach demo                                   # ~30 s: page, clips, narration, explained video
@@ -31,7 +33,7 @@ your own video, your agent writes the review: see below.
 
 The install downloads about 60 MB (mostly OpenCV and NumPy; no torch). No git, or git fails behind a proxy: `uv tool install https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`.
 
-![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, subtitles say why](docs/images/demo-film.gif)
+[![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, subtitles say why](docs/images/demo-film.gif)](https://mariusding.github.io/sports-video-coach/film.en.mp4)
 
 ## For agents: start here
 

@@ -20,6 +20,8 @@
 
 ## 一分钟试用
 
+**不想安装：**[打开 demo 生成的教练网页](https://mariusding.github.io/sports-video-coach/)（片段、讲解音频），以及讲解视频（[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。它们由 CI 用下面的 `demo` 命令重新生成。
+
 ```bash
 uv tool install git+https://github.com/mariusDing/sports-video-coach   # PATH 上要有 ffmpeg
 sports-video-coach demo --lang zh en                      # 约一分钟：网页、片段、讲解音频、讲解视频
@@ -31,7 +33,7 @@ sports-video-coach demo --lang zh en                      # 约一分钟：网�
 - 安装约下载 60 MB（主要是 OpenCV 和 NumPy，不含 torch）。
 - 没装 git，或 git 被代理挡住：`uv tool install https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`。
 
-![demo 生成的讲解视频：方块停住的地方画面暂停、圈出来，字幕说明原因](docs/images/demo-film.gif)
+[![demo 生成的讲解视频：方块停住的地方画面暂停、圈出来，字幕说明原因](docs/images/demo-film.gif)](https://mariusding.github.io/sports-video-coach/film.zh.mp4)
 
 ## 给 agent：从这里开始
 
