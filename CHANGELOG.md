@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## Unreleased
 
 ### sports-video-coach: an agent-first core, basketball as a plugin
 
@@ -99,7 +99,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - `recalib` no longer stops with a NameError at its first progress line.
 - `run`'s momentum step finds `lineup_intervals.json` in `run/` when the review folder has none (older runs wrote it there).
 
-## [0.1.0] - 2026-10-16
+## 0.1.0 - 2026-10-16
 
 ### Added
 
@@ -112,6 +112,3 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - Renamed the package to `hoop_tape_miner`, the CLI to `hoop-tape-miner` and the workspace variable to `HOOP_WORKSPACE`.
-
-[Unreleased]: https://github.com/mariusDing/sports-video-coach/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/mariusDing/sports-video-coach/releases/tag/v0.1.0
