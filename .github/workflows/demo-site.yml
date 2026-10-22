@@ -26,9 +26,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - name: ffmpeg and a small CJK font (libass falls back to it for the Chinese subtitles)
+      - name: ffmpeg
         timeout-minutes: 5
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg fonts-wqy-microhei
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Noto Sans CJK SC, the film's default font on Linux (apt font packages hung this job)
+        timeout-minutes: 5
+        run: |
+          mkdir -p ~/.local/share/fonts
+          curl -fsSL -o ~/.local/share/fonts/NotoSansCJKsc-Regular.otf             https://github.com/notofonts/noto-cjk/raw/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
+          fc-cache -f ~/.local/share/fonts && fc-list | grep -c "Noto Sans CJK SC"
       - name: Light install, as in the README
         run: uv tool install .
       - name: Demo, English and Chinese
