@@ -18,6 +18,13 @@ All notable changes to this project are documented here. The format follows [Kee
   longer repeat the page-check sentence.
 - README: what to do when `sports-video-coach` is not found after `uv tool install`.
 - `guide --plugin basketball` on a light install says its guides live in a clone instead of "has no guides".
+- A phone video recorded upright (stored landscape with a rotation tag, like an iPhone .MOV) is measured the way it
+  is shown: freeze highlights in the explained video land on the right spot and `frames.json` gives the upright size.
+- Upright clips keep their shape on the page (no forced 16:9 box with black bars).
+- `film --dry` stops a paragraph with nothing to say (only symbols, such as a lone `&gt;`) before it reaches TTS;
+  a TTS failure names the paragraph and what to do instead of printing a traceback.
+- Contact sheets are denser for videos up to 3 minutes (a tile every 1 s, was 2 s from 30 s on), so a 1-2 s
+  moment in a drill gets more than one tile.
 
 ## 0.2.3 - 2026-10-23
 

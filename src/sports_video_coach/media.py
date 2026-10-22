@@ -58,9 +58,19 @@ def duration_s(p: Path) -> float:
 
 
 def video_size(p: Path) -> tuple[int, int]:
-    out = ffprobe("-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", p)
-    w, h = out.strip().split(",")[:2]
-    return int(w), int(h)
+    """(width, height) as the video is shown: a phone clip stored 1280x720 with a 90 degree rotation tag is 720x1280,
+    the way ffmpeg and OpenCV decode it."""
+    return display_size(next(s for s in probe(p)["streams"] if s.get("codec_type") == "video"))
+
+
+def display_size(v: dict) -> tuple[int, int]:
+    """(width, height) of an ffprobe video stream after its rotation (tag `rotate` or display-matrix side data)."""
+    w, h = int(v["width"]), int(v["height"])
+    rot = int(float((v.get("tags") or {}).get("rotate", 0) or 0))
+    for sd in v.get("side_data_list") or []:
+        if "rotation" in sd:
+            rot = int(float(sd["rotation"]))
+    return (h, w) if rot % 180 else (w, h)
 
 
 def has_audio(p: Path) -> bool:
@@ -136,13 +146,7 @@ def video_info(p: Path) -> dict:
     """width / height after rotation, duration (s) and recording date (YYYY-MM-DD or None) of a video."""
     info = probe(p)
     v = next(s for s in info["streams"] if s.get("codec_type") == "video")
-    w, h = int(v["width"]), int(v["height"])
-    rot = int(float((v.get("tags") or {}).get("rotate", 0) or 0))
-    for sd in v.get("side_data_list") or []:
-        if "rotation" in sd:
-            rot = int(float(sd["rotation"]))
-    if rot % 180:
-        w, h = h, w
+    w, h = display_size(v)
     created = (info.get("format", {}).get("tags") or {}).get("creation_time") or (v.get("tags") or {}).get("creation_time")
     return dict(w=w, h=h, duration=float(info["format"]["duration"]), date=created[:10] if created else None)
 

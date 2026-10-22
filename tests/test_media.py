@@ -116,3 +116,12 @@ def test_a_failed_cut_leaves_no_half_clip(tmp_path, monkeypatch):
     with pytest.raises(subprocess.CalledProcessError):
         clips.cut(tmp_path / "game.mp4", "00:10", "00:14", out)
     assert not out.exists() and not list(out.parent.rglob("*.mp4"))
+
+
+def test_video_size_is_the_shown_size_of_a_rotated_phone_clip(monkeypatch):
+    stream = {"codec_type": "video", "width": 1280, "height": 720,
+              "side_data_list": [{"side_data_type": "Display Matrix", "rotation": -90}]}
+    assert media.display_size(stream) == (720, 1280)
+    assert media.display_size({"width": 1280, "height": 720, "tags": {"rotate": "180"}}) == (1280, 720)
+    monkeypatch.setattr(media, "probe", lambda p: {"streams": [{"codec_type": "audio"}, stream]})
+    assert media.video_size(Path("IMG_0001.MOV")) == (720, 1280)

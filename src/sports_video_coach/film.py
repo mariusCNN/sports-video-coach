@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import hashlib
+import html
 import json
 import re
 import sys
@@ -79,6 +80,7 @@ def target_s(video_s: float | None) -> tuple[int, int]:
     if video_s is None or video_s >= 60:
         return TARGET_S
     return max(30, int(round(2 * video_s))), TARGET_S[1]
+WORD_RE = re.compile(r"[^\W_]")  # a letter, digit or CJK character: something to speak
 STILL_MAX_S = 12.0  # --dry notes a still scene (title, stat, picture) that talks longer than this
 SPEECH_RATE = {"zh": 4.7, "en": 15.0}  # characters per second, only for --dry estimates (measured on edge-tts runs)
 FONT = {"win32": "Microsoft YaHei", "darwin": "PingFang SC"}.get(sys.platform, "Noto Sans CJK SC")
@@ -229,6 +231,9 @@ def check(scenes: list[Scene], folder: Path, video: Path | None, video_s: float 
     kinds = kinds or {}
     out = []
     for i, sc in enumerate(scenes, 1):
+        for p in [*sc.paras, *(p for fz in sc.freezes for p in fz.paras)]:
+            if not WORD_RE.search(html.unescape(p)):  # `&gt;` alone is a symbol too
+                out.append(f"scene {i}: {p!r} has nothing to say (TTS gets no speech from it); write words or drop it")
         if sc.kind == "image" and not (folder / sc.src).is_file():
             out.append(f"scene {i}: picture not found: {folder / sc.src}")
         if sc.kind not in ("title", "card", "image", *BUILTIN, *kinds):
@@ -519,7 +524,13 @@ def spoken(text: str, voice: str, rate: str, cache: Path) -> tuple[Path, float, 
         cues = [tuple(c) for c in m["cues"]]
     else:
         cache.mkdir(parents=True, exist_ok=True)
-        cues = asyncio.run(_tts(text, voice, rate, mp3))
+        try:
+            cues = asyncio.run(_tts(text, voice, rate, mp3))
+        except Exception as e:  # edge_tts.NoAudioReceived, a network error: name the paragraph, not a traceback
+            mp3.unlink(missing_ok=True)
+            raise SystemExit(f"edge-tts gave no speech for {text[:80]!r} ({type(e).__name__}: {e}). A paragraph "
+                             "with nothing to say (only symbols) gets none: fix it in the script. Otherwise check "
+                             "the internet connection and run again (spoken paragraphs are cached).") from e
         cues = cues or [(0.0, duration_s(mp3), text)]  # no sentence timing from the service: one cue, split later
         meta.write_text(json.dumps({"duration": duration_s(mp3), "cues": cues, "text": text}, ensure_ascii=False),
                         encoding="utf8")

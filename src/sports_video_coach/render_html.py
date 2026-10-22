@@ -30,6 +30,7 @@ from markdown_it import MarkdownIt
 
 from sports_video_coach import clips as clipmod
 from sports_video_coach import plugin, units
+from sports_video_coach.media import video_size
 from sports_video_coach.media import duration_s  # ffprobe with a timeout: a cloud placeholder file can hang it
 
 # Raw HTML is off: README text is agent-written and quotes league data, so a <script> or <img onerror> in it must
@@ -173,6 +174,15 @@ def for_sharing(md_text: str) -> str:
 CLIP_IMG = re.compile(r'(<p>)?<img src="clips/([0-9_]+-[0-9_]+)\.mp4" alt="([^"]*)"\s*/?>(?(1)</p>)')
 
 
+def portrait(mp4: Path) -> str:
+    """' style="aspect-ratio: 9 / 16"' for an upright phone clip (the player keeps its shape before it loads), else ''."""
+    try:
+        w, h = video_size(mp4)
+    except Exception:  # not a readable video (a test stub): the default 16:9 box
+        return ""
+    return f' style="aspect-ratio: {w} / {h}"' if h > w else ""
+
+
 def clip_players(body: str, folder: Path | None, lang: str, embed: bool, windows: dict, ui: dict | None = None) -> str:
     """Clip images (from `clip:` markers) -> numbered <figure> with a video player, poster and slow-mo button.
     Paths stay relative in index.html (clips/ sits next to it); embed (--share) inlines them. ui: labels (UI)."""
@@ -192,7 +202,9 @@ def clip_players(body: str, folder: Path | None, lang: str, embed: bool, windows
         poster = clipmod.poster_of(mp4)  # the telestrated poster when the posters stage made one
         src = data_uri(mp4) if embed else f"clips/{mp4.name}"
         post = f' poster="{data_uri(poster) if embed else "clips/" + poster.name}"' if poster.exists() else ""
-        return (f'<figure class="clip" id="{lang}-clip-{name}"><video controls playsinline preload="none"{post} src="{src}"></video>'
+        tall = portrait(mp4)
+        return (f'<figure class="clip{" tall" if tall else ""}" id="{lang}-clip-{name}"><video controls playsinline '
+                f'preload="none"{post}{tall} src="{src}"></video>'
                 f'<div class="clip-bar">{cap}<button type="button" class="slow" data-slow aria-pressed="false">'
                 f'{t["slow"]} ½×</button></div></figure>')
     body = CLIP_IMG.sub(sub, body)
@@ -448,6 +460,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {{ outline: 3px solid
 /* film clips next to the analysis */
 .clip {{ margin: 1.25rem 0 1.75rem; background: #000; border-radius: 6px; overflow: hidden; max-width: 42rem; }}
 .clip video {{ display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }}
+.clip.tall {{ max-width: 24rem; }}
+.clip.tall video {{ width: auto; max-width: 100%; height: min(70vh, 40rem); margin: 0 auto; }}
 .clip-bar {{ display: flex; align-items: flex-start; gap: .75rem; padding: .6rem .8rem; background: var(--ink); color: #e6e5f5; }}
 .clip figcaption {{ flex: 1; min-width: 0; font-size: .9rem; line-height: 1.55; }}
 .clip-no {{ display: block; font: 600 .95rem/1.3 var(--display); letter-spacing: .03em; color: var(--us-light); font-variant-numeric: tabular-nums; }}

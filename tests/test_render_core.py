@@ -90,3 +90,11 @@ def test_audio_length_label_says_seconds_under_a_minute():
     assert render_html.length_label(zh, 53.8) == "约 55 秒，可以边看边听"
     assert render_html.length_label(en, 61) == "About 1 min. Read along or just listen."
     assert render_html.length_label({"listen_sub": "{m}m"}, 30) == "1m"      # a plugin UI without the seconds text
+
+
+def test_an_upright_phone_clip_keeps_its_shape_on_the_page(tmp_path, monkeypatch):
+    monkeypatch.setattr(render_html, "video_size", lambda p: (270, 480) if "tall" in p.name else (480, 270))
+    assert render_html.portrait(tmp_path / "tall.mp4") == ' style="aspect-ratio: 270 / 480"'
+    assert render_html.portrait(tmp_path / "wide.mp4") == ""
+    monkeypatch.setattr(render_html, "video_size", lambda p: (_ for _ in ()).throw(RuntimeError("not a video")))
+    assert render_html.portrait(tmp_path / "stub.mp4") == ""

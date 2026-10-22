@@ -340,3 +340,21 @@ def test_basketball_folder_gets_court_scenes_and_player_marks(tmp_path):
     (tmp_path / "game.json").write_text("{}", encoding="utf8")
     hooks, kinds = film.hooks_for(tmp_path)
     assert hooks is FILM and set(kinds) == {"court"}
+
+
+def test_a_paragraph_with_nothing_to_say_stops_before_tts(tmp_path):
+    scenes = film.parse_script("Hello.\n\n## Card\n&gt;\n\n——\n")
+    probs = film.check(scenes, tmp_path, None, None)
+    assert probs == ["scene 2: '&gt;' has nothing to say (TTS gets no speech from it); write words or drop it",
+                     "scene 2: '——' has nothing to say (TTS gets no speech from it); write words or drop it"]
+    assert film.check(film.parse_script("你好。\n\n## 数字\n第2段 00:08。\n"), tmp_path, None, None) == []
+
+
+def test_a_tts_failure_names_the_paragraph(tmp_path, monkeypatch):
+    async def no_audio(text, voice, rate, out):
+        out.write_bytes(b"")
+        raise RuntimeError("No audio was received")
+    monkeypatch.setattr(film, "_tts", no_audio)
+    with pytest.raises(SystemExit, match="edge-tts gave no speech for 'Toss higher.'"):
+        film.spoken("Toss higher.", "en-US-AriaNeural", "+0%", tmp_path / "tts")
+    assert not list((tmp_path / "tts").glob("*.mp3"))  # nothing half-written is cached

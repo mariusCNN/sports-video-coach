@@ -112,6 +112,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 /* film clips next to the analysis */
 .clip { margin: 1.25rem 0 1.75rem; background: #000; border-radius: 6px; overflow: hidden; max-width: 42rem; }
 .clip video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.clip.tall { max-width: 24rem; }
+.clip.tall video { width: auto; max-width: 100%; height: min(70vh, 40rem); margin: 0 auto; }
 .clip-bar { display: flex; align-items: flex-start; gap: .75rem; padding: .6rem .8rem; background: var(--ink); color: #e6e5f5; }
 .clip figcaption { flex: 1; min-width: 0; font-size: .9rem; line-height: 1.55; }
 .clip-no { display: block; font: 600 .95rem/1.3 var(--display); letter-spacing: .03em; color: var(--us-light); font-variant-numeric: tabular-nums; }

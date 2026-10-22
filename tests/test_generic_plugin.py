@@ -32,7 +32,7 @@ def test_new_writes_analysis_json_owned_by_generic(analysis, video):
 
 
 def test_new_picks_the_tile_interval_from_the_length_and_keeps_an_old_one(analysis, video):
-    assert [new.auto_every(s) for s in (6, 30, 31, 120, 121, 3600)] == [0.5, 0.5, 1.0, 1.0, 2.0, 2.0]
+    assert [new.auto_every(s) for s in (6, 30, 31, 180, 181, 3600)] == [0.5, 0.5, 1.0, 1.0, 2.0, 2.0]
     p = analysis.folder / "analysis.json"
     assert json.loads(p.read_text(encoding="utf8"))["every_s"] == 0.5  # the 6 s test video
     new.main([str(video), "--out", str(analysis.folder), "--every", "2"])

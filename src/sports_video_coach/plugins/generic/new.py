@@ -26,7 +26,7 @@ def langs_default() -> list[str]:
 def auto_every(duration_s: float) -> float:
     """Seconds between contact-sheet tiles for a video this long: denser for short clips, so a 1-2 s moment in a
     drill gets several tiles, while a long game stays at a few dozen sheets."""
-    return 0.5 if duration_s <= 30 else 1.0 if duration_s <= 120 else 2.0
+    return 0.5 if duration_s <= 30 else 1.0 if duration_s <= 180 else 2.0
 
 
 def folder_inputs(folder: Path) -> list[str] | None:
@@ -47,7 +47,7 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--date", help="YYYY-MM-DD (default: the first video's recording date, else today)")
     ap.add_argument("--lang", nargs="+", choices=pipeline.LANGS, help="report languages (default: profile, else en)")
     ap.add_argument("--every", type=float, help="seconds between contact-sheet tiles (default: 0.5 up to 30 s "
-                    "of video, 1 up to 2 min, else 2)")
+                    "of video, 1 up to 3 min, else 2)")
     ap.add_argument("--out", help="the analysis folder (default: <workspace>/analysis/<name>/<date>)")
     return ap
 
