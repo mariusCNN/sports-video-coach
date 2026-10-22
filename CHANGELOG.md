@@ -15,6 +15,13 @@ All notable changes to this project are documented here. The format follows [Kee
 - New start option `run <videos> --artifacts html film` picks the deliverables when a unit starts (saved in the
   unit json).
 - The review guide says what to do when the user wants a report on footage with no athlete in it.
+- `new-plugin`: the copy's agent steps point at its own guides (`sports-video-coach guide review --plugin <name>`)
+  and its own `<name>:review-check`; its summary, "use when" line, guide titles and usage lines are written for
+  the new sport, so `sports-video-coach plugins` no longer lists a second copy of generic.
+- `new-plugin` writes `plugins/<name>/tests/test_<name>.py` (the plugin loads, is listed and has its steps:
+  `uv run pytest plugins/<name>`).
+- docs/plugins.md: how to test a local plugin, where local plugins are found (`./plugins` of the current working
+  directory), and an example of adding a command stage.
 
 ## 0.2.5 - 2026-10-23
 
