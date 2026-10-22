@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Changed
+
+- Basketball without a league (pickup games, phone clips, no GPU) goes to `generic` with `--sport basketball`;
+  the `basketball` plugin is for league games or tracking from a clone. README, AGENTS.md and `plugins` say so,
+  and `generic`'s listing says it does no detection (the agent reviews the frames).
+- `run <videos>` prints one line saying which plugin it picked and why.
+- `film --dry` no longer counts a bare `>` resume as a freeze ("2 freeze(s), 1 resume(s)").
+- `narrate` prints the script's length and estimated read time before rendering. The read rates are measured
+  on edge-tts (English about 950 characters a minute, Chinese about 235); the narration guides count characters.
+- docs/basketball.md quick start: `cd sports-video-coach` after the clone.
+
 ## 0.2.6 - 2026-10-23
 
 ### Changed
