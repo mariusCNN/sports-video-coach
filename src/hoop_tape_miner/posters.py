@@ -21,7 +21,6 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 from sports_video_coach import film_draw as fd
@@ -130,7 +129,7 @@ def draw(jpg: Path, marks: list[tuple], t: float, tracks, out: Path) -> None:
     w, h = media.video_size(jpg)
     events = fd.freeze_events(marks, "", t, tracks, w, h, (0, 0, w, h), 0.0, 5.0)
     events = [(s, e, st, txt.replace("\\fad(200,0)", "")) for s, e, st, txt in events]  # a still: no fade-in
-    with tempfile.TemporaryDirectory() as tmp, media.partial(out) as part:
+    with media.scratch(out) as tmp, media.partial(out) as part:
         Path(tmp, "marks.ass").write_text(ass_doc(w, h, FONT, fd.MARK_HEX, events), encoding="utf8")
         # relative ass name + cwd: a Windows drive colon would break the filter argument
         media.ffmpeg("-i", Path(jpg).resolve(), "-vf", "ass=marks.ass", "-frames:v", "1", "-update", "1",

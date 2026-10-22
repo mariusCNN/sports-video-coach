@@ -49,7 +49,6 @@ import hashlib
 import json
 import re
 import sys
-import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -704,7 +703,7 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
         chosen = [(i, sc) for i, sc in chosen if pick[0] <= i <= pick[1]]
     out = folder / (f"film.{lang}.preview.mp4" if pick else f"film.{lang}.mp4")
     max_chars = MAX_CHARS.get(lang, 84)
-    with tempfile.TemporaryDirectory() as t:
+    with media.scratch(out) as t:
         tmp = Path(t)
         rendered = []
         for i, sc in chosen:

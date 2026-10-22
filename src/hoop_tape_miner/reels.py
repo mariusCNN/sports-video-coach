@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -129,7 +128,7 @@ def build(folder: Path, number: str, video: Path, df, langs, max_clips: int = MA
     src_w, src_h = media.video_size(video)
     crop_w = min(src_w, int(round(src_h * 9 / 16 / 2)) * 2)
     audio = media.has_audio(video)
-    with tempfile.TemporaryDirectory() as tmp:
+    with media.scratch(folder / "reels" / "reel") as tmp:
         tmp = Path(tmp)
         parts = []
         for i, e in enumerate(evs):

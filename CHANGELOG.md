@@ -11,6 +11,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - README: the Claude Code install line was wrong (`--marketplace` is no flag): add the marketplace, then `install sports-video-coach@sports-video-coach`. Added `npx skills add` for other Agent Skills clients.
 - The `qa` step says why `qa.md` does not count yet (no PASS, no stamp, or files changed after QA with the new stamp) instead of waiting silently.
 - Pages declare an empty favicon, so opening one from a local server logs no 404.
+- Narration, the explained video and joining videos no longer fail with `PermissionError` inside a sandboxed agent on Windows (e.g. Codex): work files go to a plain folder next to the output instead of `tempfile`, whose owner-only folders (CPython 3.11.10+ / 3.12.4+) a restricted token cannot open.
 
 ### Added
 

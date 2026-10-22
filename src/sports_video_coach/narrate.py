@@ -20,7 +20,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
-import tempfile
 from pathlib import Path
 
 from . import media
@@ -106,7 +105,7 @@ def render(src: Path, out: Path, lang: str, gap: float, bell: bool, loud: bool, 
            voice_table: dict | None = None, tight: bool = False):
     paras = paragraphs(src.read_text(encoding="utf8"))
     voice, default_rate = (voice_table or VOICES)[lang]
-    with tempfile.TemporaryDirectory() as t:
+    with media.scratch(out) as t:
         tmp = Path(t)
         parts = asyncio.run(speak(paras, voice, rate or default_rate, tmp))
         with media.partial(out) as part:  # a stopped run never leaves a short listen.<lang>.mp3 that counts as done

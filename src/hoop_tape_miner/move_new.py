@@ -20,7 +20,6 @@ import datetime as dt
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 from sports_video_coach import media
@@ -86,7 +85,7 @@ def build_reel(segments: list[dict], out: Path, w: int = M.REEL_W, h: int = M.RE
     length of each part in seconds."""
     out.parent.mkdir(parents=True, exist_ok=True)
     durs = []
-    with tempfile.TemporaryDirectory() as tmp:
+    with media.scratch(out) as tmp:
         parts = []
         for s in segments:
             a, b = M.seg_seconds(s)

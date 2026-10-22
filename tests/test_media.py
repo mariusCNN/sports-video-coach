@@ -23,6 +23,22 @@ def fake_run(monkeypatch, stdout="", write=None, rc=0):
     return calls
 
 
+def test_scratch_is_a_plain_folder_next_to_the_output_and_goes_away(tmp_path):
+    out = tmp_path / "listen.en.mp3"
+    with media.scratch(out) as a, media.scratch(out) as b:
+        assert a != b and a.parent == b.parent == tmp_path / ".partial"
+        (a / "p000.mp3").write_bytes(b"x")  # tempfile.mkdtemp's owner-only ACL broke exactly this in a sandbox
+        with media.partial(out) as part:
+            part.write_bytes(b"mp3")
+    assert out.read_bytes() == b"mp3" and not (tmp_path / ".partial").exists()
+
+    with pytest.raises(RuntimeError):
+        with media.scratch(out) as a:
+            (a / "half").write_bytes(b"x")
+            raise RuntimeError("edge-tts died")
+    assert not (tmp_path / ".partial").exists()
+
+
 def test_partial_moves_into_place_only_on_success(tmp_path):
     out = tmp_path / "clips" / "a.mp4"
     out.parent.mkdir()

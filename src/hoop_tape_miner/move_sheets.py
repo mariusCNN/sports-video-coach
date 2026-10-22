@@ -19,7 +19,6 @@ import argparse
 import json
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -209,7 +208,7 @@ def overlay_reel(m: dict, folder: Path, run: Path, out: Path) -> Path:
         gaits[s["id"]] = json.loads(gp.read_text(encoding="utf8")) if gp.exists() else {}
     cap = cv2.VideoCapture(str(reel))
     fps = cap.get(cv2.CAP_PROP_FPS) or M.REEL_FPS
-    with tempfile.TemporaryDirectory() as tmp:
+    with media.scratch(out) as tmp:
         raw = Path(tmp) / "overlay.avi"
         wr = cv2.VideoWriter(str(raw), cv2.VideoWriter_fourcc(*"MJPG"), fps, (M.REEL_W, M.REEL_H))
         i = 0

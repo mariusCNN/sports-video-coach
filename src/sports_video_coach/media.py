@@ -14,8 +14,8 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 
 PROBE_TIMEOUT = 120  # seconds
@@ -76,6 +76,32 @@ def concat(parts: list[Path], out: Path, workdir: Path) -> None:
 
 
 @contextlib.contextmanager
+def scratch(near: Path):
+    """Yield a fresh work folder in `<near's folder>/.partial/`, deleted afterwards.
+
+    Not `tempfile`: since CPython 3.11.10 / 3.12.4, `mkdtemp` on Windows gives the folder an owner-only ACL, which
+    a sandboxed agent (a restricted token, e.g. the Codex Windows sandbox) cannot open. A plain mkdir inherits the
+    output folder's permissions, which the run can already write."""
+    d = Path(near).parent / ".partial"
+    d.mkdir(parents=True, exist_ok=True)
+    for i in range(1000):
+        t = d / f"work-{os.getpid()}-{i}"
+        try:
+            t.mkdir()
+            break
+        except FileExistsError:
+            continue
+    else:
+        raise FileExistsError(f"no free scratch folder in {d}")
+    try:
+        yield t
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+        with contextlib.suppress(OSError):
+            d.rmdir()  # only when empty, as in `partial`
+
+
+@contextlib.contextmanager
 def partial(out: Path):
     """Yield a path to write instead of `out` (same name, in `<dir>/.partial/`); it replaces `out` only when the
     block ends without an exception, else it is deleted and an existing `out` stays as it was."""
@@ -132,7 +158,7 @@ def join(videos: list[Path], out: Path, long_side: int = 1080, label: str = "joi
     W, H = target_size(infos[0]["w"], infos[0]["h"], long_side)
     out.parent.mkdir(parents=True, exist_ok=True)
     sources, start = [], 0.0
-    with tempfile.TemporaryDirectory() as tmp:
+    with scratch(out) as tmp:
         parts = []
         for i, (v, info) in enumerate(zip(videos, infos)):
             part = Path(tmp) / f"p{i:03d}.mp4"
