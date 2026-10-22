@@ -308,6 +308,14 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     out = capsys.readouterr().out
     assert [ln.split()[1] for ln in out.splitlines()[:3]] == ["title", "card", "clip"]
     assert "1 freeze(s)" in out and "3 scenes" in out
+    assert "freeze 0:03: 1 mark(s) 0.5,0.8  label 'here'" in out  # what --dry read from the freeze line
+    (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\n"
+                                       '> 0:03 0.88,0.72 "stop here" 0.92,0.72\nStop.\n\n## Numbers\n'
+                                       + "A long still talk. " * 14 + "\n", encoding="utf8")
+    film.main([str(folder), "--video", str(video), "--dry"])
+    out = capsys.readouterr().out
+    assert "warning: scene 2: freeze 0:03: `0.92,0.72` comes after the label; put the label last" in out
+    assert "on a still picture; split the text" in out  # the card talks ~18 s over one picture
     assert film.title_text(folder, {}, 720) == "2025-03-12"  # the folder name; no date line repeating it
     assert film.title_text(folder, {"title": "Sprint"}, 720).endswith("2025-03-12")
     assert film.title_text(folder, {"title": "Sprint, 2025-03-12"}, 720).count("2025-03-12") == 1

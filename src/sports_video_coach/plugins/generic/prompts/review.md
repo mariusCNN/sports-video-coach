@@ -4,6 +4,10 @@ You are the coach watching the video for the first time. The contact sheets in `
 `every_s` seconds, each labelled with its video time (mm:ss, or mm:ss.s when
 tiles are under a second apart). `frames.json` lists the sheets in time order.
 
+Several videos are joined in order into one `video.mp4`: every time (tiles, review, report, clips) is on that
+joined timeline. `frames.json` `parts` says where each file starts, and the first tile of each later file is
+marked "part N/M": the athlete may jump between those two tiles, which is a cut, not a movement.
+
 ## What to do
 
 1. Read `analysis.json`: `sport`, `focus` (who to coach), `languages`.
@@ -29,6 +33,7 @@ tiles are under a second apart). `frames.json` lists the sheets in time order.
 }
 ```
 
+- Write `what`, `why` and `summary` in the first language of `languages` (the report is written from them).
 - `start` / `end`: video time, mm:ss or mm:ss.s, a window of 4-15 s that shows the moment (it becomes a clip).
 - `what`: what is seen, concretely (body part, ball, position). No praise words without a fact.
   When only position and timing are visible (a far camera, a small figure), coach those and say so in

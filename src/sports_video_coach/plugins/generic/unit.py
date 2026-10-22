@@ -35,16 +35,16 @@ class Analysis(P.Session):
                     focus=self.game.get("focus") or "the main athlete in the video")
 
     def finished(self):
-        print(f"[analysis] done. Page: {self.folder / 'index.html'}")
+        print(f"[analysis] done. Page: {P.slash(self.folder / 'index.html')}")
         films = [self.folder / f"film.{l}.mp4" for l in self.langs if (self.folder / f"film.{l}.mp4").exists()]
         if films:
-            print("[analysis] explained video (send it yourself, it is not published): " + ", ".join(map(str, films)))
+            print("[analysis] explained video (send it yourself, it is not published): " + ", ".join(map(P.slash, films)))
         mp3s = [self.folder / f"listen.{l}.mp3" for l in self.langs if (self.folder / f"listen.{l}.mp3").exists()]
         if mp3s:
-            print("[analysis] narration (also on the page): " + ", ".join(map(str, mp3s)))
+            print("[analysis] narration (also on the page): " + ", ".join(map(P.slash, mp3s)))
         clips = sorted((self.folder / "clips").glob("*.mp4"))
         if clips:
-            print(f"[analysis] clips (also on the page): {len(clips)} in {self.folder / 'clips'}")
+            print(f"[analysis] clips (also on the page): {len(clips)} in {P.slash(self.folder / 'clips')}")
 
     @classmethod
     def load(cls, folder: Path) -> "Analysis":
@@ -113,9 +113,8 @@ STEPS = [
         lambda g: g.video,
         listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} (`sports-video-coach guide narration`).",
         qa_how="QA: serve {folder} over http (a browser-check subagent if you have one) and check the page in every "
-               "language, the audio and every clip on a 390 px wide screen. No browser: `sports-video-coach page-check "
-               "{folder}` is accepted; say in qa.md that layout and playback were not looked at. Write the result to "
-               "{folder}/qa.md, first word PASS when it passes.",
+               "language, the audio and every clip on a 390 px wide screen. Write the result to {folder}/qa.md, "
+               "first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "
                         "report (`sports-video-coach guide film`); check them with `sports-video-coach film {folder} --video "
                         "{video} --dry`."),

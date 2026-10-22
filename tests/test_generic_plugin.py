@@ -78,6 +78,24 @@ def test_a_second_video_of_the_same_day_gets_its_own_folder(video, tmp_path, mon
     assert new.folder_inputs(first) == [str(video.resolve())]
 
 
+def test_joined_videos_print_their_parts_and_the_sheets_mark_them(tmp_path, video, capsys):
+    other = tmp_path / "part2.mp4"
+    shutil.copy(video, other)
+    folder = new.main([str(video), str(other), "--sport", "shuttle-run", "--lang", "zh", "--out", str(tmp_path / "a")])
+    out = capsys.readouterr().out
+    assert "[new] joined 2 videos into video.mp4: clip.mp4 = 00:00-00:06, part2.mp4 = 00:06-00:12" in out
+    assert "sport 'shuttle-run' has no Chinese name" in out
+    a = U.Analysis.load(folder)
+    assert frames.unit_sources(a.video) == a.game["sources"] and frames.unit_sources(video) is None
+    frames.main([str(a.video), "--out", str(a.run / "frames"), "--every", "1"])
+    data = json.loads((a.run / "frames" / "frames.json").read_text(encoding="utf8"))
+    assert [p["file"] for p in data["parts"]] == ["clip.mp4", "part2.mp4"] and data["parts"][1]["start"] == "00:06.0"
+    assert "the first tile of each later file is marked" in capsys.readouterr().out
+    assert frames.part_starts([0.5, 1.5, 6.5, 7.5], a.game["sources"]) == {6.5: "part 2/2"}
+    if sys.platform == "win32":  # one path style in run output: it pastes into Git Bash as printed
+        assert P.slash(r"C:\ws\a\run") == "C:/ws/a/run"
+
+
 def test_frames_sheets_and_index(tmp_path, video, capsys):
     data = frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     assert [s["file"] for s in data["sheets"]] == ["sheet_001.jpg"]

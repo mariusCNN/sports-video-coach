@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 from sports_video_coach import media, pipeline, workspace
+from sports_video_coach.render_html import sport_names
 
 from . import NAME, SPORT
 
@@ -73,6 +74,8 @@ def main(argv=None) -> Path:
     else:
         out = folder / "video.mp4"
         data["sources"] = media.join(videos, out, label="new")
+        print(f"[new] joined {len(videos)} videos into {out.name}: {media.parts_line(data['sources'])} (every time "
+              "from here on, in the sheets, the review and the report, is on this joined timeline)")
         data["video"] = "video.mp4"
     p = folder / "analysis.json"
     if p.exists():
@@ -81,7 +84,11 @@ def main(argv=None) -> Path:
             del data["every_s"]
         data = {**old, **{k: v for k, v in data.items() if v not in ("", None)}}
     media.write_text_atomic(p, json.dumps(data, ensure_ascii=False, indent=1) + "\n")
-    print(folder)
+    sport = data.get("sport")
+    if "zh" in data["languages"] and isinstance(sport, str) and not sport_names(sport, ("zh", "en")).get("zh"):
+        print(f"[new] sport {sport!r} has no Chinese name for the zh page: set it in analysis.json, e.g. "
+              f'"sport": {{"zh": "折返跑", "en": "{sport}"}}')
+    print(pipeline.slash(folder))
     return folder
 
 

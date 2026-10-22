@@ -51,6 +51,15 @@ def parse_freeze_line(line: str, ref: Callable[[str], tuple | None] | None = Non
     return t, marks, label, bad
 
 
+def mark_text(mark) -> str:
+    """A parsed mark back as script text: ('point', 0.4, 0.6) -> '0.4,0.6'; an arrow 'A->B'; a plugin mark 'us#7'."""
+    if mark[0] == "point":
+        return f"{mark[1]:g},{mark[2]:g}"
+    if mark[0] == "arrow":
+        return f"{mark_text(mark[1])}->{mark_text(mark[2])}"
+    return "#".join(map(str, mark[1:]))
+
+
 def mark_box(mark, t: float, tracks=None):
     """A point mark, or a plugin mark found by `tracks.locate(mark, t)` -> its box (x1, y1, x2, y2) as frame
     fractions, or None if it cannot be found."""

@@ -104,7 +104,7 @@ class Unit:
         return None
 
     def finished(self):
-        print(f"[run] done: {self.folder}")
+        print(f"[run] done: {slash(self.folder)}")
 
     @classmethod
     def load(cls, folder: Path) -> "Unit":
@@ -140,10 +140,10 @@ class Session(Unit):
         return dict(super().fill_values(), player=self.game.get("player"))
 
     def finished(self):
-        print(f"[{self.LABEL}] done. Page: {self.folder / 'index.html'}")
+        print(f"[{self.LABEL}] done. Page: {slash(self.folder / 'index.html')}")
         print(f"[{self.LABEL}] explained video (send it yourself, it is not published): "
-              + ", ".join(str(self.folder / f"film.{l}.mp4") for l in self.langs))
-        print(f"[{self.LABEL}] {self.PLAN}: {self.folder / 'plan.json'}")
+              + ", ".join(slash(self.folder / f"film.{l}.mp4") for l in self.langs))
+        print(f"[{self.LABEL}] {self.PLAN}: {slash(self.folder / 'plan.json')}")
 
 
 @dataclass
@@ -402,6 +402,11 @@ def tail(path: Path, n: int = 15) -> str:
     return "\n".join(lines[-n:])
 
 
+def slash(text) -> str:
+    """Paths in run output with forward slashes on Windows too, so every line pastes into Git Bash as it is."""
+    return str(text).replace("\\", "/") if os.sep == "\\" else str(text)
+
+
 def child_env() -> dict:
     """The environment for stage subprocesses: UTF-8 stdio, so Chinese text in a log file or on a cp1252 / GBK
     Windows console never raises UnicodeEncodeError."""
@@ -412,16 +417,16 @@ def run_cmd(step: Step, g: Unit, runner=subprocess.run, argvs: list[list[str]] |
     """Run a command step; long ones log to a file and only the tail is printed on failure."""
     env = child_env()
     for i, argv in enumerate(step.args(g) if argvs is None else argvs):
-        print(f"[run] {step.name}: sports-video-coach {' '.join(argv)}", flush=True)
+        print(slash(f"[run] {step.name}: sports-video-coach {' '.join(argv)}"), flush=True)
         if step.long:
             log = logs_dir(g) / f"{g.folder.parent.name}-{g.folder.name}-{step.name}{i or ''}.log"
-            print(f"[run]   log: {log}", flush=True)
+            print(f"[run]   log: {slash(log)}", flush=True)
             with open(log, "w", encoding="utf8") as fh:
                 rc = runner(stage_cmd(argv, g.PLUGIN), stdout=fh, stderr=subprocess.STDOUT, env=env).returncode
         else:
             log, rc = None, runner(stage_cmd(argv, g.PLUGIN), env=env).returncode
         if rc != 0 and not step.expect_exit:
-            print(f"[run] {step.name} failed (exit {rc})" + (f"; last lines of {log}:\n{tail(log)}" if log else
+            print(f"[run] {step.name} failed (exit {rc})" + (f"; last lines of {slash(log)}:\n{tail(log)}" if log else
                   ": the error is in the lines above (this step prints to the console, it keeps no log)"))
             return False
     return True
@@ -478,7 +483,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             print(f"[run] waiting for the agent: {s.name}\n{g.fill(s.how)}")
             errs = s.errors(g) if s.errors else []
             for e in errs[:12]:
-                print(f"[run]   {e}")
+                print(f"[run]   {slash(e)}")
             if len(errs) > 12:
                 print(f"[run]   ... {len(errs) - 12} more")
             note = g.note(s.name, errs)
@@ -490,7 +495,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             print(f"[run] {s.name}: changed since its last run: {', '.join(why[:6])}{' ...' if len(why) > 6 else ''}")
         if dry:
             for argv in argvs:
-                print(f"[dry] {s.name}: sports-video-coach {' '.join(argv)}")
+                print(slash(f"[dry] {s.name}: sports-video-coach {' '.join(argv)}"))
             return 0
         if not run_cmd(s, g, runner, argvs):
             return 1

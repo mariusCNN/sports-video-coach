@@ -33,6 +33,8 @@ a video of your own (`--lang en zh` for both languages, `--offline` with no netw
 your own video, your agent writes the review: see below.
 
 The install downloads about 60 MB (mostly OpenCV and NumPy; no torch). No git, or git fails behind a proxy: `uv tool install https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`.
+`sports-video-coach: command not found` after the install: run `uv tool update-shell` and open a new terminal, or in
+bash (Git Bash too) `export PATH="$HOME/.local/bin:$PATH"` (the default; `uv tool dir --bin` prints yours).
 
 [![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, subtitles say why](docs/images/demo-film.gif)](https://mariusding.github.io/sports-video-coach/film.en.mp4)
 

@@ -79,6 +79,7 @@ def target_s(video_s: float | None) -> tuple[int, int]:
     if video_s is None or video_s >= 60:
         return TARGET_S
     return max(30, int(round(2 * video_s))), TARGET_S[1]
+STILL_MAX_S = 12.0  # --dry notes a still scene (title, stat, picture) that talks longer than this
 SPEECH_RATE = {"zh": 4.7, "en": 15.0}  # characters per second, only for --dry estimates (measured on edge-tts runs)
 FONT = {"win32": "Microsoft YaHei", "darwin": "PingFang SC"}.get(sys.platform, "Noto Sans CJK SC")
 BG = "#14161f"
@@ -286,11 +287,16 @@ def points(mark) -> tuple:
 
 
 def freeze_warnings(scenes: list[Scene], tracks) -> list[str]:
-    """Marked players the tracks do not have at that moment (their ring is left out)."""
+    """Marks after the label (the label belongs at the end of the line), and marked players the tracks do not
+    have at that moment (their ring is left out)."""
     out = []
     for i, sc in enumerate(scenes, 1):
         for fz in sc.freezes:
             t, marks, _, _ = fz.parts()
+            m = fd.LABEL_RE.search(fz.line)
+            if m and fz.line[m.end():].strip():
+                out.append(f"scene {i}: freeze {t}: `{fz.line[m.end():].strip()}` comes after the label; put the "
+                           "label last: > mm:ss.s x,y x,y \"label\"")
             if tracks is None or not TIME_RE.match(t):
                 continue
             for m in dict.fromkeys(m for mk in marks for m in points(mk)):
@@ -694,6 +700,12 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
             extra = f"  {len(sc.freezes)} freeze(s)" if sc.freezes else "  slow replay" if slow else ""
             print(f"{i:3d} {sc.kind:5s} {sc.src or sc.text[:30]:<30s} {sum(len(p) for g in groups for p in g):5d} chars"
                   f" ~{length:5.1f} s{extra}")
+            for fz in sc.freezes:
+                t, marks, label, _ = fz.parts()
+                print(f"      freeze {t}: {len(marks)} mark(s) {' '.join(map(fd.mark_text, marks)) or '-'}"
+                      f"  label {label!r}")
+            if sc.kind != "clip" and length > STILL_MAX_S:
+                print(f"      note: {length:.0f} s on a still picture; split the text or move part of it to a clip")
         print(f"{len(scenes)} scenes, about {total / 60:.1f} min")
         lo, hi = target_s(video_s)
         if not lo <= total <= hi:  # a warning, not an error

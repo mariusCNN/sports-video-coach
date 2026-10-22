@@ -175,3 +175,9 @@ def join(videos: list[Path], out: Path, long_side: int = 1080, label: str = "joi
         with partial(out) as joined:
             concat(parts, joined, Path(tmp))
     return sources
+
+
+def parts_line(sources: list[dict]) -> str:
+    """'part1.mp4 = 00:00-00:22, part2.mp4 = 00:22-01:02': where each joined file sits on the joined timeline."""
+    from .timefmt import mmss
+    return ", ".join(f"{Path(s['file']).name} = {mmss(round(s['start']))}-{mmss(round(s['start'] + s['duration']))}" for s in sources)

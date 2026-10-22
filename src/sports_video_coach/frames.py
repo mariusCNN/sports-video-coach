@@ -5,6 +5,8 @@ usage: sports-video-coach frames <video> --out <folder>/run/frames [--every 2] [
 
 Writes `sheet_NNN.jpg` (cols x rows tiles, in time order) and `frames.json`:
   {"video", "duration_s", "every_s", "sheets": [{"file", "start", "end", "tiles": ["mm:ss", ...]}]}
+When the video joins several files (the unit json's `sources`), frames.json lists them as `parts` (file, start,
+end on the joined timeline) and the first tile of each later file is labelled "part N/M".
 Labels are mm:ss, or mm:ss.s when tiles are under a second apart (then they fall on whole tenths).
 An agent opens the sheets in order, notes what happens and when, then cuts closer looks with `clips`. Sheets that
 already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width` and the video size).
@@ -38,24 +40,54 @@ def sheets(ts: list[float], per: int) -> list[list[float]]:
     return [ts[i:i + per] for i in range(0, len(ts), per)]
 
 
-def tile(frame, label: str, width: int):
+def tile(frame, label: str, width: int, part: str = ""):
+    """The frame scaled to `width`, its time label top left; `part` ("part 2/2") marks where a new file starts."""
     import cv2
     h, w = frame.shape[:2]
     frame = cv2.resize(frame, (width, max(2, round(h * width / w))))
     cv2.rectangle(frame, (0, 0), (92, 30), (0, 0, 0), -1)
     cv2.putText(frame, label, (6, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
+    if part:
+        cv2.rectangle(frame, (0, 0), (frame.shape[1] - 1, frame.shape[0] - 1), (0, 212, 255), 4)
+        cv2.rectangle(frame, (96, 0), (96 + 14 * len(part), 30), (0, 212, 255), -1)
+        cv2.putText(frame, part, (102, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 0), 2, cv2.LINE_AA)
     return frame
 
 
+def part_starts(ts: list[float], sources: list[dict] | None) -> dict[float, str]:
+    """{tile time: "part N/M"} for the first tile of each joined file after the first."""
+    out = {}
+    for n, s in enumerate(sources or [], 1):
+        if n > 1:
+            t = next((t for t in ts if t >= s["start"]), None)
+            if t is not None and t not in out:
+                out[t] = f"part {n}/{len(sources)}"
+    return out
+
+
+def unit_sources(video: Path) -> list[dict] | None:
+    """The `sources` of the unit whose joined video this is (its json in the video's folder), else None."""
+    from . import units
+    u = units.load(video.parent) if video.parent.is_dir() else {}
+    v = u.get("video")
+    if len(u.get("sources") or []) > 1 and v and Path(v).name == video.name:
+        return u["sources"]
+    return None
+
+
 def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int = 3, width: int = 480,
-          start: float | None = None, end: float | None = None) -> dict:
-    """Write the sheets and frames.json into `out` (only `start`-`end` seconds when given); returns its data."""
+          start: float | None = None, end: float | None = None, sources: list[dict] | None = None) -> dict:
+    """Write the sheets and frames.json into `out` (only `start`-`end` seconds when given); `sources` (the joined
+    files, from media.join) marks where each starts. Returns the frames.json data."""
     import cv2
     import numpy as np
     duration = media.duration_s(video)
     settings = dict(every_s=every, cols=cols, rows=rows, width=width, size=list(media.video_size(video)))
     if start is not None or end is not None:  # a window; whole-video sheets keep their old settings keys
         settings.update(start_s=start or 0.0, end_s=end)
+    if sources:
+        settings["parts"] = [dict(file=Path(s["file"]).name, start=mmss(s["start"], 1),
+                                  end=mmss(s["start"] + s["duration"], 1)) for s in sources]
     index = out / "frames.json"
     if index.exists():
         old = json.loads(index.read_text(encoding="utf8"))
@@ -67,14 +99,16 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     data = dict(video=str(video), duration_s=round(duration, 2), **settings, sheets=[])
     dec = 1 if every < 1 else 0  # label 0:12.5 when tiles are under a second apart
     stop = min(duration, end) if end is not None else duration
-    for i, group in enumerate(sheets(times(stop, every, start or 0.0), cols * rows), 1):
+    ts = times(stop, every, start or 0.0)
+    marks = part_starts(ts, sources)
+    for i, group in enumerate(sheets(ts, cols * rows), 1):
         tiles = []
         for t in group:
             cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
             ok, frame = cap.read()
             if not ok:
                 continue
-            tiles.append((t, tile(frame, mmss(t, dec), width)))
+            tiles.append((t, tile(frame, mmss(t, dec), width, marks.get(t, ""))))
         if not tiles:
             continue
         th = max(f.shape[0] for _, f in tiles)
@@ -89,6 +123,9 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     cap.release()
     media.write_json_atomic(index, data, indent=1)
     print(f"frames: {len(data['sheets'])} sheets ({every:g} s per tile) in {out}")
+    if sources:
+        print(f"frames: {len(sources)} joined files, times are on the joined timeline: {media.parts_line(sources)}; "
+              'the first tile of each later file is marked "part N/M"')
     return data
 
 
@@ -114,7 +151,7 @@ def main(argv=None):
         snapped = max(0.1, round(a.every, 1))
         print(f"frames: --every {a.every:g} -> {snapped:g} (tiles are labelled in tenths of a second, as clip times are)")
         a.every = snapped
-    build(video, Path(a.out), a.every, a.cols, a.rows, a.width, a.start, a.end)
+    build(video, Path(a.out), a.every, a.cols, a.rows, a.width, a.start, a.end, unit_sources(video))
 
 
 if __name__ == "__main__":

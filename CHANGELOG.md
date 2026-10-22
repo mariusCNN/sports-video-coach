@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Changed
+
+- Several videos in one run: `new` prints where each file sits on the joined timeline
+  (`part1.mp4 = 00:00-00:22, part2.mp4 = 00:22-01:02`), `frames.json` lists them as `parts`, and the first contact
+  sheet tile of each later file is framed and labelled "part N/M". The review and report guides say every time is
+  on the joined timeline.
+- The review guide says to write `what`, `why` and `summary` in the first page language.
+- `film --dry` prints what it read from each freeze line (marks and label), warns when a mark comes after the
+  label, and notes a still scene (title, stat card, picture) that talks for more than 12 s.
+- `new` says when a zh page has no Chinese name for the sport, and how to set one.
+- Run output prints paths with forward slashes on Windows too, so they paste into Git Bash; the QA instructions no
+  longer repeat the page-check sentence.
+- README: what to do when `sports-video-coach` is not found after `uv tool install`.
+
 ## 0.2.3 - 2026-10-23
 
 ### Changed
