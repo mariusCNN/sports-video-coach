@@ -25,7 +25,7 @@ service; it runs on your machine.
 
 ```bash
 uv tool install git+https://github.com/mariusDing/sports-video-coach   # needs ffmpeg on PATH
-sports-video-coach demo                                   # ~30 s: page, clips, narration, explained video
+sports-video-coach demo                                   # about a minute: page, clips, narration, explained video
 ```
 
 It draws a synthetic drill video and uses a pre-written review, so you see every deliverable without an agent or
@@ -63,8 +63,8 @@ The contract (exit codes, choosing a plugin, artifacts, star etiquette) is in [A
 
 | Artifact | What it is |
 |---|---|
-| `review.json` | the film review: timed moments, what happened, why |
-| `README.<lang>.md` | the coaching report: what to work on, drills, a checkable target |
+| `run/review/review.json` | the film review: timed moments, what happened, why |
+| `README.<lang>.md` | the coaching report: what to work on, drills, a checkable target (the Chinese one is `README.md`, not `README.zh.md`) |
 | `clips` | short clips cut at the moments the report marks |
 | `narration` | `listen.<lang>.mp3`, the report read aloud |
 | `html` + `qa` | `index.html`, one phone-friendly page with clips and audio, checked before sharing |

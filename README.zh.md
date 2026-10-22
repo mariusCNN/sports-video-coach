@@ -58,8 +58,8 @@ sports-video-coach run workspace/analysis/badminton/2025-03-15
 
 | 交付物 | 是什么 |
 |---|---|
-| `review.json` | 录像复盘：带时间的片段、发生了什么、为什么 |
-| `README.<lang>.md` | 教练报告：练什么、怎么练、可检查的目标 |
+| `run/review/review.json` | 录像复盘：带时间的片段、发生了什么、为什么 |
+| `README.<lang>.md` | 教练报告：练什么、怎么练、可检查的目标（中文报告是 `README.md`，不是 `README.zh.md`） |
 | `clips` | 报告标出的关键片段 |
 | `narration` | `listen.<lang>.mp3`，报告的朗读版 |
 | `html` + `qa` | `index.html`，手机友好的单页，含片段和音频，分享前已检查 |

@@ -2,7 +2,8 @@
 
 usage:
   sports-video-coach narrate <unit folder> [--lang zh en]
-      report narration: listen.zh.md / listen.en.md -> listen.zh.mp3 / listen.en.mp3 in that folder
+      report narration: listen.zh.md / listen.en.md -> listen.zh.mp3 / listen.en.mp3 in that folder; an mp3
+      newer than its script is kept (--force re-renders it), so a rerun after a network error redoes only the rest
   sports-video-coach narrate --script cues.zh.md [--gap 6 --chime --loud --rate -5%]
       any single script -> cues.zh.mp3 next to it (language from the .zh/.en suffix). --chime plays a short
       two-tone bell before every paragraph and --gap leaves silence after it, which makes a loop you can
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import re
 import sys
 from pathlib import Path
 
@@ -29,6 +31,12 @@ from .media import ffmpeg
 VOICES = {"zh": ("zh-CN-YunjianNeural", "+0%"), "en": ("en-US-AndrewNeural", "+0%")}
 PAUSE_S = 0.7
 MP3 = ["-ac", "1", "-ar", "24000", "-c:a", "libmp3lame", "-b:a", "48k"]
+TRIES, BACKOFF_S = 3, 2.0  # edge-tts sometimes returns no audio for a moment; a retry usually gets it
+PER_MIN = {"zh": 270, "en": 150}  # read speed: Chinese characters / English words a minute (prompts/narration.md)
+
+
+class TTSFailed(SystemExit):
+    """The online voice failed after every retry: exits with one line, not a traceback."""
 
 
 def paragraphs(text: str) -> list[str]:
@@ -55,9 +63,64 @@ async def speak(paras: list[str], voice: str, rate: str, tmp: Path) -> list[Path
     parts = []
     for i, p in enumerate(paras):
         out = tmp / f"p{i:03d}.mp3"
-        await edge_tts.Communicate(p, voice, rate=rate).save(str(out))
+        for n in range(1, TRIES + 1):
+            try:
+                await edge_tts.Communicate(p, voice, rate=rate).save(str(out))
+                break
+            except (edge_tts.exceptions.EdgeTTSException, OSError, asyncio.TimeoutError) as e:  # aiohttp: OSError
+                if n == TRIES:
+                    raise TTSFailed(f"text-to-speech (edge-tts, online) failed: {type(e).__name__}: {e}; "
+                                    "check the network and run again") from None
+                print(f"[narrate] edge-tts {type(e).__name__}, retry {n}/{TRIES - 1}", flush=True)
+                await asyncio.sleep(BACKOFF_S * n)
         parts.append(out)
     return parts
+
+
+_ZH_NUM = {"一": 1, "两": 2, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+_EN_NUM = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+           "nine": 9, "ten": 10}
+_ZH_LEN = re.compile(r"(?P<under>不到|少于)?\s*(?P<n>\d+(?:\.\d+)?|[一两二三四五六七八九十]{1,3})\s*"
+                     r"分(?:(?P<h1>半)钟?|钟(?P<h2>半)?)")  # not 三分球
+_EN_LEN = re.compile(r"\b(?P<under>under\s+|less\s+than\s+)?"
+                     r"(?P<n>\d+(?:\.\d+)?|a|one|two|three|four|five|six|seven|eight|nine|ten)"
+                     r"(?P<h1>\s+and\s+a\s+half)?\s+min(?:ute)?s?\b(?P<h2>\s+and\s+a\s+half)?", re.I)
+
+
+def stated(paras: list[str], lang: str) -> tuple[float, bool] | None:
+    """The length the script says it runs ("约 2 分钟", "一分半", "about three minutes") in seconds, and whether it
+    is only an upper bound ("不到一分钟", "under a minute"); None when it names none. The first mention counts:
+    the opening "this runs about N minutes"."""
+    m = (_ZH_LEN if lang == "zh" else _EN_LEN).search(" ".join(paras))
+    if not m:
+        return None
+    w = m["n"].lower()
+    if w[0].isdigit():
+        n = float(w)
+    elif lang != "zh":
+        n = _EN_NUM[w]
+    else:  # 三, 十二, 二十, 二十五
+        tens, _, ones = w.rpartition("十") if "十" in w else ("", "", w)
+        n = (_ZH_NUM.get(tens, 1) * 10 if "十" in w else 0) + _ZH_NUM.get(ones, 0)
+    return (n + (0.5 if m["h1"] or m["h2"] else 0)) * 60, bool(m["under"])  # 一分半, two and a half minutes
+
+
+def estimate_s(paras: list[str], lang: str) -> float:
+    """Read time at the guide's speed (Chinese counts characters without punctuation, English words), plus pauses."""
+    n = sum(len(re.findall(r"\w", p)) if lang == "zh" else len(p.split()) for p in paras)
+    return n / PER_MIN.get(lang, 150) * 60 + PAUSE_S * max(0, len(paras) - 1)
+
+
+def check_length(paras: list[str], lang: str) -> str | None:
+    """A warning when the stated length is off the estimated read time by more than 30 s, or a quarter of a short
+    length ("一分钟" for 78 s), else None."""
+    if not (s := stated(paras, lang)):
+        return None
+    (said, under), est = s, estimate_s(paras, lang)
+    if abs(est - said) <= min(30, said / 4) or under and est <= said:  # "under a minute" fits any shorter length
+        return None
+    return (f"[narrate] warning: the {lang} script says {'under' if under else 'about'} {said / 60:g} min but reads in about {est:.0f} s; "
+            "fix that sentence (the real length prints when the mp3 is written)")
 
 
 def silence(seconds: float, out: Path) -> Path:
@@ -105,6 +168,8 @@ def render(src: Path, out: Path, lang: str, gap: float, bell: bool, loud: bool, 
            voice_table: dict | None = None, tight: bool = False):
     paras = paragraphs(src.read_text(encoding="utf8"))
     voice, default_rate = (voice_table or VOICES)[lang]
+    if warn := check_length(paras, lang):
+        print(warn, flush=True)
     print(f"[narrate] {lang}: {len(paras)} paragraphs, {sum(map(len, paras))} characters with {voice} "
           "(edge-tts, online)...", flush=True)
     with media.scratch(out) as t:
@@ -129,6 +194,7 @@ def main(argv=None):
     ap.add_argument("--loud", action="store_true", help="normalise loudness to -14 LUFS")
     ap.add_argument("--rate", help='speaking rate, e.g. "-5%%"')
     ap.add_argument("--tight", action="store_true", help="trim TTS silence around each paragraph so --gap is exact")
+    ap.add_argument("--force", action="store_true", help="re-render a language whose mp3 is newer than its script")
     a = ap.parse_args(argv)
     if a.script:
         vt = voices(load_game(a.script.parent))
@@ -143,7 +209,16 @@ def main(argv=None):
     if not langs:
         sys.exit(f"{folder} has no listen.<lang>.md ({', '.join(VOICES)})")
     for lang in langs:
-        render(folder / f"listen.{lang}.md", folder / f"listen.{lang}.mp3", lang, a.gap, a.chime, a.loud, a.rate, vt, a.tight)
+        src, out = folder / f"listen.{lang}.md", folder / f"listen.{lang}.mp3"
+        if not a.force and up_to_date(out, src):  # a rerun after a failure redoes only the stale language
+            print(f"[narrate] {lang}: {out.name} is newer than {src.name}, kept (--force re-renders)")
+            continue
+        render(src, out, lang, a.gap, a.chime, a.loud, a.rate, vt, a.tight)
+
+
+def up_to_date(out: Path, src: Path, slack: float = 2.0) -> bool:
+    """out exists and src did not change after it (the driver's test for the narrate step)."""
+    return out.exists() and src.exists() and src.stat().st_mtime <= out.stat().st_mtime + slack
 
 
 if __name__ == "__main__":

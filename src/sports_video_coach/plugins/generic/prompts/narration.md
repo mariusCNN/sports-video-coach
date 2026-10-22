@@ -10,4 +10,5 @@ A spoken version of the report, rendered to MP3 by `sports-video-coach narrate <
 - Same facts as the report; never add a claim. No names of people unless the user asked for them (the text goes
   to an online text-to-speech service).
 - Before rendering, estimate the length (English about 150 words a minute, Chinese about 270 characters a
-  minute) so the "about N minutes" sentence is right the first time; `narrate` prints the real length after.
+  minute) so the "about N minutes" sentence is right the first time; `narrate` warns when it is clearly off and
+  prints the real length after.

@@ -261,10 +261,11 @@ def first_readme(folder: Path) -> Path:
 
 
 def length_label(ui: dict, seconds: float) -> str:
-    """'About 3 min' for a long recording; under a minute in seconds (to 5 s), so 47 s never reads as 1 min."""
+    """'About 1.5 min' for a long recording, to the nearest half minute (84 s never reads as 1 min); under a minute
+    in seconds (to 5 s), so 47 s never reads as 1 min either."""
     if seconds < 55 and "listen_sub_s" in ui:
         return ui["listen_sub_s"].format(s=max(5, round(seconds / 5) * 5))
-    return ui["listen_sub"].format(m=max(1, round(seconds / 60)))
+    return ui["listen_sub"].format(m=f"{max(1, int(seconds / 30 + 0.5) / 2):g}")  # 75 s rounds up
 
 
 def listen_block(folder: Path, embed: bool, langs: list[tuple] | None = None):
