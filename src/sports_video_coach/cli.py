@@ -87,7 +87,15 @@ def list_plugins(argv=None) -> None:
         print(f"broken plugin ({where}): {e}")
 
 
+def utf8_stdio() -> None:
+    """Print Chinese as Chinese: a Git Bash pipe or a cp1252 / GBK console would show `???` or crash."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure") and (stream.encoding or "").lower().replace("-", "") != "utf8":
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv=None, prog: str = "sports-video-coach", default: str | None = None):
+    utf8_stdio()
     argv = sys.argv[1:] if argv is None else list(argv)
     if not argv or argv[0] in ("-h", "--help"):
         print(usage(prog, default))

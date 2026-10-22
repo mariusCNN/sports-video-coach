@@ -14,3 +14,14 @@ def test_guide_lists_prints_and_names_unknown_ones(capsys):
     with pytest.raises(SystemExit) as e:
         guide.main(["nope"])
     assert "its guides: film, narration, report, review" in str(e.value.code)
+
+
+def test_cli_prints_chinese_through_a_non_utf8_pipe(monkeypatch):
+    import io
+    import sys
+    raw = io.BytesIO()
+    monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(raw, encoding="cp1252"))
+    cli.utf8_stdio()
+    print("网球", end="")
+    sys.stdout.flush()
+    assert raw.getvalue().decode("utf8") == "网球"

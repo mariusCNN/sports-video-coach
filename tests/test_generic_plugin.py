@@ -62,6 +62,9 @@ def test_frames_window_for_a_close_look(tmp_path, video, capsys):
     assert "start_s" not in whole  # whole-video sheets keep the settings keys they always had
     with pytest.raises(SystemExit):
         frames.main([str(video), "--out", str(tmp_path / "z"), "--start", "3", "--end", "2"])
+    frames.main([str(video), "--out", str(tmp_path / "q"), "--start", "2", "--end", "3", "--every", "0.25"])
+    assert "--every 0.25 -> 0.2" in capsys.readouterr().out  # tenths labels: no ambiguous 00:02.2 for 2.25
+    assert json.loads((tmp_path / "q" / "frames.json").read_text(encoding="utf8"))["every_s"] == 0.2
 
 
 def test_a_second_video_of_the_same_day_gets_its_own_folder(video, tmp_path, monkeypatch):

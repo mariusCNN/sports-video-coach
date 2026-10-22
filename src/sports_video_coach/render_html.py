@@ -82,14 +82,16 @@ SPORT_ZH = {"tennis": "网球", "basketball": "篮球", "football": "足球", "s
 
 
 def sport_names(sport, langs=("en",)) -> dict[str, str]:
-    """{lang: sport name} for the page languages: a per-language dict as given, else SPORT_ZH both ways."""
+    """{lang: sport name} for the page languages: a per-language dict as given, else SPORT_ZH both ways. With
+    several languages, a name that is not in the page's script is left out ("" ) rather than shown untranslated."""
     if isinstance(sport, dict):
         fallback = next((str(v) for v in sport.values() if v), "")
         return {c: str(sport.get(c) or fallback) for c in langs}
-    raw = str(sport or "")
-    key = raw.strip().lower()
-    en = next((k for k, v in SPORT_ZH.items() if v == raw.strip()), raw)
-    return {c: SPORT_ZH.get(key, raw) if c == "zh" else en for c in langs}
+    raw = str(sport or "").strip()
+    cjk = bool(re.search(r"[㐀-鿿]", raw))
+    zh = SPORT_ZH.get(raw.lower(), raw if cjk or len(langs) == 1 else "")
+    en = next((k for k, v in SPORT_ZH.items() if v == raw), "" if cjk and len(langs) > 1 else raw)
+    return {c: zh if c == "zh" else en for c in langs}
 
 
 def default_board(folder: Path, data: dict, sport: str, heading: str, langs=("en",)) -> dict:
@@ -102,12 +104,13 @@ def default_board(folder: Path, data: dict, sport: str, heading: str, langs=("en
 
 def default_band(sb: dict, lab) -> str:
     names = sb["sport"] if isinstance(sb["sport"], dict) else {"": str(sb["sport"])}
+    def line(name):
+        return " · ".join(html.escape(x) for x in (name, sb["date"]) if x)
     if len(set(names.values())) > 1:  # one span per language, the switch shows one (first language visible)
-        sport = "".join(f'<span data-lang="{c}"{" hidden" if i else ""}>{html.escape(n)}</span>'
-                        for i, (c, n) in enumerate(names.items()))
+        meta = "".join(f'<span data-lang="{c}"{" hidden" if i else ""}>{line(n)}</span>'
+                       for i, (c, n) in enumerate(names.items()))
     else:
-        sport = html.escape(next(iter(names.values()), ""))
-    meta = " · ".join(x for x in (sport, html.escape(sb["date"])) if x)
+        meta = line(next(iter(names.values()), ""))
     return f"""<div class="score" data-result="plain">
       <div class="team us"><span class="name">{sb["heading"]}</span><span class="side">{meta}</span></div>
     </div>"""

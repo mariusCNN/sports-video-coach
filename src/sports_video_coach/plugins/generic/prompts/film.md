@@ -32,5 +32,5 @@ Seven of ten tosses in front of the head: that is the target for next week.
   Paragraphs after a line are read over it.
 - Plugins may add scene kinds (basketball adds `court:` diagrams); `film --dry` names the kinds it knows.
 - Keep it to 2-4 minutes; for a source video under a minute, two to four times its length (a 22 s drill:
-  45-90 s). Same facts as
-  the report. `film --dry` estimates the length.
+  45-90 s). Same facts as the report; a short report makes a shorter film, never pad it. `film --dry`
+  estimates the length.

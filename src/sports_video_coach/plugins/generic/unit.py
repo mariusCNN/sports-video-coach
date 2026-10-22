@@ -101,22 +101,23 @@ STEPS = [
            inputs=lambda g: [g.video], params=lambda g: {"every_s": g.game.get("every_s", 2)}),
     P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors,
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
-               "{review}/review.json as {prompts}/review.md says (sport: {sport}; focus: {focus}). Delegate the "
-               "sheets to subagents if you have them, at most 3 at once, one part each. Can't read that path? "
-               "`sports-video-coach guide review` prints it (and `guide report`, `guide narration`, `guide film`). An "
+               "{review}/review.json as the review guide says (`sports-video-coach guide review` prints it; sport: "
+               "{sport}; focus: {focus}). Delegate the sheets to subagents if you have them, at most 3 at once, one "
+               "part each. An "
                "unclear moment: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 --end 0:15 "
                "--every 0.2` cuts a dense sheet of just that."),
     P.Step("report", "agent", reports_written,
-           how="Write the coaching report {readmes} in {folder} from {review}/review.json, as {prompts}/report.md "
-               "says ({langs}); mark the moments to show with ![caption](clip:mm:ss-mm:ss)."),
+           how="Write the coaching report {readmes} in {folder} from {review}/review.json, as `sports-video-coach "
+               "guide report` says ({langs}); mark the moments to show with ![caption](clip:mm:ss-mm:ss)."),
     *P.tail_steps(
         lambda g: g.video,
-        listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} ({prompts}/narration.md).",
+        listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} (`sports-video-coach guide narration`).",
         qa_how="QA: serve {folder} over http (a browser-check subagent if you have one) and check the page in every "
-               "language, the audio and every clip on a 390 px wide screen. Write the result to {folder}/qa.md, "
-               "first word PASS when it passes.",
+               "language, the audio and every clip on a 390 px wide screen. No browser: `sports-video-coach page-check "
+               "{folder}` is accepted; say in qa.md that layout and playback were not looked at. Write the result to "
+               "{folder}/qa.md, first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "
-                        "report ({prompts}/film.md); check them with `sports-video-coach film {folder} --video "
+                        "report (`sports-video-coach guide film`); check them with `sports-video-coach film {folder} --video "
                         "{video} --dry`."),
 ]
 NAMES = [s.name for s in STEPS]

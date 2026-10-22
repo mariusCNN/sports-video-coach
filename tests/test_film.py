@@ -185,6 +185,11 @@ def test_freeze_events_circle_tracked_players_and_dim_the_rest():
     assert styles.count("Draw") == 4 and styles[-1] == "Mark"  # dim layer, two rings, one arrow; the label
     assert ev[0][3].count(" m ") == 2 and "\\1a&H78&" in ev[0][3]  # two holes cut in the dim layer
     assert "\\3c&H00D4FF&" in ev[1][3] and all(e[:2] == (2.0, 6.0) for e in ev)
+    short = fd.parse_freeze_line('> 00:04.5 0.87,0.72->0.92,0.72 "short"', fc.parse_ref)[1]
+    ev = fd.freeze_events(short, "short", 4.5, None, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)
+    assert ev[0][3].count(" m ") == 1 and [e[2] for e in ev].count("Draw") == 3  # one hole, one ring, the arrow
+    far = fd.parse_freeze_line('> 00:04.5 0.2,0.72->0.8,0.72', fc.parse_ref)[1]
+    assert fd.freeze_events(far, "", 4.5, None, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)[0][3].count(" m ") == 2
     assert film.freeze_warnings(film.parse_script("![x](clip:03:08-03:20)\n> 03:10 我#9\n", FILM), tracks) == [
         "scene 1: freeze 03:10: us#9 is not in the tracks near that moment; mark them with x,y instead"]
 
@@ -305,6 +310,7 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     assert "1 freeze(s)" in out and "3 scenes" in out
     assert film.title_text(folder, {}, 720) == "2025-03-12"  # the folder name; no date line repeating it
     assert film.title_text(folder, {"title": "Sprint"}, 720).endswith("2025-03-12")
+    assert film.title_text(folder, {"title": "Sprint, 2025-03-12"}, 720).count("2025-03-12") == 1
     (folder / "README.en.md").write_text("# Hill sprints: the turn\n\nbody\n", encoding="utf8")
     assert film.title_text(folder, {}, 720, lang="en").startswith("Hill sprints: the turn")  # the report's heading
     assert film.title_text(folder, {}, 720, lang="zh") == "2025-03-12"                     # no README.md: folder name

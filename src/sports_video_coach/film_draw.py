@@ -15,6 +15,7 @@ import re
 from typing import Callable
 
 MARK_HEX = "#ffd400"  # telestration yellow
+SHORT_ARROW = 0.12   # arrow ends closer than this (frame fractions) get one ring, at the start
 POINT_RE = re.compile(r"^(\d*\.?\d+),(\d*\.?\d+)$")
 ARROW_RE = re.compile(r"^(.+?)(?:->|→)(.+)$")
 LABEL_RE = re.compile(r'"([^"]*)"|“([^”]*)”')
@@ -120,7 +121,13 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
     found = [(m, b) for m, b in boxes.items() if b]
     ev = []
     head = "{\\an7\\pos(0,0)\\fad(200,0)\\p1\\bord0\\shad0"
-    ring_marks = [m for m in marks if m[0] != "arrow"] or [m for m, _ in found]
+    explicit = [m for m in marks if m[0] != "arrow"]
+    ring_marks = explicit or [m for m, _ in found]
+    for mk in [] if explicit else marks:  # arrows only: a short one ("stopped short of the cone") rings its start
+        if mk[0] == "arrow" and boxes.get(mk[1]) and boxes.get(mk[2]) and mk[2] in ring_marks and mk[1] != mk[2]:
+            (a1, b1, a2, b2), (c1, d1, c2, d2) = boxes[mk[1]], boxes[mk[2]]
+            if math.hypot((a1 + a2 - c1 - c2) / 2, (b1 + b2 - d1 - d2) / 2) < SHORT_ARROW:
+                ring_marks = [m for m in ring_marks if m != mk[2]]
     holes = []
     for m, (x1, y1, x2, y2) in found:
         if m in ring_marks:

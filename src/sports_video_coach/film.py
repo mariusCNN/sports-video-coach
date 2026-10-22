@@ -79,7 +79,7 @@ def target_s(video_s: float | None) -> tuple[int, int]:
     if video_s is None or video_s >= 60:
         return TARGET_S
     return max(30, int(round(2 * video_s))), TARGET_S[1]
-SPEECH_RATE = {"zh": 5.2, "en": 15.0}  # characters per second, only for --dry estimates
+SPEECH_RATE = {"zh": 4.7, "en": 15.0}  # characters per second, only for --dry estimates (measured on edge-tts runs)
 FONT = {"win32": "Microsoft YaHei", "darwin": "PingFang SC"}.get(sys.platform, "Noto Sans CJK SC")
 BG = "#14161f"
 
@@ -486,7 +486,7 @@ def title_text(folder: Path, data: dict, h: int, hooks: FilmHooks = GENERIC, lan
         return hooks.title(folder, data, h)
     head = str(data.get("title") or report_title(folder, lang) or folder.resolve().name)
     sub = str(data.get("date") or folder_date(folder))
-    return title_lines(head, "" if sub == head else sub, h)
+    return title_lines(head, "" if sub in head else sub, h)  # a heading "<sport>: <who>, <date>" has it
 
 
 # ---- speech ------------------------------------------------------------------------------------------------
@@ -698,8 +698,9 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
         lo, hi = target_s(video_s)
         if not lo <= total <= hi:  # a warning, not an error
             span = f"{lo // 60}-{hi // 60} min" if lo >= 60 else f"{lo} s - {hi // 60} min"
-            print(f"note: outside the {span} the film guide asks for; "
-                  f"{'add a scene or say more' if total < lo else 'cut scenes'} unless that is on purpose")
+            print(f"note: outside the {span} the film guide asks for; " + (
+                "fine for a short report, never pad: add a scene only for a moment the report covers" if total < lo
+                else "cut scenes unless that is on purpose"))
         return None
 
     w, h = int(round(height * 16 / 9 / 2)) * 2, height
@@ -781,7 +782,9 @@ def main(argv=None):
     ap.add_argument("--dry", action="store_true", help="check the script and print scenes with estimated lengths")
     a = ap.parse_args(argv)
     folder = Path(a.folder)
-    langs = a.lang or sorted(p.name.split(".")[1] for p in folder.glob("film.*.md"))
+    have = sorted(p.name.split(".")[1] for p in folder.glob("film.*.md"))
+    order = [l for l in (units.load(folder).get("languages") or []) if l in have]
+    langs = a.lang or order + [l for l in have if l not in order]  # the unit's language order (zh first if asked)
     if not langs:
         sys.exit(f"no film.<lang>.md in {folder}; see prompts/film.md")
     pick = None

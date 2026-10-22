@@ -7,7 +7,14 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - A finished generic run also lists the narration MP3s and the clips folder, not only the page and the explained video.
-- A Chinese page names the sport in Chinese (`tennis` shows as 网球 on the zh page). Other sports: set `"sport": {"zh": "...", "en": "..."}` in analysis.json.
+- A Chinese page names the sport in Chinese (`tennis` shows as 网球 on the zh page). Other sports: set `"sport": {"zh": "...", "en": "..."}` in analysis.json; a sport it cannot name is left out of the zh header instead of showing in English.
+- The report guide gives the Chinese section labels (录像里看到的, 为什么会这样 ...), so a zh report has no English headings and every Chinese report reads the same.
+- Every command prints Chinese correctly through a Git Bash pipe or a cp1252 / GBK console (was `???`).
+- `film --dry`: languages in the unit's order, a calibrated Chinese speech rate, and a short-film note that says never pad.
+- The title card no longer repeats the date when the heading already has it.
+- A short arrow on a freeze rings only its start, not two overlapping spots.
+- `frames --every` under a second snaps to tenths (`0.25` -> `0.2`), so tile labels match clip times.
+- Agent steps point at `sports-video-coach guide <name>` instead of a path inside site-packages; the QA step says a `page-check` pass is accepted without a browser.
 
 ## 0.2.2 - 2026-10-23
 

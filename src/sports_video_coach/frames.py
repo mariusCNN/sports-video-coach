@@ -108,6 +108,12 @@ def main(argv=None):
         raise SystemExit(f"video not found: {video}")
     if a.start is not None and a.end is not None and a.end <= a.start:
         raise SystemExit("--end must be after --start")
+    if a.every <= 0:
+        raise SystemExit("--every must be above 0")
+    if a.every < 1 and abs(a.every * 10 - round(a.every * 10)) > 1e-6:  # labels and clip times are in tenths
+        snapped = max(0.1, round(a.every, 1))
+        print(f"frames: --every {a.every:g} -> {snapped:g} (tiles are labelled in tenths of a second, as clip times are)")
+        a.every = snapped
     build(video, Path(a.out), a.every, a.cols, a.rows, a.width, a.start, a.end)
 
 
