@@ -22,6 +22,16 @@ All notable changes to this project are documented here. The format follows [Kee
   `uv run pytest plugins/<name>`).
 - docs/plugins.md: how to test a local plugin, where local plugins are found (`./plugins` of the current working
   directory), and an example of adding a command stage.
+- `run <folder> --artifacts html narration film` also works on a later run: it replaces the unit's "artifacts"
+  (html brings qa and clips, film brings clips) and goes on. Exit 2 (a wrong option) is listed in the exit codes.
+- The finishing line prints the command that builds the left-out deliverables too (publish is never suggested).
+- Step texts and the generic review guide no longer assume Claude subagents or a browser-check agent; the
+  joined-videos paragraph applies only when the unit has several videos.
+- `--artifacts` help says narration (the page's audio) is not brought in by html; the `html` stage help names
+  `README.md` (Chinese) or `README.<lang>.md`.
+- `film --dry` length note gives the estimate, the target range and the source length.
+- Freeze frames dim the rest of the picture more lightly, so a ball next to the ringed player stays readable; the
+  film guide says to ring the ball too when the label is about it.
 
 ## 0.2.5 - 2026-10-23
 
