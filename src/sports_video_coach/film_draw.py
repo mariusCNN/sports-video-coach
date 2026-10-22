@@ -145,8 +145,8 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
             (a, b), (c, d) = px(x1, y1), px(x2, y2)
             bw, bh = c - a, d - b
             holes.append(ellipse((a + c) / 2, (b + d) / 2, bw * 0.85 + uw * 0.012, bh * 0.62 + u * 0.012, reverse=True))
-    if holes:  # dim everything but the marked players
-        ev.append((start, end, "Draw", head + f"\\1c&H000000&\\1a&H78&}}m 0 0 l {w} 0 l {w} {h} l 0 {h} " + " ".join(holes)))
+    if holes:  # dim everything but the marked players, lightly: a ball or cone next to them stays readable
+        ev.append((start, end, "Draw", head + f"\\1c&H000000&\\1a&H9C&}}m 0 0 l {w} 0 l {w} {h} l 0 {h} " + " ".join(holes)))
     feet = {}
     for m, (x1, y1, x2, y2) in found:
         (a, b), (c, d) = px(x1, y1), px(x2, y2)

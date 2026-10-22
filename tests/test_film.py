@@ -183,7 +183,7 @@ def test_freeze_events_circle_tracked_players_and_dim_the_rest():
     ev = fd.freeze_events(marks, "alone", 190.0, tracks, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)
     styles = [e[2] for e in ev]
     assert styles.count("Draw") == 4 and styles[-1] == "Mark"  # dim layer, two rings, one arrow; the label
-    assert ev[0][3].count(" m ") == 2 and "\\1a&H78&" in ev[0][3]  # two holes cut in the dim layer
+    assert ev[0][3].count(" m ") == 2 and "\\1a&H9C&" in ev[0][3]  # two holes cut in the dim layer
     assert "\\3c&H00D4FF&" in ev[1][3] and all(e[:2] == (2.0, 6.0) for e in ev)
     short = fd.parse_freeze_line('> 00:04.5 0.87,0.72->0.92,0.72 "short"', fc.parse_ref)[1]
     ev = fd.freeze_events(short, "short", 4.5, None, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)
