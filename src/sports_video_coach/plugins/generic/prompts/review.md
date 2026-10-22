@@ -11,7 +11,9 @@ tiles are under a second apart). `frames.json` lists the sheets in time order.
    With subagents: at most 3 at once, one contiguous range of sheets each; each writes its moments to
    `run/review/part<N>.json` (same format) and replies in a few lines. Then merge the parts into `review.json`.
 3. When a tile is unclear, cut a closer look: `sports-video-coach clips` needs a report, so instead open the video
-   at that time, or ask for a denser sheet: `sports-video-coach frames <video> --out run/frames-zoom --every 0.5`.
+   at that time, or cut a dense sheet of just that moment:
+   `sports-video-coach frames <video> --out run/frames-zoom --start 0:12 --end 0:15 --every 0.2` (tiles 0.2 s apart,
+   labelled in tenths).
 4. Write `run/review/review.json`.
 
 ## review.json

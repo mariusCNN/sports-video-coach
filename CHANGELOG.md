@@ -8,9 +8,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - The demo's output is online (GitHub Pages, rebuilt by CI from `sports-video-coach demo`): the coaching page with clips and narration, and the explained videos. The README links it, so you can see the deliverables before installing.
 - `sports-video-coach guide [<name>]` prints a writing guide (review, report, narration, film) or lists them, for agents that cannot read the install folder the step names.
+- `frames --start 0:12 --end 0:15 --every 0.2` cuts dense sheets of one moment only, for a close look; the review guide suggests it.
 
 ### Changed
 
+- A second video of the same sport on the same day starts its own analysis folder (`<date>-2`) instead of taking over the first one's.
+- The film guide spells out the freeze line syntax (`> 0:12.5 0.45,0.80 "label"`, no brackets; arrows with `->`).
 - `run --help` is written for users: the three ways to call it, the exit codes, and every start option (`--lang`, `--focus`, `--every`, ...) and driver option (`--status`, `--redo`, ...).
 - A new analysis picks the contact-sheet interval from the video length: a tile every 0.5 s up to 30 s, 1 s up to 2 min, else 2 s (it was always 2 s, too sparse for a short drill). `--every` still overrides it, and a second start keeps the interval already used.
 - Contact-sheet labels show tenths (`00:12.5`) when tiles are under a second apart; the guides say `mm:ss.s` works in reviews, clips and freezes.

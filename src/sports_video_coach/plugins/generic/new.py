@@ -28,6 +28,15 @@ def auto_every(duration_s: float) -> float:
     return 0.5 if duration_s <= 30 else 1.0 if duration_s <= 120 else 2.0
 
 
+def folder_inputs(folder: Path) -> list[str] | None:
+    """The video paths the analysis in `folder` was started from; None when there is none yet."""
+    p = folder / "analysis.json"
+    if not p.exists():
+        return None
+    old = json.loads(p.read_text(encoding="utf8"))
+    return [s["file"] for s in old["sources"]] if old.get("sources") else [old.get("video")]
+
+
 def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog=f"sports-video-coach {NAME}:new", description=__doc__.split("\n\n")[0])
     ap.add_argument("videos", nargs="+")
@@ -52,6 +61,10 @@ def main(argv=None) -> Path:
     date = a.date or info.get("date") or dt.date.today().isoformat()
     name = workspace.slug(a.name or a.sport or videos[0].stem)
     folder = Path(a.out) if a.out else workspace.root() / "analysis" / name / date
+    base, n = folder, 1
+    while not a.out and folder_inputs(folder) not in (None, [str(v) for v in videos]):
+        n += 1  # another video of the same sport on the same day: its own folder, not the first one's
+        folder = base.with_name(f"{base.name}-{n}")
     folder.mkdir(parents=True, exist_ok=True)
     data = dict(plugin=NAME, kind="analysis", sport=a.sport, focus=a.focus, date=date,
                 languages=a.lang or langs_default(), every_s=a.every or auto_every(info["duration"]))

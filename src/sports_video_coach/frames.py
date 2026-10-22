@@ -1,11 +1,13 @@
 """Contact sheets of a video for an agent to review: one tile every N seconds, each tile labelled with its mm:ss.
 
 usage: sports-video-coach frames <video> --out <folder>/run/frames [--every 2] [--cols 4] [--rows 3] [--width 480]
+           [--start mm:ss.s --end mm:ss.s]
 
 Writes `sheet_NNN.jpg` (cols x rows tiles, in time order) and `frames.json`:
   {"video", "duration_s", "every_s", "sheets": [{"file", "start", "end", "tiles": ["mm:ss", ...]}]}
 An agent opens the sheets in order, notes what happens and when, then cuts closer looks with `clips`. Sheets that
 already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width` and the video size).
+A close look at one moment: `--start 0:12 --end 0:14 --every 0.1 --out run/frames-zoom` (tenths in the labels).
 """
 from __future__ import annotations
 
@@ -14,12 +16,12 @@ import json
 from pathlib import Path
 
 from . import media
-from .timefmt import mmss
+from .timefmt import mmss, seconds
 
 
-def times(duration: float, every: float) -> list[float]:
-    """Tile times: every `every` seconds from every/2 (skips the black first frame), within the video."""
-    out, t = [], every / 2
+def times(duration: float, every: float, start: float = 0.0) -> list[float]:
+    """Tile times: every `every` seconds from start + every/2 (skips the black first frame), before `duration`."""
+    out, t = [], start + every / 2
     while t < duration:
         out.append(round(t, 2))
         t += every
@@ -39,12 +41,15 @@ def tile(frame, label: str, width: int):
     return frame
 
 
-def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int = 3, width: int = 480) -> dict:
-    """Write the sheets and frames.json into `out`; returns the frames.json data."""
+def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int = 3, width: int = 480,
+          start: float | None = None, end: float | None = None) -> dict:
+    """Write the sheets and frames.json into `out` (only `start`-`end` seconds when given); returns its data."""
     import cv2
     import numpy as np
     duration = media.duration_s(video)
     settings = dict(every_s=every, cols=cols, rows=rows, width=width, size=list(media.video_size(video)))
+    if start is not None or end is not None:  # a window; whole-video sheets keep their old settings keys
+        settings.update(start_s=start or 0.0, end_s=end)
     index = out / "frames.json"
     if index.exists():
         old = json.loads(index.read_text(encoding="utf8"))
@@ -55,7 +60,8 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     cap = cv2.VideoCapture(str(video))
     data = dict(video=str(video), duration_s=round(duration, 2), **settings, sheets=[])
     dec = 1 if every < 1 else 0  # label 0:12.5 when tiles are under a second apart
-    for i, group in enumerate(sheets(times(duration, every), cols * rows), 1):
+    stop = min(duration, end) if end is not None else duration
+    for i, group in enumerate(sheets(times(stop, every, start or 0.0), cols * rows), 1):
         tiles = []
         for t in group:
             cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
@@ -88,11 +94,15 @@ def main(argv=None):
     ap.add_argument("--cols", type=int, default=4)
     ap.add_argument("--rows", type=int, default=3)
     ap.add_argument("--width", type=int, default=480, help="tile width in pixels (default 480)")
+    ap.add_argument("--start", type=seconds, help="only from this video time (mm:ss.s or seconds)")
+    ap.add_argument("--end", type=seconds, help="only up to this video time")
     a = ap.parse_args(argv)
     video = Path(a.video)
     if not video.is_file():
         raise SystemExit(f"video not found: {video}")
-    build(video, Path(a.out), a.every, a.cols, a.rows, a.width)
+    if a.start is not None and a.end is not None and a.end <= a.start:
+        raise SystemExit("--end must be after --start")
+    build(video, Path(a.out), a.every, a.cols, a.rows, a.width, a.start, a.end)
 
 
 if __name__ == "__main__":

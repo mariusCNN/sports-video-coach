@@ -53,6 +53,28 @@ def test_frames_label_tenths_under_a_second(tmp_path, video):
     assert data["sheets"][0]["tiles"] == ["00:00.2", "00:00.8", "00:01.2", "00:01.8"]
 
 
+def test_frames_window_for_a_close_look(tmp_path, video, capsys):
+    frames.main([str(video), "--out", str(tmp_path / "z"), "--start", "0:02", "--end", "3", "--every", "0.25"])
+    data = json.loads((tmp_path / "z" / "frames.json").read_text(encoding="utf8"))
+    assert data["sheets"][0]["tiles"] == ["00:02.1", "00:02.4", "00:02.6", "00:02.9"]
+    assert (data["start_s"], data["end_s"]) == (2.0, 3.0)
+    whole = frames.build(video, tmp_path / "f", every=2)
+    assert "start_s" not in whole  # whole-video sheets keep the settings keys they always had
+    with pytest.raises(SystemExit):
+        frames.main([str(video), "--out", str(tmp_path / "z"), "--start", "3", "--end", "2"])
+
+
+def test_a_second_video_of_the_same_day_gets_its_own_folder(video, tmp_path, monkeypatch):
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
+    other = tmp_path / "other.mp4"
+    shutil.copy(video, other)
+    first = new.main([str(video), "--sport", "tennis", "--date", "2026-01-02"])
+    assert new.main([str(video), "--sport", "tennis", "--date", "2026-01-02"]) == first  # the same video goes on
+    second = new.main([str(other), "--sport", "tennis", "--date", "2026-01-02"])
+    assert second.name == "2026-01-02-2" and new.folder_inputs(second) == [str(other.resolve())]
+    assert new.folder_inputs(first) == [str(video.resolve())]
+
+
 def test_frames_sheets_and_index(tmp_path, video, capsys):
     data = frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     assert [s["file"] for s in data["sheets"]] == ["sheet_001.jpg"]
