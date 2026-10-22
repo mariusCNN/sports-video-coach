@@ -29,7 +29,7 @@ It draws a synthetic drill video and uses a pre-written review, so you see every
 a video of your own (`--lang en zh` for both languages, `--offline` with no network: clips and the page only). With
 your own video, your agent writes the review: see below.
 
-No git, or git fails behind a proxy: `uv tool install https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`.
+The install downloads about 60 MB (mostly OpenCV and NumPy; no torch). No git, or git fails behind a proxy: `uv tool install https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`.
 
 ![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, subtitles say why](docs/images/demo-film.gif)
 
