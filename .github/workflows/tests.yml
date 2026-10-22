@@ -16,14 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - name: ffmpeg (the generic plugin and film tests cut synthetic video)
-        timeout-minutes: 10
+      # the generic plugin and film tests cut synthetic video; apt hung here for 8 minutes on 2026-10-22
+      - name: ffmpeg, a static build from GitHub
+        timeout-minutes: 5
         run: |
-          for i in 1 2 3; do  # apt sometimes hangs on these runners
-            timeout 150 sudo apt-get update -qq && timeout 150 sudo apt-get install -y -qq ffmpeg && break
-            echo "apt attempt $i failed or hung, retrying"
-          done
-          ffmpeg -version | head -1
+          curl -fsSL --retry 3 https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
+            | tar -xJ -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/ffmpeg-master-latest-linux64-gpl/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg" -version | head -1
       - name: Install (CPU torch; the CUDA index in pyproject is for local GPUs)
         run: |
           uv venv --python 3.11
