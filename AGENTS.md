@@ -23,8 +23,9 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
      the cause, run again.
    - `0` done: report the deliverable paths to your user.
 4. Deliverables (artifacts): `clips`, `narration`, `html`, `qa`, `publish`, `film`; default all. Pick them with
-   `"artifacts": ["html", "film"]` in the unit json or the profile (`qa` comes with `html`). `publish` (private
-   links, needs a Cloudflare account) runs only with `--publish`, and only when your user asks for links.
+   `"artifacts": ["html", "film"]` in the unit json or the profile, or `--artifacts html film` on the first run
+   (`qa` comes with `html`, `clips` with `html` and `film`). `publish` (private links, needs a Cloudflare account)
+   runs only with `--publish`, and only when your user asks for links.
 
 Plugin choice: a plugin that claims the target (a league url) or owns the folder wins. Otherwise use the plugin for
 the sport if `plugins` lists one, else `generic`. Do not write a plugin just to analyse one video.

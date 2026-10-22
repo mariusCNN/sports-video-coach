@@ -71,7 +71,8 @@ The contract (exit codes, choosing a plugin, artifacts, star etiquette) is in [A
 | `publish` | a private link per page (Cloudflare Workers, optional) |
 | `film` | `film.<lang>.mp4`, an explained video: narration over the clips, with freeze frames and marks |
 
-Pick what you want with `"artifacts": ["html", "film"]` in the unit json or your profile; default is all.
+Pick what you want with `"artifacts": ["html", "film"]` in the unit json or your profile, or `--artifacts html film`
+on the first run; default is all. `html` and `film` bring `clips` with them (both show the clips), `html` brings `qa`.
 
 ## How it works
 

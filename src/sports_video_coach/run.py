@@ -4,8 +4,8 @@ The target is one of:
   - a unit folder (or its json): the owning plugin's driver stage runs it (`Kind.driver`), else the core walks the
     kind's step table with pipeline.drive;
   - a target a plugin claims (e.g. a league game url): that plugin's `run` stage takes it;
-  - one or more video files: the plugin's `new` stage (default: the generic plugin) starts a unit from them and the
-    driver goes on with the folder it made.
+  - one or more video files: the plugin's `new` stage (default: the plugin named for `--sport`, else the generic
+    plugin) starts a unit from them and the driver goes on with the folder it made.
 Exit codes as every driver: 0 done, 3 an agent step is waiting (do it, run again), 1 a command failed.
 """
 from __future__ import annotations
@@ -46,6 +46,19 @@ def drive_unit(folder: Path, rest: list[str]) -> int:
         pipeline.print_status(unit, steps)
         return 0
     return pipeline.drive(unit, steps, a.until, a.redo, a.publish, a.dry, accept=a.accept)
+
+
+def for_sport(argv: list[str]) -> plugin.Plugin:
+    """The plugin that starts a unit from videos when no --plugin is given: the one named like `--sport` (any case,
+    with a `new` stage), else generic."""
+    sport = next((v for k, v in zip(argv, argv[1:]) if k == "--sport"), None)
+    sport = sport or next((a.split("=", 1)[1] for a in argv if a.startswith("--sport=")), None)
+    if sport:
+        for p in plugin.plugins().values():
+            if p.name.lower() == sport.lower() and p.name != "generic" and "new" in p.stages:
+                print(f"[run] plugin {p.name} matches --sport {sport}; --plugin generic to use the generic one")
+                return p
+    return plugin.get("generic")
 
 
 HELP = """usage: sports-video-coach run <videos...> [--plugin NAME] [start options]
@@ -99,7 +112,7 @@ def main(argv=None):
     path = Path(target)
     videos = [a for a in argv if Path(a).suffix.lower() in VIDEO_EXT and Path(a).is_file()]
     if videos:
-        p = plugin.get(name or "generic")
+        p = plugin.get(name) if name else for_sport(argv)
         folder = stage_main(p, "new")(argv)
         if folder is None:
             return

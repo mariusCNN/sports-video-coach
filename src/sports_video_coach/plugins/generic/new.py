@@ -2,6 +2,7 @@
 
 usage: sports-video-coach generic:new <video> [<video> ...] [--sport tennis] [--focus "player in red"]
            [--name my-serve] [--date 2025-03-16] [--lang en zh] [--sport-zh 发球] [--every 1] [--out <folder>]
+           [--artifacts html film]
 
 One video is used where it is (analysis.json `video` points to it); several are joined in order into the
 folder's video.mp4 (their offsets kept in `sources`). Prints the folder; `sports-video-coach run <folder>` goes on.
@@ -13,7 +14,7 @@ import datetime as dt
 import json
 from pathlib import Path
 
-from sports_video_coach import media, pipeline, workspace
+from sports_video_coach import artifacts, media, pipeline, workspace
 from sports_video_coach.render_html import sport_names
 
 from . import NAME, SPORT
@@ -48,6 +49,8 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--name", help="folder name (default: sport or the first video's name)")
     ap.add_argument("--date", help="YYYY-MM-DD (default: the first video's recording date, else today)")
     ap.add_argument("--lang", nargs="+", choices=pipeline.LANGS, help="report languages (default: profile, else en)")
+    ap.add_argument("--artifacts", nargs="+", choices=artifacts.NAMES, help="deliverables to build (default: "
+                    "profile, else all); html brings qa and clips, film brings clips")
     ap.add_argument("--every", type=float, help="seconds between contact-sheet tiles (default: 0.5 up to 30 s "
                     "of video, 1 up to 3 min, else 2)")
     ap.add_argument("--out", help="the analysis folder (default: <workspace>/analysis/<name>/<date>)")
@@ -56,6 +59,8 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> Path:
     a = parser().parse_args(argv)
+    if a.artifacts:
+        artifacts.check(a.artifacts)  # publish without html: stop before any video work
     videos = [Path(v).resolve() for v in a.videos]
     missing = [str(v) for v in videos if not v.is_file()]
     if missing:
@@ -72,6 +77,8 @@ def main(argv=None) -> Path:
     sport = {"zh": a.sport_zh, "en": a.sport} if a.sport_zh else a.sport
     data = dict(plugin=NAME, kind="analysis", sport=sport, focus=a.focus, date=date,
                 languages=a.lang or langs_default(), every_s=a.every or auto_every(info["duration"]))
+    if a.artifacts:
+        data["artifacts"] = list(a.artifacts)
     if len(videos) == 1:
         data["video"] = str(videos[0])
     else:

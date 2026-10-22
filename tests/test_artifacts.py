@@ -35,15 +35,22 @@ def test_default_is_every_artifact_in_order(tmp_path, ws):
                                               "film-script", "film"]
 
 
-def test_html_keeps_qa_and_drops_the_rest(tmp_path, ws):
+def test_html_keeps_qa_and_clips_and_drops_the_rest(tmp_path, ws):
     g = unit(tmp_path, {"artifacts": ["publish", "html"]})
-    assert artifacts.selected(g) == ("html", "qa", "publish")
-    assert tail_names(g) == ["html", "qa", "publish"]
+    assert artifacts.selected(g) == ("clips", "html", "qa", "publish")
+    assert tail_names(g) == ["clips", "html", "qa", "publish"]
+
+
+def test_film_keeps_clips(tmp_path, ws):
+    g = unit(tmp_path, {"artifacts": ["html", "film"]})  # the example the docs give
+    assert artifacts.selected(g) == ("clips", "html", "qa", "film")
+    assert tail_names(g) == ["clips", "html", "qa", "film-script", "film"]
+    assert artifacts.check(["film"]) == ("clips", "film")
 
 
 def test_profile_choice_applies_when_the_unit_has_none(tmp_path, ws):
     (ws / "profile.json").write_text(json.dumps({"artifacts": ["film"]}), encoding="utf8")
-    assert tail_names(unit(tmp_path, {})) == ["film-script", "film"]
+    assert tail_names(unit(tmp_path, {})) == ["clips", "film-script", "film"]
     assert artifacts.selected(unit(tmp_path, {"artifacts": ["clips"]})) == ("clips",)
 
 

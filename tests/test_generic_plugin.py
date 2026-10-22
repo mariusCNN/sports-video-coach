@@ -40,12 +40,20 @@ def test_new_picks_the_tile_interval_from_the_length_and_keeps_an_old_one(analys
     assert json.loads(p.read_text(encoding="utf8"))["every_s"] == 2
 
 
+def test_new_stores_the_artifacts_choice(tmp_path, video):
+    folder = new.main([str(video), "--out", str(tmp_path / "a"), "--artifacts", "html", "film"])
+    assert json.loads((folder / "analysis.json").read_text(encoding="utf8"))["artifacts"] == ["html", "film"]
+    with pytest.raises(SystemExit, match="needs 'html'"):
+        new.main([str(video), "--out", str(tmp_path / "b"), "--artifacts", "publish"])
+    assert not (tmp_path / "b").exists()
+
+
 def test_run_help_lists_the_start_and_driver_options(capsys):
     with pytest.raises(SystemExit) as e:
         run.main(["--help"])
     out = capsys.readouterr().out
     assert e.value.code == 0
-    assert all(f in out for f in ("--lang", "--every", "--focus", "--status", "--redo STEP", "Exit codes"))
+    assert all(f in out for f in ("--lang", "--every", "--focus", "--artifacts", "--status", "--redo STEP", "Exit codes"))
 
 
 def test_frames_label_tenths_under_a_second(tmp_path, video):

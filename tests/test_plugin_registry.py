@@ -124,3 +124,36 @@ def test_a_stage_that_needs_a_missing_package_exits_with_a_hint(monkeypatch):
 def test_basketball_declares_its_heavy_packages():
     p = plugin.get("basketball")
     assert {"pandas", "torch"} <= set(p.requires) and "uv sync" in p.install
+
+
+SWIM = '''from sports_video_coach.plugin import Plugin
+PLUGIN = Plugin(name="swimming", summary="test plugin", stages={"new": (__name__ + ".new", "start")})
+'''
+
+
+@pytest.fixture
+def swimming(tmp_path, monkeypatch):
+    """A clean registry with one local plugin `swimming` whose `new` stage records its argv."""
+    d = tmp_path / "plugins" / "swimming"
+    d.mkdir(parents=True)
+    (d / "__init__.py").write_text(SWIM, encoding="utf8")
+    (d / "new.py").write_text("SEEN = []\ndef main(argv):\n    SEEN.append(argv)\n", encoding="utf8")
+    monkeypatch.setenv("SVC_PLUGIN_PATH", str(d.parent))
+    for m in [m for m in sys.modules if m.startswith("svc_plugin_")]:
+        monkeypatch.delitem(sys.modules, m)
+    plugin.plugins(refresh=True)
+    yield tmp_path
+    monkeypatch.undo()
+    plugin.plugins(refresh=True)
+
+
+def test_videos_go_to_the_plugin_named_for_the_sport(swimming, capsys):
+    from sports_video_coach import run
+    video = swimming / "lap.mp4"
+    video.write_bytes(b"x")
+    run.main([str(video), "--sport", "Swimming"])
+    assert sys.modules["svc_plugin_swimming.new"].SEEN == [[str(video), "--sport", "Swimming"]]
+    assert "[run] plugin swimming matches --sport Swimming; --plugin generic" in capsys.readouterr().out
+    assert run.for_sport(["v.mp4", "--sport=swimming"]).name == "swimming"
+    assert run.for_sport(["v.mp4", "--sport", "tennis"]).name == "generic"
+    assert run.for_sport(["v.mp4"]).name == "generic"

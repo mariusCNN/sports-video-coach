@@ -29,7 +29,7 @@ video(s) ──new──▶ unit folder (analysis.json / game.json / session.jso
   it and the steps after it stale.
 - **Exit codes**: 0 done, 3 an agent step waits, 1 a command failed. An agent drives the loop with no other API.
 - **Artifacts**: steps are tagged `clips`, `narration`, `html`, `qa`, `publish`, `film` (or a plugin's own); the
-  unit json or profile picks which run. `artifacts.py`.
+  unit json or profile picks which run; `html` implies `qa` and `clips`, `film` implies `clips`. `artifacts.py`.
 
 ## The CLI
 

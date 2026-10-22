@@ -4,7 +4,8 @@ The choice comes from the unit json `"artifacts": [...]`, else the profile's `"a
 belongs to an artifact through `Step.artifact`; the driver skips steps of artifacts not chosen. A plugin may add its
 own artifact names (`Plugin.artifacts`: name -> help) and tag its steps with them.
 
-Rules: `qa` is kept whenever `html` is (a page is never shipped unchecked) and `publish` needs `html`.
+Rules: `qa` is kept whenever `html` is (a page is never shipped unchecked), `clips` whenever `html` or `film` is
+(both show the clips) and `publish` needs `html`.
 """
 from __future__ import annotations
 
@@ -19,6 +20,7 @@ HELP = {
     "publish": "private links to the pages (Cloudflare Workers)",
     "film": "film.<lang>.mp4: an explained video, narration over the clips",
 }
+IMPLIED = {"html": ("qa", "clips"), "film": ("clips",)}  # chosen -> also built: the page is checked, both show clips
 
 
 def known(unit=None) -> tuple[str, ...]:
@@ -33,15 +35,15 @@ def known(unit=None) -> tuple[str, ...]:
 
 
 def check(names, allowed=NAMES) -> tuple[str, ...]:
-    """The chosen names in canonical order, with qa added to html; exits on unknown names or publish without html."""
+    """The chosen names in canonical order, plus the ones they imply (IMPLIED); exits on unknown names or publish
+    without html."""
     names = list(names)
     bad = [n for n in names if n not in allowed]
     if bad:
         sys.exit(f"unknown artifact(s) {', '.join(map(repr, bad))}; choose from: {', '.join(allowed)}")
     if "publish" in names and "html" not in names:
         sys.exit("artifact 'publish' needs 'html' (publish deploys the page)")
-    if "html" in names and "qa" not in names:
-        names.append("qa")
+    names += [m for n in list(names) for m in IMPLIED.get(n, ()) if m not in names]
     return tuple(n for n in allowed if n in names)
 
 
