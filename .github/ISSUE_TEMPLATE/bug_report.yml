@@ -1,0 +1,46 @@
+name: Bug report
+description: A stage crashes or produces wrong output.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not upload game videos, frames, report screenshots, rosters or player names.** Describe the problem in words or with synthetic data.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched existing issues and discussions.
+          required: true
+        - label: This report contains no real player data (videos, frames, names, rosters).
+          required: true
+  - type: input
+    id: stage
+    attributes:
+      label: Stage
+      description: Which `hoop-tape-miner <stage>` failed?
+      placeholder: e.g. jersey, analyze, html
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The command you ran, what you expected, what you got. Paste the traceback.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      value: |
+        - hoop-tape-miner version or commit:
+        - OS:
+        - GPU / VRAM:
+        - Python / uv version:
+        - Agent (Claude Code, Codex, none):
+    validations:
+      required: true

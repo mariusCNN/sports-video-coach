@@ -1,0 +1,24 @@
+{
+  "_comment": {
+    "about": "Team profile: copy to <workspace>/team.json (workspace = $HOOP_WORKSPACE or ./workspace). Read by `hoop-tape-miner fetch` and the run orchestrator to fill each game.json. Keys named _comment are documentation and are ignored.",
+    "team": "Our team's name exactly as the league shows it (matched case-insensitively against home/away).",
+    "label": "Free-text description of our jerseys, copied to game.json us.label.",
+    "hex": "Our chart/page colour #rrggbb, copied to game.json us.hex.",
+    "focus_player": "Jersey number (string) of the player who gets a personal page, copied to game.json us.focus_player.",
+    "media_root": "Folder for heavy files (videos, run/, raw league data): <media_root>/teams/<opponent-slug>/<date>/. null = inside the game folder.",
+    "league": "kind = league site (only glory for now); secrets = KEY=VALUE file with GLORY_EMAIL / GLORY_PASSWORD, kept outside the repo. Env GLORY_EMAIL / GLORY_PASSWORD win over the file.",
+    "languages": "Report languages: [\"zh\", \"en\"] (default), [\"zh\"] or [\"en\"]. README.md is the Chinese report, README.en.md the English one.",
+    "coach_library": "Optional folder of coaching texts outside the repo (legal manuals and books as text). The insights writer may grep it for a supporting passage; null = use prompts/coach_kb.md only."
+  },
+  "team": "Our Team",
+  "label": "Dark jerseys",
+  "hex": "#6250d6",
+  "focus_player": "7",
+  "media_root": null,
+  "league": {
+    "kind": "glory",
+    "secrets": "~/.secrets/league.env"
+  },
+  "languages": ["zh", "en"],
+  "coach_library": null
+}

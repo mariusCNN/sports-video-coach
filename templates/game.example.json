@@ -1,0 +1,49 @@
+{
+  "_comment": {
+    "about": "Per-game config. `hoop-tape-miner new-game` copies this to workspace/teams/<opponent-slug>/<date>/game.json. Keys named _comment are documentation and are ignored by every stage.",
+    "name": "Free-text title of the game, shown nowhere critical.",
+    "video": "Path to our game video (absolute, or relative to this folder). Stages also take --video explicitly.",
+    "us": "Our team. team = display name; colour = the label you gave our jersey cluster in run/cluster_names.json when it uses colour words (not needed if you label clusters us/them); hex = optional chart/page colour #rrggbb (neutral default when missing); label = free-text jersey description; focus_player = optional jersey number for a player figure in `hoop-tape-miner report`.",
+    "them": "The opponent, same fields as us (no focus_player).",
+    "periods": "Playing periods in seconds of OUR video, [[start, end], ...], e.g. two halves [[0, 1200], [1320, 2400]]. Required by `analyze`; gaps between periods are shaded as breaks in `momentum`.",
+    "rosters": "Jersey numbers (strings) per side. Jersey reads that are not on the roster are rejected; leave a list empty to accept any number.",
+    "result": "Final and halftime score, read by `hoop-tape-miner html` for the score band. Leave null until known. us_side / them_side = home or away.",
+    "narration": "Optional. voices = edge-tts voice per language for `hoop-tape-miner narrate`, either a voice name or {voice, rate}; defaults zh-CN-YunjianNeural / en-US-AndrewNeural."
+  },
+  "name": "YYYY-MM-DD vs Opponent",
+  "video": "",
+  "us": {
+    "team": "Our Team",
+    "colour": "us",
+    "hex": "#6250d6",
+    "label": "Dark jerseys",
+    "focus_player": null
+  },
+  "them": {
+    "team": "Opponent",
+    "colour": "them",
+    "hex": "#1baf7a",
+    "label": "Light jerseys"
+  },
+  "periods": [],
+  "rosters": {
+    "us": [],
+    "them": []
+  },
+  "result": {
+    "us": null,
+    "them": null,
+    "us_side": null,
+    "them_side": null,
+    "halftime": {
+      "us": null,
+      "them": null
+    }
+  },
+  "narration": {
+    "voices": {
+      "en": "en-US-AndrewNeural",
+      "zh": "zh-CN-YunjianNeural"
+    }
+  }
+}

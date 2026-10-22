@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/mariusDing/sports-video-coach/discussions/new?category=q-a
+    about: Questions about setup or using the pipeline go to Discussions.
+  - name: Share an idea
+    url: https://github.com/mariusDing/sports-video-coach/discussions/new?category=ideas
+    about: Early ideas and feature votes.
+  - name: Report a security or privacy problem
+    url: https://github.com/mariusDing/sports-video-coach/security/advisories/new
+    about: Private report, not a public issue.

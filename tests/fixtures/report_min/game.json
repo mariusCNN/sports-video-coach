@@ -1,0 +1,9 @@
+{
+  "_comment": {"about": "Synthetic test game, no real teams or people."},
+  "name": "2000-01-01 vs Sample Foxes",
+  "us": {"team": "Example Owls", "colour": "us", "hex": "#d1495b"},
+  "them": {"team": "Sample Foxes", "colour": "them", "hex": "#00798c"},
+  "periods": [[0, 600], [700, 1300]],
+  "rosters": {"us": ["4", "7"], "them": ["11"]},
+  "result": {"us": 21, "them": 18, "us_side": "home", "them_side": "away", "halftime": {"us": 10, "them": 9}}
+}

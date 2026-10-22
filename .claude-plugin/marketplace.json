@@ -1,0 +1,12 @@
+{
+  "name": "sports-video-coach",
+  "description": "Sports video analysis and coaching, driven by your agent",
+  "owner": { "name": "mariusDing", "url": "https://github.com/mariusDing" },
+  "plugins": [
+    {
+      "name": "sports-video-coach",
+      "source": "./",
+      "description": "Turn your own game or training video into a film review, a coaching page with narration and clips, and an explained video"
+    }
+  ]
+}

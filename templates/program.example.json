@@ -1,0 +1,63 @@
+{
+ "title": "#0 · one-month training program",
+ "brand": "#0 · Program",
+ "storageKey": "program-example-v1",
+ "legacyKeys": [],
+ "start": "2025-03-03",
+ "days": 28,
+ "week1": "2025-03-03",
+ "phases": ["learn the moves", "add volume", "add intensity", "taper + retest"],
+ "weekdays": {"0": "R", "1": "Z", "2": "L", "3": "C", "4": "M", "5": "R", "6": "G"},
+ "special": {"2025-03-05": "TS"},
+ "short": {"M": "Handles + mobility", "C": "Shooting", "G": "League", "L": "Legs", "Z": "Easy aerobic", "TS": "Shot test", "R": "Rest"},
+ "week": [
+  {"wd": 1, "code": "Z", "title": "Easy aerobic", "why": "Flush the legs two days after the game."},
+  {"wd": 2, "code": "L", "title": "Legs", "why": "The one heavy lower-body day, four days before the game."},
+  {"wd": 3, "code": "C", "title": "Shooting", "why": "Shot volume while the legs recover."},
+  {"wd": 4, "code": "M", "title": "Ball handling + mobility", "why": "Hands and hips, no hard running."},
+  {"wd": 5, "code": "R", "title": "Rest", "why": "Fresh legs for the game."},
+  {"wd": 6, "code": "G", "title": "League game", "why": "Use the game plan; log it after."},
+  {"wd": 0, "code": "R", "title": "Rest", "why": "Recover from the game."}
+ ],
+ "sessions": {
+  "M": {"title": "Ball handling + mobility", "tag": "easy", "dur": "45 min", "rpe": "effort 4/10", "focus": "Eyes up on every dribble.", "letter": "M", "color": "#e5736b",
+        "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]},
+                  {"block": "Handling", "ex": "pound", "dose": "4 × 45 s each hand", "sets": [4, "45 s"], "note": "Ball no higher than the hip."}]},
+  "C": {"title": "Shooting", "tag": "mid", "dur": "50 min", "rpe": "effort 5/10", "focus": "Same release on every shot.", "letter": "C", "color": "#e5b13a",
+        "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]},
+                  {"block": "Shooting", "ex": "spotup", "dose": ["", "4 spots × 10", "4 spots × 12", "4 spots × 15", "4 spots × 8"],
+                   "setsByWeek": [[4, "10 shots"], [4, "12 shots"], [4, "15 shots"], [4, "8 shots"]]}]},
+  "G": {"title": "League game", "tag": "hard", "dur": "game", "rpe": "game", "focus": "Three things on the game tab.", "letter": "G", "color": "#7fb3ff", "game": "league",
+        "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]}]},
+  "L": {"title": "Legs", "tag": "hard", "dur": "60 min", "rpe": "effort 7/10", "focus": "Strength, then landing.", "letter": "L", "color": "#f28c28",
+        "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]},
+                  {"block": "Strength", "ex": "gobletsq", "dose": "4 × 6", "sets": [4, "6 reps"]}]},
+  "Z": {"title": "Easy aerobic", "tag": "easy", "dur": "30 min", "rpe": "effort 3/10", "focus": "You can still talk.", "letter": "Z", "color": "#56d4dd",
+        "items": [{"block": null, "ex": "z2", "dose": "30 min", "sets": [1, "30 min"]}]},
+  "TS": {"title": "Shooting test", "tag": "mid", "dur": "40 min", "rpe": "effort 5/10", "focus": "Same spots and counts every test.", "letter": "T", "color": "#f2d36b",
+         "items": [{"block": null, "ex": "spotup", "dose": "4 spots × 10", "sets": [4, "10 shots"]}]},
+  "R": {"title": "Rest", "tag": "easy", "dur": "0 min", "rpe": "—", "focus": "Sleep.", "letter": "R", "color": "#8b949e", "items": []}
+ },
+ "kind": {"spotup": "shot", "pound": "time", "gobletsq": "kg", "z2": "time"},
+ "game": {
+  "three": {"half": [], "full": [], "league": [["Box out first", "A shot goes up", "Find a body, then go to the ball", "rebounds lost to my player"]]},
+  "mission": [],
+  "done": {"half": [], "full": []},
+  "where": [],
+  "rules": {"half": [], "full": [], "league": []},
+  "warm": ["Jog, carioca, leg swings (5 min)", "Form shots 10"],
+  "watch": [["Talk on every screen", "Call it early: \"screen left\", \"switch\"."]],
+  "targets": [{"label": "Rebounds", "value": "4+", "note": "per game"}]
+ },
+ "tests": [{"group": "Shooting"}, {"label": "Spot-up, 40 shots (makes)", "key": "su40"}],
+ "messages": ["Every set counts."],
+ "exercises": {
+  "W": {"n": "Warm-up", "en": "basketball dynamic warm-up", "v": [], "r": [], "how": "Jog, shuffle, leg swings, three build-up sprints.", "cue": "Sweat, not tired", "why": "A neuromuscular warm-up cuts lower-limb injuries.", "fix": "", "tips": ["Light sweat, not tired", "Slow on the mobility moves", "Phone away"]},
+  "pound": {"n": "Pound dribble", "en": "pound dribble", "v": [], "r": [], "how": "Hard dribbles at hip height, one hand, eyes on a spot on the wall.", "cue": "Eyes up", "why": "Control without looking at the ball.", "fix": "", "tips": ["Fingertips, not palm", "Stay low", "Same rhythm both hands"]},
+  "spotup": {"n": "Spot-up shooting", "en": "spot-up shooting", "v": [], "r": [], "how": "Four spots; feet set and square before the catch.", "cue": "Same release", "why": "Most open shots in a game are catch-and-shoot.", "fix": "", "tips": ["Hop into the catch", "Hold the follow-through", "Log makes per spot"]},
+  "gobletsq": {"n": "Goblet squat", "en": "goblet squat", "v": [], "r": [], "how": "Hold a dumbbell at the chest; sit down between the heels, stand up tall.", "cue": "Chest up", "why": "Leg strength for braking, landing and jumping.", "fix": "", "tips": ["3 s down", "Knees follow the toes", "Same depth each rep"]},
+  "z2": {"n": "Zone 2", "en": "zone 2 cardio", "v": [], "r": [], "how": "Bike, jog or row at a talking pace.", "cue": "Can talk", "why": "Aerobic base for late-game legs.", "fix": "", "tips": ["Nose breathing if you can", "Same pace start to end", "Heart rate about 60–70% of max"]}
+ },
+ "calNote": "Test days replace that day's session.",
+ "endNote": "The program has ended. Export your log, or run `hoop-tape-miner program pull` to plan the next month."
+}
