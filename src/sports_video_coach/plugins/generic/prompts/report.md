@@ -39,7 +39,8 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 
 ## Rules
 
-- 2-4 numbered sections, most important first; each has the same five parts in the same order.
+- 2-4 numbered sections, most important first; each has a clip, then the same five bold-labelled parts in
+  the same order.
 - Every claim has a time or a clip from `review.json`. Never add what the review did not see.
 - Clips: `![caption](clip:mm:ss-mm:ss)` in video time, 4-15 s, one per section at least. The clips stage cuts them.
 - Numbers and cues go in bold or their own bullet, not mid-sentence.

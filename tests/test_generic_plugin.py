@@ -113,3 +113,12 @@ def test_logs_stay_with_a_unit_outside_the_workspace(analysis, tmp_path, monkeyp
 def test_status_marks_publish_optional(analysis, capsys):
     P.print_status(analysis, U.STEPS)
     assert "skip  publish" in capsys.readouterr().out
+
+
+def test_built_line_names_what_was_built_and_what_was_left_out(tmp_path):
+    g = U.Analysis(tmp_path, {"plugin": "generic"}, ("en",))
+    assert P.built_line(g, publish=False) == ("[run] built: clips, narration, html, qa, film; "
+                                              "publish: only with --publish")
+    g.game["artifacts"] = ["clips", "html"]
+    assert P.built_line(g, publish=False) == ("[run] built: clips, html, qa; left out by \"artifacts\" in "
+                                              "analysis.json: narration, publish, film")

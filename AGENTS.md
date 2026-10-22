@@ -18,7 +18,8 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
 3. Exit codes:
    - `3` an agent step is waiting: the output names the step and says exactly what to write and with which guide.
      Do it, then run again.
-   - `1` a command failed: read the stage log it names, fix the cause, run again.
+   - `1` a command failed: read the stage log it names (or the error printed just above, for short steps), fix
+     the cause, run again.
    - `0` done: report the deliverable paths to your user.
 4. Deliverables (artifacts): `clips`, `narration`, `html`, `qa`, `publish`, `film`; default all. Pick them with
    `"artifacts": ["html", "film"]` in the unit json or the profile (`qa` comes with `html`). `publish` (private
@@ -29,7 +30,8 @@ the sport if `plugins` lists one, else `generic`. Do not write a plugin just to 
 
 ## Working rules
 
-- One unit (game, session) per conversation. Read `git status` and the unit's json first; reuse an existing `run/`.
+- One unit (game, session) per conversation. Read the unit's json first (and `git status` in a clone); reuse an
+  existing `run/`.
 - Long runs: redirect output to `workspace/logs/*.log` and read only the tail.
 - Film review: delegate one part or sheet range per helper if your tool has helpers, at most 3 at once; they write
   files and reply in a few lines. Keep images out of the main context.

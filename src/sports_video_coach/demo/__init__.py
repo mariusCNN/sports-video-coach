@@ -109,7 +109,8 @@ def main(argv=None) -> int:
             print("[demo] qa: wrote qa.md (scripted self-check, stands in for the agent's browser check)")
         code = P.drive(g, U.STEPS)
     if code != 0:
-        print(f"[demo] stopped with exit {code}; the lines above say why. Run the same command again to resume.")
+        print(f"[demo] stopped with exit {code}; the lines above say why. Fix that, then run the same command again "
+              "to resume. No network for narration? `sports-video-coach demo --offline` makes the clips and the page.")
         return code
     print(f"\n[demo] done in {time.monotonic() - t0:.0f} s. Open {folder / 'index.html'} in a browser.")
     for lang in a.lang:

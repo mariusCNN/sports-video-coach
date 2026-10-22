@@ -418,7 +418,8 @@ def run_cmd(step: Step, g: Unit, runner=subprocess.run, argvs: list[list[str]] |
         else:
             log, rc = None, runner(stage_cmd(argv, g.PLUGIN), env=env).returncode
         if rc != 0 and not step.expect_exit:
-            print(f"[run] {step.name} failed (exit {rc})" + (f"; last lines of {log}:\n{tail(log)}" if log else ""))
+            print(f"[run] {step.name} failed (exit {rc})" + (f"; last lines of {log}:\n{tail(log)}" if log else
+                  ": the error is in the lines above (this step prints to the console, it keeps no log)"))
             return False
     return True
 
@@ -499,8 +500,21 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
         if s.name == until:
             print(f"[run] stopped after {until}")
             return 0
+    print(built_line(g, publish))
     g.finished()
     return 0
+
+
+def built_line(g: Unit, publish: bool) -> str:
+    """One line at exit 0: which deliverables were built and which the unit's `artifacts` choice left out."""
+    chosen = artifacts.selected(g)
+    line = "[run] built: " + ", ".join(n for n in chosen if n != "publish" or publish)
+    if "publish" in chosen and not publish:
+        line += "; publish: only with --publish"
+    off = [n for n in artifacts.known(g) if n not in chosen]
+    if off:
+        line += f"; left out by \"artifacts\" in {getattr(g, 'JSON', 'the unit json')}: {', '.join(off)}"
+    return line
 
 
 def add_drive_args(ap, names: list[str], pages: str = "pages") -> None:
