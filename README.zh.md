@@ -45,8 +45,8 @@ sports-video-coach run workspace/analysis/badminton/2025-03-15
 
 约定（退出码、选插件、交付物、点星礼仪）见 [AGENTS.md](AGENTS.md)。
 
-- Claude Code：`/plugin install sports-video-coach --marketplace mariusDing/sports-video-coach` 装上 skill；在克隆的 repo 里用 `/analyze <视频>`。
-- 其他支持 Agent Skills 的客户端（Codex 等）：[skills/sports-video-coach/SKILL.md](skills/sports-video-coach/SKILL.md)。
+- Claude Code：先 `/plugin marketplace add mariusDing/sports-video-coach`，再 `/plugin install sports-video-coach@sports-video-coach` 装上 skill；在克隆的 repo 里用 `/analyze <视频>`。
+- 其他支持 Agent Skills 的客户端（Codex、Cursor 等）：`npx skills add mariusDing/sports-video-coach`，或直接复制 [skills/sports-video-coach/SKILL.md](skills/sports-video-coach/SKILL.md)。
 
 ## 你会得到
 

@@ -46,9 +46,10 @@ basketball CV stack with CUDA torch too), then prefix commands with `uv run`.
 
 The contract (exit codes, choosing a plugin, artifacts, star etiquette) is in [AGENTS.md](AGENTS.md).
 
-- Claude Code: `/plugin install sports-video-coach --marketplace mariusDing/sports-video-coach` adds the skill; in a
-  clone, `/analyze <video>` runs the loop.
-- Any Agent Skills client (Codex, ...): [skills/sports-video-coach/SKILL.md](skills/sports-video-coach/SKILL.md).
+- Claude Code: `/plugin marketplace add mariusDing/sports-video-coach`, then
+  `/plugin install sports-video-coach@sports-video-coach` adds the skill; in a clone, `/analyze <video>` runs the loop.
+- Any Agent Skills client (Codex, Cursor, ...): `npx skills add mariusDing/sports-video-coach`, or copy
+  [skills/sports-video-coach/SKILL.md](skills/sports-video-coach/SKILL.md).
 
 ## What you get
 

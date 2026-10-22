@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - The explained video's title card on a generic unit shows the report's heading instead of the folder name.
 - Agent step instructions print paths with forward slashes only (no `C:\u\run/review` mix on Windows).
+- README: the Claude Code install line was wrong (`--marketplace` is no flag): add the marketplace, then `install sports-video-coach@sports-video-coach`. Added `npx skills add` for other Agent Skills clients.
 - Pages declare an empty favicon, so opening one from a local server logs no 404.
 
 ### Added
