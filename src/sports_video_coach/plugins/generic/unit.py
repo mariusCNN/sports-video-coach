@@ -31,7 +31,7 @@ class Analysis(P.Session):
         sport = self.game.get("sport")
         if isinstance(sport, dict):  # {"zh": .., "en": ..}: names per page language
             sport = sport.get("en") or next(iter(sport.values()), "")
-        return dict(super().fill_values(), prompts=PROMPTS, sport=sport or "the sport in the video",
+        return dict(super().fill_values(), prompts=PROMPTS, plugin=NAME, sport=sport or "the sport in the video",
                     focus=self.game.get("focus") or "the main athlete in the video")
 
     def finished(self):
@@ -102,7 +102,7 @@ def review_errors(g: Analysis) -> list[str]:
     if not p.exists():
         parts = sorted(g.review.glob("part*.json")) if g.review.is_dir() else []
         if parts:
-            return [f"{p} missing; {len(parts)} part file(s) there: `sports-video-coach generic:review-check "
+            return [f"{p} missing; {len(parts)} part file(s) there: `sports-video-coach {NAME}:review-check "
                     f"{P.slash(g.folder)}` merges them into it"]
         return [f"{p} missing" + split_hint(g)]
     try:
@@ -144,25 +144,26 @@ STEPS = [
            inputs=lambda g: [g.video], params=lambda g: {"every_s": g.game.get("every_s", 2)}),
     P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors,
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
-               "{review}/review.json as the review guide says (`sports-video-coach guide review` prints it; sport: "
-               "{sport}; focus: {focus}). Delegate the sheets to subagents if you have them, at most 3 at once, one "
-               "contiguous range each, writing {review}/part<N>.json; `sports-video-coach generic:review-check "
-               "{folder}` merges them. An "
-               "unclear moment: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 --end 0:15 "
-               "--every 0.2` cuts a dense sheet of just that."),
+               "{review}/review.json as the review guide says (`sports-video-coach guide review --plugin {plugin}` "
+               "prints it; sport: {sport}; focus: {focus}). Delegate the sheets to subagents if you have them, at "
+               "most 3 at once, one contiguous range each, writing {review}/part<N>.json; `sports-video-coach "
+               "{plugin}:review-check {folder}` merges them. An unclear moment: `sports-video-coach frames {video} "
+               "--out {run}/frames-zoom --start 0:12 --end 0:15 --every 0.2` cuts a dense sheet of just that."),
     P.Step("report", "agent", reports_written,
            derives=lambda g: [(g.folder / P.readme(l), [g.review / "review.json"]) for l in g.langs],
            how="Write the coaching report {readmes} in {folder} from {review}/review.json, as `sports-video-coach "
-               "guide report` says ({langs}); mark the moments to show with ![caption](clip:mm:ss-mm:ss)."),
+               "guide report --plugin {plugin}` says ({langs}); mark the moments to show with "
+               "![caption](clip:mm:ss-mm:ss)."),
     *P.tail_steps(
         lambda g: g.video,
-        listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} (`sports-video-coach guide narration`).",
+        listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} (`sports-video-coach guide "
+                   "narration --plugin {plugin}`).",
         qa_how="QA: serve {folder} over http (a browser-check subagent if you have one) and check the page in every "
                "language, the audio and every clip on a 390 px wide screen. Write the result to {folder}/qa.md, "
                "first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "
-                        "report (`sports-video-coach guide film`); check them with `sports-video-coach film {folder} --video "
-                        "{video} --dry`."),
+                        "report (`sports-video-coach guide film --plugin {plugin}`); check them with "
+                        "`sports-video-coach film {folder} --video {video} --dry`."),
 ]
 NAMES = [s.name for s in STEPS]
 

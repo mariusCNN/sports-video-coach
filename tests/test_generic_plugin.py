@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 import sys
 
 import pytest
@@ -174,6 +175,58 @@ def test_scaffolded_plugin_loads_and_owns_its_units(tmp_path, video, monkeypatch
     finally:
         monkeypatch.undo()
         plugin.plugins(refresh=True)
+
+
+def test_scaffolded_plugin_names_itself_and_its_own_guides(tmp_path, monkeypatch):
+    out = scaffold.scaffold("swimming", tmp_path / "plugins", "swimming")
+    for f in [out / "new.py", *(out / "prompts").glob("*.md")]:
+        assert "generic:" not in f.read_text(encoding="utf8") and "(generic plugin)" not in f.read_text(encoding="utf8")
+    assert "sports-video-coach swimming:new" in (out / "new.py").read_text(encoding="utf8")
+    monkeypatch.setenv("SVC_PLUGIN_PATH", str(tmp_path / "plugins"))
+    monkeypatch.delitem(sys.modules, "svc_plugin_swimming", raising=False)
+    try:
+        found = plugin.plugins(refresh=True)
+        p, g = found["swimming"], found["generic"]
+        assert p.summary.startswith("swimming video:") and "scaffolded from generic" in p.summary
+        assert p.summary != g.summary and p.use_when != g.use_when and "no plugin" not in p.use_when
+        steps = p.kinds[0].step_table()
+        unit = p.kinds[0].unit_class()(tmp_path / "a", {"plugin": "swimming"}, ("en",))
+        hows = {s.name: unit.fill(s.how) for s in steps if s.kind == "agent" and s.how}
+        assert "guide review --plugin swimming" in hows["review"] and "swimming:review-check" in hows["review"]
+        assert "guide report --plugin swimming" in hows["report"]
+        assert "guide film --plugin swimming" in hows["film-script"]
+        assert "generic" not in " ".join(hows.values())
+    finally:
+        monkeypatch.undo()
+        plugin.plugins(refresh=True)
+
+
+def test_scaffolded_plugin_tests_pass(tmp_path):
+    out = scaffold.scaffold("swimming", tmp_path / "plugins")
+    assert (out / "tests" / "test_swimming.py").exists()
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", str(out / "tests")],
+                       cwd=tmp_path, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "3 passed" in r.stdout
+
+
+def test_a_command_stage_added_as_docs_plugins_md_says_runs_qualified(tmp_path):
+    out = scaffold.scaffold("swimming", tmp_path / "plugins")
+    (out / "pose.py").write_text("from pathlib import Path\n\n\ndef main(argv=None):\n"
+                                 "    Path(argv[-1]).write_text('ok')\n", encoding="utf8")
+    init = out / "__init__.py"
+    init.write_text(init.read_text(encoding="utf8").replace(
+        "    stages={\n", '    stages={\n        "pose": (f"{__name__}.pose", "measure"),\n', 1), encoding="utf8")
+    cmd = P.stage_cmd(["pose", str(tmp_path / "pose.json")], "swimming")
+    assert cmd[3:] == ["swimming:pose", str(tmp_path / "pose.json")]
+    r = subprocess.run(cmd, cwd=tmp_path, capture_output=True, text=True, env=P.child_env())  # finds ./plugins
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / "pose.json").read_text() == "ok"
+
+
+def test_generic_steps_point_at_the_generic_guides(analysis):
+    review = next(s for s in U.STEPS if s.name == "review")
+    assert "guide review --plugin generic" in analysis.fill(review.how)
 
 
 def test_logs_stay_with_a_unit_outside_the_workspace(analysis, tmp_path, monkeypatch):

@@ -13,8 +13,13 @@ again and again with its own prompts, measurements (pose, tracking, a scoreboard
 ```bash
 uv run sports-video-coach new-plugin tennis            # writes ./plugins/tennis/ (a copy of generic)
 uv run sports-video-coach plugins                      # lists tennis
+uv run pytest plugins/tennis                           # the tests it wrote
 uv run sports-video-coach run serve.mp4 --plugin tennis
 ```
+
+The copy gets its own name everywhere: `summary` and `use_when` (rewrite them: agents pick a plugin by them), the
+stage names in its texts (`tennis:review-check`) and its agent steps, which say
+`sports-video-coach guide review --plugin tennis` so the agent reads your guides, not the generic ones.
 
 The copy runs as it is. Make it yours in this order:
 
@@ -22,7 +27,16 @@ The copy runs as it is. Make it yours in this order:
 2. `prompts/report.md`: the report's sections (what to work on, drills, a checkable target).
 3. Stages for your own measurements, added to the step table before the review.
 
-Local plugins load from `./plugins/<name>/`, `<workspace>/plugins/<name>/` and every folder on `$SVC_PLUGIN_PATH`.
+Local plugins load from `<dir>/<name>/` for three kinds of `<dir>`:
+
+- `./plugins`: the `plugins` folder in the current working directory (where you run the command), not the repo
+  or the install folder. Run from another folder and the plugin is not found.
+- `<workspace>/plugins`.
+- every folder on `$SVC_PLUGIN_PATH` (separated by `;` on Windows, `:` elsewhere).
+
+A local plugin imports as the package `svc_plugin_<name>` (`-` becomes `_`), so its own modules are
+`svc_plugin_<name>.unit` and so on; inside the plugin use relative imports (`from . import NAME`).
+
 To ship one as a package, declare an entry point:
 
 ```toml
@@ -72,6 +86,28 @@ and stops at the first that is not:
 - End with `*pipeline.tail_steps(video_fn, listen_how=..., qa_how=..., film_script_how=...)`: clips, narration,
   page, QA, publish, explained film, each tagged with its artifact.
 
+### Example: add a command stage
+
+A `pose` stage that writes `run/pose/pose.json` before the review. In `__init__.py`, next to the other stages:
+
+```python
+stages={
+    "pose": (f"{__name__}.pose", "measure body angles per frame: run/pose/pose.json"),  # pose.py has main(argv)
+    ...
+},
+```
+
+In `unit.py`, a step in `STEPS` before `review`. Its args give the bare stage name; the driver runs it as
+`sports-video-coach tennis:pose ...` (`pipeline.stage_cmd` adds the Unit's `PLUGIN`):
+
+```python
+P.Step("pose", "cmd", lambda g: (g.run / "pose" / "pose.json").exists(),
+       lambda g: [["pose", str(g.video), "--out", str(g.run / "pose")]],
+       inputs=lambda g: [g.video], long=True),
+```
+
+Try the stage alone with `sports-video-coach tennis:pose <video> --out <folder>`.
+
 Rules that keep agents honest: every agent step has a validator (`errors`), every number the agent writes comes from
 a file a command step made, and the review format says "unclear" is a valid answer.
 
@@ -95,6 +131,23 @@ every plugin to list it.
 The basketball plugin (`src/hoop_tape_miner/plugin.py`) uses every hook; read it as the full example.
 
 ## Test it
+
+`new-plugin` writes `plugins/<name>/tests/test_<name>.py`. Run it from the folder that holds `plugins/`:
+
+```bash
+uv run pytest plugins/tennis
+```
+
+It checks three things, and is the pattern for your own tests:
+
+- The plugin loads with no error: it puts the plugin's parent folder on `SVC_PLUGIN_PATH`, drops
+  `svc_plugin_<name>` from `sys.modules` and calls `plugin.plugins(refresh=True)`.
+- `sports-video-coach plugins --json` lists it with its stages.
+- Its step table (`PLUGIN.kinds[0].step_table()`) has the expected steps in order.
+
+When you add a step, update the expected list in the last test.
+
+More:
 
 - Keep tests fast with synthetic video (`ffmpeg -f lavfi -i testsrc=...`), as `tests/test_generic_plugin.py` does.
 - Check the loop: `run <video> --plugin <name>` exits 3 at your first agent step; `--status` lists your steps.

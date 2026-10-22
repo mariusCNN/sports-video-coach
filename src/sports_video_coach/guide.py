@@ -1,7 +1,8 @@
 """`sports-video-coach guide [<name>] [--plugin NAME]`: print a plugin's writing guide, or list its guides.
 
 The agent steps name their guide by path, and after `uv tool install` that path is deep in the tool's folder
-(an agent sandboxed to the project may not read it). This prints the same file, so `guide review` is enough.
+(an agent sandboxed to the project may not read it). This prints the same file, so `guide review --plugin <name>` is enough
+(the agent steps name their plugin).
 """
 from __future__ import annotations
 
