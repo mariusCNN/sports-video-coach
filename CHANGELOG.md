@@ -8,6 +8,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - `sports-video-coach --version` (and `-V`) prints the version instead of "unknown stage".
 - The page header writes a lowercase sport as a label ("Tennis", not "tennis").
+- `"artifacts": ["html", "film"]` no longer skips the clips: `html` and `film` bring `clips` with them, as `html`
+  already brought `qa`.
+- `run <videos> --sport swimming` uses an installed or local plugin named `swimming` when there is one;
+  `--plugin generic` keeps the generic one.
+- New start option `run <videos> --artifacts html film` picks the deliverables when a unit starts (saved in the
+  unit json).
+- The review guide says what to do when the user wants a report on footage with no athlete in it.
 
 ## 0.2.5 - 2026-10-23
 
