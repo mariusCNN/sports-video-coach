@@ -773,9 +773,11 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
         lo, hi = target_s(video_s)
         if not lo <= total <= hi:  # a warning, not an error
             span = f"{lo // 60}-{hi // 60} min" if lo >= 60 else f"{lo} s - {hi // 60} min"
-            print(f"note: outside the {span} the film guide asks for; " + (
-                "fine for a short report, never pad: add a scene only for a moment the report covers" if total < lo
-                else "cut scenes unless that is on purpose"))
+            source = f" with a {video_s:.0f} s video" if video_s is not None and video_s < 60 else ""
+            print(f"note: about {total / 60:.1f} min, {'under' if total < lo else 'over'} the {span} the film "
+                  f"guide aims for{source}; " + (
+                      "add a moment the report covers or a slow replay of one; fine for a short report, never pad"
+                      if total < lo else "cut scenes unless that is on purpose"))
         return None
 
     accent, second = hooks.colours(game) if hooks.colours else (DEFAULT_ACCENT, DEFAULT_SECOND)

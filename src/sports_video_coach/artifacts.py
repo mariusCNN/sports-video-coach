@@ -21,6 +21,8 @@ HELP = {
     "film": "film.<lang>.mp4: an explained video, narration over the clips",
 }
 IMPLIED = {"html": ("qa", "clips"), "film": ("clips",)}  # chosen -> also built: the page is checked, both show clips
+IMPLIED_HELP = ("html brings qa and clips, film brings clips; narration is the page's audio and html does not bring "
+                "it (add narration for audio on the page)")
 
 
 def known(unit=None) -> tuple[str, ...]:

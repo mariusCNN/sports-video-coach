@@ -309,6 +309,7 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     assert [ln.split()[1] for ln in out.splitlines()[:3]] == ["title", "card", "clip"]
     assert "1 freeze(s)" in out and "3 scenes" in out
     assert "freeze 0:03: 1 mark(s) 0.5,0.8  label 'here'" in out  # what --dry read from the freeze line
+    assert "under the 40 s - 4 min the film guide aims for with a 20 s video; add a moment" in out  # a short plan
     (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\nWatch.\n"
                                        '> 0:03 0.5,0.8 "here"\nStop.\n>\nOn it goes.\n', encoding="utf8")
     film.main([str(folder), "--video", str(video), "--dry"])

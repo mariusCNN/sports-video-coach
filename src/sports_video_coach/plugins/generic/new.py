@@ -50,7 +50,7 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--date", help="YYYY-MM-DD (default: the first video's recording date, else today)")
     ap.add_argument("--lang", nargs="+", choices=pipeline.LANGS, help="report languages (default: profile, else en)")
     ap.add_argument("--artifacts", nargs="+", choices=artifacts.NAMES, help="deliverables to build (default: "
-                    "profile, else all); html brings qa and clips, film brings clips")
+                    "profile, else all); " + artifacts.IMPLIED_HELP)
     ap.add_argument("--every", type=float, help="seconds between contact-sheet tiles (default: 0.5 up to 30 s "
                     "of video, 1 up to 3 min, else 2)")
     ap.add_argument("--out", help="the analysis folder (default: <workspace>/analysis/<name>/<date>)")

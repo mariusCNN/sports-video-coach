@@ -6,16 +6,19 @@ The target is one of:
   - a target a plugin claims (e.g. a league game url): that plugin's `run` stage takes it;
   - one or more video files: the plugin's `new` stage (default: the plugin named for `--sport`, else the generic
     plugin) starts a unit from them and the driver goes on with the folder it made.
-Exit codes as every driver: 0 done, 3 an agent step is waiting (do it, run again), 1 a command failed.
+A later run's `--artifacts a b ...` replaces "artifacts" in the unit json (with what they imply), then drives on.
+Exit codes as every driver: 0 done, 3 an agent step is waiting (do it, run again), 1 a command failed, 2 a usage
+error (argparse).
 """
 from __future__ import annotations
 
 import argparse
 import importlib
+import json
 import sys
 from pathlib import Path
 
-from . import pipeline, plugin
+from . import artifacts, media, pipeline, plugin, units
 
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".mkv", ".avi", ".webm"}
 
@@ -26,6 +29,28 @@ def stage_main(p: plugin.Plugin, stage: str):
     return importlib.import_module(p.stages[stage][0]).main
 
 
+def add_artifacts_arg(ap: argparse.ArgumentParser, allowed=artifacts.NAMES) -> None:
+    ap.add_argument("--artifacts", nargs="+", choices=allowed, help="deliverables to build from now on (replaces "
+                    "\"artifacts\" in the unit json); " + artifacts.IMPLIED_HELP)
+
+
+def choose_artifacts(folder: Path, kind: plugin.Kind, rest: list[str]) -> list[str]:
+    """Take `--artifacts ...` out of `rest` and write the choice, with what it implies, to the unit json; the other
+    options go on to the driver."""
+    ap = argparse.ArgumentParser(prog="sports-video-coach run <folder>", add_help=False)
+    allowed = artifacts.known(kind.unit_class() if kind.unit else None)
+    add_artifacts_arg(ap, allowed)
+    a, rest = ap.parse_known_args(rest)
+    if a.artifacts:
+        names = artifacts.check(a.artifacts, allowed)
+        path = units.unit_json(folder)
+        data = json.loads(path.read_text(encoding="utf8"))
+        data["artifacts"] = list(names)
+        media.write_json_atomic(path, data, indent=1)
+        print(f"[run] artifacts in {path.name}: {', '.join(names)}")
+    return rest
+
+
 def drive_unit(folder: Path, rest: list[str]) -> int:
     """Run the unit at `folder` with its plugin's driver, or the core step walker."""
     own = plugin.owner(folder)
@@ -33,6 +58,7 @@ def drive_unit(folder: Path, rest: list[str]) -> int:
         sys.exit(f"{folder}: no unit json a plugin knows (installed: {', '.join(plugin.plugins())}); "
                  "start one with `sports-video-coach run <video files>`")
     p, kind, _ = own
+    rest = choose_artifacts(folder, kind, rest)
     if kind.driver:
         return stage_main(p, kind.driver)([str(folder), *rest]) or 0
     if not kind.steps:
@@ -69,7 +95,8 @@ Turns your sports video into a film review, a coaching page with narration and c
 The first run starts a folder from the videos; later runs take that folder and go on where it stopped.
 
 Exit codes: 0 done (the deliverables are listed), 3 an agent step is waiting (the output says what to write and
-with which guide; do it, run again), 1 a command failed (read the log it names, fix, run again).
+with which guide; do it, run again), 1 a command failed (read the log it names, fix, run again), 2 a usage
+error (wrong option): read the message.
 """
 
 
@@ -90,6 +117,7 @@ def help_text(name: str | None = None) -> str:
         parts.append(f"start options ({p.name} plugin, first run with videos):\n" + options(mod.parser()))
     ap = argparse.ArgumentParser(add_help=False)
     pipeline.add_drive_args(ap, ["STEP"])
+    add_artifacts_arg(ap)
     for a in ap._actions:
         if a.dest in ("until", "redo", "accept"):
             a.choices, a.metavar = None, "STEP"

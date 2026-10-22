@@ -22,9 +22,11 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    - `1` a command failed: read the stage log it names (or the error printed just above, for short steps), fix
      the cause, run again.
    - `0` done: report the deliverable paths to your user.
+   - `2` a usage error (wrong option): read the message.
 4. Deliverables (artifacts): `clips`, `narration`, `html`, `qa`, `publish`, `film`; default all. Pick them with
-   `"artifacts": ["html", "film"]` in the unit json or the profile, or `--artifacts html film` on the first run
-   (`qa` comes with `html`, `clips` with `html` and `film`). `publish` (private links, needs a Cloudflare account)
+   `"artifacts": ["html", "film"]` in the unit json or the profile, or `--artifacts html film` on any run (a later
+   run replaces the unit json's choice; `qa` comes with `html`, `clips` with `html` and `film`; `narration`, the
+   page's audio, only when chosen). `publish` (private links, needs a Cloudflare account)
    runs only with `--publish`, and only when your user asks for links.
 
 Plugin choice: a plugin that claims the target (a league url) or owns the folder wins. Otherwise use the plugin for

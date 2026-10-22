@@ -145,7 +145,8 @@ STEPS = [
     P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors,
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
                "{review}/review.json as the review guide says (`sports-video-coach guide review --plugin {plugin}` "
-               "prints it; sport: {sport}; focus: {focus}). Delegate the sheets to subagents if you have them, at "
+               "prints it; sport: {sport}; focus: {focus}). Delegate the sheets to helpers (subagents), if your "
+               "tool has them, at "
                "most 3 at once, one contiguous range each, writing {review}/part<N>.json; `sports-video-coach "
                "{plugin}:review-check {folder}` merges them. An unclear moment: `sports-video-coach frames {video} "
                "--out {run}/frames-zoom --start 0:12 --end 0:15 --every 0.2` cuts a dense sheet of just that."),
@@ -158,7 +159,7 @@ STEPS = [
         lambda g: g.video,
         listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} (`sports-video-coach guide "
                    "narration --plugin {plugin}`).",
-        qa_how="QA: serve {folder} over http (a browser-check subagent if you have one) and check the page in every "
+        qa_how="QA: serve {folder} over http (a browser helper, if your tool has one) and check the page in every "
                "language, the audio and every clip on a 390 px wide screen. Write the result to {folder}/qa.md, "
                "first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "

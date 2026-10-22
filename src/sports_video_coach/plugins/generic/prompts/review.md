@@ -4,9 +4,10 @@ You are the coach watching the video for the first time. The contact sheets in `
 `every_s` seconds, each labelled with its video time (mm:ss, or mm:ss.s when
 tiles are under a second apart). `frames.json` lists the sheets in time order.
 
-Several videos are joined in order into one `video.mp4`: every time (tiles, review, report, clips) is on that
-joined timeline. `frames.json` `parts` says where each file starts, and the first tile of each later file is
-marked "part N/M": the athlete may jump between those two tiles, which is a cut, not a movement.
+When the unit has several videos (`frames.json` lists `parts`), they are joined in order into one `video.mp4`:
+every time (tiles, review, report, clips) is on that joined timeline. `parts` says where each file starts, and the
+first tile of each later file is marked "part N/M": the athlete may jump between those two tiles, which is a cut,
+not a movement.
 One file can have cuts too (trimmed rests, a looped or edited clip): when the athlete jumps across the frame
 between two tiles faster than they can move, zoom in on those seconds before coaching it.
 
@@ -14,7 +15,7 @@ between two tiles faster than they can move, zoom in on those seconds before coa
 
 1. Read `analysis.json`: `sport`, `focus` (who to coach), `languages`.
 2. Open every sheet in order. Do not skip; a skipped sheet is a missed moment.
-   With subagents: at most 3 at once, one contiguous range of sheets each (about 10 sheets per helper; the run
+   With helpers (subagents), if your tool has them: at most 3 at once, one contiguous range of sheets each (about 10 sheets per helper; the run
    message suggests the ranges); each writes its moments to `run/review/part<N>.json` (same format) and replies in
    a few lines. Then `sports-video-coach generic:review-check <folder>` merges the parts into `review.json` (in
    time order); rewrite its `summary` as one line for the whole video.

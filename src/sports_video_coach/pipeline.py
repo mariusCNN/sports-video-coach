@@ -581,14 +581,20 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
 
 
 def built_line(g: Unit, publish: bool) -> str:
-    """One line at exit 0: which deliverables were built and which the unit's `artifacts` choice left out."""
+    """One line at exit 0: which deliverables were built, which the unit's `artifacts` choice left out and the
+    command that builds those too (publish stays out: it is only for links the user asks for)."""
     chosen = artifacts.selected(g)
     line = "[run] built: " + ", ".join(n for n in chosen if n != "publish" or publish)
     if "publish" in chosen and not publish:
         line += "; publish: only with --publish"
-    off = [n for n in artifacts.known(g) if n not in chosen]
+    known = artifacts.known(g)
+    off = [n for n in known if n not in chosen]
     if off:
         line += f"; left out by \"artifacts\" in {getattr(g, 'JSON', 'the unit json')}: {', '.join(off)}"
+    if [n for n in off if n != "publish"]:
+        more = [n for n in known if n in chosen or n != "publish"]
+        folder = f'"{g.folder}"' if " " in str(g.folder) else g.folder
+        line += slash(f"\n[run] to build them too: sports-video-coach run {folder} --artifacts {' '.join(more)}")
     return line
 
 

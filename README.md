@@ -72,7 +72,8 @@ The contract (exit codes, choosing a plugin, artifacts, star etiquette) is in [A
 | `film` | `film.<lang>.mp4`, an explained video: narration over the clips, with freeze frames and marks |
 
 Pick what you want with `"artifacts": ["html", "film"]` in the unit json or your profile, or `--artifacts html film`
-on the first run; default is all. `html` and `film` bring `clips` with them (both show the clips), `html` brings `qa`.
+on any run (a later run replaces the choice); default is all. `html` and `film` bring `clips` with them (both show
+the clips), `html` brings `qa`; `narration` (the page's audio) comes only when you pick it.
 
 ## How it works
 

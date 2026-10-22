@@ -247,7 +247,33 @@ def test_built_line_names_what_was_built_and_what_was_left_out(tmp_path):
                                               "publish: only with --publish")
     g.game["artifacts"] = ["clips", "html"]
     assert P.built_line(g, publish=False) == ("[run] built: clips, html, qa; left out by \"artifacts\" in "
-                                              "analysis.json: narration, publish, film")
+                                              "analysis.json: narration, publish, film\n[run] to build them too: "
+                                              f"sports-video-coach run {P.slash(tmp_path)} --artifacts clips "
+                                              "narration html qa film")  # publish is never suggested
+    g.game["artifacts"] = ["clips", "narration", "html", "film"]
+    assert "to build them too" not in P.built_line(g, publish=False)  # only publish is left out
+
+
+def test_artifacts_on_a_later_run_replace_the_choice(analysis, capsys):
+    gj = analysis.folder / "analysis.json"
+    data = json.loads(gj.read_text(encoding="utf8"))
+    gj.write_text(json.dumps({**data, "artifacts": ["html"]}), encoding="utf8")
+    assert run.drive_unit(analysis.folder, ["--artifacts", "html", "narration", "film", "--status"]) == 0
+    assert json.loads(gj.read_text(encoding="utf8"))["artifacts"] == ["clips", "narration", "html", "qa", "film"]
+    out = capsys.readouterr().out
+    assert "artifacts in analysis.json: clips, narration, html, qa, film" in out and "film-script" in out
+    with pytest.raises(SystemExit) as e:  # a wrong name is argparse's usage error
+        run.drive_unit(analysis.folder, ["--artifacts", "pdf"])
+    assert e.value.code == 2
+    with pytest.raises(SystemExit, match="needs 'html'"):
+        run.drive_unit(analysis.folder, ["--artifacts", "publish"])
+    assert json.loads(gj.read_text(encoding="utf8"))["artifacts"][-1] == "film"  # a refused choice writes nothing
+
+
+def test_step_texts_are_tool_neutral(analysis):
+    texts = " ".join(analysis.fill(s.how) for s in U.STEPS if s.how)
+    assert "browser-check" not in texts and "if your tool has" in texts
+    assert "subagents if you have" not in texts
 
 
 def test_finished_lists_every_deliverable_it_finds(analysis, capsys):
