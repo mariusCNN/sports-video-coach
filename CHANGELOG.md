@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Fixed
 
 - The explained video's title card on a generic unit shows the report's heading instead of the folder name.
+- Agent step instructions print paths with forward slashes only (no `C:\u\run/review` mix on Windows).
 - Pages declare an empty favicon, so opening one from a local server logs no 404.
 
 ### Added

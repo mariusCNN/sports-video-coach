@@ -177,7 +177,7 @@ def test_agent_step_waits_with_exit_3_and_fills_its_instructions(unit, capsys):
     s = [P.Step("ask", "agent", lambda g: False, how="look in {run}", errors=lambda g: [f"e{i}" for i in range(14)])]
     assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
     out = capsys.readouterr().out
-    assert "waiting for the agent: ask" in out and str(unit / "run") in out and "... 2 more" in out
+    assert "waiting for the agent: ask" in out and (unit / "run").as_posix() in out and "... 2 more" in out
 
 
 def test_failed_long_step_exits_1_with_its_log_tail(unit, capsys):

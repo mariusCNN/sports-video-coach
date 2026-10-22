@@ -94,7 +94,9 @@ class Unit:
                     langs=", ".join(self.langs), readmes=" + ".join(readme(l) for l in self.langs), qa=qa_hash(self))
 
     def fill(self, how: str) -> str:
-        return how.format(**self.fill_values())
+        """Paths print with forward slashes, so `{run}/review/review.json` is one style on Windows too."""
+        vals = {k: v.as_posix() if isinstance(v, Path) else v for k, v in self.fill_values().items()}
+        return how.format(**vals)
 
     def note(self, step: str, errors: list[str]) -> str | None:
         """An extra line printed when an agent step waits (e.g. why an old game now fails a stricter check)."""
