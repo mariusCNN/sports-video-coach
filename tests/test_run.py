@@ -338,6 +338,21 @@ def test_qa_pass_is_bound_to_the_checked_files(game):
     assert not R.qa_done(g)
 
 
+def test_qa_errors_say_why_qa_md_does_not_count(game):
+    from sports_video_coach import pipeline as P
+    finished_until_html(game)
+    touch(game, "index.html", "player-7/index.html")
+    g = R.Game.load(game)
+    assert P.qa_errors(g) == []                       # not written yet: the step's instructions cover it
+    (game / "qa.md").write_text("PASS", encoding="utf8")
+    assert [e for e in P.qa_errors(g) if f"checked: {P.qa_hash(g)}" in e]
+    (game / "qa.md").write_text("FAIL: clip 3 is black\nchecked: 0123456789abcdef\n", encoding="utf8")
+    errs = P.qa_errors(g)
+    assert len(errs) == 2 and "PASS" in errs[0] and "changed after QA" in errs[1]
+    qa_pass(game)
+    assert P.qa_errors(g) == [] and P.qa_done(g)
+
+
 def test_child_stages_run_with_utf8_io(game):
     touch(game, "run/calib/keyframes.json")
     seen = []

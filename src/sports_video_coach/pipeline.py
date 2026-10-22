@@ -272,14 +272,28 @@ def qa_hash(g: Unit) -> str:
     return h.hexdigest()[:16]
 
 
-def qa_done(g: Unit) -> bool:
-    """qa.md starts with PASS and carries the stamp of the files as they are now (`checked: <qa_hash>`)."""
+def qa_errors(g: Unit) -> list[str]:
+    """Why qa.md does not count yet; [] when it starts with PASS and carries the stamp of the files as they are now."""
     qa = g.folder / "qa.md"
     if not qa.exists():
-        return False
+        return []           # not written yet: the step's instructions say what to do
     text = qa.read_text(encoding="utf8")
+    errs = []
+    if not text.lstrip().upper().startswith("PASS"):
+        errs.append("qa.md does not start with PASS (fix what it lists, rebuild, check again)")
     stamp = re.search(r"checked:\s*([0-9a-f]{16})", text)
-    return text.lstrip().upper().startswith("PASS") and bool(stamp) and stamp.group(1) == qa_hash(g)
+    now = qa_hash(g)
+    if not stamp:
+        errs.append(f"qa.md has no `checked: {now}` line")
+    elif stamp.group(1) != now:
+        errs.append(f"the pages, READMEs, audio or clips changed after QA (stamp {stamp.group(1)}, now {now}): "
+                    f"check again, then write `checked: {now}`")
+    return errs
+
+
+def qa_done(g: Unit) -> bool:
+    """qa.md starts with PASS and carries the stamp of the files as they are now (`checked: <qa_hash>`)."""
+    return (g.folder / "qa.md").exists() and not qa_errors(g)
 
 
 QA_STAMP = (" Then add the line `checked: {qa}` to qa.md (the stamp of the files you checked; an edit after QA "
@@ -350,7 +364,7 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              inputs=lambda g: [d / f"listen.{l}.md" for d in g.reports() for l in g.langs], artifact="narration"),
         Step("html", "cmd", html_done, lambda g: [["html", str(d)] for d in g.reports()], inputs=html_inputs,
              artifact="html"),
-        Step("qa", "agent", qa_done, how=qa_how + QA_STAMP, artifact="qa"),
+        Step("qa", "agent", qa_done, how=qa_how + QA_STAMP, errors=qa_errors, artifact="qa"),
         Step("publish", "cmd", published, lambda g: [["publish", *map(str, g.reports()), "--deploy"]],
              artifact="publish"),
         Step("film-script", "agent", lambda g: all((g.folder / f"film.{l}.md").exists() for l in g.langs),
