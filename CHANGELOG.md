@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.2.0 - 2026-10-23
+
 ### sports-video-coach: an agent-first core, basketball as a plugin
 
 - The repo and distribution are now `sports-video-coach` (was hoop-tape-miner; old GitHub links redirect). The sport-agnostic core is the package `sports_video_coach` with its own CLI `sports-video-coach`; basketball is the `basketball` plugin (`hoop_tape_miner`), and `uv run hoop-tape-miner ...`, `/game`, `/train`, `/move`, existing workspace folders and publish links work as before.
