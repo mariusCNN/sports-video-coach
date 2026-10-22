@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Fixed
+
+- The explained video's title card on a generic unit shows the report's heading instead of the folder name.
+- Pages declare an empty favicon, so opening one from a local server logs no 404.
+
+### Added
+
+- README: a GIF of the demo's explained video.
+
 ## 0.2.0 - 2026-10-23
 
 ### sports-video-coach: an agent-first core, basketball as a plugin

@@ -29,6 +29,8 @@ It draws a synthetic drill video and uses a pre-written review, so you see every
 a video of your own (`--lang en zh` for both languages, `--offline` without text-to-speech). With your own video,
 your agent writes the review: see below.
 
+![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, subtitles say why](docs/images/demo-film.gif)
+
 ## For agents: start here
 
 ```bash

@@ -462,11 +462,20 @@ def folder_date(folder: Path) -> str:
     return next((p for p in reversed(folder.resolve().parts) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", p)), "")
 
 
-def title_text(folder: Path, data: dict, h: int, hooks: FilmHooks = GENERIC) -> str:
-    """The title card: hooks.title, else the unit json `title` (or the folder name) over its date."""
+def report_title(folder: Path, lang: str | None) -> str:
+    """The `# ` heading of the report in that language (README.md is Chinese, README.<lang>.md the others), or ""."""
+    if not lang:
+        return ""
+    p = folder / ("README.md" if lang == "zh" else f"README.{lang}.md")
+    m = re.match(r"#\s+(.+)", p.read_text(encoding="utf8")) if p.exists() else None
+    return m.group(1).strip() if m else ""
+
+
+def title_text(folder: Path, data: dict, h: int, hooks: FilmHooks = GENERIC, lang: str | None = None) -> str:
+    """The title card: hooks.title, else the unit json `title`, the report's heading or the folder name, over its date."""
     if hooks.title:
         return hooks.title(folder, data, h)
-    head = str(data.get("title") or folder.resolve().name)
+    head = str(data.get("title") or report_title(folder, lang) or folder.resolve().name)
     sub = str(data.get("date") or folder_date(folder))
     return title_lines(head, "" if sub == head else sub, h)
 
@@ -686,7 +695,7 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
     accent, second = hooks.colours(game) if hooks.colours else (DEFAULT_ACCENT, DEFAULT_SECOND)
     ctx = FilmCtx(folder, game, lang, w, h, FPS, accent, second)
     voice, rate = voices(game)[lang]
-    title = title_text(folder, game, h, hooks)
+    title = title_text(folder, game, h, hooks, lang)
     cache = folder / ".film-cache"
     game_audio = has_audio(video) if needs_video else False
     fit = fit_box(src, w, h)

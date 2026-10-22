@@ -29,6 +29,8 @@ sports-video-coach demo --lang zh en                      # 约一分钟：网�
 - 不需要 agent，也不需要你自己的视频，就能看到全部交付物。
 - `--offline`：不联网，只出片段和网页。换成你自己的视频时，复盘由你的 agent 来写，见下文。
 
+![demo 生成的讲解视频：方块停住的地方画面暂停、圈出来，字幕说明原因](docs/images/demo-film.gif)
+
 ## 给 agent：从这里开始
 
 ```bash

@@ -297,6 +297,9 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     assert "1 freeze(s)" in out and "3 scenes" in out
     assert film.title_text(folder, {}, 720) == "2025-03-12"  # the folder name; no date line repeating it
     assert film.title_text(folder, {"title": "Sprint"}, 720).endswith("2025-03-12")
+    (folder / "README.en.md").write_text("# Hill sprints: the turn\n\nbody\n", encoding="utf8")
+    assert film.title_text(folder, {}, 720, lang="en").startswith("Hill sprints: the turn")  # the report's heading
+    assert film.title_text(folder, {}, 720, lang="zh") == "2025-03-12"                     # no README.md: folder name
 
 
 def test_unknown_scene_prefix_names_the_known_ones(tmp_path):
