@@ -7,6 +7,7 @@ review, a coaching page with narration and clips, and an explained video.**
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](pyproject.toml)
 [![Agent: Claude Code | Codex | any AGENTS.md agent](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-8A2BE2.svg)](AGENTS.md)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f.svg)](https://mariusding.github.io/sports-video-coach/)
 
 English · [中文](README.zh.md)
 
