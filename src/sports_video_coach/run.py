@@ -48,11 +48,47 @@ def drive_unit(folder: Path, rest: list[str]) -> int:
     return pipeline.drive(unit, steps, a.until, a.redo, a.publish, a.dry)
 
 
+HELP = """usage: sports-video-coach run <videos...> [--plugin NAME] [start options]
+       sports-video-coach run <folder> [driver options]
+       sports-video-coach run <url> [--plugin NAME]
+
+Turns your sports video into a film review, a coaching page with narration and clips, and an explained video.
+The first run starts a folder from the videos; later runs take that folder and go on where it stopped.
+
+Exit codes: 0 done (the deliverables are listed), 3 an agent step is waiting (the output says what to write and
+with which guide; do it, run again), 1 a command failed (read the log it names, fix, run again).
+"""
+
+
+def help_text(name: str | None = None) -> str:
+    """The user-facing help: the forms, then the start options of the plugin's `new` stage and the driver options."""
+    def options(ap: argparse.ArgumentParser) -> str:
+        fmt = ap._get_formatter()
+        fmt.add_arguments([a for a in ap._actions if a.option_strings and a.dest != "help"])
+        return fmt.format_help()
+
+    parts = [HELP]
+    try:
+        p = plugin.get(name or "generic")
+        mod = importlib.import_module(p.stages["new"][0]) if "new" in p.stages else None
+    except (SystemExit, ImportError):
+        mod = None
+    if mod is not None and hasattr(mod, "parser"):
+        parts.append(f"start options ({p.name} plugin, first run with videos):\n" + options(mod.parser()))
+    ap = argparse.ArgumentParser(add_help=False)
+    pipeline.add_drive_args(ap, ["STEP"])
+    for a in ap._actions:
+        if a.dest in ("until", "redo"):
+            a.choices, a.metavar = None, "STEP"
+    parts.append("driver options (later runs with the folder; `--status` lists the steps):\n" + options(ap))
+    return "\n".join(parts)
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else list(argv)
     if not argv or argv[0] in ("-h", "--help"):
-        print(__doc__)
-        print("usage: sports-video-coach run <folder | url | videos...> [--plugin NAME] [driver flags]")
+        name = argv[argv.index("--plugin") + 1] if "--plugin" in argv[:-1] else None
+        print(help_text(name))
         sys.exit(0 if argv else 1)
     name = None
     if "--plugin" in argv:

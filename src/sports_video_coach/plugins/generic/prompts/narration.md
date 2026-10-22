@@ -9,4 +9,5 @@ A spoken version of the report, rendered to MP3 by `sports-video-coach narrate <
   report's sections in order, shorter. End with a short sign-off.
 - Same facts as the report; never add a claim. No names of people unless the user asked for them (the text goes
   to an online text-to-speech service).
-- After rendering, measure the MP3 length and fix the "about N minutes" sentence if it is off by a minute.
+- Before rendering, estimate the length (English about 150 words a minute, Chinese about 300 characters a
+  minute) so the "about N minutes" sentence is right the first time; `narrate` prints the real length after.

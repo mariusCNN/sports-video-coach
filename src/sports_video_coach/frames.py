@@ -54,6 +54,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     out.mkdir(parents=True, exist_ok=True)
     cap = cv2.VideoCapture(str(video))
     data = dict(video=str(video), duration_s=round(duration, 2), **settings, sheets=[])
+    dec = 1 if every < 1 else 0  # label 0:12.5 when tiles are under a second apart
     for i, group in enumerate(sheets(times(duration, every), cols * rows), 1):
         tiles = []
         for t in group:
@@ -61,7 +62,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
             ok, frame = cap.read()
             if not ok:
                 continue
-            tiles.append((t, tile(frame, mmss(t), width)))
+            tiles.append((t, tile(frame, mmss(t, dec), width)))
         if not tiles:
             continue
         th = max(f.shape[0] for _, f in tiles)
@@ -71,8 +72,8 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
         grid = np.vstack([np.hstack(cells[r * cols:(r + 1) * cols]) for r in range(rows)])
         name = f"sheet_{i:03d}.jpg"
         cv2.imwrite(str(out / name), grid, [cv2.IMWRITE_JPEG_QUALITY, 80])
-        data["sheets"].append(dict(file=name, start=mmss(tiles[0][0]), end=mmss(tiles[-1][0]),
-                                   tiles=[mmss(t) for t, _ in tiles]))
+        data["sheets"].append(dict(file=name, start=mmss(tiles[0][0], dec), end=mmss(tiles[-1][0], dec),
+                                   tiles=[mmss(t, dec) for t, _ in tiles]))
     cap.release()
     media.write_json_atomic(index, data, indent=1)
     print(f"frames: {len(data['sheets'])} sheets ({every:g} s per tile) in {out}")

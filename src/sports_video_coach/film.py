@@ -71,6 +71,14 @@ FREEZE_S = 2.0                   # a freeze without narration
 SLOW_TAG = {"zh": "慢放", "en": "Slow motion"}
 FREEZE_TAG = {"zh": "定格", "en": "Paused"}
 TARGET_S = (120, 240)  # film length the guides ask for (2-4 min)
+
+
+def target_s(video_s: float | None) -> tuple[int, int]:
+    """The film length (seconds) the guide asks for: 2-4 min, from about a minute when the source is under one
+    (a 20 s drill does not hold two minutes of explaining)."""
+    if video_s is None or video_s >= 60:
+        return TARGET_S
+    return max(30, int(round(2 * video_s))), TARGET_S[1]
 SPEECH_RATE = {"zh": 5.2, "en": 15.0}  # characters per second, only for --dry estimates
 FONT = {"win32": "Microsoft YaHei", "darwin": "PingFang SC"}.get(sys.platform, "Noto Sans CJK SC")
 BG = "#14161f"
@@ -685,9 +693,11 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
             print(f"{i:3d} {sc.kind:5s} {sc.src or sc.text[:30]:<30s} {sum(len(p) for g in groups for p in g):5d} chars"
                   f" ~{length:5.1f} s{extra}")
         print(f"{len(scenes)} scenes, about {total / 60:.1f} min")
-        if not TARGET_S[0] <= total <= TARGET_S[1]:  # the guides ask for 2-4 min; a warning, not an error
-            print(f"note: outside the {TARGET_S[0] // 60}-{TARGET_S[1] // 60} min the film guide asks for; "
-                  f"{'add a scene or say more' if total < TARGET_S[0] else 'cut scenes'} unless that is on purpose")
+        lo, hi = target_s(video_s)
+        if not lo <= total <= hi:  # a warning, not an error
+            span = f"{lo // 60}-{hi // 60} min" if lo >= 60 else f"{lo} s - {hi // 60} min"
+            print(f"note: outside the {span} the film guide asks for; "
+                  f"{'add a scene or say more' if total < lo else 'cut scenes'} unless that is on purpose")
         return None
 
     w, h = int(round(height * 16 / 9 / 2)) * 2, height

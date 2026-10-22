@@ -31,6 +31,28 @@ def test_new_writes_analysis_json_owned_by_generic(analysis, video):
     assert (p.name, k.name) == ("generic", "analysis")
 
 
+def test_new_picks_the_tile_interval_from_the_length_and_keeps_an_old_one(analysis, video):
+    assert [new.auto_every(s) for s in (6, 30, 31, 120, 121, 3600)] == [0.5, 0.5, 1.0, 1.0, 2.0, 2.0]
+    p = analysis.folder / "analysis.json"
+    assert json.loads(p.read_text(encoding="utf8"))["every_s"] == 0.5  # the 6 s test video
+    new.main([str(video), "--out", str(analysis.folder), "--every", "2"])
+    new.main([str(video), "--out", str(analysis.folder)])  # a second start keeps the sheets already cut
+    assert json.loads(p.read_text(encoding="utf8"))["every_s"] == 2
+
+
+def test_run_help_lists_the_start_and_driver_options(capsys):
+    with pytest.raises(SystemExit) as e:
+        run.main(["--help"])
+    out = capsys.readouterr().out
+    assert e.value.code == 0
+    assert all(f in out for f in ("--lang", "--every", "--focus", "--status", "--redo STEP", "Exit codes"))
+
+
+def test_frames_label_tenths_under_a_second(tmp_path, video):
+    data = frames.build(video, tmp_path / "f", every=0.5, cols=2, rows=2)
+    assert data["sheets"][0]["tiles"] == ["00:00.2", "00:00.8", "00:01.2", "00:01.8"]
+
+
 def test_frames_sheets_and_index(tmp_path, video, capsys):
     data = frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     assert [s["file"] for s in data["sheets"]] == ["sheet_001.jpg"]

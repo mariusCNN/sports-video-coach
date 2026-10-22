@@ -38,6 +38,11 @@ def test_parse_script_scenes_and_paragraphs():
     assert s[3].paras == [] and s[2].window() == (2.0, 4.0) and s[2].clip_s() == 2.0
 
 
+def test_target_length_scales_down_for_a_short_source():
+    assert film.target_s(None) == film.target_s(600) == film.TARGET_S == (120, 240)
+    assert film.target_s(22) == (44, 240) and film.target_s(5) == (30, 240)
+
+
 def test_parse_script_starting_with_a_visual_has_no_title_card():
     assert [x.kind for x in film.parse_script("## Start\nText.\n")] == ["card"]
 

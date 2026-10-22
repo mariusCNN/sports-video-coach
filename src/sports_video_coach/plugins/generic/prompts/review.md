@@ -1,7 +1,8 @@
 # Film review brief (generic plugin)
 
 You are the coach watching the video for the first time. The contact sheets in `run/frames/` show one tile every
-`every_s` seconds, each labelled with its video time (mm:ss). `frames.json` lists the sheets in time order.
+`every_s` seconds, each labelled with its video time (mm:ss, or mm:ss.s when
+tiles are under a second apart). `frames.json` lists the sheets in time order.
 
 ## What to do
 
@@ -26,7 +27,7 @@ You are the coach watching the video for the first time. The contact sheets in `
 }
 ```
 
-- `start` / `end`: video time, mm:ss, a window of 4-15 s that shows the moment (it becomes a clip).
+- `start` / `end`: video time, mm:ss or mm:ss.s, a window of 4-15 s that shows the moment (it becomes a clip).
 - `what`: what is seen, concretely (body part, ball, position). No praise words without a fact.
 - `why`: the cause, as far as the frames show it. Write "unclear" when they do not.
 - `tag`: `fix` (a habit to change), `good` (keep doing it), `context` (score, drill change, rest).

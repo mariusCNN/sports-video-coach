@@ -8,6 +8,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - The demo's output is online (GitHub Pages, rebuilt by CI from `sports-video-coach demo`): the coaching page with clips and narration, and the explained videos. The README links it, so you can see the deliverables before installing.
 
+### Changed
+
+- `run --help` is written for users: the three ways to call it, the exit codes, and every start option (`--lang`, `--focus`, `--every`, ...) and driver option (`--status`, `--redo`, ...).
+- A new analysis picks the contact-sheet interval from the video length: a tile every 0.5 s up to 30 s, 1 s up to 2 min, else 2 s (it was always 2 s, too sparse for a short drill). `--every` still overrides it, and a second start keeps the interval already used.
+- Contact-sheet labels show tenths (`00:12.5`) when tiles are under a second apart; the guides say `mm:ss.s` works in reviews, clips and freezes.
+- `film --dry` asks for a shorter film when the source video is under a minute (from about twice its length) instead of always 2-4 min.
+- The narration guide has the speaking rates to get the "about N minutes" sentence right before rendering.
+
 ## 0.2.1 - 2026-10-23
 
 ### Fixed

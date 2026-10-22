@@ -13,8 +13,9 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
 1. Install: `uv tool install git+https://github.com/mariusDing/sports-video-coach` (light, ffmpeg on PATH), or in
    a clone `uv sync` and prefix every command with `uv run` (needed for basketball tracking). Then
    `sports-video-coach plugins` lists the plugins, what each analyses and when to use it (`--json` for you).
-2. `sports-video-coach run <video...> [--plugin NAME] [--sport S] [--focus WHO]` starts a unit folder from the
-   videos and drives it. Later runs take that folder: `sports-video-coach run <folder>`. `--status` lists every step.
+2. `sports-video-coach run <video...> [--plugin NAME] [--sport S] [--focus WHO] [--lang en zh]` starts a unit
+   folder from the videos and drives it. Later runs take that folder: `sports-video-coach run <folder>`. `--status`
+   lists every step; `run --help` lists every option.
 3. Exit codes:
    - `3` an agent step is waiting: the output names the step and says exactly what to write and with which guide.
      Do it, then run again.

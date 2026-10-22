@@ -28,4 +28,5 @@ Seven of ten tosses in front of the head: that is the target for next week.
 - Freeze lines after a clip: `> mm:ss <x,y> "label"` stops the clip and rings the spot (fractions of width and
   height); `>` alone resumes. Paragraphs after a line are read over it.
 - Plugins may add scene kinds (basketball adds `court:` diagrams); `film --dry` names the kinds it knows.
-- Keep it to 2-4 minutes. Same facts as the report.
+- Keep it to 2-4 minutes; for a source video under a minute, from about twice its length. Same facts as
+  the report. `film --dry` estimates the length.

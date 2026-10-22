@@ -42,6 +42,7 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 - 2-4 numbered sections, most important first; each has a clip, then the same five bold-labelled parts in
   the same order.
 - Every claim has a time or a clip from `review.json`. Never add what the review did not see.
-- Clips: `![caption](clip:mm:ss-mm:ss)` in video time, 4-15 s, one per section at least. The clips stage cuts them.
+- Clips: `![caption](clip:mm:ss-mm:ss)` in video time (`mm:ss.s` works too),
+  4-15 s, one per section at least. The clips stage cuts them.
 - Numbers and cues go in bold or their own bullet, not mid-sentence.
 - At most two levels of nesting. Details (long reasoning, references) go at the end under `## Notes`.
