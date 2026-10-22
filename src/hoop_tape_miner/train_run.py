@@ -119,7 +119,7 @@ def main(argv=None):
     if a.status:
         P.print_status(g, TRAIN_STEPS)
         return
-    sys.exit(P.drive(g, TRAIN_STEPS, a.until, a.redo, a.publish, a.dry))
+    sys.exit(P.drive(g, TRAIN_STEPS, a.until, a.redo, a.publish, a.dry, accept=a.accept))
 
 
 if __name__ == "__main__":

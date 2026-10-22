@@ -178,6 +178,28 @@ def test_agent_step_waits_with_exit_3_and_fills_its_instructions(unit, capsys):
     assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
     out = capsys.readouterr().out
     assert "waiting for the agent: ask" in out and (unit / "run").as_posix() in out and "... 2 more" in out
+    assert (unit / "run" / "review").is_dir()                     # ready for review.json and the helpers' parts
+
+
+def test_agent_script_is_out_of_date_when_what_it_follows_changes(unit, capsys):
+    src, out = unit / "src.txt", unit / "script.md"
+    out.write_text("v1", encoding="utf8")
+    s = [P.Step("script", "agent", lambda g: out.exists(), how="write {folder}/script.md",
+                derives=lambda g: [(out, [src])])]
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0          # recorded as it is
+    assert "outputs" in json.loads((unit / P.STORE).read_text(encoding="utf8"))["steps"]["script"]
+    src.write_text("b", encoding="utf8")                                  # the report it follows was corrected
+    capsys.readouterr()
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    said = capsys.readouterr().out
+    assert "script is out of date" in said and "script.md: src.txt changed after it was written" in said
+    assert "--accept script" in said
+    assert P.rows(Unit.load(unit), s)[0][3] == ["script.md: src.txt changed after it was written"]
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit), accept="script") == 0
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0          # accepted stays accepted
+    src.write_text("c", encoding="utf8")
+    out.write_text("v2", encoding="utf8")                                 # the agent followed the change
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0
 
 
 def test_failed_long_step_exits_1_with_its_log_tail(unit, capsys):

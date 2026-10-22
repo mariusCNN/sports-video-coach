@@ -12,7 +12,12 @@ under 1 MB, else size + mtime), the step's `params`, and the run stamp of the st
 inputs a later stage rewrites, such as tracks.pkl). Records live in <folder>/.hoop-steps.json. A change to any
 of them makes the step stale, so `--redo X` (or a new input) re-runs the steps that depend on X. Folders from
 before provenance have no records: their steps count as done by their own check, and `drive` writes the records
-on its first walk (`--status` and `--dry` never write). Agent steps keep their own checks.
+on its first walk (`--status` and `--dry` never write).
+
+Agent steps keep their own checks; one that declares `derives` (each output with the files it is written from)
+is also out of date when one of those inputs changed after the output was last seen and the agent has not
+touched the output since: a corrected review or report waits for the narration and film scripts to follow it.
+`--accept X` records agent step X as it is (the scripts still hold).
 """
 from __future__ import annotations
 
@@ -161,6 +166,7 @@ class Step:
     after: tuple = ()                           # cmd: steps whose re-run makes this one stale
     again: tuple = ()                           # cmd: extra argv when it re-runs over existing outputs
     artifact: str | None = None                 # the deliverable it builds (artifacts.NAMES); None = always runs
+    derives: Callable[[Unit], list[tuple[Path, list[Path]]]] | None = None  # agent: (output, files it follows)
 
 
 def newer(out: Path, *inputs: Path, slack: float = 2.0) -> bool:
@@ -244,6 +250,40 @@ def record(step: Step, g: Unit, store: Store) -> bool:
     if cur is None:
         return False
     store.steps[step.name] = dict(cur, run=uuid.uuid4().hex[:8], at=dt.datetime.now().isoformat(timespec="seconds"))
+    return True
+
+
+def derived(step: Step, g: Unit) -> dict:
+    """An agent step's record of its outputs: per output, its signature and those of the files it is written from."""
+    return {input_key(g, o): dict(sig=signature(o), inputs={input_key(g, p): signature(p) for p in ins})
+            for o, ins in step.derives(g)}
+
+
+def outdated(step: Step, g: Unit, store: Store) -> list[str]:
+    """Outputs of an agent step whose inputs changed since the run last saw them, while the output itself did not
+    (an output the agent edited since counts as following the change). [] without `derives` or a record."""
+    rec = (store.get(step.name) or {}).get("outputs") if step.derives else None
+    if rec is None:
+        return []
+    out = []
+    for o, ins in step.derives(g):
+        r = rec.get(input_key(g, o))
+        if not r or r.get("sig") != signature(o):
+            continue
+        moved = [input_key(g, p) for p in ins if (r.get("inputs") or {}).get(input_key(g, p)) != signature(p)]
+        if moved:
+            out.append(f"{input_key(g, o)}: {', '.join(moved)} changed after it was written")
+    return out
+
+
+def note_outputs(step: Step, g: Unit, store: Store) -> bool:
+    """Save what an agent step's outputs follow now; False when that is already the record (nothing to write)."""
+    if not step.derives:
+        return False
+    now = derived(step, g)
+    if (store.get(step.name) or {}).get("outputs") == now:
+        return False
+    store.steps[step.name] = dict(outputs=now, at=dt.datetime.now().isoformat(timespec="seconds"))
     return True
 
 
@@ -351,6 +391,12 @@ def html_done(g: Unit) -> bool:
     return all(newer(d / "index.html", *inputs(d)) for d in g.reports())
 
 
+def missing(paths: list[Path], g: Unit) -> list[str]:
+    """`missing: <path> (Chinese)` per file not written yet, so the agent sees each exact name (listen.zh.md)."""
+    return [f"missing: {slash(p.as_posix())}" + (" (Chinese)" if p.name.split(".")[-2:-1] == ["zh"] else "")
+            for p in paths if not p.exists()]
+
+
 def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film_script_how: str,
                film_run: bool = False) -> list[Step]:
     """The steps every driver ends with: clips -> narration -> page -> QA -> publish -> explained video.
@@ -362,7 +408,9 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              inputs=lambda g: [video(g)], again=("--force",), artifact="clips"),  # a new video re-cuts every clip
         Step("listen-script", "agent",
              lambda g: all((d / f"listen.{l}.md").exists() for d in g.reports() for l in g.langs), how=listen_how,
-             artifact="narration"),
+             artifact="narration",
+             errors=lambda g: missing([d / f"listen.{l}.md" for d in g.reports() for l in g.langs], g),
+             derives=lambda g: [(d / f"listen.{l}.md", [d / readme(l)]) for d in g.reports() for l in g.langs]),
         Step("narrate", "cmd", listen_done, lambda g: [["narrate", str(d), "--lang", *g.langs] for d in g.reports()],
              inputs=lambda g: [d / f"listen.{l}.md" for d in g.reports() for l in g.langs], artifact="narration"),
         Step("html", "cmd", html_done, lambda g: [["html", str(d)] for d in g.reports()], inputs=html_inputs,
@@ -371,7 +419,9 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
         Step("publish", "cmd", published, lambda g: [["publish", *map(str, g.reports()), "--deploy"]],
              artifact="publish"),
         Step("film-script", "agent", lambda g: all((g.folder / f"film.{l}.md").exists() for l in g.langs),
-             how=film_script_how, artifact="film"),
+             how=film_script_how, artifact="film",
+             errors=lambda g: missing([g.folder / f"film.{l}.md" for l in g.langs], g),
+             derives=lambda g: [(g.folder / f"film.{l}.md", [d / readme(l) for d in g.reports()]) for l in g.langs]),
         Step("film", "cmd", film_done, film_args, long=True,
              inputs=lambda g: [*(g.folder / f"film.{l}.md" for l in g.langs), video(g)], artifact="film"),
     ]
@@ -440,7 +490,7 @@ def rows(g: Unit, steps: list[Step]) -> list[tuple[str, str, bool, list[str]]]:
     out = []
     for s in artifacts.keep(steps, g):
         ok = s.done(g)
-        why = changes(s, g, store) if ok else []
+        why = (changes(s, g, store) + outdated(s, g, store)) if ok else []
         out.append((s.name, s.kind, ok and not why, why))
     return out
 
@@ -459,7 +509,7 @@ def print_status(g: Unit, steps: list[Step]) -> None:
 
 
 def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None = None, publish: bool = False,
-          dry: bool = False, runner=subprocess.run) -> int:
+          dry: bool = False, runner=subprocess.run, accept: str | None = None) -> int:
     """Walk `steps` and return the exit code: 0 done (or stopped at --until), 3 waiting for the agent, 1 failed."""
     steps = artifacts.keep(steps, g)  # exits on a bad `artifacts` choice before any step runs
     store = Store(g.folder)
@@ -475,12 +525,28 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             continue
         own = s.done(g)
         why = changes(s, g, store) if own else []
-        if own and not why and s.name != redo:
+        stale = outdated(s, g, store) if own else []
+        if stale and s.name == accept and not dry:
+            print(f"[run] {s.name}: accepted as it is ({len(stale)} output(s) kept although their inputs changed)")
+            stale = []
+        if own and not why and not stale and s.name != redo:
+            if not dry and note_outputs(s, g, store):
+                store.save()
             if s.name == until:
                 print(f"[run] stopped after {until} (already done)")
                 return 0
             continue
         if s.kind == "agent":
+            if not dry:
+                g.review.mkdir(parents=True, exist_ok=True)   # where review.json and the helpers' parts go
+            if stale:
+                print(f"[run] waiting for the agent: {s.name} is out of date")
+                for e in stale[:12]:
+                    print(f"[run]   {slash(e)}")
+                print(slash(f"[run] Bring those files in line with what changed, then run again. They still hold "
+                            f"as they are? `run {g.folder} --accept {s.name}`.\n[run] The step, for reference: "
+                            f"{g.fill(s.how)}"))
+                return WAITING
             print(f"[run] waiting for the agent: {s.name}\n{g.fill(s.how)}")
             errs = s.errors(g) if s.errors else []
             for e in errs[:12]:
@@ -534,3 +600,5 @@ def add_drive_args(ap, names: list[str], pages: str = "pages") -> None:
     ap.add_argument("--redo", choices=names, help="run this step again even if its output exists (steps that "
                                                   "depend on it run again too)")
     ap.add_argument("--publish", action="store_true", help=f"also deploy the {pages} (publish --deploy) at the end")
+    ap.add_argument("--accept", choices=names, help="an agent step reported out of date (its inputs changed) still "
+                                                    "holds as it is: record it and go on")

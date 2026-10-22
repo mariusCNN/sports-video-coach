@@ -309,6 +309,10 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     assert [ln.split()[1] for ln in out.splitlines()[:3]] == ["title", "card", "clip"]
     assert "1 freeze(s)" in out and "3 scenes" in out
     assert "freeze 0:03: 1 mark(s) 0.5,0.8  label 'here'" in out  # what --dry read from the freeze line
+    (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\nWatch.\n"
+                                       '> 0:03 0.5,0.8 "here"\nStop.\n>\nOn it goes.\n', encoding="utf8")
+    film.main([str(folder), "--video", str(video), "--dry"])
+    assert "      resume: the play runs on" in capsys.readouterr().out
     (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\n"
                                        '> 0:03 0.88,0.72 "stop here" 0.92,0.72\nStop.\n\n## Numbers\n'
                                        + "A long still talk. " * 14 + "\n", encoding="utf8")
@@ -370,3 +374,15 @@ def test_an_upright_video_makes_an_upright_film_with_the_same_text_size():
     styles = lambda doc: [ln for ln in doc.splitlines() if ln.startswith("Style:")]
     tall, land = styles(film.ass_doc(720, 1280, "F", "#6250d6", [])), styles(film.ass_doc(1280, 720, "F", "#6250d6", []))
     assert [s for s in tall if s.startswith("Style: Sub")] == [s for s in land if s.startswith("Style: Sub")]
+
+
+def test_chinese_subtitles_break_into_lines_that_fit_an_upright_film():
+    line = "录像里只看得到一个红色方块在两个橙色标志之间来回"  # 24 wide characters, no spaces: libass cannot wrap it
+    sc = film.parse_script("![clip](clip:0:01-0:05)\n")[0]
+    cues = [(0.0, 3.0, line)]
+    tall = film.scene_events(sc, 5, 0, 4, cues, "zh", "", 720, frame=(720, 1280))[-1][3]
+    assert tall.split(r"\N") == ["录像里只看得到一个红色方", "块在两个橙色标志之间来回"]
+    assert r"\N" not in film.scene_events(sc, 5, 0, 4, cues, "zh", "", 720)[-1][3]  # fits a landscape line
+    assert film.fit("练习：节拍折返，四组，每组六个来回，每到一端数一", 15) == ["练习：节拍折返，四组，", "每组六个来回，每到一端数一"]
+    assert film.fit("用 ACL 和 shuttle run 练三组，每组六个来回", 15)[0] == "用 ACL 和 shuttle run"  # no word cut
+    assert film.fit("Keep your hips low and push off the line", 15) == ["Keep your hips low and push off the line"]

@@ -24,6 +24,7 @@ ID = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
 LOCAL_PATH = re.compile(r"""(?:file:///|\b[A-Za-z]:[\\/](?:Users|home)\b|/home/\w|/Users/\w)""")
 ZH_REPORT = re.compile(r"""<article\b[^>]*\blang=["']zh[^"']*["'][^>]*>(.*?)</article>""", re.I | re.S)
 TAG = re.compile(r"<[^>]+>")
+HEDGE = re.compile(r"(?<![A-Za-z])(?:unclear|likely|unknown|maybe)(?![A-Za-z])", re.I)  # guide words left untranslated
 # three or more Latin words in a row: a sentence or phrase, not a name, unit or acronym (ACL, mp4, Brunson)
 LATIN_RUN = re.compile(r"[A-Za-z][A-Za-z'\u2019-]*(?:[ ,]+[A-Za-z][A-Za-z'\u2019-]*){2,}")
 
@@ -83,6 +84,8 @@ def warnings(folder: Path) -> list[str]:
             name = all(w[0].isupper() for w in re.findall(r"[A-Za-z]+", run))  # Riverside Owls
             if not (gloss or name):
                 runs.append(run)
+        runs += [w.group(0) for w in HEDGE.finditer(text)
+                 if not any(w.start() >= m.start() and w.end() <= m.end() for m in LATIN_RUN.finditer(text))]
     if not runs:
         return []
     shown = "; ".join(repr(r[:60]) for r in list(dict.fromkeys(runs))[:5])

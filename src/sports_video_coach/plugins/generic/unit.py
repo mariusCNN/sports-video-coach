@@ -151,6 +151,7 @@ STEPS = [
                "unclear moment: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 --end 0:15 "
                "--every 0.2` cuts a dense sheet of just that."),
     P.Step("report", "agent", reports_written,
+           derives=lambda g: [(g.folder / P.readme(l), [g.review / "review.json"]) for l in g.langs],
            how="Write the coaching report {readmes} in {folder} from {review}/review.json, as `sports-video-coach "
                "guide report` says ({langs}); mark the moments to show with ![caption](clip:mm:ss-mm:ss)."),
     *P.tail_steps(

@@ -48,8 +48,10 @@ import asyncio
 import hashlib
 import html
 import json
+import math
 import re
 import sys
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -385,6 +387,36 @@ def chunks(text: str, max_chars: int) -> list[str]:
     return out
 
 
+def em_width(text: str) -> float:
+    """Rough width of `text` in ems: a CJK (wide) character is 1, anything else about 0.55."""
+    return sum(1.0 if unicodedata.east_asian_width(c) in "WF" else 0.55 for c in text)
+
+
+def fit(text: str, cap: float) -> list[str]:
+    """`text` as balanced lines of at most `cap` ems. libass wraps at spaces only, so CJK text with no spaces runs
+    off a narrow frame; this breaks it, after punctuation when one is close, never inside a Latin word or number.
+    Text with no wide characters is left to libass (one line)."""
+    width = em_width(text)
+    if width <= cap or not any(unicodedata.east_asian_width(c) in "WF" for c in text):
+        return [text]
+    for n in range(math.ceil(width / cap), math.ceil(width / cap) + 3):
+        target, lines, cur = width / n, [], ""
+        for i, c in enumerate(text):
+            cur += c
+            nxt = text[i + 1:i + 2]
+            if len(lines) == n - 1 or em_width(cur) < target or (c.isascii() and c.isalnum() and nxt.isascii()
+                                                                 and nxt.isalnum()):
+                continue
+            back = max(cur.rfind(p) for p in "，、；：。,;:")
+            cut = back + 1 if 0 <= back < len(cur) - 1 and em_width(cur[:back + 1]) >= target * 0.7 else len(cur)
+            lines.append(cur[:cut])
+            cur = cur[cut:]
+        lines = [x.strip() for x in [*lines, cur] if x.strip()]
+        if all(em_width(x) <= cap for x in lines):
+            return lines
+    return lines
+
+
 def tidy(t: str) -> str:
     """Subtitles drop trailing commas and full stops (but keep ? and !)."""
     return t.strip().rstrip("，。、；：,;:.").strip()
@@ -454,24 +486,26 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
     """Subtitle events for one scene; cue times count from the start of the voice (LEAD). extra: more events.
     h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h."""
     fw, fh = frame or (round(h * 16 / 9), h)
+    m, side = round(h * 0.04), round(fw * 0.08)  # the margins and font sizes ass_doc gives Sub, Banner, Title
+    sub_fs, small, big = round(h * 0.057), round(h * 0.036), round(h * 0.075)
     ev = []
     if sc.kind == "title":
         ev.append((0, length, "Title", title))
     elif sc.kind == "card":  # " · " separates lines; the text grows upwards from just above the accent bar
-        lines = "\\N".join(ass_escape(x.strip()) for x in sc.text.split(" · "))
+        lines = "\\N".join(ass_escape(y) for x in sc.text.split(" · ") for y in fit(x.strip(), (fw - 2 * m) / big))
         ev.append((0, length, "Title", f"{{\\an2\\pos({round(fw / 2)},{round(fh / 2 + h * 0.055)})}}" + lines))
     elif sc.kind == "stat":
         ev.append((0, length, "Big", f"{ass_escape(sc.src)}\\N{{\\fs{round(h * 0.055)}\\c&HFFFFFF&\\bord0}}"
                    f"{ass_escape(sc.text)}"))
     elif sc.text:
-        ev.append((0, length, "Banner", ass_escape(sc.text)))
+        ev.append((0, length, "Banner", "\\N".join(ass_escape(y) for y in fit(sc.text, (fw - 2.5 * side) / small))))
     if slow:
         ev.append((clip_s, clip_s + slow, "Tag", SLOW_TAG.get(lang, SLOW_TAG["en"])))
     subs = sorted((LEAD + s, LEAD + e, t) for s, e, t in cues)
     for i, (s, e, t) in enumerate(subs):
         if i + 1 < len(subs) and subs[i + 1][0] - e < 0.6:  # no flicker between close subtitles
             e = subs[i + 1][0]
-        ev.append((s, min(e, length), "Sub", ass_escape(t)))
+        ev.append((s, min(e, length), "Sub", "\\N".join(ass_escape(y) for y in fit(t, (fw - 3 * m) / sub_fs))))
     return ev + list(extra)
 
 
@@ -727,6 +761,9 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
             print(f"{i:3d} {sc.kind:5s} {sc.src or sc.text[:30]:<30s} {sum(len(p) for g in groups for p in g):5d} chars"
                   f" ~{length:5.1f} s{extra}")
             for fz in sc.freezes:
+                if fz.resume:
+                    print("      resume: the play runs on under the next paragraphs")
+                    continue
                 t, marks, label, _ = fz.parts()
                 print(f"      freeze {t}: {len(marks)} mark(s) {' '.join(map(fd.mark_text, marks)) or '-'}"
                       f"  label {label!r}")

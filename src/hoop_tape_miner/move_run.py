@@ -191,7 +191,7 @@ def main(argv=None):
     if a.status:
         P.print_status(g, MOVE_STEPS)
         return
-    sys.exit(P.drive(g, MOVE_STEPS, a.until, a.redo, a.publish, a.dry))
+    sys.exit(P.drive(g, MOVE_STEPS, a.until, a.redo, a.publish, a.dry, accept=a.accept))
 
 
 if __name__ == "__main__":

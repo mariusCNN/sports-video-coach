@@ -51,6 +51,8 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 - Write the labels in the report's language. In `README.md` (Chinese) use these, so every Chinese report reads the
   same: **录像里看到的** / **为什么会这样** / **正确的样子** / **练习** / **下次怎么检查**, `## 继续保持`, `## 备注`,
   and `**一句话：**` for the bottom line.
+- review.json is in English; do not copy its words into the Chinese report. Its `likely` / `unclear` become
+  **可能** / **看不清（不确定）**, and every other English phrase is translated unless it is a name.
 - The page shows the sport under the title. A sport the page cannot name in Chinese (it knows tennis, basketball,
   football and about 25 more) is left out of the zh header; to name it, set `"sport": {"zh": "折返跑", "en": "shuttle
   run"}` in `analysis.json`.

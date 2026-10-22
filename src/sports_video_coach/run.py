@@ -45,7 +45,7 @@ def drive_unit(folder: Path, rest: list[str]) -> int:
     if a.status:
         pipeline.print_status(unit, steps)
         return 0
-    return pipeline.drive(unit, steps, a.until, a.redo, a.publish, a.dry)
+    return pipeline.drive(unit, steps, a.until, a.redo, a.publish, a.dry, accept=a.accept)
 
 
 HELP = """usage: sports-video-coach run <videos...> [--plugin NAME] [start options]
@@ -78,7 +78,7 @@ def help_text(name: str | None = None) -> str:
     ap = argparse.ArgumentParser(add_help=False)
     pipeline.add_drive_args(ap, ["STEP"])
     for a in ap._actions:
-        if a.dest in ("until", "redo"):
+        if a.dest in ("until", "redo", "accept"):
             a.choices, a.metavar = None, "STEP"
     parts.append("driver options (later runs with the folder; `--status` lists the steps):\n" + options(ap))
     return "\n".join(parts)

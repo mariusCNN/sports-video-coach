@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Changed
+
+- Chinese subtitles, banners and card titles in the explained video break into lines that fit the frame (they ran
+  off both edges of an upright film); lines break after punctuation when one is close, never inside a Latin word.
+- A narration or film script written before the report changed is out of date: the run waits (exit 3) and names
+  it, e.g. `listen.zh.md: README.md changed after it was written`, and the same for a report written before
+  `review.json` changed. Bring the file in line, or `run <folder> --accept listen-script` keeps it as it is.
+  `--status` shows such a step as not done.
+- The narration and film-script steps name each missing file (`missing: listen.zh.md (Chinese)`).
+- Upright clips are cut at 480x854 (were 270x480, soft on a phone); landscape clips stay 854x480.
+- The run creates `run/review/` before it waits for the review, so writing `review.json` there just works.
+- `page-check` also warns about the guides' hedge words (`unclear`, `likely`) left in the Chinese report, even in
+  brackets; the report guide says to write 可能 / 看不清（不确定）.
+- `film --dry` prints a bare `>` line as `resume` instead of an empty freeze.
+
 ## 0.2.4 - 2026-10-23
 
 ### Changed

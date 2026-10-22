@@ -49,3 +49,5 @@ def test_english_left_in_the_chinese_report_is_a_warning_not_a_failure(tmp_path,
     assert len(warns) == 1 and "1 English phrase" in warns[0] and "'keep your hips low'" in warns[0]
     assert PC.main([str(tmp_path)]) == 0
     assert "warning: 1 English phrase" in capsys.readouterr().out
+    page(tmp_path, '<article class="report" lang="zh"><p>重心偏后（unclear），可能是likely站位。</p></article>')
+    assert "2 English phrase" in PC.warnings(tmp_path)[0]                 # the guides' hedges, even in a gloss

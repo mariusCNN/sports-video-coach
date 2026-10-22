@@ -427,9 +427,9 @@ def status(g: Game) -> list[tuple[str, str, bool]]:
 
 
 def drive(g: Game, until: str | None = None, redo: str | None = None, publish: bool = False,
-          dry: bool = False, runner=subprocess.run, steps: list[Step] | None = None) -> int:
+          dry: bool = False, runner=subprocess.run, steps: list[Step] | None = None, accept: str | None = None) -> int:
     """Walk `steps` (default: the game STEPS) with pipeline.drive; `g` may be any pipeline.Unit."""
-    return pipeline.drive(g, STEPS if steps is None else steps, until, redo, publish, dry, runner)
+    return pipeline.drive(g, STEPS if steps is None else steps, until, redo, publish, dry, runner, accept)
 
 
 def game_for_url(url: str, game_id: Callable[[str], str]) -> Path | None:
@@ -468,7 +468,7 @@ def main(argv=None):
         if line:
             print(f"  {line}")
         return
-    sys.exit(drive(g, a.until, a.redo, a.publish, a.dry))
+    sys.exit(drive(g, a.until, a.redo, a.publish, a.dry, accept=a.accept))
 
 
 if __name__ == "__main__":
