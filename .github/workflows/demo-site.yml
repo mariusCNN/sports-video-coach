@@ -1,8 +1,9 @@
 name: demo site
 
 # Runs `sports-video-coach demo` on a light install (as a new user would) and puts its output on GitHub Pages:
-# the report page with clips and narration, and the explained videos. Everything in it is synthetic (a drawn
-# video, a pre-written review); no person appears. Doubles as an end-to-end check of the light install.
+# an English landing page, the report page with clips and narration (demo/), and the explained videos.
+# Everything in it is synthetic (a drawn video, a pre-written review); no person appears. Doubles as an end-to-end
+# check of the light install.
 
 on:
   push:
@@ -41,43 +42,10 @@ jobs:
           fc-cache -f ~/.local/share/fonts && fc-list | grep -c "Noto Sans CJK SC"
       - name: Light install, as in the README
         run: uv tool install .
-      - name: Demo, English and Chinese
-        run: sports-video-coach demo --out demo --lang en zh
-      - name: Static site
-        run: |
-          uv run --no-project --with . python - <<'EOF'
-          import shutil
-          from pathlib import Path
-          from sports_video_coach import publish
-          src, site = Path("demo"), Path("_site")
-          for w in publish.build_report(src, site):
-              raise SystemExit(f"demo site: {w}")
-          page = site / "index.html"
-          url, repo = "https://mariusding.github.io/sports-video-coach/", "https://github.com/mariusDing/sports-video-coach"
-          # the demo is synthetic and meant to be found and shared; real report pages keep noindex and no preview
-          card = "\n".join([
-              '<meta property="og:title" content="sports-video-coach demo: a coaching page made from one video">',
-              '<meta property="og:description" content="Your coding agent turns your own sports video into a film '
-              'review, a coaching page with narration and clips, and an explained video.">',
-              f'<meta property="og:image" content="{url}film.en.jpg">',
-              f'<meta property="og:url" content="{url}">',
-              '<meta name="twitter:card" content="summary_large_image">'])
-          banner = ('<p style="margin:0;padding:.6rem 1rem;background:#221f45;color:#fff;font:15px/1.4 system-ui,sans-serif;'
-                    f'text-align:center">Synthetic demo (a drawn video, a pre-written review). Made by '
-                    f'<a href="{repo}" style="color:#fff;font-weight:600">sports-video-coach</a>: '
-                    f'run it on your own video.</p>')
-          text = page.read_text(encoding="utf8")
-          for old, new in (('<meta name="robots" content="noindex, nofollow">', card), ("<body>", "<body>\n" + banner)):
-              if text.count(old) != 1:
-                  raise SystemExit(f"demo site: page template changed, {old!r} not found once")
-              text = text.replace(old, new)
-          page.write_text(text, encoding="utf8")
-          for f in sorted(src.glob("film.*.mp4")) + sorted(src.glob("film.*.jpg")):
-              shutil.copy2(f, site / f.name)
-          print(*sorted(p.relative_to(site).as_posix() for p in site.rglob("*") if p.is_file()), sep="\n")
-          EOF
+      - name: Demo, English and Chinese, and the static site (English landing page, coaching page in demo/)
+        run: sports-video-coach demo --out demo --lang en zh --site _site
       - name: Page check
-        run: sports-video-coach page-check _site
+        run: sports-video-coach page-check _site _site/demo
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site

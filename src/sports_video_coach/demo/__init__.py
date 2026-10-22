@@ -6,7 +6,7 @@ normal pipeline: frames, clips, narration, page, a scripted QA self-check, expla
 the agent writes those files; here they come with the package so the run needs nothing but ffmpeg (and the
 network for edge-tts, unless --offline).
 
-usage: sports-video-coach demo [--out <folder>] [--lang en zh] [--no-film] [--offline]
+usage: sports-video-coach demo [--out <folder>] [--lang en zh] [--no-film] [--offline] [--site <folder>]
 """
 from __future__ import annotations
 
@@ -71,6 +71,100 @@ def write_qa(g: U.Analysis) -> None:
     media.write_text_atomic(g.folder / "qa.md", text)
 
 
+SITE_URL = "https://mariusding.github.io/sports-video-coach/"
+REPO_URL = "https://github.com/mariusDing/sports-video-coach"
+TAGLINE = "Your AI agent watches your game film and coaches you."
+PITCH = ("Drop in a phone video of a game or workout. Claude Code or Codex reviews it like a coach and gives back a "
+         "phone page with clips, audio narration, drills and a target for next time. Runs on your machine.")
+CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next time."),
+         ("Coaches", "One game in: a team page and a page per player, with clips and audio, shared as private links."),
+         ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "
+                        "validator per agent step. A new sport plugin is one command."))
+
+
+def landing(films: list[str]) -> str:
+    """The English landing page of the demo site: tagline, pitch, the explained video, three cards, links."""
+    video = ""
+    if "film.en.mp4" in films:
+        poster = ' poster="film.en.jpg"' if "film.en.jpg" in films else ""
+        video = f'<video controls playsinline preload="none"{poster} src="film.en.mp4"></video>'
+    other = " ".join(f'<a href="{f}">{f}</a>' for f in films if f.endswith(".mp4") and f != "film.en.mp4")
+    cards = "".join(f"<section><h2>{t}</h2><p>{d}</p></section>" for t, d in CARDS)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sports-video-coach - AI film review for your own sports video</title>
+<meta name="description" content="{PITCH}">
+<meta property="og:title" content="sports-video-coach: {TAGLINE}">
+<meta property="og:description" content="{PITCH}">
+{f'<meta property="og:image" content="{SITE_URL}film.en.jpg">' if "film.en.jpg" in films else ""}
+<meta property="og:url" content="{SITE_URL}">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+body {{ margin: 0; font: 17px/1.55 system-ui, sans-serif; color: #1d1b38; background: #f6f5fb; }}
+main {{ max-width: 46rem; margin: 0 auto; padding: 2rem 1.1rem 3rem; }}
+h1 {{ font-size: clamp(1.6rem, 5vw, 2.3rem); line-height: 1.2; margin: .2rem 0 .8rem; }}
+.name {{ font-weight: 700; color: #5c5a86; margin: 0; }}
+video {{ width: 100%; border-radius: 10px; background: #221f45; margin: 1.2rem 0 .4rem; }}
+.cards {{ display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); margin: 1.4rem 0; }}
+.cards section {{ background: #fff; border-radius: 10px; padding: .9rem 1rem; box-shadow: 0 1px 3px #0001; }}
+.cards h2 {{ font-size: 1.05rem; margin: 0 0 .3rem; }}
+.cards p {{ margin: 0; font-size: .95rem; }}
+.go {{ display: flex; flex-wrap: wrap; gap: .6rem; }}
+.go a {{ padding: .6rem 1rem; border-radius: 999px; background: #221f45; color: #fff; font-weight: 600;
+        text-decoration: none; }}
+.go a + a {{ background: #fff; color: #221f45; border: 1px solid #221f45; }}
+small {{ display: block; margin-top: 1.4rem; color: #5c5a86; }}
+</style>
+</head>
+<body>
+<main>
+<p class="name">sports-video-coach</p>
+<h1>{TAGLINE}</h1>
+<p>{PITCH}</p>
+{video}
+<div class="cards">{cards}</div>
+<p class="go"><a href="demo/">Open the demo coaching page</a><a href="{REPO_URL}">Get it on GitHub</a></p>
+<small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
+no person appears. {("Other languages: " + other) if other else ""}</small>
+</main>
+</body>
+</html>
+"""
+
+
+def build_site(folder: Path, site: Path) -> list[str]:
+    """The public demo site from a finished demo folder: an English landing page at the root, the coaching page
+    under demo/, the explained videos and posters at the root. Returns warnings (see publish.build_report)."""
+    from .. import publish
+    warnings = publish.build_report(folder, site / "demo")
+    page = site / "demo" / "index.html"
+    # the demo is synthetic and meant to be found and shared; real report pages keep noindex and no preview
+    card = "\n".join([
+        '<meta property="og:title" content="sports-video-coach demo: a coaching page made from one video">',
+        f'<meta property="og:description" content="{PITCH}">',
+        f'<meta property="og:image" content="{SITE_URL}film.en.jpg">',
+        f'<meta property="og:url" content="{SITE_URL}demo/">',
+        '<meta name="twitter:card" content="summary_large_image">'])
+    banner = ('<p style="margin:0;padding:.6rem 1rem;background:#221f45;color:#fff;font:15px/1.4 system-ui,sans-serif;'
+              'text-align:center">Synthetic demo (a drawn video, a pre-written review). Made by '
+              f'<a href="{REPO_URL}" style="color:#fff;font-weight:600">sports-video-coach</a>: '
+              'run it on your own video.</p>')
+    text = page.read_text(encoding="utf8")
+    for old, new in (('<meta name="robots" content="noindex, nofollow">', card), ("<body>", "<body>\n" + banner)):
+        if text.count(old) != 1:
+            raise SystemExit(f"demo site: page template changed, {old!r} not found once")
+        text = text.replace(old, new)
+    page.write_text(text, encoding="utf8")
+    films = sorted(folder.glob("film.*.mp4")) + sorted(folder.glob("film.*.jpg"))
+    for f in films:
+        shutil.copy2(f, site / f.name)
+    (site / "index.html").write_text(landing([f.name for f in films]), encoding="utf8")
+    return warnings
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="sports-video-coach demo", description=__doc__.split("\n\n")[0])
     ap.add_argument("--out", help="the demo folder (default: <workspace>/analysis/demo/<today>)")
@@ -78,6 +172,7 @@ def main(argv=None) -> int:
     ap.add_argument("--no-film", action="store_true", help="stop after the page (skips the explained video)")
     ap.add_argument("--offline", action="store_true",
                     help="no network: clips and the page only (narration and the film need online text-to-speech)")
+    ap.add_argument("--site", help="also write the public demo site here: English landing page, coaching page in demo/")
     a = ap.parse_args(argv)
     if not (shutil.which(media.ffmpeg_exe()) and shutil.which("ffprobe")):
         sys.exit("[demo] needs ffmpeg and ffprobe on PATH (https://ffmpeg.org/download.html)")
@@ -110,6 +205,11 @@ def main(argv=None) -> int:
     for lang in a.lang:
         if (folder / f"film.{lang}.mp4").exists():
             print(f"[demo] explained video: {folder / f'film.{lang}.mp4'}")
+    if a.site:
+        warnings = build_site(folder, Path(a.site))
+        if warnings:
+            sys.exit("[demo] site: " + "; ".join(warnings))
+        print(f"[demo] site: {Path(a.site) / 'index.html'} (landing page), {Path(a.site) / 'demo' / 'index.html'}")
     print("[demo] The video is drawn and the review is pre-written. With your own video, your agent writes them:\n"
           "       sports-video-coach run my_video.mp4 --sport tennis")
     return 0

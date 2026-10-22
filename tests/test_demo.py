@@ -54,3 +54,16 @@ def test_film_scripts_check_clean(tmp_path):
     for lang in ("en", "zh"):
         scenes = film.parse_script((demo.FILES / f"film.{lang}.md").read_text(encoding="utf8"))
         assert len(scenes) >= 4 and film.check(scenes, tmp_path, v, demo.SECONDS) == []
+
+
+@needs_ffmpeg
+def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
+    from sports_video_coach import page_check
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
+    out, site = tmp_path / "demo", tmp_path / "site"
+    assert demo.main(["--out", str(out), "--offline", "--lang", "en", "zh", "--site", str(site)]) == 0
+    home = (site / "index.html").read_text(encoding="utf8")
+    assert '<html lang="en">' in home and demo.TAGLINE in home and 'href="demo/"' in home
+    assert all(f"<h2>{t}</h2>" in home for t, _ in demo.CARDS)
+    assert "noindex" not in (site / "demo" / "index.html").read_text(encoding="utf8")   # meant to be found
+    assert page_check.problems(site) == [] and page_check.problems(site / "demo") == []
