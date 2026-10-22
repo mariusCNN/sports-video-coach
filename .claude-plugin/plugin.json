@@ -1,7 +1,7 @@
 {
   "name": "sports-video-coach",
   "description": "Agent-first sports video analysis: turn your own game or training video into a coach's film review, a coaching page with narration and clips, and an explained video. Any sport (generic plugin), basketball built in.",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "author": { "name": "mariusDing", "url": "https://github.com/mariusDing" },
   "homepage": "https://github.com/mariusDing/sports-video-coach",
   "repository": "https://github.com/mariusDing/sports-video-coach",

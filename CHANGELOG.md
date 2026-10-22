@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.2.4 - 2026-10-23
+
 ### Changed
 
 - Several videos in one run: `new` prints where each file sits on the joined timeline
