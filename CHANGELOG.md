@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.2.2 - 2026-10-23
+
 ### Added
 
 - The demo's output is online (GitHub Pages, rebuilt by CI from `sports-video-coach demo`): the coaching page with clips and narration, and the explained videos. The README links it, so you can see the deliverables before installing.
@@ -19,6 +21,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - Contact-sheet labels show tenths (`00:12.5`) when tiles are under a second apart; the guides say `mm:ss.s` works in reviews, clips and freezes.
 - `film --dry` asks for a shorter film when the source video is under a minute (from about twice its length) instead of always 2-4 min.
 - The narration guide has the speaking rates to get the "about N minutes" sentence right before rendering.
+- Contact-sheet tiles under a second apart fall on whole tenths (00:00.3, 00:00.8, ...: even gaps, exact labels); a `--start` window starts at `--start`.
+- A freeze line with two labels says "only one label per freeze line" instead of "cannot read"; the film guide says so, and gives the short-source length as 2-4x the source (a 22 s drill: 45-90 s).
+- The review step names the close-look command; README "For agents" mentions `--lang`; `html`'s help no longer reads as if Chinese were required; the no-browser QA note says to state that the 390 px layout was not checked.
 
 ## 0.2.1 - 2026-10-23
 

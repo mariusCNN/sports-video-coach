@@ -94,7 +94,9 @@ STEPS = [
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
                "{review}/review.json as {prompts}/review.md says (sport: {sport}; focus: {focus}). Delegate the "
                "sheets to subagents if you have them, at most 3 at once, one part each. Can't read that path? "
-               "`sports-video-coach guide review` prints it (and `guide report`, `guide narration`, `guide film`)."),
+               "`sports-video-coach guide review` prints it (and `guide report`, `guide narration`, `guide film`). An "
+               "unclear moment: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 --end 0:15 "
+               "--every 0.2` cuts a dense sheet of just that."),
     P.Step("report", "agent", reports_written,
            how="Write the coaching report {readmes} in {folder} from {review}/review.json, as {prompts}/report.md "
                "says ({langs}); mark the moments to show with ![caption](clip:mm:ss-mm:ss)."),

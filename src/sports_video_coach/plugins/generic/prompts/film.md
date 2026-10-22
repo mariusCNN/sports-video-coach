@@ -27,8 +27,10 @@ Seven of ten tosses in front of the head: that is the target for next week.
   `![caption](picture.png)` (a figure in the folder).
 - Freeze lines after a clip: `> 0:12.5 0.45,0.80 "label"` stops the clip at 0:12.5 and rings that spot (x,y as
   fractions of the frame from the top left, no brackets; read them off the contact-sheet tile; to mark a person,
-  point at their feet). `0.2,0.8->0.6,0.8` draws an arrow; several marks may follow the time. `>` alone resumes.
+  point at their feet). `0.2,0.8->0.6,0.8` draws an arrow; several marks may follow the time, but only one
+  `"label"` per line (at the end). `>` alone resumes.
   Paragraphs after a line are read over it.
 - Plugins may add scene kinds (basketball adds `court:` diagrams); `film --dry` names the kinds it knows.
-- Keep it to 2-4 minutes; for a source video under a minute, from about twice its length. Same facts as
+- Keep it to 2-4 minutes; for a source video under a minute, two to four times its length (a 22 s drill:
+  45-90 s). Same facts as
   the report. `film --dry` estimates the length.

@@ -1,10 +1,11 @@
-"""Contact sheets of a video for an agent to review: one tile every N seconds, each tile labelled with its mm:ss.
+"""Contact sheets of a video for an agent to review: one tile every N seconds, each labelled with its video time.
 
 usage: sports-video-coach frames <video> --out <folder>/run/frames [--every 2] [--cols 4] [--rows 3] [--width 480]
            [--start mm:ss.s --end mm:ss.s]
 
 Writes `sheet_NNN.jpg` (cols x rows tiles, in time order) and `frames.json`:
   {"video", "duration_s", "every_s", "sheets": [{"file", "start", "end", "tiles": ["mm:ss", ...]}]}
+Labels are mm:ss, or mm:ss.s when tiles are under a second apart (then they fall on whole tenths).
 An agent opens the sheets in order, notes what happens and when, then cuts closer looks with `clips`. Sheets that
 already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width` and the video size).
 A close look at one moment: `--start 0:12 --end 0:14 --every 0.1 --out run/frames-zoom` (tenths in the labels).
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 from . import media
@@ -20,11 +22,15 @@ from .timefmt import mmss, seconds
 
 
 def times(duration: float, every: float, start: float = 0.0) -> list[float]:
-    """Tile times: every `every` seconds from start + every/2 (skips the black first frame), before `duration`."""
-    out, t = [], start + every / 2
-    while t < duration:
-        out.append(round(t, 2))
-        t += every
+    """Tile times every `every` seconds before `duration`: from `start` (a window), else from every/2 (skips the
+    black first frame). Under a second apart they fall on whole tenths, so the labels are exact."""
+    t0 = start if start > 0 else every / 2
+    if every < 1:
+        t0 = math.ceil(round(t0 * 10, 6)) / 10
+    out, k = [], 0
+    while (t := round(t0 + k * every, 2)) < duration:
+        out.append(t)
+        k += 1
     return out
 
 

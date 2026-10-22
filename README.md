@@ -42,6 +42,7 @@ The install downloads about 60 MB (mostly OpenCV and NumPy; no torch). No git, o
 uv tool install git+https://github.com/mariusDing/sports-video-coach   # light: no torch; needs ffmpeg on PATH
 sports-video-coach plugins                                # which plugin fits this video (--json)
 sports-video-coach run my_video.mp4 --sport tennis        # generic plugin; makes workspace/analysis/tennis/<date>/
+                                                          # (--lang en zh for both languages; run --help lists all)
 # exit 3: do the step it prints, then run again on the folder it made
 sports-video-coach run workspace/analysis/tennis/2025-03-15
 ```

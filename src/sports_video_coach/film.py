@@ -259,7 +259,9 @@ def check(scenes: list[Scene], folder: Path, video: Path | None, video_s: float 
                 times.append(seconds(t))
                 if not t0 <= seconds(t) <= t1:
                     out.append(f"scene {i}: freeze {t} is outside the clip {sc.src}")
-                out += [f"scene {i}: freeze {t}: cannot read {b!r} ({hooks.mark_help})" for b in bad]
+                out += [f"scene {i}: freeze {t}: only one \"label\" per freeze line; split it into two lines or drop "
+                        f"{b!r}" if b[:1] in "\"“" else f"scene {i}: freeze {t}: cannot read {b!r} ({hooks.mark_help})"
+                        for b in bad]
                 if tracks is None and any(m[0] != "point" for mk in marks for m in points(mk)):
                     out.append(f"scene {i}: freeze {t} marks players but no CV tracks were found; pass --run")
             if times != sorted(times):

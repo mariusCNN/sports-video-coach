@@ -42,6 +42,7 @@ sports-video-coach demo --lang zh en                      # 约一分钟：网�
 uv tool install git+https://github.com/mariusDing/sports-video-coach   # 轻量安装，不含 torch；PATH 上要有 ffmpeg
 sports-video-coach plugins                                # 看哪个插件适合这个视频（--json）
 sports-video-coach run my_video.mp4 --sport badminton     # generic 插件；建 workspace/analysis/badminton/<日期>/
+                                                          # （--lang zh en 出中英两份；run --help 列出全部选项）
 # 退出码 3：按输出做完那一步，再对它建好的文件夹运行一次
 sports-video-coach run workspace/analysis/badminton/2025-03-15
 ```

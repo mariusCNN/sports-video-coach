@@ -139,6 +139,9 @@ def test_check_flags_bad_freezes_and_court_files(tmp_path):
     assert any("outside the clip" in p for p in probs) and any("cannot read 'wat'" in p for p in probs)
     assert any("no CV tracks" in p for p in probs) and any("only work after a clip" in p for p in probs)
     assert any("unknown player us:2" in p for p in probs)
+    two = FREEZE_SCRIPT.replace("03:13.5 0.3,0.6", '03:13.5 0.3,0.6 "you" 0.5,0.6 "cone"')
+    probs = film.check(film.parse_script(two, FILM), tmp_path, video, 2000, kinds=SCENES, hooks=FILM)
+    assert any("only one \"label\" per freeze line" in p and "'\"cone\"'" in p for p in probs)
 
 
 def test_clip_plan_plays_freezes_and_resumes():

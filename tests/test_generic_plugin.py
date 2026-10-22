@@ -50,13 +50,13 @@ def test_run_help_lists_the_start_and_driver_options(capsys):
 
 def test_frames_label_tenths_under_a_second(tmp_path, video):
     data = frames.build(video, tmp_path / "f", every=0.5, cols=2, rows=2)
-    assert data["sheets"][0]["tiles"] == ["00:00.2", "00:00.8", "00:01.2", "00:01.8"]
+    assert data["sheets"][0]["tiles"] == ["00:00.3", "00:00.8", "00:01.3", "00:01.8"]  # whole tenths, even gaps
 
 
 def test_frames_window_for_a_close_look(tmp_path, video, capsys):
-    frames.main([str(video), "--out", str(tmp_path / "z"), "--start", "0:02", "--end", "3", "--every", "0.25"])
+    frames.main([str(video), "--out", str(tmp_path / "z"), "--start", "0:02", "--end", "3", "--every", "0.2"])
     data = json.loads((tmp_path / "z" / "frames.json").read_text(encoding="utf8"))
-    assert data["sheets"][0]["tiles"] == ["00:02.1", "00:02.4", "00:02.6", "00:02.9"]
+    assert data["sheets"][0]["tiles"] == ["00:02.0", "00:02.2", "00:02.4", "00:02.6", "00:02.8"]  # from --start
     assert (data["start_s"], data["end_s"]) == (2.0, 3.0)
     whole = frames.build(video, tmp_path / "f", every=2)
     assert "start_s" not in whole  # whole-video sheets keep the settings keys they always had
@@ -82,7 +82,7 @@ def test_frames_sheets_and_index(tmp_path, video, capsys):
     assert (tmp_path / "f" / "sheet_001.jpg").stat().st_size > 1000
     frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     assert "up to date" in capsys.readouterr().out
-    assert frames.times(5, 2) == [1.0, 3.0]
+    assert frames.times(5, 2) == [1.0, 3.0] and frames.times(1, 0.1)[-1] == 0.9
 
 
 def test_status_and_waiting_on_review(analysis, video):

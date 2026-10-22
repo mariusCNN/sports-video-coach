@@ -298,7 +298,7 @@ def qa_done(g: Unit) -> bool:
 
 
 QA_STAMP = (" No browser? `sports-video-coach page-check {pages}` checks links and media (not layout or playback);"
-            " say in qa.md which checks you ran."
+            " say in qa.md which checks you ran and that the 390 px layout was not looked at."
             " Then add the line `checked: {qa}` to qa.md (the stamp of the files you checked; an edit after QA "
             "changes it and the run asks for QA again).")
 
