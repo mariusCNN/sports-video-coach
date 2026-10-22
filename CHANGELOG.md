@@ -33,6 +33,11 @@ All notable changes to this project are documented here. The format follows [Kee
   `README.md (Chinese)`.
 - Contact sheets are denser for videos up to 3 minutes (a tile every 1 s, was 2 s from 30 s on), so a 1-2 s
   moment in a drill gets more than one tile.
+- `page-check` warns (without failing) about English phrases left inside the Chinese report; names in Title Case and
+  glosses in brackets are not flagged.
+- Stage output reaches an agent line by line (unbuffered), and narration prints a line per language before TTS
+  starts, so a long step no longer looks stuck.
+- The film guide shows a freeze line with two marks before the label.
 
 ## 0.2.3 - 2026-10-23
 

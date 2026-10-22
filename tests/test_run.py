@@ -362,6 +362,7 @@ def test_child_stages_run_with_utf8_io(game):
         return subprocess.CompletedProcess(cmd, 1)
     R.drive(R.Game.load(game), runner=runner)
     assert seen and seen[0].get("PYTHONUTF8") == "1" and seen[0].get("PYTHONIOENCODING") == "utf-8"
+    assert seen[0].get("PYTHONUNBUFFERED") == "1"
     assert "PATH" in seen[0] or "Path" in seen[0]  # the rest of the environment is kept
 
 

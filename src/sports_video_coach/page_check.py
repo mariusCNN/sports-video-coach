@@ -3,6 +3,7 @@
 Reads `<folder>/index.html` and checks: every local src / href / poster exists, every `#anchor` has its id, every
 clip and listen.<lang>.mp3 in the folder is linked and readable (ffprobe duration > 0), no local disk path leaked
 into the page, and a mobile viewport is declared. Prints the problems and exits 1, else prints OK and exits 0.
+It also warns (without failing) about English phrases left inside a Chinese report.
 
 It does not see layout, playback or the 390 px phone view: a browser check still covers those. Say in qa.md which
 checks you ran.
@@ -10,6 +11,7 @@ checks you ran.
 from __future__ import annotations
 
 import argparse
+import html as html_lib
 import re
 import sys
 from pathlib import Path
@@ -20,6 +22,10 @@ from . import media
 REF = re.compile(r"""\b(?:src|href|poster)\s*=\s*["']([^"']+)["']""", re.I)
 ID = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
 LOCAL_PATH = re.compile(r"""(?:file:///|\b[A-Za-z]:[\\/](?:Users|home)\b|/home/\w|/Users/\w)""")
+ZH_REPORT = re.compile(r"""<article\b[^>]*\blang=["']zh[^"']*["'][^>]*>(.*?)</article>""", re.I | re.S)
+TAG = re.compile(r"<[^>]+>")
+# three or more Latin words in a row: a sentence or phrase, not a name, unit or acronym (ACL, mp4, Brunson)
+LATIN_RUN = re.compile(r"[A-Za-z][A-Za-z'\u2019-]*(?:[ ,]+[A-Za-z][A-Za-z'\u2019-]*){2,}")
 
 
 def playable_s(p: Path) -> float:
@@ -63,6 +69,27 @@ def problems(folder: Path) -> list[str]:
     return errs
 
 
+def warnings(folder: Path) -> list[str]:
+    """Things a reader may trip on that are not broken: English phrases inside the zh report (up to 5 shown)."""
+    page = folder / "index.html"
+    if not page.exists():
+        return []
+    runs = []
+    for body in ZH_REPORT.findall(page.read_text(encoding="utf8")):
+        text = html_lib.unescape(TAG.sub("\n", body))  # a phrase never runs across tags
+        for m in LATIN_RUN.finditer(text):
+            run = m.group(0).strip(" ,")
+            gloss = text[:m.start()].rstrip(" \"'“").endswith(("(", "（"))  # 协防轮转（help the helper）
+            name = all(w[0].isupper() for w in re.findall(r"[A-Za-z]+", run))  # Riverside Owls
+            if not (gloss or name):
+                runs.append(run)
+    if not runs:
+        return []
+    shown = "; ".join(repr(r[:60]) for r in list(dict.fromkeys(runs))[:5])
+    return [f"{len(runs)} English phrase(s) in the Chinese report, e.g. {shown}: translate them unless they are "
+            "names or terms the reader knows"]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="sports-video-coach page-check", description=__doc__.split("\n\n")[0])
     ap.add_argument("folders", nargs="+", type=Path, help="report folders (each with an index.html)")
@@ -72,6 +99,8 @@ def main(argv=None) -> int:
         errs = problems(folder)
         for e in errs:
             print(f"[page-check] {folder.as_posix()}: {e}")
+        for w in warnings(folder):
+            print(f"[page-check] {folder.as_posix()}: warning: {w}")
         if not errs:
             print(f"[page-check] {folder.as_posix()}: OK (links, anchors, media; layout and playback not checked)")
         bad += bool(errs)

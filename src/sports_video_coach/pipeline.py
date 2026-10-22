@@ -409,8 +409,9 @@ def slash(text) -> str:
 
 def child_env() -> dict:
     """The environment for stage subprocesses: UTF-8 stdio, so Chinese text in a log file or on a cp1252 / GBK
-    Windows console never raises UnicodeEncodeError."""
-    return {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    Windows console never raises UnicodeEncodeError; unbuffered, so an agent reading the run through a pipe sees
+    each progress line when it is printed, not all of them when the stage ends."""
+    return {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
 
 
 def run_cmd(step: Step, g: Unit, runner=subprocess.run, argvs: list[list[str]] | None = None) -> bool:

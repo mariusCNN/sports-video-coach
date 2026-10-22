@@ -39,3 +39,13 @@ def test_each_problem_is_named(tmp_path, monkeypatch):
 
 def test_no_page_says_how_to_make_one(tmp_path):
     assert "sports-video-coach html" in PC.problems(tmp_path)[0]
+
+
+def test_english_left_in_the_chinese_report_is_a_warning_not_a_failure(tmp_path, capsys):
+    page(tmp_path, '<article class="report" data-lang="en" lang="en"><p>keep your hips low</p></article>'
+                   '<article class="report" data-lang="zh" lang="zh-CN"><p>落地后 keep your hips low，再起跳。</p>'
+                   '<p>协防轮转（help the helper）。对手 <b>Riverside Owls</b> 用 ACL 和 mp4。</p></article>')
+    warns = PC.warnings(tmp_path)
+    assert len(warns) == 1 and "1 English phrase" in warns[0] and "'keep your hips low'" in warns[0]
+    assert PC.main([str(tmp_path)]) == 0
+    assert "warning: 1 English phrase" in capsys.readouterr().out

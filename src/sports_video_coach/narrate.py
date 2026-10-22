@@ -105,6 +105,8 @@ def render(src: Path, out: Path, lang: str, gap: float, bell: bool, loud: bool, 
            voice_table: dict | None = None, tight: bool = False):
     paras = paragraphs(src.read_text(encoding="utf8"))
     voice, default_rate = (voice_table or VOICES)[lang]
+    print(f"[narrate] {lang}: {len(paras)} paragraphs, {sum(map(len, paras))} characters with {voice} "
+          "(edge-tts, online)...", flush=True)
     with media.scratch(out) as t:
         tmp = Path(t)
         parts = asyncio.run(speak(paras, voice, rate or default_rate, tmp))
