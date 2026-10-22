@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.2.5 - 2026-10-23
+
 ### Changed
 
 - Chinese subtitles, banners and card titles in the explained video break into lines that fit the frame (they ran
