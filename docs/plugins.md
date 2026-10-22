@@ -42,6 +42,7 @@ A plugin is a `sports_video_coach.plugin.Plugin` object named `PLUGIN`:
 | `kinds` | the unit folders it drives (`Kind`, below) |
 | `prompts` | folder of writing guides; agent steps refer to it as `{prompts}` |
 | `claims` | `claims(target) -> bool`: take a target such as a league url (`run <url>` then calls your `run` stage) |
+| `requires`, `install` | import names your stages need beyond the core, and how to get them; `plugins` marks the plugin as not usable while one is missing |
 | `artifacts` | extra deliverable names (`{"scorecard": "help"}`) your steps can be tagged with |
 | `page`, `scenes`, `film`, `site`, `clip_windows` | optional hooks into the page, the film and the publish site |
 

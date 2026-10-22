@@ -68,13 +68,16 @@ def list_plugins(argv=None) -> None:
     if as_json:
         print(json.dumps({"plugins": [dict(name=p.name, summary=p.summary, use_when=p.use_when,
                                            kinds=[dict(name=k.name, json=k.json) for k in p.kinds],
-                                           stages=list(p.stages), prompts=str(p.prompts) if p.prompts else None)
+                                           stages=list(p.stages), prompts=str(p.prompts) if p.prompts else None,
+                                           missing=plugin.missing(p), install=p.install)
                                       for p in found.values()], "errors": errs}, indent=1))
         return
     for p in found.values():
         print(f"{p.name}: {p.summary}")
         if p.use_when:
             print(f"  use when: {p.use_when}")
+        if gone := plugin.missing(p):
+            print(f"  not usable in this install: needs {', '.join(gone)}" + (f" ({p.install})" if p.install else ""))
         print(f"  units: {', '.join(f'{k.name} ({k.json})' for k in p.kinds) or '-'}")
         print(f"  stages: {', '.join(p.stages) or '-'}")
     for where, e in errs.items():
@@ -99,7 +102,13 @@ def main(argv=None, prog: str = "sports-video-coach", default: str | None = None
             raise
         sys.exit(f"stage {argv[0]!r} is not available in this checkout ({name} is missing)")
     sys.argv[0] = f"{prog} {label}"  # argparse prog for stages that do not set one
-    return mod.main(argv[1:])
+    try:
+        return mod.main(argv[1:])
+    except ModuleNotFoundError as e:  # a plugin's heavy dependency in a light install: say what to do, no traceback
+        if not e.name or e.name.split(".")[0] == __package__:
+            raise
+        sys.exit(f"{prog} {label}: the Python package {e.name!r} is not installed. `sports-video-coach plugins` "
+                 f"shows which plugins this install can run and how to add the rest.")
 
 
 if __name__ == "__main__":

@@ -84,6 +84,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- `run --status` showed `clips` as done before any report existed (nothing to cut yet counted as all cut), which misled a new session picking up a unit.
+- In the light install, a basketball stage (or `html` on a basketball folder) crashed with a `ModuleNotFoundError` traceback; it now says which package is missing, and `sports-video-coach plugins` marks a plugin whose packages are not installed and how to get them (`missing` / `install` in `--json`).
 - Glory League box scores with two players wearing the same number kept only the last one in `official.json`, so the per-player lines did not add up to the team total; they are now summed into one line and listed in `shared_jerseys`.
 - A re-fetch with `run <url>` and no `--video` overwrote `run/official.json` with a zero offset, shifting every time on games filmed with our own camera.
 - `extract` sampled 25 fps video at 12.5 fps while later stages assumed 10 fps (minutes and speeds 25 % high); the sampled rate is now recorded and read downstream.

@@ -272,6 +272,9 @@ def test_game_new_periods_rerun_analyze(game):
 def test_game_clips_recut_with_force_when_the_video_changes(game):
     from hoop_tape_miner import run as R
     steps = game_steps("clips")
+    for d in (game, game / "player-7"):  # the reports exist (clips are not done before them); no clip marks
+        d.mkdir(exist_ok=True)
+        (d / "README.md").write_text("# r\n", encoding="utf8")
     R.drive(R.Game.load(game), runner=StageRunner(), steps=steps)
     (game.parents[2] / "game.mp4").write_bytes(b"v2")
     r = StageRunner()

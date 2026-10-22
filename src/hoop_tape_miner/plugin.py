@@ -97,4 +97,7 @@ PLUGIN = Plugin(
     scenes=film_hooks.SCENES,
     film=film_hooks.FILM,
     site=site_hooks.SITE,
+    requires=("pandas", "scipy", "sklearn", "matplotlib", "torch", "ultralytics", "supervision", "transformers"),
+    install="the basketball stack: git clone https://github.com/mariusDing/sports-video-coach, `uv sync` in it, "
+            "then prefix commands with `uv run`",
 )

@@ -60,6 +60,13 @@ class Plugin:
     artifacts: dict[str, str] = field(default_factory=dict)           # extra artifact name -> help (steps tag it)
     claims: Callable[[str], bool] | None = None  # does this plugin take this target (e.g. a league url)
     version: str = ""
+    requires: tuple[str, ...] = ()              # import names its stages need beyond the core (pandas, torch, ...)
+    install: str = ""                           # how to get them, shown when one is missing
+
+
+def missing(p: Plugin) -> list[str]:
+    """The packages in `p.requires` this Python cannot import (checked without importing them)."""
+    return [m for m in p.requires if importlib.util.find_spec(m) is None]
 
 
 def _attr(ref: str):

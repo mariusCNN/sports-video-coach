@@ -308,7 +308,9 @@ def reports_done(g: Unit) -> bool:
 
 
 def clips_done(g: Unit) -> bool:
-    return all(clips.clip_path(d, a, b).exists() for d in g.reports() for a, b in clips.find_clips(d))
+    """Every clip the reports mark is cut; not done while a report folder has no README yet."""
+    return all(any((d / n).exists() for n in clips.READMES) for d in g.reports()) and \
+        all(clips.clip_path(d, a, b).exists() for d in g.reports() for a, b in clips.find_clips(d))
 
 
 def film_done(g: Unit) -> bool:

@@ -50,6 +50,15 @@ def test_status_and_waiting_on_review(analysis, video):
     assert calls == []
 
 
+def test_clips_not_done_before_a_report_exists(analysis):
+    # nothing to cut yet must not read as "done" in --status: a fresh session would trust it
+    assert not P.clips_done(analysis)
+    (analysis.folder / "README.en.md").write_text("# r\n\nno clips marked\n", encoding="utf8")
+    assert P.clips_done(analysis)
+    ok = {n: ok for n, _, ok, _ in P.rows(analysis, U.STEPS)}
+    assert ok["clips"] is True
+
+
 def test_review_validator(analysis, video):
     assert U.review_errors(analysis) == [f"{analysis.review / 'review.json'} missing"]
     analysis.review.mkdir(parents=True)

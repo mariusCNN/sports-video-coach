@@ -97,3 +97,30 @@ def test_old_cli_keeps_every_stage_and_lists_plugins(capsys):
 def test_units_say_which_plugin_runs_their_stages(tmp_path):
     from hoop_tape_miner import run, train_run
     assert run.Game(tmp_path, {}).PLUGIN == "basketball" and train_run.Session(tmp_path, {}).PLUGIN == "basketball"
+
+
+def test_missing_packages_are_listed_with_the_install_hint(monkeypatch, capsys):
+    p = plugin.Plugin(name="heavy", summary="s", requires=("json", "no_such_pkg_xyz"), install="clone and uv sync")
+    assert plugin.missing(p) == ["no_such_pkg_xyz"] and plugin.missing(plugin.get("generic")) == []
+    monkeypatch.setattr(plugin, "plugins", lambda refresh=False: {"heavy": p})
+    cli.list_plugins([])
+    assert "not usable in this install: needs no_such_pkg_xyz (clone and uv sync)" in capsys.readouterr().out
+    cli.list_plugins(["--json"])
+    row = json.loads(capsys.readouterr().out)["plugins"][0]
+    assert row["missing"] == ["no_such_pkg_xyz"] and row["install"] == "clone and uv sync"
+
+
+def test_a_stage_that_needs_a_missing_package_exits_with_a_hint(monkeypatch):
+    def stage(argv):
+        raise ModuleNotFoundError("No module named 'pandas'", name="pandas")
+    monkeypatch.setattr(cli, "resolve", lambda stage, default: ("fake_stage_mod", "html"))
+    monkeypatch.setitem(sys.modules, "fake_stage_mod", type(sys)("fake_stage_mod"))
+    sys.modules["fake_stage_mod"].main = stage
+    with pytest.raises(SystemExit) as e:
+        cli.main(["html", "x"])
+    assert "'pandas' is not installed" in str(e.value) and "sports-video-coach plugins" in str(e.value)
+
+
+def test_basketball_declares_its_heavy_packages():
+    p = plugin.get("basketball")
+    assert {"pandas", "torch"} <= set(p.requires) and "uv sync" in p.install
