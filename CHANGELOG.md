@@ -32,6 +32,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - `film --dry` length note gives the estimate, the target range and the source length.
 - Freeze frames dim the rest of the picture more lightly, so a ball next to the ringed player stays readable; the
   film guide says to ring the ball too when the label is about it.
+- Contact-sheet tiles are labelled with the time of the frame they show; whole-second sheets sample whole seconds
+  (1 s sheets showed 0.5 s but read 00:00, so clip times came out 0.5 s early). Sheets with tiles off the whole
+  second are labelled in tenths, so main and zoom sheets read the same moment the same way; older sheets are
+  rebuilt on the next `frames` run.
 
 ## 0.2.5 - 2026-10-23
 
