@@ -88,7 +88,7 @@ def main(argv=None) -> int:
     if not (shutil.which(media.ffmpeg_exe()) and shutil.which("ffprobe")):
         sys.exit("[demo] needs ffmpeg and ffprobe on PATH (https://ffmpeg.org/download.html)")
     t0 = time.monotonic()
-    folder = Path(a.out) if a.out else workspace.root() / "analysis" / "demo" / time.strftime("%Y-%m-%d")
+    folder = (Path(a.out) if a.out else workspace.root() / "analysis" / "demo" / time.strftime("%Y-%m-%d")).resolve()
     folder.mkdir(parents=True, exist_ok=True)
     video = folder / "drill.mp4"
     if not video.exists():
