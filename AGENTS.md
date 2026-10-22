@@ -17,8 +17,8 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    folder from the videos and drives it. Later runs take that folder: `sports-video-coach run <folder>`. `--status`
    lists every step; `run --help` lists every option.
 3. Exit codes:
-   - `3` an agent step is waiting: the output names the step and says exactly what to write and with which guide.
-     Do it, then run again.
+   - `3` an agent step is waiting: the output names the step and says exactly what to write and with which guide
+     (`sports-video-coach guide <name>` prints a guide). Do it, then run again.
    - `1` a command failed: read the stage log it names (or the error printed just above, for short steps), fix
      the cause, run again.
    - `0` done: report the deliverable paths to your user.

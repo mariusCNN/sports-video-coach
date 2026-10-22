@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 
 - The demo's output is online (GitHub Pages, rebuilt by CI from `sports-video-coach demo`): the coaching page with clips and narration, and the explained videos. The README links it, so you can see the deliverables before installing.
+- `sports-video-coach guide [<name>]` prints a writing guide (review, report, narration, film) or lists them, for agents that cannot read the install folder the step names.
 
 ### Changed
 

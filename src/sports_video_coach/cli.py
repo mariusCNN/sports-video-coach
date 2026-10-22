@@ -16,6 +16,7 @@ CORE = {
     "plugins": ("sports_video_coach.cli", "list the installed plugins (what each analyses, when to use it, its stages)"),
     "run": ("sports_video_coach.run", "drive one unit end to end: a unit folder, a target a plugin claims, or new videos"),
     "demo": ("sports_video_coach.demo", "every deliverable in about a minute: a drawn video, a pre-written review, no agent"),
+    "guide": ("sports_video_coach.guide", "print a plugin's writing guide (review, report, narration, film) or list them"),
     "frames": ("sports_video_coach.frames", "contact sheets of a video (one tile every N seconds) for an agent to review"),
     "new-plugin": ("sports_video_coach.scaffold", "write a new plugin folder from the generic template"),
     "clips": ("sports_video_coach.clips", "cut the video clips a report marks with ![caption](clip:mm:ss-mm:ss)"),
