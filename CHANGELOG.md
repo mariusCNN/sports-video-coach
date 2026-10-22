@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.2.6 - 2026-10-23
+
 ### Changed
 
 - `sports-video-coach --version` (and `-V`) prints the version instead of "unknown stage".
