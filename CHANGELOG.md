@@ -23,6 +23,14 @@ All notable changes to this project are documented here. The format follows [Kee
 - Upright clips keep their shape on the page (no forced 16:9 box with black bars).
 - `film --dry` stops a paragraph with nothing to say (only symbols, such as a lone `&gt;`) before it reaches TTS;
   a TTS failure names the paragraph and what to do instead of printing a traceback.
+- An upright phone video makes an upright explained video (720x1280, same text size), so the athlete fills the
+  phone screen instead of a narrow strip in a landscape frame; `film --dry` says so.
+- Review with helpers: the run message suggests contiguous sheet ranges (about 10 sheets each, at most 3 helpers),
+  and `generic:review-check` merges their `run/review/part*.json` into `review.json` in time order.
+- The review guide warns that a jump across the frame between tiles may be a cut in the footage, says to zoom 2-3
+  reps of a repeated drill at 0.2-0.3 s, and asks for one moment per distinct habit in a drill, not one per rep.
+- `--sport-zh 折返跑` names the sport on the zh page at the start (no JSON edit); the run message says
+  `README.md (Chinese)`.
 - Contact sheets are denser for videos up to 3 minutes (a tile every 1 s, was 2 s from 30 s on), so a 1-2 s
   moment in a drill gets more than one tile.
 

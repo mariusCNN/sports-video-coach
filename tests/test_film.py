@@ -358,3 +358,15 @@ def test_a_tts_failure_names_the_paragraph(tmp_path, monkeypatch):
     with pytest.raises(SystemExit, match="edge-tts gave no speech for 'Toss higher.'"):
         film.spoken("Toss higher.", "en-US-AriaNeural", "+0%", tmp_path / "tts")
     assert not list((tmp_path / "tts").glob("*.mp3"))  # nothing half-written is cached
+
+
+def test_an_upright_video_makes_an_upright_film_with_the_same_text_size():
+    assert film.film_size(720, (1280, 720)) == (1280, 720) and film.film_size(720, (720, 1280)) == (720, 1280)
+    sc = film.parse_script("## Card\nOne line.\n")[0]
+    (ev,) = film.scene_events(sc, 5, 0, 0, [], "en", "", 720, frame=(720, 1280))
+    assert ev[3].startswith(r"{\an2\pos(360,680)}")  # mid-frame, as in a landscape film
+    (wide,) = film.scene_events(sc, 5, 0, 0, [], "en", "", 720)
+    assert wide[3].startswith(r"{\an2\pos(640,400)}")
+    styles = lambda doc: [ln for ln in doc.splitlines() if ln.startswith("Style:")]
+    tall, land = styles(film.ass_doc(720, 1280, "F", "#6250d6", [])), styles(film.ass_doc(1280, 720, "F", "#6250d6", []))
+    assert [s for s in tall if s.startswith("Style: Sub")] == [s for s in land if s.startswith("Style: Sub")]

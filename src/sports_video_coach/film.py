@@ -419,18 +419,20 @@ def ass_escape(t: str) -> str:
 
 
 def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, float, str, str]]) -> str:
-    """events: (start, end, style, text); text is already escaped and may carry ASS override tags."""
-    m = round(h * 0.04)
+    """events: (start, end, style, text); text is already escaped and may carry ASS override tags. Sizes follow the
+    short side, so a portrait film has the same text size as a landscape one."""
+    u = min(w, h)
+    m = round(u * 0.04)
     side = round(w * 0.08)  # banner keeps clear of broadcast logos in the top corners
     white, box = "&H00FFFFFF", "&H40000000"
     styles = {  # size, primary, outline/box, border style, outline, alignment, margin l/r, margin v, bold
-        "Sub": (round(h * 0.057), white, box, 3, round(h * 0.012), 2, m, round(h * 0.05), 0),
-        "Banner": (round(h * 0.036), white, ass_colour(accent, 0x30), 3, round(h * 0.012), 8, side, m, 1),
-        "Title": (round(h * 0.075), white, "&H00000000", 1, 0, 5, m, 0, 1),
-        "Tag": (round(h * 0.04), "&H0000D7FF", box, 3, round(h * 0.01), 9, m, m, 1),
+        "Sub": (round(u * 0.057), white, box, 3, round(u * 0.012), 2, m, round(u * 0.05), 0),
+        "Banner": (round(u * 0.036), white, ass_colour(accent, 0x30), 3, round(u * 0.012), 8, side, m, 1),
+        "Title": (round(u * 0.075), white, "&H00000000", 1, 0, 5, m, 0, 1),
+        "Tag": (round(u * 0.04), "&H0000D7FF", box, 3, round(u * 0.01), 9, m, m, 1),
         "Draw": (20, white, "&H00000000", 1, 0, 7, 0, 0, 0),  # telestration shapes (ASS drawings)
-        "Mark": (round(h * 0.045), "&H00101010", ass_colour(fd.MARK_HEX), 3, round(h * 0.01), 2, m, 0, 1),
-        "Big": (round(h * 0.2), ass_colour(fd.MARK_HEX), "&H00000000", 1, round(h * 0.004), 5, m, 0, 1),
+        "Mark": (round(u * 0.045), "&H00101010", ass_colour(fd.MARK_HEX), 3, round(u * 0.01), 2, m, 0, 1),
+        "Big": (round(u * 0.2), ass_colour(fd.MARK_HEX), "&H00000000", 1, round(u * 0.004), 5, m, 0, 1),
     }
     layer = {"Draw": 0, "Mark": 1}
     lines = ["[Script Info]", "ScriptType: v4.00+", f"PlayResX: {w}", f"PlayResY: {h}", "WrapStyle: 0",
@@ -448,14 +450,16 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
 
 
 def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lang: str, title: str, h: int,
-                 extra=()):
-    """Subtitle events for one scene; cue times count from the start of the voice (LEAD). extra: more events."""
+                 extra=(), frame: tuple[int, int] | None = None):
+    """Subtitle events for one scene; cue times count from the start of the voice (LEAD). extra: more events.
+    h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h."""
+    fw, fh = frame or (round(h * 16 / 9), h)
     ev = []
     if sc.kind == "title":
         ev.append((0, length, "Title", title))
     elif sc.kind == "card":  # " · " separates lines; the text grows upwards from just above the accent bar
         lines = "\\N".join(ass_escape(x.strip()) for x in sc.text.split(" · "))
-        ev.append((0, length, "Title", f"{{\\an2\\pos({round(h * 8 / 9)},{round(h * 0.555)})}}" + lines))
+        ev.append((0, length, "Title", f"{{\\an2\\pos({round(fw / 2)},{round(fh / 2 + h * 0.055)})}}" + lines))
     elif sc.kind == "stat":
         ev.append((0, length, "Big", f"{ass_escape(sc.src)}\\N{{\\fs{round(h * 0.055)}\\c&HFFFFFF&\\bord0}}"
                    f"{ass_escape(sc.text)}"))
@@ -618,8 +622,9 @@ def scene_cmd(sc: Scene, length: float, slow: float, w: int, h: int, folder: Pat
             args = ["-f", "lavfi", "-i", f"color=c=0x{BG[1:]}:s={w}x{h}:r={FPS}:d={length:.3f}"]
             v = "[0:v]null"
         if sc.kind != "stat":
-            v += (f",drawbox=x={w // 2 - w // 16}:y={int(h * (0.64 if sc.kind == 'title' else 0.58))}:w={w // 8}:"
-                  f"h={max(4, h // 120)}:color=0x{accent[1:]}:t=fill")
+            u = min(w, h)  # under the text, which sits mid-frame at the short side's size
+            v += (f",drawbox=x={w // 2 - w // 16}:y={int(h / 2 + u * (0.14 if sc.kind == 'title' else 0.08))}:"
+                  f"w={w // 8}:h={max(4, u // 120)}:color=0x{accent[1:]}:t=fill")
         graph.append(v + "[c]")
     graph.append(f"[c]format=yuv420p,ass={ass_name}[v]")
 
@@ -645,6 +650,13 @@ def backdrop(scenes: list[Scene], i: int) -> float | None:
     """Footage behind a card (scene index i, 0-based): the start of the next clip, else of the one before."""
     clips = [sc for sc in scenes[i + 1:] + scenes[:i][::-1] if sc.kind == "clip" and CLIP_RE.match(sc.src)]
     return clips[0].window()[0] if clips else None
+
+
+def film_size(height: int, src: tuple[int, int]) -> tuple[int, int]:
+    """(width, height) of the film: 16:9 with `height` as the short side, upright when the video is (a phone held
+    upright), so the athlete fills the frame on the phone it is watched on."""
+    long = int(round(height * 16 / 9 / 2)) * 2
+    return (height, long) if src[1] > src[0] else (long, height)
 
 
 def fit_box(src: tuple[int, int], w: int, h: int) -> tuple[float, float, float, float]:
@@ -700,7 +712,10 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
     objs = {i: kinds[sc.kind].parse(folder / sc.src) for i, sc in enumerate(scenes, 1) if sc.kind in kinds}
     steps = {i: kinds[scenes[i - 1].kind].steps(o) for i, o in objs.items()}
     anim = {i: kinds[scenes[i - 1].kind].anim for i in objs}
+    w, h = film_size(height, src)
     if dry:
+        if h > w:
+            print(f"film {w}x{h}: upright, like the video")
         total, rate = 0.0, SPEECH_RATE.get(lang, 15.0)
         for i, sc in enumerate(scenes, 1):
             groups = [sc.paras] + [fz.paras for fz in sc.freezes]
@@ -726,11 +741,10 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
                 else "cut scenes unless that is on purpose"))
         return None
 
-    w, h = int(round(height * 16 / 9 / 2)) * 2, height
     accent, second = hooks.colours(game) if hooks.colours else (DEFAULT_ACCENT, DEFAULT_SECOND)
     ctx = FilmCtx(folder, game, lang, w, h, FPS, accent, second)
     voice, rate = voices(game)[lang]
-    title = title_text(folder, game, h, hooks, lang)
+    title = title_text(folder, game, height, hooks, lang)
     cache = folder / ".film-cache"
     game_audio = has_audio(video) if needs_video else False
     fit = fit_box(src, w, h)
@@ -739,6 +753,8 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
         chosen = [(i, sc) for i, sc in chosen if pick[0] <= i <= pick[1]]
     out = folder / (f"film.{lang}.preview.mp4" if pick else f"film.{lang}.mp4")
     max_chars = MAX_CHARS.get(lang, 84)
+    if h > w:  # a narrow frame: shorter lines, up to three of them
+        max_chars = round(max_chars * w / h * 1.5)
     with media.scratch(out) as t:
         tmp = Path(t)
         rendered = []
@@ -760,7 +776,7 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
                 extra.append((fs, fe, "Tag", FREEZE_TAG.get(lang, FREEZE_TAG["en"])))
             ass_name = f"s{i:03d}.ass"
             (tmp / ass_name).write_text(ass_doc(w, h, font, accent, scene_events(sc, length, slow, sc.clip_s(), cues,
-                                                                                 lang, title, h, extra)),
+                                                                                 lang, title, height, extra, (w, h))),
                                         encoding="utf8")
             frames = None
             if i in objs:

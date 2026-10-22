@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from sports_video_coach import pipeline as P
+from sports_video_coach import media, pipeline as P
 from sports_video_coach.timefmt import seconds
 
 from . import NAME
@@ -57,11 +57,54 @@ class Analysis(P.Session):
         return cls(folder, data, langs)
 
 
+def split_hint(g: Analysis) -> str:
+    """'' or ' (26 sheets; with helpers: 1-9, 10-18, 19-26)': contiguous sheet ranges, about 10 per helper, at most 3."""
+    frames = g.run / "frames" / "frames.json"
+    n = len(json.loads(frames.read_text(encoding="utf8"))["sheets"]) if frames.exists() else 0
+    k = min(3, -(-n // 10))
+    if k < 2:
+        return ""
+    size = -(-n // k)
+    ranges = [f"{a + 1}-{min(n, a + size)}" for a in range(0, n, size)]
+    return f" ({n} sheets; with helpers, one range each: {', '.join(ranges)})"
+
+
+def merge_parts(g: Analysis) -> Path | None:
+    """run/review/part*.json (one per helper) joined into review.json, moments in time order; None when there is a
+    review.json already or no parts."""
+    p = g.review / "review.json"
+    parts = sorted(g.review.glob("part*.json")) if g.review.is_dir() else []
+    if p.exists() or not parts:
+        return None
+    moments, summaries = [], []
+    for part in parts:
+        data = json.loads(part.read_text(encoding="utf8"))
+        moments += data.get("moments") or []
+        if str(data.get("summary") or "").strip():
+            summaries.append(str(data["summary"]).strip())
+
+    def at(m):
+        try:
+            return seconds(m["start"])
+        except (KeyError, TypeError, ValueError):
+            return 0.0
+    moments.sort(key=at)
+    media.write_text_atomic(p, json.dumps({"summary": " ".join(summaries), "moments": moments},
+                                          ensure_ascii=False, indent=1) + "\n")
+    print(f"merged {len(parts)} part(s) into {P.slash(p)}: {len(moments)} moments. The summary joins the parts' "
+          "summaries: rewrite it as one or two sentences for the whole video.")
+    return p
+
+
 def review_errors(g: Analysis) -> list[str]:
     """What run/review/review.json still lacks (see prompts/review.md)."""
     p = g.review / "review.json"
     if not p.exists():
-        return [f"{p} missing"]
+        parts = sorted(g.review.glob("part*.json")) if g.review.is_dir() else []
+        if parts:
+            return [f"{p} missing; {len(parts)} part file(s) there: `sports-video-coach generic:review-check "
+                    f"{P.slash(g.folder)}` merges them into it"]
+        return [f"{p} missing" + split_hint(g)]
     try:
         data = json.loads(p.read_text(encoding="utf8"))
     except json.JSONDecodeError as e:
@@ -103,7 +146,8 @@ STEPS = [
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
                "{review}/review.json as the review guide says (`sports-video-coach guide review` prints it; sport: "
                "{sport}; focus: {focus}). Delegate the sheets to subagents if you have them, at most 3 at once, one "
-               "part each. An "
+               "contiguous range each, writing {review}/part<N>.json; `sports-video-coach generic:review-check "
+               "{folder}` merges them. An "
                "unclear moment: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 --end 0:15 "
                "--every 0.2` cuts a dense sheet of just that."),
     P.Step("report", "agent", reports_written,
@@ -123,11 +167,14 @@ NAMES = [s.name for s in STEPS]
 
 
 def main(argv=None):
-    """Stage `review-check <folder>`: print what review.json still lacks; exit 1 when anything does."""
+    """Stage `review-check <folder>`: merge helpers' run/review/part*.json into review.json when there is none, then
+    print what review.json still lacks; exit 1 when anything does."""
     argv = sys.argv[1:] if argv is None else argv
     if not argv:
         sys.exit("usage: review-check <analysis folder>")
-    errs = review_errors(Analysis.load(Path(argv[0])))
+    g = Analysis.load(Path(argv[0]))
+    merge_parts(g)
+    errs = review_errors(g)
     for e in errs:
         print(e)
     print("review.json: OK" if not errs else f"{len(errs)} problem(s)")

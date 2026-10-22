@@ -197,3 +197,31 @@ def test_finished_lists_every_deliverable_it_finds(analysis, capsys):
     analysis.finished()
     out = capsys.readouterr().out
     assert "index.html" in out and "film.en.mp4" in out and "listen.en.mp3" in out and "clips (also on the page): 1" in out
+
+
+def test_review_parts_from_helpers_merge_into_review_json(analysis, video, capsys):
+    frames.build(video, analysis.run / "frames", every=0.5, cols=1, rows=1)  # 12 sheets
+    assert U.review_errors(analysis)[0].endswith("(12 sheets; with helpers, one range each: 1-6, 7-12)")
+    analysis.review.mkdir(parents=True)
+    m = {"start": "00:01", "end": "00:03", "what": "toss behind the head", "why": "late contact"}
+    (analysis.review / "part1.json").write_text(json.dumps({"summary": "A.", "moments": [{**m, "start": "00:02"}, m]}),
+                                                encoding="utf8")
+    (analysis.review / "part2.json").write_text(json.dumps({"summary": "B.", "moments": [{**m, "start": "00:00"}]}),
+                                                encoding="utf8")
+    assert "merges them into it" in U.review_errors(analysis)[0]
+    with pytest.raises(SystemExit) as e:
+        U.main([str(analysis.folder)])
+    assert e.value.code == 0 and "merged 2 part(s)" in capsys.readouterr().out
+    data = json.loads((analysis.review / "review.json").read_text(encoding="utf8"))
+    assert data["summary"] == "A. B." and [x["start"] for x in data["moments"]] == ["00:00", "00:01", "00:02"]
+    assert U.merge_parts(analysis) is None  # an existing review.json is never overwritten
+
+
+def test_sport_zh_names_the_sport_on_the_zh_page(tmp_path, video, capsys):
+    folder = new.main([str(video), "--sport", "shuttle-run", "--sport-zh", "折返跑", "--lang", "zh", "en",
+                       "--out", str(tmp_path / "a")])
+    data = json.loads((folder / "analysis.json").read_text(encoding="utf8"))
+    assert data["sport"] == {"zh": "折返跑", "en": "shuttle-run"}
+    assert "no Chinese name" not in capsys.readouterr().out
+    new.main([str(video), "--sport", "shuttle-run", "--lang", "zh", "--out", str(tmp_path / "b")])
+    assert '--sport "shuttle run" --sport-zh 折返跑' in capsys.readouterr().out

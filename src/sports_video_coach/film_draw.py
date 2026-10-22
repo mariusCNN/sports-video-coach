@@ -118,6 +118,8 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
     feet, arrows, the label. fit = (ox, oy, vw, vh): where the source frame sits in the output frame; tracks
     resolves plugin marks (see mark_box). Returns (start, end, style, text) tuples."""
     ox, oy, vw, vh = fit
+    u = min(w, h)  # sizes follow the short side (uw: the width a landscape frame of it has): same in a portrait film
+    uw = u * 16 / 9
 
     def px(fx, fy):
         return ox + fx * vw, oy + fy * vh
@@ -142,17 +144,17 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
         if m in ring_marks:
             (a, b), (c, d) = px(x1, y1), px(x2, y2)
             bw, bh = c - a, d - b
-            holes.append(ellipse((a + c) / 2, (b + d) / 2, bw * 0.85 + w * 0.012, bh * 0.62 + h * 0.012, reverse=True))
+            holes.append(ellipse((a + c) / 2, (b + d) / 2, bw * 0.85 + uw * 0.012, bh * 0.62 + u * 0.012, reverse=True))
     if holes:  # dim everything but the marked players
         ev.append((start, end, "Draw", head + f"\\1c&H000000&\\1a&H78&}}m 0 0 l {w} 0 l {w} {h} l 0 {h} " + " ".join(holes)))
     feet = {}
     for m, (x1, y1, x2, y2) in found:
         (a, b), (c, d) = px(x1, y1), px(x2, y2)
-        rx = max((c - a) * 0.8, w * 0.018)
+        rx = max((c - a) * 0.8, uw * 0.018)
         feet[m] = ((a + c) / 2, d, rx, b)
         if m in ring_marks:
             ring = ellipse((a + c) / 2, d, rx, rx * 0.32)
-            ev.append((start, end, "Draw", head + f"\\1a&HFF&\\bord{max(2, round(h * 0.006))}\\3c{bgr(MARK_HEX)}}}" + ring))
+            ev.append((start, end, "Draw", head + f"\\1a&HFF&\\bord{max(2, round(u * 0.006))}\\3c{bgr(MARK_HEX)}}}" + ring))
     for mk in marks:
         if mk[0] != "arrow" or mk[1] not in feet or mk[2] not in feet:
             continue
@@ -160,13 +162,13 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
         L = math.hypot(x1 - x0, y1 - y0) or 1.0
         p = (x0 + (x1 - x0) * min(0.45, r0 * 0.7 / L), y0 + (y1 - y0) * min(0.45, r0 * 0.7 / L))
         q = (x1 - (x1 - x0) * min(0.45, r1 * 0.7 / L), y1 - (y1 - y0) * min(0.45, r1 * 0.7 / L))
-        ev.append((start, end, "Draw", head + f"\\1c{bgr(MARK_HEX)}\\bord{max(1, round(h * 0.003))}\\3c&H000000&}}"
-                   + arrow(p, q, h * 0.012, h * 0.04, h * 0.035)))
+        ev.append((start, end, "Draw", head + f"\\1c{bgr(MARK_HEX)}\\bord{max(1, round(u * 0.003))}\\3c&H000000&}}"
+                   + arrow(p, q, u * 0.012, u * 0.04, u * 0.035)))
     if label:
         first = next((feet[m] for m in ring_marks if m in feet), None)
         tops = [feet[m][3] for m in ring_marks if m in feet]
         # over the first ring, above every ringed player's head so the box never covers one
         x, top = (first[0], min(tops)) if first else (w / 2, h * 0.3)
-        y = max(top - h * 0.04, h * 0.16)
+        y = max(top - u * 0.04, h * 0.16)
         ev.append((start, end, "Mark", f"{{\\an2\\pos({_n(x)},{_n(y)})\\fad(200,0)}}" + label))
     return ev
