@@ -15,6 +15,8 @@ deliverables. It stops with exit code 3 whenever it needs you to watch or write,
 - Otherwise: `uv tool install git+https://github.com/mariusDing/sports-video-coach` (needs `uv` and `ffmpeg`).
 - Basketball tracking or writing a plugin: `git clone https://github.com/mariusDing/sports-video-coach`, `uv sync`
   in it, and prefix every command with `uv run`. Then read its `AGENTS.md`.
+- The user only wants to see what it makes: `sports-video-coach demo` (about 30 s, a drawn video, no agent work),
+  then show them the `index.html` and `film.en.mp4` paths it prints.
 
 ## Run
 
