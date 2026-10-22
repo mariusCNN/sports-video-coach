@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - name: ffmpeg (apt sometimes hangs on these runners: retry with a timeout)
+      - name: ffmpeg (apt sometimes hangs on these runners, so retry with a timeout)
         timeout-minutes: 10
         run: |
           for i in 1 2 3; do
