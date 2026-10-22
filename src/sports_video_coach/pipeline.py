@@ -360,8 +360,12 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
 
 # ---- running -------------------------------------------------------------------------------------------------
 
-def logs_dir() -> Path:
+def logs_dir(g: Unit | None = None) -> Path:
+    """<workspace>/logs for a unit inside the workspace; else the unit's own run/logs, so a unit made with --out
+    elsewhere never leaves a stray workspace/ folder in the current directory."""
     d = workspace.root() / "logs"
+    if g is not None and not g.folder.resolve().is_relative_to(workspace.root().resolve()):
+        d = g.run / "logs"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -391,7 +395,7 @@ def run_cmd(step: Step, g: Unit, runner=subprocess.run, argvs: list[list[str]] |
     for i, argv in enumerate(step.args(g) if argvs is None else argvs):
         print(f"[run] {step.name}: sports-video-coach {' '.join(argv)}", flush=True)
         if step.long:
-            log = logs_dir() / f"{g.folder.parent.name}-{g.folder.name}-{step.name}{i or ''}.log"
+            log = logs_dir(g) / f"{g.folder.parent.name}-{g.folder.name}-{step.name}{i or ''}.log"
             print(f"[run]   log: {log}", flush=True)
             with open(log, "w", encoding="utf8") as fh:
                 rc = runner(stage_cmd(argv, g.PLUGIN), stdout=fh, stderr=subprocess.STDOUT, env=env).returncode
@@ -422,6 +426,9 @@ def status(g: Unit, steps: list[Step]) -> list[tuple[str, str, bool]]:
 def print_status(g: Unit, steps: list[Step]) -> None:
     for name, kind, ok, why in rows(g, steps):
         stale = f"  (stale: {', '.join(why[:4])}{' ...' if len(why) > 4 else ''})" if why else ""
+        if name == "publish" and not ok:  # optional: a finished run without --publish is not missing a step
+            print(f"  skip  {name:13s} {kind}  (only with --publish)")
+            continue
         print(f"  {'done' if ok else '----'}  {name:13s} {kind}{stale}")
 
 

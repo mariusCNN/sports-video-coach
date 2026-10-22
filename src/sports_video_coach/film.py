@@ -71,6 +71,7 @@ MAX_CHARS = {"zh": 30, "en": 84}  # one subtitle at most (about two lines at 720
 FREEZE_S = 2.0                   # a freeze without narration
 SLOW_TAG = {"zh": "慢放", "en": "Slow motion"}
 FREEZE_TAG = {"zh": "定格", "en": "Paused"}
+TARGET_S = (120, 240)  # film length the guides ask for (2-4 min)
 SPEECH_RATE = {"zh": 5.2, "en": 15.0}  # characters per second, only for --dry estimates
 FONT = {"win32": "Microsoft YaHei", "darwin": "PingFang SC"}.get(sys.platform, "Noto Sans CJK SC")
 BG = "#14161f"
@@ -676,6 +677,9 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
             print(f"{i:3d} {sc.kind:5s} {sc.src or sc.text[:30]:<30s} {sum(len(p) for g in groups for p in g):5d} chars"
                   f" ~{length:5.1f} s{extra}")
         print(f"{len(scenes)} scenes, about {total / 60:.1f} min")
+        if not TARGET_S[0] <= total <= TARGET_S[1]:  # the guides ask for 2-4 min; a warning, not an error
+            print(f"note: outside the {TARGET_S[0] // 60}-{TARGET_S[1] // 60} min the film guide asks for; "
+                  f"{'add a scene or say more' if total < TARGET_S[0] else 'cut scenes'} unless that is on purpose")
         return None
 
     w, h = int(round(height * 16 / 9 / 2)) * 2, height

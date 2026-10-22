@@ -69,3 +69,11 @@ def test_plugin_hooks_fall_back_per_field(tmp_path, monkeypatch):
     page = render_html.page(folder)
     assert 'data-result="plain"' in page and 'id="en-s2">Extra</h2>' in page
     assert page.count("<!--assets-->") == 1 and 'href="#en-s2">Extra</a>' in page
+
+
+def test_audio_length_label_says_seconds_under_a_minute():
+    en, zh = render_html.UI["en"], render_html.UI["zh"]
+    assert render_html.length_label(en, 47.1) == "About 45 seconds. Read along or just listen."
+    assert render_html.length_label(zh, 53.8) == "约 55 秒，可以边看边听"
+    assert render_html.length_label(en, 61) == "About 1 min. Read along or just listen."
+    assert render_html.length_label({"listen_sub": "{m}m"}, 30) == "1m"      # a plugin UI without the seconds text

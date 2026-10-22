@@ -101,3 +101,15 @@ def test_scaffolded_plugin_loads_and_owns_its_units(tmp_path, video, monkeypatch
     finally:
         monkeypatch.undo()
         plugin.plugins(refresh=True)
+
+
+def test_logs_stay_with_a_unit_outside_the_workspace(analysis, tmp_path, monkeypatch):
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
+    assert P.logs_dir(analysis) == analysis.run / "logs"              # made with --out elsewhere
+    inside = U.Analysis(tmp_path / "ws" / "analysis" / "x" / "d", analysis.game, analysis.langs)
+    assert P.logs_dir(inside) == tmp_path / "ws" / "logs"
+
+
+def test_status_marks_publish_optional(analysis, capsys):
+    P.print_status(analysis, U.STEPS)
+    assert "skip  publish" in capsys.readouterr().out

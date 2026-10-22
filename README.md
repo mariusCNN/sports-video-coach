@@ -18,6 +18,17 @@ service; it runs on your machine.
 
 ![Example output (basketball plugin): score, narration, the coach's write-up](docs/images/hero.png)
 
+## Try it in a minute
+
+```bash
+uv tool install git+https://github.com/mariusDing/sports-video-coach   # needs ffmpeg on PATH
+sports-video-coach demo                                   # ~30 s: page, clips, narration, explained video
+```
+
+It draws a synthetic drill video and uses a pre-written review, so you see every deliverable without an agent or
+a video of your own (`--lang en zh` for both languages, `--offline` without text-to-speech). With your own video,
+your agent writes the review: see below.
+
 ## For agents: start here
 
 ```bash

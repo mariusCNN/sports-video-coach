@@ -24,6 +24,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- `sports-video-coach demo`: every deliverable in about 30 s on the light install, with no agent and no video of your own. It draws a synthetic drill video (a red block running between two cones, no people), copies in a pre-written review, report, narration and film script, and runs the normal pipeline; `--lang en zh`, `--no-film`, `--offline` (clips and the page only).
+
 - Training program app: `program build | check | pull` turns `program.json` (schema `templates/program.example.json`) into a phone page for a month of training, with today's session opened by date (`#d=YYYY-MM-DD` deep links), coach tips per exercise, YouTube demos, a weekly calendar grid with coloured session badges, set logging, game-day plans and a game stat log. `publish` puts a program folder at `/p/<token>/`; on that link the log syncs to `/api/sync/<token>` (Workers KV namespace `<project>-sync`, created on the first deploy, newest copy wins, daily copies for 60 days) so it follows the player across devices, and `program pull` saves it as `progress.json` for analysis. Plan pages send their origin as referrer so YouTube embeds play (error 153 otherwise).
 - Shot locate step (`shot-locate`, run steps `locate-sheets` and `shot-locate` after the film review): one sheet per reviewed shot with the court lines and a labelled 1 m grid projected from the calibration; reviewers read the take-off spot and `shot-locate merge` writes `shot.xy` (court metres, with its source and confidence) or `"xy": null` plus a reason into the trips, never a guessed spot. A located spot sets the shot's zone (missed shots also their 2/3 points; the review's values are kept in `zone_review` / `points_review`); spots within 0.5 m of a zone line keep the reviewed zone, and made shots that disagree on 2 vs 3 points are flagged for a decision instead of changed. A shot's attacked half follows the shots around it when the possession's side disagrees with 5 of its 6 neighbours (a shot by the other team inside our possession), and `shot-locate sheets --only N,M` redoes single sheets. `coach-sheets zoom` takes `--grid` and `--header` for other sheet layouts.
 - Shot chart: located shots are drawn at their spot on the half court (dot = made, cross = missed, dashed ring = unclear), filtered with the team / zone / player filters; a click plays the shot's clip, and a line under the court says how many of the shots shown are located.
@@ -84,6 +86,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Report pages no longer load fonts from Google Fonts: no request leaves the page (a privacy promise, and the fonts were blocked in some networks); the page uses the system fonts.
+- The page said "About 1 min" for a 47 s recording; under a minute it now gives seconds. `narrate` prints the length of each MP3, so a script's "about N minutes" can be checked without ffprobe.
+- Stage logs of a unit made with `--out` outside the workspace go to its `run/logs/` instead of a new `workspace/` folder in the current directory.
+- `run --status` shows `publish` as `skip (only with --publish)` instead of a missing step; `film --dry` notes when the film is outside the guide's 2-4 min.
+- The generic film-review brief says what to do when a video has nothing to coach: tell the user instead of inventing moments.
 - `run --status` showed `clips` as done before any report existed (nothing to cut yet counted as all cut), which misled a new session picking up a unit.
 - In the light install, a basketball stage (or `html` on a basketball folder) crashed with a `ModuleNotFoundError` traceback; it now says which package is missing, and `sports-video-coach plugins` marks a plugin whose packages are not installed and how to get them (`missing` / `install` in `--json`).
 - Glory League box scores with two players wearing the same number kept only the last one in `official.json`, so the per-player lines did not add up to the team total; they are now summed into one line and listed in `shared_jerseys`.

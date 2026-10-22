@@ -39,10 +39,10 @@ IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
 LANGS = [("zh", "zh-CN", "中文", "README.md"), ("en", "en", "EN", "README.en.md")]
 UI = {
     "zh": dict(contents="目录", switch="切换语言",
-               listen="听报告", listen_sub="约 {m} 分钟，可以边看边听", play="播放 / 暂停", seek="播放进度", speed="播放速度",
+               listen="听报告", listen_sub="约 {m} 分钟，可以边看边听", listen_sub_s="约 {s} 秒，可以边看边听", play="播放 / 暂停", seek="播放进度", speed="播放速度",
                clip="片段", slow="慢放", missing="（片段还没剪：运行 clips）"),
     "en": dict(contents="Contents", switch="Switch language",
-               listen="Listen to the report", listen_sub="About {m} min. Read along or just listen.", play="Play / pause",
+               listen="Listen to the report", listen_sub="About {m} min. Read along or just listen.", listen_sub_s="About {s} seconds. Read along or just listen.", play="Play / pause",
                seek="Playback position", speed="Playback speed",
                clip="Clip", slow="Slow-mo", missing="(clip not cut yet: run the clips stage)"),
 }
@@ -211,6 +211,13 @@ def first_readme(folder: Path) -> Path:
     return folder / report_langs(folder)[0][3]
 
 
+def length_label(ui: dict, seconds: float) -> str:
+    """'About 3 min' for a long recording; under a minute in seconds (to 5 s), so 47 s never reads as 1 min."""
+    if seconds < 55 and "listen_sub_s" in ui:
+        return ui["listen_sub_s"].format(s=max(5, round(seconds / 5) * 5))
+    return ui["listen_sub"].format(m=max(1, round(seconds / 60)))
+
+
 def listen_block(folder: Path, embed: bool, langs: list[tuple] | None = None):
     """Big play button + progress for the narration, or empty strings when there is no audio yet."""
     langs = langs or LANGS
@@ -226,9 +233,8 @@ def listen_block(folder: Path, embed: bool, langs: list[tuple] | None = None):
         src = data_uri(files[c]) if embed else files[c].name
         # native controls stay visible when scripts are blocked (WeChat / mail file previews); the script hides them
         audios.append(f'<audio id="audio-{c}" class="native" data-lang="{c}"{hide(c)} controls preload="metadata" src="{src}"></audio>')
-        m = max(1, round(duration_s(files[c]) / 60))
         labels.append(f'<span data-lang="{c}" lang="{attr}"{hide(c)}><b>{UI[c]["listen"]}</b>'
-                      f'<small>{UI[c]["listen_sub"].format(m=m)}</small></span>')
+                      f'<small>{length_label(UI[c], duration_s(files[c]))}</small></span>')
     block = f"""<div class="listen">
       <button type="button" class="play big" data-play aria-label="{UI[first]['play']}">{PLAY_ICON}</button>
       <div class="listen-body">
@@ -303,9 +309,6 @@ TEMPLATE = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>{page_title}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {{
   --ink: #221f45;        /* page ink + score band */
@@ -320,7 +323,7 @@ TEMPLATE = """<!doctype html>
   --them-light: {them_light};
   --us-light-rgb: {us_light_rgb};
   --whistle: #c9343f;    /* points we gave away */
-  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --display: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif-condensed, sans-serif;
   --body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }}
 * {{ box-sizing: border-box; }}

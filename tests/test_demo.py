@@ -1,0 +1,56 @@
+import json
+import shutil
+
+import cv2
+import pytest
+
+from sports_video_coach import cli, demo, film, pipeline as P
+from sports_video_coach.plugins.generic import unit as U
+
+needs_ffmpeg = pytest.mark.skipif(not (shutil.which("ffmpeg") and shutil.which("ffprobe")), reason="needs ffmpeg")
+
+
+def block_x(video, t: float) -> int:
+    """Left edge (px) of the red block at time t."""
+    cap = cv2.VideoCapture(str(video))
+    cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
+    ok, img = cap.read()
+    cap.release()
+    assert ok
+    red = (img[:, :, 2] > 160) & (img[:, :, 1] < 90)
+    return int(red.any(axis=0).argmax())
+
+
+@needs_ffmpeg
+def test_drawn_video_matches_the_prewritten_review(tmp_path):
+    # the report claims turns of 1.5 s, 0.5 s and 1.5 s; the drawing must show exactly that
+    v = demo.draw_video(tmp_path / "d.mp4")
+    assert abs(block_x(v, 4.6) - 540) <= 4 and abs(block_x(v, 5.4) - 540) <= 4      # stalled at the right cone
+    assert abs(block_x(v, 9.7) - 60) <= 4 and block_x(v, 10.6) > 100                # quick turn, already gone
+    assert abs(block_x(v, 15.0) - 540) <= 4
+    moments = json.loads((demo.FILES / "review.json").read_text(encoding="utf8"))["moments"]
+    assert [m["what"][:4] for m in moments][:3] == ["04.0", "09.5", "14.0"]
+
+
+def test_cli_lists_demo():
+    assert cli.resolve("demo")[0] == "sports_video_coach.demo"
+
+
+@needs_ffmpeg
+def test_offline_demo_runs_to_done_without_an_agent(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
+    out = tmp_path / "demo"
+    assert demo.main(["--out", str(out), "--offline", "--lang", "en", "zh"]) == 0
+    g = U.Analysis.load(out)
+    assert not U.review_errors(g) and P.qa_done(g)
+    assert sorted(p.name for p in (out / "clips").glob("*.mp4")) == ["0002-0008.mp4", "0008-0012.mp4", "0013-0018.mp4"]
+    assert (out / "index.html").exists() and not (out / "listen.en.mp3").exists()
+    assert demo.main(["--out", str(out), "--offline"]) == 0       # a second run resumes: nothing left to do
+
+
+@needs_ffmpeg
+def test_film_scripts_check_clean(tmp_path):
+    v = demo.draw_video(tmp_path / "d.mp4")
+    for lang in ("en", "zh"):
+        scenes = film.parse_script((demo.FILES / f"film.{lang}.md").read_text(encoding="utf8"))
+        assert len(scenes) >= 4 and film.check(scenes, tmp_path, v, demo.SECONDS) == []

@@ -1,0 +1,9 @@
+{
+ "summary": "Synthetic demo: a red block runs four 4-second legs between two cones. Two of its three turns stall for 1.5 s at the right cone; the turn at the left cone takes 0.5 s.",
+ "moments": [
+  {"start": "00:02", "end": "00:08", "what": "04.0-05.5: stops at the right cone for 1.5 s before running back", "why": "likely arrives at full speed and has to stop dead before it can turn", "tag": "fix", "confidence": "seen"},
+  {"start": "00:08", "end": "00:12", "what": "09.5-10.0: turns at the left cone in 0.5 s", "why": "keeps moving through the turn; the model to copy", "tag": "good", "confidence": "seen"},
+  {"start": "00:13", "end": "00:18", "what": "14.0-15.5: again a 1.5 s stall at the right cone", "why": "same pattern as 00:04: a habit, not a one-off", "tag": "fix", "confidence": "seen"},
+  {"start": "00:10", "end": "00:14", "what": "steady speed over the whole leg, no slowdown before the cone", "why": "pace is even; only the turns lose time", "tag": "good", "confidence": "seen"}
+ ]
+}

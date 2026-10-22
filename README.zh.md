@@ -18,6 +18,17 @@
 
 ![示例输出（篮球插件）：比分、讲解音频、教练复盘](docs/images/hero.png)
 
+## 一分钟试用
+
+```bash
+uv tool install git+https://github.com/mariusDing/sports-video-coach   # PATH 上要有 ffmpeg
+sports-video-coach demo --lang zh en                      # 约一分钟：网页、片段、讲解音频、讲解视频
+```
+
+- 视频是程序画的（红色方块在锥桶间折返跑），复盘是预先写好的。
+- 不需要 agent，也不需要你自己的视频，就能看到全部交付物。
+- `--offline`：不联网，只出片段和网页。换成你自己的视频时，复盘由你的 agent 来写，见下文。
+
 ## 给 agent：从这里开始
 
 ```bash

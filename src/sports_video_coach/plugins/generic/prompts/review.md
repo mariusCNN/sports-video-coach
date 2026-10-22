@@ -34,4 +34,7 @@ You are the coach watching the video for the first time. The contact sheets in `
 - At least 3 moments; a 10-minute video usually has 10-25. Patterns beat one-offs: when the same thing happens
   again, add the moment and say "again" in `what`.
 
+When there is nothing to coach (no athlete in view, the wrong file, a video too dark or too short to judge), do
+not invent moments to pass the check: stop and tell your user what the video shows and what video would work.
+
 `sports-video-coach generic:review-check <folder>` lists what is still missing.

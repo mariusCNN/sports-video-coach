@@ -111,7 +111,9 @@ def render(src: Path, out: Path, lang: str, gap: float, bell: bool, loud: bool, 
         parts = asyncio.run(speak(paras, voice, rate or default_rate, tmp))
         with media.partial(out) as part:  # a stopped run never leaves a short listen.<lang>.mp3 that counts as done
             stitch(parts, part, tmp, gap, bell, loud, tight)
-    print("wrote", out, f"{out.stat().st_size / 1e6:.1f} MB,", len(paras), "paragraphs")
+    # the length, so the script's "about N minutes" can be checked without ffprobe
+    print("wrote", out, f"{out.stat().st_size / 1e6:.1f} MB,", len(paras), "paragraphs,",
+          f"{media.duration_s(out):.0f} s")
 
 
 def main(argv=None):
