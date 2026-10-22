@@ -87,12 +87,17 @@ def sport_names(sport, langs=("en",)) -> dict[str, str]:
     several languages, a name that is not in the page's script is left out ("" ) rather than shown untranslated."""
     if isinstance(sport, dict):
         fallback = next((str(v) for v in sport.values() if v), "")
-        return {c: str(sport.get(c) or fallback) for c in langs}
+        return {c: label(str(sport.get(c) or fallback)) for c in langs}
     raw = str(sport or "").strip()
     cjk = bool(re.search(r"[㐀-鿿]", raw))
     zh = SPORT_ZH.get(raw.lower(), raw if cjk or len(langs) == 1 else "")
     en = next((k for k, v in SPORT_ZH.items() if v == raw), "" if cjk and len(langs) > 1 else raw)
-    return {c: zh if c == "zh" else en for c in langs}
+    return {c: label(zh if c == "zh" else en) for c in langs}
+
+
+def label(name: str) -> str:
+    """A sport name as a header label: "tennis" -> "Tennis"; "3x3", "NBA" and Chinese stay as they are."""
+    return name[:1].upper() + name[1:] if name.islower() and name.isascii() else name
 
 
 def default_board(folder: Path, data: dict, sport: str, heading: str, langs=("en",)) -> dict:

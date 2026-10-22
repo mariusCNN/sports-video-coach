@@ -35,6 +35,13 @@ def test_cli_unknown_stage_exits_nonzero(capsys):
     assert "unknown stage" in capsys.readouterr().out
 
 
+def test_cli_version(capsys):
+    from importlib.metadata import version
+    with pytest.raises(SystemExit) as e:
+        cli.main(["--version"])
+    assert e.value.code == 0 and capsys.readouterr().out.split()[-1] == version("sports-video-coach")
+
+
 def test_slug():
     assert workspace.slug("  Red  Foxes ") == "red-foxes"
     assert workspace.slug("Night Owls") == "night-owls"

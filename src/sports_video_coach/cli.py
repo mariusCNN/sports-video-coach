@@ -100,6 +100,10 @@ def main(argv=None, prog: str = "sports-video-coach", default: str | None = None
     if not argv or argv[0] in ("-h", "--help"):
         print(usage(prog, default))
         sys.exit(0 if argv else 1)
+    if argv[0] in ("--version", "-V"):
+        from importlib.metadata import version
+        print(f"{prog} {version('sports-video-coach')}")
+        sys.exit(0)
     if argv[0] == "plugins":
         return list_plugins(argv[1:])
     name, label = resolve(argv[0], default)

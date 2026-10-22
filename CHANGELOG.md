@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Changed
+
+- `sports-video-coach --version` (and `-V`) prints the version instead of "unknown stage".
+- The page header writes a lowercase sport as a label ("Tennis", not "tennis").
+
 ## 0.2.5 - 2026-10-23
 
 ### Changed
