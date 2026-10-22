@@ -26,8 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - name: ffmpeg and a CJK font (the Chinese subtitles)
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+      - name: ffmpeg and a small CJK font (libass falls back to it for the Chinese subtitles)
+        timeout-minutes: 5
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg fonts-wqy-microhei
       - name: Light install, as in the README
         run: uv tool install .
       - name: Demo, English and Chinese
