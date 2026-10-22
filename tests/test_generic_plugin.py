@@ -166,3 +166,13 @@ def test_built_line_names_what_was_built_and_what_was_left_out(tmp_path):
     g.game["artifacts"] = ["clips", "html"]
     assert P.built_line(g, publish=False) == ("[run] built: clips, html, qa; left out by \"artifacts\" in "
                                               "analysis.json: narration, publish, film")
+
+
+def test_finished_lists_every_deliverable_it_finds(analysis, capsys):
+    f = analysis.folder
+    (f / "clips").mkdir()
+    for p in (f / "film.en.mp4", f / "listen.en.mp3", f / "clips" / "0001-0005.mp4"):
+        p.write_bytes(b"x")
+    analysis.finished()
+    out = capsys.readouterr().out
+    assert "index.html" in out and "film.en.mp4" in out and "listen.en.mp3" in out and "clips (also on the page): 1" in out

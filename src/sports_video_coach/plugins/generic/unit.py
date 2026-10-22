@@ -36,6 +36,12 @@ class Analysis(P.Session):
         films = [self.folder / f"film.{l}.mp4" for l in self.langs if (self.folder / f"film.{l}.mp4").exists()]
         if films:
             print("[analysis] explained video (send it yourself, it is not published): " + ", ".join(map(str, films)))
+        mp3s = [self.folder / f"listen.{l}.mp3" for l in self.langs if (self.folder / f"listen.{l}.mp3").exists()]
+        if mp3s:
+            print("[analysis] narration (also on the page): " + ", ".join(map(str, mp3s)))
+        clips = sorted((self.folder / "clips").glob("*.mp4"))
+        if clips:
+            print(f"[analysis] clips (also on the page): {len(clips)} in {self.folder / 'clips'}")
 
     @classmethod
     def load(cls, folder: Path) -> "Analysis":
