@@ -54,5 +54,7 @@ between two tiles faster than they can move, zoom in on those seconds before coa
 
 When there is nothing to coach (no athlete in view, the wrong file, a video too dark or too short to judge), do
 not invent moments to pass the check: stop and tell your user what the video shows and what video would work.
+If they still want a report on it (a test run, drawn or screen-recorded footage), review only what is visible
+(positions, timing, counts) and say in `summary` that no athlete's technique can be judged from it.
 
 `sports-video-coach generic:review-check <folder>` lists what is still missing.
