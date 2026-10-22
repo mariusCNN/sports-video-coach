@@ -1,0 +1,66 @@
+name: demo site
+
+# Runs `sports-video-coach demo` on a light install (as a new user would) and puts its output on GitHub Pages:
+# the report page with clips and narration, and the explained videos. Everything in it is synthetic (a drawn
+# video, a pre-written review); no person appears. Doubles as an end-to-end check of the light install.
+
+on:
+  push:
+    branches: [master]
+    paths: ["src/sports_video_coach/**", "pyproject.toml", ".github/workflows/demo-site.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - name: ffmpeg and a CJK font (the Chinese subtitles)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+      - name: Light install, as in the README
+        run: uv tool install .
+      - name: Demo, English and Chinese
+        run: sports-video-coach demo --out demo --lang en zh
+      - name: Static site
+        run: |
+          uv run --no-project --with . python - <<'EOF'
+          import shutil
+          from pathlib import Path
+          from sports_video_coach import publish
+          src, site = Path("demo"), Path("_site")
+          for w in publish.build_report(src, site):
+              raise SystemExit(f"demo site: {w}")
+          page = site / "index.html"
+          # the demo is synthetic and meant to be found; real report pages keep noindex
+          page.write_text(page.read_text(encoding="utf8").replace(
+              '<meta name="robots" content="noindex, nofollow">', ""), encoding="utf8")
+          for f in sorted(src.glob("film.*.mp4")) + sorted(src.glob("film.*.jpg")):
+              shutil.copy2(f, site / f.name)
+          print(*sorted(p.relative_to(site).as_posix() for p in site.rglob("*") if p.is_file()), sep="\n")
+          EOF
+      - name: Page check
+        run: sports-video-coach page-check _site
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
