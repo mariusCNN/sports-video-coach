@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.2.3 - 2026-10-23
+
 ### Changed
 
 - A finished generic run also lists the narration MP3s and the clips folder, not only the page and the explained video.
