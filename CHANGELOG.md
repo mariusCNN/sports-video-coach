@@ -14,6 +14,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - `narrate` prints the script's length and estimated read time before rendering. The read rates are measured
   on edge-tts (English about 950 characters a minute, Chinese about 235); the narration guides count characters.
 - docs/basketball.md quick start: `cd sports-video-coach` after the clone.
+- README leads with a tagline, who it's for and what you need (incl. what leaves your machine), and shows a real
+  run transcript of the exit-3 loop under "How it works".
+- `sports-video-coach demo --site <dir>` writes the demo site: an English landing page, the coaching page under
+  `demo/`; the GitHub Pages site opens on that landing page.
 
 ## 0.2.6 - 2026-10-23
 
