@@ -108,7 +108,7 @@ def test_joined_videos_print_their_parts_and_the_sheets_mark_them(tmp_path, vide
 def test_frames_sheets_and_index(tmp_path, video, capsys):
     data = frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     assert [s["file"] for s in data["sheets"]] == ["sheet_001.jpg"]
-    assert data["sheets"][0]["tiles"] == ["00:00", "00:01", "00:02", "00:03", "00:04", "00:05"]
+    assert data["sheets"][0]["tiles"] == ["00:01", "00:02", "00:03", "00:04", "00:05"]  # whole seconds from 1 s
     assert (tmp_path / "f" / "sheet_001.jpg").stat().st_size > 1000
     frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     assert "up to date" in capsys.readouterr().out

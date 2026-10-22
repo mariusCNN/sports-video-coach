@@ -7,9 +7,11 @@ Writes `sheet_NNN.jpg` (cols x rows tiles, in time order) and `frames.json`:
   {"video", "duration_s", "every_s", "sheets": [{"file", "start", "end", "tiles": ["mm:ss", ...]}]}
 When the video joins several files (the unit json's `sources`), frames.json lists them as `parts` (file, start,
 end on the joined timeline) and the first tile of each later file is labelled "part N/M".
-Labels are mm:ss, or mm:ss.s when tiles are under a second apart (then they fall on whole tenths).
+Each label is the video time of the frame shown: mm:ss when every tile falls on a whole second (whole-second
+sheets start at a whole second), else mm:ss.s (tiles under a second apart fall on whole tenths).
 An agent opens the sheets in order, notes what happens and when, then cuts closer looks with `clips`. Sheets that
-already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width` and the video size).
+already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width`, `labels` and the
+video size).
 A close look at one moment: `--start 0:12 --end 0:14 --every 0.1 --out run/frames-zoom` (tenths in the labels).
 """
 from __future__ import annotations
@@ -25,15 +27,29 @@ from .timefmt import mmss, seconds
 
 def times(duration: float, every: float, start: float = 0.0) -> list[float]:
     """Tile times every `every` seconds before `duration`: from `start` (a window), else from every/2 (skips the
-    black first frame). Under a second apart they fall on whole tenths, so the labels are exact."""
-    t0 = start if start > 0 else every / 2
-    if every < 1:
+    black first frame), rounded up to a whole second when `every` is whole. Other gaps fall on whole tenths, so the
+    labels are exact."""
+    t0 = start if start > 0 else math.ceil(every / 2) if float(every).is_integer() else every / 2
+    if not float(every).is_integer():
         t0 = math.ceil(round(t0 * 10, 6)) / 10
     out, k = [], 0
     while (t := round(t0 + k * every, 2)) < duration:
         out.append(t)
         k += 1
     return out
+
+
+def shown_at(cap, t: float) -> float:
+    """Video time of the frame just read (a seek lands on the first frame at or after `t`); `t` if the reader's
+    position is missing or far off."""
+    import cv2
+    got = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000
+    return round(got, 3) if abs(got - t) < 1 else t  # 0.99999 would read 00:00
+
+
+def labels(ts: list[float]) -> int:
+    """Decimals of the tile labels: 0 when every tile time is a whole second, else 1 (mm:ss.s)."""
+    return 0 if all(float(t).is_integer() for t in ts) else 1
 
 
 def sheets(ts: list[float], per: int) -> list[list[float]]:
@@ -82,7 +98,8 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     import cv2
     import numpy as np
     duration = media.duration_s(video)
-    settings = dict(every_s=every, cols=cols, rows=rows, width=width, size=list(media.video_size(video)))
+    settings = dict(every_s=every, cols=cols, rows=rows, width=width, labels="frame",  # labels: shown frame's time
+                    size=list(media.video_size(video)))
     if start is not None or end is not None:  # a window; whole-video sheets keep their old settings keys
         settings.update(start_s=start or 0.0, end_s=end)
     if sources:
@@ -97,9 +114,9 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     out.mkdir(parents=True, exist_ok=True)
     cap = cv2.VideoCapture(str(video))
     data = dict(video=str(video), duration_s=round(duration, 2), **settings, sheets=[])
-    dec = 1 if every < 1 else 0  # label 0:12.5 when tiles are under a second apart
     stop = min(duration, end) if end is not None else duration
     ts = times(stop, every, start or 0.0)
+    dec = labels(ts)  # 0:12.5 unless every tile is on a whole second
     marks = part_starts(ts, sources)
     for i, group in enumerate(sheets(ts, cols * rows), 1):
         tiles = []
@@ -108,7 +125,8 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
             ok, frame = cap.read()
             if not ok:
                 continue
-            tiles.append((t, tile(frame, mmss(t, dec), width, marks.get(t, ""))))
+            s = shown_at(cap, t)
+            tiles.append((s, tile(frame, mmss(s, dec), width, marks.get(t, ""))))
         if not tiles:
             continue
         th = max(f.shape[0] for _, f in tiles)
