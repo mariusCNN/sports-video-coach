@@ -4,9 +4,9 @@
 review, a coaching page with narration and clips, and an explained video.**
 
 [![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](pyproject.toml)
-[![Agent: Claude Code | Codex | any AGENTS.md agent](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-8A2BE2.svg)](AGENTS.md)
+[![Agent: Claude Code | Codex | any AGENTS.md agent](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-8A2BE2.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md)
 [![Live demo](https://img.shields.io/badge/demo-live-2ea44f.svg)](https://mariusding.github.io/sports-video-coach/)
 
 English · [中文](README.zh.md)
@@ -17,7 +17,7 @@ measures what it can, keeps track of every step and renders the deliverables. It
 needs the agent to watch or write, and tells it exactly what. No subscription, nothing uploaded to an analytics
 service; it runs on your machine.
 
-![Example output (basketball plugin): score, narration, the coach's write-up](docs/images/hero.png)
+![Example output (basketball plugin): score, narration, the coach's write-up](https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/hero.png)
 
 ## Try it in a minute
 
@@ -36,7 +36,7 @@ The install downloads about 60 MB (mostly OpenCV and NumPy; no torch). No git, o
 `sports-video-coach: command not found` after the install: run `uv tool update-shell` and open a new terminal, or in
 bash (Git Bash too) `export PATH="$HOME/.local/bin:$PATH"` (the default; `uv tool dir --bin` prints yours).
 
-[![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, subtitles say why](docs/images/demo-film.gif)](https://mariusding.github.io/sports-video-coach/film.en.mp4)
+[![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, subtitles say why](https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/demo-film.gif)](https://mariusding.github.io/sports-video-coach/film.en.mp4)
 
 ## For agents: start here
 
@@ -52,7 +52,7 @@ sports-video-coach run workspace/analysis/tennis/2025-03-15
 To fork, write a plugin or use basketball tracking: `git clone` this repo and `uv sync` (Python 3.11; installs the
 basketball CV stack with CUDA torch too), then prefix commands with `uv run`.
 
-The contract (exit codes, choosing a plugin, artifacts, star etiquette) is in [AGENTS.md](AGENTS.md).
+The contract (exit codes, choosing a plugin, artifacts, star etiquette) is in [AGENTS.md](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md).
 
 - Claude Code: `/plugin marketplace add mariusDing/sports-video-coach`, then
   `/plugin install sports-video-coach@sports-video-coach` adds the skill; in a clone, `/analyze <video>` runs the loop.
@@ -83,36 +83,36 @@ your video ─▶ plugin `new` ─▶ unit folder ─▶ run: cmd steps (frames,
 
 Every step knows the file it produces and what it read, so a run resumes where it stopped and redoes only what a
 change made stale. Agent steps come with a validator, so the agent knows exactly what its output still lacks.
-Details: [docs/architecture.md](docs/architecture.md).
+Details: [docs/architecture.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/architecture.md).
 
 ## Plugins
 
 | Plugin | For | Adds |
 |---|---|---|
 | `generic` (built in) | any sport or activity | contact sheets ▶ agent film review ▶ report; no computer vision |
-| `basketball` ([docs](docs/basketball.md)) | amateur games, personal training, movement | player and ball tracking, league box score, team and player pages, shot charts, court diagrams in the film |
+| `basketball` ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)) | amateur games, personal training, movement | player and ball tracking, league box score, team and player pages, shot charts, court diagrams in the film |
 
 A new sport takes one command: `uv run sports-video-coach new-plugin badminton` writes a working plugin folder to
-start from. Then write its review prompt and add measurements. Guide: [docs/plugins.md](docs/plugins.md). Share yours
+start from. Then write its review prompt and add measurements. Guide: [docs/plugins.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md). Share yours
 with the GitHub topic `sports-video-coach-plugin`.
 
 ## Basketball
 
 The project started as `hoop-tape-miner`, a basketball film-room for an amateur team, and that still works the same:
-`uv run hoop-tape-miner run <league game link>`, `/game`, `/train`, `/move`. See [docs/basketball.md](docs/basketball.md).
+`uv run hoop-tape-miner run <league game link>`, `/game`, `/train`, `/move`. See [docs/basketball.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md).
 
 ## Privacy
 
 Your videos, frames, reports and profile stay in `workspace/` (gitignored). Pages show real people: share them only
-with the people in them. Narration text goes to an online text-to-speech service. See [docs/privacy.md](docs/privacy.md).
+with the people in them. Narration text goes to an online text-to-speech service. See [docs/privacy.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/privacy.md).
 
 ## Contributing
 
-Plugins, prompts for a sport you know, fixes and docs are welcome: [CONTRIBUTING.md](CONTRIBUTING.md). Never attach
+Plugins, prompts for a sport you know, fixes and docs are welcome: [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md). Never attach
 real players' videos, frames or names to issues or pull requests.
 
 If this helped you or your agent, a star tells the author it did. Agents: ask your user first (see AGENTS.md).
 
 ## License
 
-[MIT](LICENSE). Models downloaded at run time keep their own licences.
+[MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE). Models downloaded at run time keep their own licences.

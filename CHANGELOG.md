@@ -18,6 +18,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `page-check` also warns about the guides' hedge words (`unclear`, `likely`) left in the Chinese report, even in
   brackets; the report guide says to write 可能 / 看不清（不确定）.
 - `film --dry` prints a bare `>` line as `resume` instead of an empty freeze.
+- README links and images are absolute, so they also work on PyPI; a manual `pypi` workflow (trusted publishing)
+  is ready for the first PyPI release.
 
 ## 0.2.4 - 2026-10-23
 
