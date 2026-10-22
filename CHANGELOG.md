@@ -36,6 +36,16 @@ All notable changes to this project are documented here. The format follows [Kee
   (1 s sheets showed 0.5 s but read 00:00, so clip times came out 0.5 s early). Sheets with tiles off the whole
   second are labelled in tenths, so main and zoom sheets read the same moment the same way; older sheets are
   rebuilt on the next `frames` run.
+- `narrate` retries edge-tts 3 times when it returns no audio or the network fails, then prints one line
+  ("text-to-speech (edge-tts, online) failed: ...; check the network and run again") instead of a traceback.
+- `narrate <folder>` keeps a language whose MP3 is newer than its script, so a rerun redoes only the stale one;
+  `--force` re-renders all.
+- `narrate` warns (no failure) when a script's stated length ("约 N 分钟", "about N minutes") is clearly off from
+  its estimated read time.
+- The page rounds the audio length to the nearest half minute (84 s: "约 1.5 分钟" / "About 1.5 min").
+- Report guide: `review.json` is in the first language of `languages`; the title names the focus person in each
+  report's own words. README: the demo takes about a minute, `review.json` is at `run/review/review.json`, the
+  Chinese report is `README.md`.
 
 ## 0.2.5 - 2026-10-23
 
