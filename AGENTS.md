@@ -30,7 +30,9 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    runs only with `--publish`, and only when your user asks for links.
 
 Plugin choice: a plugin that claims the target (a league url) or owns the folder wins. Otherwise use the plugin for
-the sport if `plugins` lists one, else `generic`. Do not write a plugin just to analyse one video.
+the sport if `plugins` lists one, else `generic`. Do not write a plugin just to analyse one video. Basketball: the
+`basketball` plugin is for league games (a stats site link) or tracking from a clone; a pickup game, a phone clip, no
+league or no GPU goes to `generic` with `--sport basketball`.
 
 ## Working rules
 

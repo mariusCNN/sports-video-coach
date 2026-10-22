@@ -14,8 +14,8 @@ SPORT = ""          # e.g. "tennis"; the generic plugin takes the sport from ana
 
 PLUGIN = Plugin(
     name=NAME,
-    summary="any sport or activity video, no tracking: contact sheets -> agent film review -> coaching report",
-    use_when="no plugin for this sport is installed, or a quick first look at any game or training video",
+    summary="any sport or activity video, no detection (the agent reviews the frames): contact sheets -> film review -> report",
+    use_when="no plugin for the sport, a phone clip, a first look; basketball with no league or GPU: --sport basketball",
     stages={
         "new": (f"{__name__}.new", "start an analysis from one or more videos: analysis.json + joined video.mp4"),
         "review-check": (f"{__name__}.unit", "check run/review/review.json against the review brief"),

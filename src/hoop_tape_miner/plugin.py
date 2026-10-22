@@ -79,7 +79,8 @@ PLUGIN = Plugin(
     name="basketball",
     summary="amateur basketball games (tracking, league box score, coach film review) and personal training sessions "
             "-> bilingual team / player pages with narration and clips, explained film",
-    use_when="a basketball game video (fixed camera, full court), or a player's own workout or movement clips",
+    use_when="a league basketball game (stats site link), or tracking a fixed-camera full-court game from a clone (uv sync, GPU), "
+             "or a player's own workout or movement clips; pickup game or phone clip without a league: generic",
     stages=STAGES,
     kinds=[
         Kind("game", "game.json", "hoop_tape_miner.run:Game", "hoop_tape_miner.run:STEPS", match=_is_game,

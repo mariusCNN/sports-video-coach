@@ -24,7 +24,7 @@ A spoken version of a report, rendered to MP3 by `hoop-tape-miner narrate` (edge
 6. Same facts and numbers as the written report; never add a claim that is not in it.
 7. Jersey numbers only, no names (the text is sent to an online TTS service; see `docs/privacy.md`).
 8. End with a short sign-off ("See you at practice.").
-9. Target length: team report about 8-10 minutes (English about 140-150 words per minute; Chinese about 230-260 characters per minute); player deep dive about 3 minutes.
+9. Target length: team report about 8-10 minutes (count characters, not words: English about 950 characters per minute with spaces, 130-190 words depending on word length; Chinese about 235 characters per minute without punctuation; `narrate` prints its estimate before rendering); player deep dive about 3 minutes.
 
 ## After rendering
 

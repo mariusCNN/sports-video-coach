@@ -32,7 +32,9 @@ VOICES = {"zh": ("zh-CN-YunjianNeural", "+0%"), "en": ("en-US-AndrewNeural", "+0
 PAUSE_S = 0.7
 MP3 = ["-ac", "1", "-ar", "24000", "-c:a", "libmp3lame", "-b:a", "48k"]
 TRIES, BACKOFF_S = 3, 2.0  # edge-tts sometimes returns no audio for a moment; a retry usually gets it
-PER_MIN = {"zh": 270, "en": 150}  # read speed: Chinese characters / English words a minute (prompts/narration.md)
+# read speed of the default voices, measured on rendered scripts (the narration guide quotes it): Chinese characters
+# without punctuation / English characters with spaces a minute; English words a minute range 130-190 with word length
+PER_MIN = {"zh": 235, "en": 960}
 
 
 class TTSFailed(SystemExit):
@@ -105,10 +107,22 @@ def stated(paras: list[str], lang: str) -> tuple[float, bool] | None:
     return (n + (0.5 if m["h1"] or m["h2"] else 0)) * 60, bool(m["under"])  # 一分半, two and a half minutes
 
 
+def count(paras: list[str], lang: str) -> int:
+    """What PER_MIN counts: Chinese characters without punctuation, else every character."""
+    return sum(len(re.findall(r"\w", p)) if lang == "zh" else len(p) for p in paras)
+
+
 def estimate_s(paras: list[str], lang: str) -> float:
-    """Read time at the guide's speed (Chinese counts characters without punctuation, English words), plus pauses."""
-    n = sum(len(re.findall(r"\w", p)) if lang == "zh" else len(p.split()) for p in paras)
-    return n / PER_MIN.get(lang, 150) * 60 + PAUSE_S * max(0, len(paras) - 1)
+    """Read time at the measured speed (PER_MIN), plus the pauses between paragraphs."""
+    return count(paras, lang) / PER_MIN.get(lang, PER_MIN["en"]) * 60 + PAUSE_S * max(0, len(paras) - 1)
+
+
+def size_text(paras: list[str], lang: str) -> str:
+    """One line for the writer: paragraphs, words / characters and the estimated read time."""
+    words = "" if lang == "zh" else f"{sum(len(p.split()) for p in paras)} words, "
+    what = "characters without punctuation" if lang == "zh" else "characters"
+    return (f"{len(paras)} paragraphs, {words}{count(paras, lang)} {what}, "
+            f"reads in about {estimate_s(paras, lang):.0f} s")
 
 
 def check_length(paras: list[str], lang: str) -> str | None:
@@ -170,8 +184,7 @@ def render(src: Path, out: Path, lang: str, gap: float, bell: bool, loud: bool, 
     voice, default_rate = (voice_table or VOICES)[lang]
     if warn := check_length(paras, lang):
         print(warn, flush=True)
-    print(f"[narrate] {lang}: {len(paras)} paragraphs, {sum(map(len, paras))} characters with {voice} "
-          "(edge-tts, online)...", flush=True)
+    print(f"[narrate] {lang}: {size_text(paras, lang)}; rendering with {voice} (edge-tts, online)...", flush=True)
     with media.scratch(out) as t:
         tmp = Path(t)
         parts = asyncio.run(speak(paras, voice, rate or default_rate, tmp))

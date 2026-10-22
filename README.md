@@ -91,8 +91,8 @@ Details: [docs/architecture.md](https://github.com/mariusDing/sports-video-coach
 
 | Plugin | For | Adds |
 |---|---|---|
-| `generic` (built in) | any sport or activity | contact sheets ▶ agent film review ▶ report; no computer vision |
-| `basketball` ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)) | amateur games, personal training, movement | player and ball tracking, league box score, team and player pages, shot charts, court diagrams in the film |
+| `generic` (built in) | any sport or activity, any clip; also pickup basketball, phone clips, no league or no GPU (`--sport basketball`) | contact sheets ▶ agent film review ▶ report; no detection: the agent reviews the frames |
+| `basketball` ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)) | league games (stats site link) or tracking from a clone (`uv sync`, GPU); personal training, movement | player and ball tracking, league box score, team and player pages, shot charts, court diagrams in the film |
 
 A new sport takes one command: `uv run sports-video-coach new-plugin badminton` writes a working plugin folder to
 start from. Then write its review prompt and add measurements. Guide: [docs/plugins.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md). Share yours
@@ -102,6 +102,8 @@ with the GitHub topic `sports-video-coach-plugin`.
 
 The project started as `hoop-tape-miner`, a basketball film-room for an amateur team, and that still works the same:
 `uv run hoop-tape-miner run <league game link>`, `/game`, `/train`, `/move`. See [docs/basketball.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md).
+
+No league, a pickup game or a phone clip: `sports-video-coach run clip.mp4 --sport basketball` (generic plugin, any clip).
 
 ## Privacy
 

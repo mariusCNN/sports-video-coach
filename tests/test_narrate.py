@@ -144,15 +144,25 @@ def test_stated_length_is_read_in_both_languages():
 
 
 def test_length_warning_when_the_script_is_off_by_more_than_30_s():
-    long_zh = ["这是报告，一分钟。" + "练" * 345]                    # 352 characters, about 78 s
+    long_zh = ["这是报告，一分钟。" + "练" * 345]                    # 352 characters, about 90 s
     warn = N.check_length(long_zh, "zh")
-    assert "about 1 min" in warn and "78 s" in warn
+    assert "about 1 min" in warn and "90 s" in warn
     assert N.check_length(["这是报告，约一分半。" + "练" * 340], "zh") is None
-    assert N.check_length(["About two minutes. " + "word " * 290], "en") is None
+    assert N.check_length(["About two minutes. " + "word " * 380], "en") is None    # 1919 characters, 120 s
     assert N.check_length(["About two minutes. " + "word " * 100], "en").startswith("[narrate] warning: the en")
     assert N.check_length(["练" * 900], "zh") is None                # no stated length, nothing to check
-    assert N.check_length(["Under a minute. " + "word " * 50], "en") is None   # 20 s is under a minute
-    assert N.check_length(["Under a minute. " + "word " * 200], "en").startswith("[narrate] warning")
+    assert N.check_length(["Under a minute. " + "word " * 50], "en") is None   # 17 s is under a minute
+    assert N.check_length(["Under a minute. " + "word " * 300], "en").startswith("[narrate] warning")
+
+
+def test_read_time_uses_the_measured_rates():
+    """Measured with the default voices: 887 characters / 6 paragraphs read in 58 s, 201 Chinese characters in 55 s;
+    English words a minute vary with word length, characters do not."""
+    en = ["x" * 147] * 6
+    assert abs(N.estimate_s(en, "en") - 58) < 2
+    assert abs(N.estimate_s(["练习，" * 17] * 6, "zh") - 55.6) < 2   # punctuation is not read as characters
+    assert N.size_text(["One two three.", "Four."], "en") == "2 paragraphs, 4 words, 19 characters, reads in about 2 s"
+    assert N.size_text(["一二三。"], "zh") == "1 paragraphs, 3 characters without punctuation, reads in about 1 s"
 
 
 def test_render_prints_the_length_warning_and_goes_on(tmp_path, monkeypatch, capsys):
@@ -164,4 +174,6 @@ def test_render_prints_the_length_warning_and_goes_on(tmp_path, monkeypatch, cap
     monkeypatch.setattr(N, "speak", speak)
     with pytest.raises(RuntimeError):
         N.render(tmp_path / "listen.zh.md", tmp_path / "listen.zh.mp3", "zh", 0.7, False, False, None)
-    assert "[narrate] warning: the zh script says about 1 min" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "[narrate] warning: the zh script says about 1 min" in out
+    assert "[narrate] zh: 1 paragraphs, 352 characters without punctuation, reads in about 90 s; rendering" in out

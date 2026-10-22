@@ -76,7 +76,7 @@ One command drives all of it: `hoop-tape-miner run`. It knows which file each st
 
 ```bash
 git clone https://github.com/mariusDing/sports-video-coach.git    # or your fork
-cd hoop-tape-miner
+cd sports-video-coach
 uv sync
 uv run hoop-tape-miner          # lists every stage
 ```

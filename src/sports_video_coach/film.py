@@ -757,7 +757,9 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
             starts = [sum(len(p) / rate + GAP for p in sc.paras[:k]) for k in range(len(sc.paras))]
             length, slow, *_ = plan(sc, voice_s, starts, steps.get(i, 0), anim.get(i, 1.0))
             total += length
-            extra = f"  {len(sc.freezes)} freeze(s)" if sc.freezes else "  slow replay" if slow else ""
+            n_resume = sum(fz.resume for fz in sc.freezes)  # a bare > resumes the play: not a freeze
+            extra = (f"  {len(sc.freezes) - n_resume} freeze(s)" + (f", {n_resume} resume(s)" if n_resume else "")
+                     if sc.freezes else "  slow replay" if slow else "")
             print(f"{i:3d} {sc.kind:5s} {sc.src or sc.text[:30]:<30s} {sum(len(p) for g in groups for p in g):5d} chars"
                   f" ~{length:5.1f} s{extra}")
             for fz in sc.freezes:

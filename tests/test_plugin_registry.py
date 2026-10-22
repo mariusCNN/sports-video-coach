@@ -153,7 +153,23 @@ def test_videos_go_to_the_plugin_named_for_the_sport(swimming, capsys):
     video.write_bytes(b"x")
     run.main([str(video), "--sport", "Swimming"])
     assert sys.modules["svc_plugin_swimming.new"].SEEN == [[str(video), "--sport", "Swimming"]]
-    assert "[run] plugin swimming matches --sport Swimming; --plugin generic" in capsys.readouterr().out
-    assert run.for_sport(["v.mp4", "--sport=swimming"]).name == "swimming"
-    assert run.for_sport(["v.mp4", "--sport", "tennis"]).name == "generic"
-    assert run.for_sport(["v.mp4"]).name == "generic"
+    assert "[run] plugin: swimming (named for --sport Swimming; `--plugin generic`" in capsys.readouterr().out
+    assert run.for_sport(["v.mp4", "--sport=swimming"])[0].name == "swimming"
+    p, why = run.for_sport(["v.mp4", "--sport", "tennis"])
+    assert p.name == "generic" and "no plugin named for --sport tennis" in why
+    p, why = run.for_sport(["v.mp4"])
+    assert p.name == "generic" and "no --sport" in why
+
+
+def test_run_says_which_plugin_starts_the_unit_and_why(swimming, capsys, monkeypatch):
+    from sports_video_coach import run
+    video = swimming / "lap.mp4"
+    video.write_bytes(b"x")
+    run.main([str(video), "--plugin", "swimming"])
+    assert "[run] plugin: swimming (--plugin)" in capsys.readouterr().out
+    if "basketball" in plugin.plugins():    # a plugin with no `new` stage: videos go to generic, and it says why
+        p, why = run.for_sport(["v.mp4", "--sport", "Basketball"])
+        assert p.name == "generic" and "basketball plugin does not start from videos" in why
+    monkeypatch.setattr(run, "stage_main", lambda p, stage: lambda argv: None)
+    run.main([str(video), "--sport", "tennis"])
+    assert "[run] plugin: generic (no plugin named for --sport tennis" in capsys.readouterr().out

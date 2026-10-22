@@ -84,8 +84,8 @@ sports-video-coach run workspace/analysis/badminton/2025-03-15
 
 | 插件 | 适用 | 增加了什么 |
 |---|---|---|
-| `generic`（内置） | 任何运动或活动 | 缩略图拼版 ▶ agent 看片 ▶ 报告；不需要计算机视觉 |
-| `basketball`（[文档](docs/basketball.zh.md)） | 业余比赛、个人训练、跑动 | 球员和球跟踪、联赛数据、球队和球员页面、投篮图、讲解视频里的战术板 |
+| `generic`（内置） | 任何运动或活动、任何片段；野球、手机片段、没有联赛或没有 GPU 的篮球也用它（`--sport basketball`） | 缩略图拼版 ▶ agent 看片 ▶ 报告；不做检测，由 agent 看截帧 |
+| `basketball`（[文档](docs/basketball.zh.md)） | 联赛比赛（数据网站链接），或在克隆的 repo 里做跟踪（`uv sync`，GPU）；个人训练、跑动 | 球员和球跟踪、联赛数据、球队和球员页面、投篮图、讲解视频里的战术板 |
 
 新运动一条命令：`uv run sports-video-coach new-plugin badminton` 生成一个能直接跑的插件文件夹。然后写它的看片提示词、
 加测量。指南：[docs/plugins.md](docs/plugins.md)。分享你的插件时加 GitHub topic `sports-video-coach-plugin`。
@@ -94,6 +94,8 @@ sports-video-coach run workspace/analysis/badminton/2025-03-15
 
 项目起点是 `hoop-tape-miner`，一个业余球队的篮球录像室，用法不变：`uv run hoop-tape-miner run <联赛比赛链接>`、
 `/game`、`/train`、`/move`。见 [docs/basketball.zh.md](docs/basketball.zh.md)。
+
+没有联赛、野球或手机片段：`sports-video-coach run clip.mp4 --sport basketball`（generic 插件，任何片段都行）。
 
 ## 隐私
 

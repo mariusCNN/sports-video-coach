@@ -313,7 +313,12 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\nWatch.\n"
                                        '> 0:03 0.5,0.8 "here"\nStop.\n>\nOn it goes.\n', encoding="utf8")
     film.main([str(folder), "--video", str(video), "--dry"])
-    assert "      resume: the play runs on" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "      resume: the play runs on" in out and "1 freeze(s), 1 resume(s)" in out
+    (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\nWatch.\n> 0:03\nStop.\n"
+                                       "> 0:04\nAgain.\n>\nOn it goes.\n", encoding="utf8")
+    film.main([str(folder), "--video", str(video), "--dry"])
+    assert "2 freeze(s), 1 resume(s)" in capsys.readouterr().out  # two freezes and a bare `>`, not 3 freezes
     (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\n"
                                        '> 0:03 0.88,0.72 "stop here" 0.92,0.72\nStop.\n\n## Numbers\n'
                                        + "A long still talk. " * 14 + "\n", encoding="utf8")
