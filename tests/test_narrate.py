@@ -53,3 +53,24 @@ def test_ffprobe_has_a_timeout(tmp_path, monkeypatch):
     monkeypatch.setattr(media.subprocess, "run", fake_run)  # render_html probes through media
     assert render_html.duration_s(tmp_path / "a.mp3") == 12.5
     assert seen.get("timeout") and seen.get("encoding") == "utf8"
+
+
+def test_render_with_a_relative_unit_folder_runs_ffmpeg(tmp_path, monkeypatch):
+    """README-style `run ws/analysis/x/<date>`: the concat list must still resolve (real ffmpeg, no TTS)."""
+    import shutil
+    from pathlib import Path
+
+    import pytest
+    if not shutil.which("ffmpeg"):
+        pytest.skip("needs ffmpeg")
+
+    async def speak(paras, voice, rate, tmp):
+        return [N.silence(0.2, tmp / f"p{i:03d}.mp3") for i in range(len(paras))]
+    monkeypatch.setattr(N, "speak", speak)
+    monkeypatch.chdir(tmp_path)
+    unit = Path("ws") / "unit"
+    unit.mkdir(parents=True)
+    (unit / "listen.en.md").write_text("one\n\ntwo\n", encoding="utf8")
+    N.render(unit / "listen.en.md", unit / "listen.en.mp3", "en", 0.1, False, False, None)
+    assert (tmp_path / "ws" / "unit" / "listen.en.mp3").stat().st_size > 0
+    assert not (tmp_path / "ws" / "unit" / ".partial").exists()

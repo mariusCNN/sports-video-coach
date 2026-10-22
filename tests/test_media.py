@@ -39,6 +39,13 @@ def test_scratch_is_a_plain_folder_next_to_the_output_and_goes_away(tmp_path):
     assert not (tmp_path / ".partial").exists()
 
 
+def test_scratch_is_absolute_for_a_relative_output(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "unit").mkdir()
+    with media.scratch(Path("unit") / "listen.en.mp3") as t:  # README-style relative unit folder
+        assert t.is_absolute() and t.parent == tmp_path / "unit" / ".partial"
+
+
 def test_partial_moves_into_place_only_on_success(tmp_path):
     out = tmp_path / "clips" / "a.mp4"
     out.parent.mkdir()

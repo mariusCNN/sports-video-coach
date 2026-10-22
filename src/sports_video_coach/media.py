@@ -81,8 +81,9 @@ def scratch(near: Path):
 
     Not `tempfile`: since CPython 3.11.10 / 3.12.4, `mkdtemp` on Windows gives the folder an owner-only ACL, which
     a sandboxed agent (a restricted token, e.g. the Codex Windows sandbox) cannot open. A plain mkdir inherits the
-    output folder's permissions, which the run can already write."""
-    d = Path(near).parent / ".partial"
+    output folder's permissions, which the run can already write. Absolute, like tempfile's: ffmpeg reads a concat
+    list's entries, and runs with `cwd=`, relative to other folders."""
+    d = Path(near).resolve().parent / ".partial"
     d.mkdir(parents=True, exist_ok=True)
     for i in range(1000):
         t = d / f"work-{os.getpid()}-{i}"
