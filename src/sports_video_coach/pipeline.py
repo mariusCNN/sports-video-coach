@@ -91,7 +91,8 @@ class Unit:
     def fill_values(self) -> dict:
         """Placeholders for agent instructions ({folder}, {run}, {qa}, ...)."""
         return dict(folder=self.folder, run=self.run, review=self.review, video=self.video,
-                    langs=", ".join(self.langs), readmes=" + ".join(readme(l) for l in self.langs), qa=qa_hash(self))
+                    langs=", ".join(self.langs), readmes=" + ".join(readme(l) for l in self.langs), qa=qa_hash(self),
+                    pages=" ".join(d.as_posix() for d in self.reports()))
 
     def fill(self, how: str) -> str:
         """Paths print with forward slashes, so `{run}/review/review.json` is one style on Windows too."""
@@ -296,7 +297,9 @@ def qa_done(g: Unit) -> bool:
     return (g.folder / "qa.md").exists() and not qa_errors(g)
 
 
-QA_STAMP = (" Then add the line `checked: {qa}` to qa.md (the stamp of the files you checked; an edit after QA "
+QA_STAMP = (" No browser? `sports-video-coach page-check {pages}` checks links and media (not layout or playback);"
+            " say in qa.md which checks you ran."
+            " Then add the line `checked: {qa}` to qa.md (the stamp of the files you checked; an edit after QA "
             "changes it and the run asks for QA again).")
 
 

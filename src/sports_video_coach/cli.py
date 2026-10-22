@@ -21,6 +21,7 @@ CORE = {
     "clips": ("sports_video_coach.clips", "cut the video clips a report marks with ![caption](clip:mm:ss-mm:ss)"),
     "narrate": ("sports_video_coach.narrate", "listen.<lang>.md -> listen.<lang>.mp3 (edge-tts + ffmpeg)"),
     "html": ("sports_video_coach.render_html", "report folder (README.md + README.en.md) -> one bilingual index.html"),
+    "page-check": ("sports_video_coach.page_check", "static check of a report page: links, anchors, media, no local paths"),
     "film": ("sports_video_coach.film", "film.<lang>.md -> explained video: narration over clips and charts, subtitled"),
     "publish": ("sports_video_coach.publish", "reports -> private-link website (Cloudflare Workers), one stable link per report"),
 }

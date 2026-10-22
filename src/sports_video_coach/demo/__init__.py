@@ -18,7 +18,7 @@ import sys
 import time
 from pathlib import Path
 
-from .. import media, pipeline as P, workspace
+from .. import media, page_check, pipeline as P, workspace
 from ..plugins.generic import new, unit as U
 
 FILES = Path(__file__).parent / "files"
@@ -54,14 +54,8 @@ def copy_files(folder: Path, langs: list[str]) -> None:
 
 
 def self_check(g: U.Analysis) -> list[str]:
-    """What the page is missing: it must link every clip and audio file the run made. Not a browser check."""
-    page = g.folder / "index.html"
-    if not page.exists():
-        return [f"{page} missing"]
-    html = page.read_text(encoding="utf8")
-    media_files = [*sorted(g.folder.glob("clips/*.mp4")), *sorted(g.folder.glob("listen.*.mp3"))]
-    errs = [f"index.html does not link {p.relative_to(g.folder).as_posix()}" for p in media_files
-            if p.relative_to(g.folder).as_posix() not in html]
+    """What the page is missing (`page-check`: links, anchors, media), plus at least one cut clip. Not a browser."""
+    errs = page_check.problems(g.folder)
     if not list(g.folder.glob("clips/*.mp4")):
         errs.append("no clips were cut")
     return errs
@@ -71,8 +65,8 @@ def write_qa(g: U.Analysis) -> None:
     errs = self_check(g)
     if errs:
         sys.exit("[demo] page self-check failed:\n  " + "\n  ".join(errs))
-    text = ("PASS\n\nScripted self-check by `sports-video-coach demo`, not a browser check: index.html links every "
-            "clip and audio file. With your own video the agent checks the page in a browser instead.\n\n"
+    text = ("PASS\n\nScripted self-check by `sports-video-coach demo` (`page-check`: links, anchors, every clip and "
+            "audio file), not a browser check. With your own video the agent checks the page in a browser instead.\n\n"
             f"checked: {P.qa_hash(g)}\n")
     media.write_text_atomic(g.folder / "qa.md", text)
 

@@ -17,6 +17,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- `sports-video-coach page-check <folder...>`: a static check of a report page for agents with no browser (every local link and anchor resolves, every clip and audio file is linked and readable, no local disk path, a mobile viewport). The qa step mentions it; `demo` uses it for its scripted QA.
 - README: a GIF of the demo's explained video.
 - README: install from the GitHub ZIP when git is missing or blocked.
 - `run` ends with one line naming the deliverables it built and the ones the unit's `artifacts` left out.

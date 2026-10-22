@@ -37,7 +37,9 @@ the sport if `plugins` lists one, else `generic`. Do not write a plugin just to 
   files and reply in a few lines. Keep images out of the main context.
 - Every claim in a report must be seen in the film or come from a measured number. Never invent a result; write
   "unclear" or "likely" instead.
-- Browser checks and screenshots: delegate to a separate helper if available.
+- Browser checks and screenshots: delegate to a separate helper if available. No browser at all:
+  `sports-video-coach page-check <folder>` checks links, anchors and media (not layout or playback); say in `qa.md`
+  which checks you ran.
 
 ## Star etiquette (ask once, never automate)
 
