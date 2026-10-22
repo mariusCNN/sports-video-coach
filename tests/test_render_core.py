@@ -48,7 +48,8 @@ def test_folder_no_plugin_owns_gets_the_plain_band(tmp_path):
         page = render_html.page(folder)
         assert 'data-result="plain"' in page and "Serve practice" in page and "发球练习" in page
         # no json: the dated folder name; an analysis.json the generic plugin owns: its own date and sport
-        assert ("2025-03-15" if data is None else "tennis · 2025-03-16") in page
+        assert "2025-03-15" in page if data is None else (
+            '<span data-lang="zh">网球</span><span data-lang="en" hidden>tennis</span> · 2025-03-16' in page)
         for basketball in ("factors", "fi-", "data-result=\"win\"", "Four Factors", "我们", "1st half"):
             assert basketball not in page
         assert f"--us: {render_html.DEFAULT_COLOURS['us'][0]};" in page
@@ -59,6 +60,14 @@ def test_default_board_shows_date_and_sport():
     sb = render_html.default_board(Path("x"), {"date": "2025-03-16", "sport": "tennis"}, "generic", "<span>T</span>")
     band = render_html.default_band(sb, lambda k: k)
     assert "<span>T</span>" in band and "tennis · 2025-03-16" in band
+
+
+def test_sport_names_per_page_language():
+    assert render_html.sport_names("Tennis", ("zh", "en")) == {"zh": "网球", "en": "Tennis"}
+    assert render_html.sport_names("网球", ("zh", "en")) == {"zh": "网球", "en": "tennis"}
+    assert render_html.sport_names("sepak takraw", ("zh", "en")) == {"zh": "sepak takraw", "en": "sepak takraw"}
+    assert render_html.sport_names({"zh": "藤球", "en": "sepak takraw"}, ("zh", "en"))["zh"] == "藤球"
+    assert render_html.sport_names({"en": "padel"}, ("zh", "en")) == {"zh": "padel", "en": "padel"}
 
 
 def test_plugin_hooks_fall_back_per_field(tmp_path, monkeypatch):

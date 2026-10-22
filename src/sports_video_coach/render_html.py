@@ -71,14 +71,43 @@ class PageHooks:
 DEFAULT = PageHooks()
 
 
-def default_board(folder: Path, data: dict, sport: str, heading: str) -> dict:
-    """Plain band data: the title spans, the unit's date (or a dated folder name) and the sport / plugin name."""
+# Common sport names in Chinese, so a zh page does not show "tennis"; analysis.json `"sport": {"zh": .., "en": ..}`
+# names any other sport per language.
+SPORT_ZH = {"tennis": "网球", "basketball": "篮球", "football": "足球", "soccer": "足球", "badminton": "羽毛球",
+            "table tennis": "乒乓球", "volleyball": "排球", "swimming": "游泳", "running": "跑步", "golf": "高尔夫",
+            "baseball": "棒球", "boxing": "拳击", "climbing": "攀岩", "cycling": "骑行", "skiing": "滑雪",
+            "skateboarding": "滑板", "martial arts": "武术", "gymnastics": "体操", "yoga": "瑜伽",
+            "weightlifting": "举重", "fitness": "健身", "dance": "舞蹈", "pickleball": "匹克球", "squash": "壁球",
+            "rugby": "橄榄球", "hockey": "曲棍球", "ice hockey": "冰球", "cricket": "板球", "athletics": "田径"}
+
+
+def sport_names(sport, langs=("en",)) -> dict[str, str]:
+    """{lang: sport name} for the page languages: a per-language dict as given, else SPORT_ZH both ways."""
+    if isinstance(sport, dict):
+        fallback = next((str(v) for v in sport.values() if v), "")
+        return {c: str(sport.get(c) or fallback) for c in langs}
+    raw = str(sport or "")
+    key = raw.strip().lower()
+    en = next((k for k, v in SPORT_ZH.items() if v == raw.strip()), raw)
+    return {c: SPORT_ZH.get(key, raw) if c == "zh" else en for c in langs}
+
+
+def default_board(folder: Path, data: dict, sport: str, heading: str, langs=("en",)) -> dict:
+    """Plain band data: the title spans, the unit's date (or a dated folder name) and the sport / plugin name
+    ({lang: name}, see sport_names)."""
     date = data.get("date") or (folder.name if re.fullmatch(r"\d{4}-\d{2}-\d{2}", folder.name) else "")
-    return dict(heading=heading, date=str(date), sport=str(data.get("sport") or sport), colours=DEFAULT_COLOURS)
+    return dict(heading=heading, date=str(date), sport=sport_names(data.get("sport") or sport, langs),
+                colours=DEFAULT_COLOURS)
 
 
 def default_band(sb: dict, lab) -> str:
-    meta = " · ".join(html.escape(x) for x in (sb["sport"], sb["date"]) if x)
+    names = sb["sport"] if isinstance(sb["sport"], dict) else {"": str(sb["sport"])}
+    if len(set(names.values())) > 1:  # one span per language, the switch shows one (first language visible)
+        sport = "".join(f'<span data-lang="{c}"{" hidden" if i else ""}>{html.escape(n)}</span>'
+                        for i, (c, n) in enumerate(names.items()))
+    else:
+        sport = html.escape(next(iter(names.values()), ""))
+    meta = " · ".join(x for x in (sport, html.escape(sb["date"])) if x)
     return f"""<div class="score" data-result="plain">
       <div class="team us"><span class="name">{sb["heading"]}</span><span class="side">{meta}</span></div>
     </div>"""
@@ -282,7 +311,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
     def title_spans():
         return "".join(f'<span data-lang="{c}"{hide(c)}>{html.escape(titles[c])}</span>' for c, *_ in langs)
     if sb is None:
-        sb = default_board(folder, data, sport, title_spans())
+        sb = default_board(folder, data, sport, title_spans(), [c for c, *_ in langs])
     board = (hooks.band or default_band)(sb, lab)
     colours = {**DEFAULT_COLOURS, **(sb.get("colours") or {})}
     (us_hex, us_light), (them_hex, them_light) = colours["us"], colours["them"]

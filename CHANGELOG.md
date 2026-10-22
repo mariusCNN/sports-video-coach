@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - A finished generic run also lists the narration MP3s and the clips folder, not only the page and the explained video.
+- A Chinese page names the sport in Chinese (`tennis` shows as 网球 on the zh page). Other sports: set `"sport": {"zh": "...", "en": "..."}` in analysis.json.
 
 ## 0.2.2 - 2026-10-23
 

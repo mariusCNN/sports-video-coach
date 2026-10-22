@@ -15,6 +15,8 @@ hf/
 HANDOFF.md
 # personal Claude Code rules (machine paths, league login), auto-loaded locally
 CLAUDE.local.md
+# Ralph Loop state (Claude Code plugin)
+.claude/*.local.md
 
 # Playwright MCP scratch logs/snapshots
 .playwright-mcp/

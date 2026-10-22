@@ -28,7 +28,10 @@ class Analysis(P.Session):
     PLAN = "next steps"
 
     def fill_values(self) -> dict:
-        return dict(super().fill_values(), prompts=PROMPTS, sport=self.game.get("sport") or "the sport in the video",
+        sport = self.game.get("sport")
+        if isinstance(sport, dict):  # {"zh": .., "en": ..}: names per page language
+            sport = sport.get("en") or next(iter(sport.values()), "")
+        return dict(super().fill_values(), prompts=PROMPTS, sport=sport or "the sport in the video",
                     focus=self.game.get("focus") or "the main athlete in the video")
 
     def finished(self):
