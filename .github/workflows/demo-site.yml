@@ -26,9 +26,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - name: ffmpeg
-        timeout-minutes: 5
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: ffmpeg (apt sometimes hangs on these runners: retry with a timeout)
+        timeout-minutes: 10
+        run: |
+          for i in 1 2 3; do
+            timeout 150 sudo apt-get update -qq && timeout 150 sudo apt-get install -y -qq ffmpeg && break
+            echo "apt attempt $i failed or hung, retrying"
+          done
+          ffmpeg -version | head -1
       - name: Noto Sans CJK SC, the film's default font on Linux (apt font packages hung this job)
         timeout-minutes: 5
         run: |
