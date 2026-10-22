@@ -17,6 +17,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Run output prints paths with forward slashes on Windows too, so they paste into Git Bash; the QA instructions no
   longer repeat the page-check sentence.
 - README: what to do when `sports-video-coach` is not found after `uv tool install`.
+- `guide --plugin basketball` on a light install says its guides live in a clone instead of "has no guides".
 
 ## 0.2.3 - 2026-10-23
 

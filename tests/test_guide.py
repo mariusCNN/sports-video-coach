@@ -16,6 +16,15 @@ def test_guide_lists_prints_and_names_unknown_ones(capsys):
     assert "its guides: film, narration, report, review" in str(e.value.code)
 
 
+def test_guide_says_where_a_plugins_missing_guides_live(monkeypatch, tmp_path):
+    from sports_video_coach import plugin
+    p = plugin.get("generic")
+    monkeypatch.setattr(p, "prompts", tmp_path / "prompts")  # a wheel install of a clone-only plugin
+    with pytest.raises(SystemExit) as e:
+        guide.main([])
+    assert "which this install does not have" in str(e.value.code)
+
+
 def test_cli_prints_chinese_through_a_non_utf8_pipe(monkeypatch):
     import io
     import sys

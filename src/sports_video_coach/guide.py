@@ -27,7 +27,10 @@ def main(argv=None) -> int:
     found = guides(p)
     if not a.name:
         if not found:
-            sys.exit(f"plugin {p.name!r} has no guides")
+            where = (f": they are in {p.prompts}, which this install does not have (a plugin that runs from a clone "
+                     "keeps its guides there; see `sports-video-coach plugins`)") if p.prompts and not Path(
+                p.prompts).is_dir() else ""
+            sys.exit(f"plugin {p.name!r} has no guides{where}")
         print(f"{p.name} guides ({p.prompts}):")
         for name in found:
             print(f"  {name}")
