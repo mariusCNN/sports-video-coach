@@ -1,6 +1,6 @@
 [project]
 name = "sports-video-coach"
-version = "0.3.0"
+version = "0.3.1.dev0"
 description = "Agent-first sports video analysis and coaching: your game or training video -> coaching pages with clips and narration, plus an explained video. Plugins per sport (basketball built in); runs from Claude Code, Codex or any coding agent"
 readme = "README.md"
 license = "MIT"
