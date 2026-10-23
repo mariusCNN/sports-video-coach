@@ -72,6 +72,18 @@ All notable changes to this project are documented here. The format follows [Kee
   after editing a stage, and a single source video is referenced, not copied.
 - The landing page shows the install and demo commands, a "Write a plugin for your sport" link and the version.
   README: one star request and an alpha status line.
+- `page-check` also reads the narration and film scripts (`listen.<lang>.md`, `film.<lang>.md`): another
+  language's words, mojibake (Ã©, â€™) and, in French, straight quotes. `--strict` exits 1 on a warning, and the
+  run's qa step waits on them too (`--accept qa` keeps it). `page-check --write-qa` drafts qa.md, saying what it
+  could not check without a browser (layout, the phone view, playback).
+- Editing one language's report prints one warning naming the other languages' report and scripts that may no
+  longer match.
+- After adding a language, the report step lists only the missing report files (`missing:` lines).
+- Sport names in every language from one table (fr, es, de, pt, ko too); `--sport-name` still overrides. The
+  report guide no longer asks for a date in the title (the page header shows it), and its example dates match the
+  page (`23 oct. 2026`).
+- Contact sheets start with a tile at 0:00, and the time label sits bottom left, clear of a clock burned into the
+  video's top left.
 - README (en, zh) rewritten: the explained video first, a "Tell your agent" prompt to paste into Claude Code or
   Codex, what you get and what it can't do yet, three steps for how it works; install options, costs and data,
   and the developer pattern folded away.
