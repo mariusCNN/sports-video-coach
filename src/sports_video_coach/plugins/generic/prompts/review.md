@@ -27,6 +27,9 @@ between two tiles faster than they can move, zoom in on those seconds before coa
    A drill repeated many times: zoom 2-3 reps (one early, one in the middle, one late) at 0.2-0.3 s for technique;
    at 2 s a tile per stride or turn is too coarse to see it. Use the regular sheets for counting reps, rest and
    fatigue.
+   Fast objects (a shuttle, a ball, a swing) cross the frame between two regular tiles: before coaching contact or
+   flight, make a zoom sheet around the moment with
+   `sports-video-coach frames <video> --out run/frames-zoom --start <t> --end <t> --every 0.2`.
 4. Write `run/review/review.json`.
 
 ## review.json
@@ -48,7 +51,7 @@ between two tiles faster than they can move, zoom in on those seconds before coa
 - `what`: what is seen, concretely (body part, ball, position). No praise words without a fact.
   When only position and timing are visible (a far camera, a small figure), coach those and say so in
   `summary`; write `why` as "likely" or "unclear" where mechanics would be needed, in the review's language
-  (Chinese 可能 / 看不清, Japanese おそらく / 見えない).
+  (Chinese 可能 / 看不清, Japanese おそらく / 見えない, Korean 아마 / 불분명).
 - `why`: the cause, as far as the frames show it. Write "unclear" (in the review's language) when they do not.
 - `tag`: `fix` (a habit to change), `good` (keep doing it), `context` (score, drill change, rest).
 - `confidence`: `seen` (clear in the frames), `likely`, or `unclear`. Never invent what the frames do not show.

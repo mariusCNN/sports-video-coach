@@ -9,6 +9,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - Korean narration: the length check reads spelled-out lengths (약 이 분, 일 분 반, 오 분 정도), and the Korean
   read rate is 245 Hangul a minute (was 270, about 10% short of the real audio).
 - The Korean page's slow-motion button reads 느리게 ½× (was 슬로).
+- The report and review guides give the Korean labels (**영상에서 보인 것** ... `## 계속할 것`, `**한 줄 요약:**`) and
+  아마 / 불분명 for likely / unclear, as they do for Chinese and Japanese.
+- The review guide and the review step say to cut a 0.2 s zoom sheet around fast objects (a shuttle, a ball, a
+  swing), which can fall between two regular tiles.
 
 ### Changed
 

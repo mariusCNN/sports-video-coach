@@ -149,8 +149,9 @@ STEPS = [
                "prints it; sport: {sport}; focus: {focus}). Delegate the sheets to helpers (subagents), if your "
                "tool has them, at "
                "most 3 at once, one contiguous range each, writing {review}/part<N>.json; `sports-video-coach "
-               "{plugin}:review-check {folder}` merges them. An unclear moment: `sports-video-coach frames {video} "
-               "--out {run}/frames-zoom --start 0:12 --end 0:15 --every 0.2` cuts a dense sheet of just that."),
+               "{plugin}:review-check {folder}` merges them. An unclear moment, or a fast object (shuttle, ball, a "
+               "swing) between two tiles: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 "
+               "--end 0:15 --every 0.2` cuts a dense sheet of just that."),
     P.Step("report", "agent", reports_written,
            errors=lambda g: P.missing([g.folder / P.readme(l) for l in g.langs], g),  # a language added: only its file
            derives=lambda g: [(g.folder / P.readme(l), [g.review / "review.json"]) for l in g.langs],
