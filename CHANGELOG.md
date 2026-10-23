@@ -4,11 +4,6 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
-### Changed
-
-- The agent steps print `guide <name> --unit <folder>`: the guide of the unit's own plugin, found from any folder
-  (also a plugin in a `plugins/` folder above the unit); `<plugin>:<stage> <unit path>` finds such a plugin too.
-
 ### Added
 
 - New languages: `--lang ja ko es fr de pt` beside zh and en, from one table (`src/sports_video_coach/langs.py`).
@@ -61,7 +56,8 @@ All notable changes to this project are documented here. The format follows [Kee
   estimate is outside it.
 - Contact sheets have a 3 px gap between tiles; x,y fractions read off a tile stay correct. The report guide and
   `--focus` help say one report can cover several players, one section each.
-- Agent-step commands work from any folder: `guide <name> --unit <folder>` uses the unit's own plugin.
+- The agent steps print `guide <name> --unit <folder>`: the guide of the unit's own plugin, found from any folder
+  (also a plugin in a `plugins/` folder above the unit); `<plugin>:<stage> <unit path>` finds such a plugin too.
 - `new-plugin --summary "..." --use-when "..."`; `plugins` marks a placeholder summary and shows a plugin with
   missing packages on one line (`--json` keeps the full list).
 - The new-plugin test checks step order only and has a commented stage test; docs/plugins.md: `--redo <stage>`
