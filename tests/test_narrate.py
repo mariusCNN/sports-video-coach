@@ -147,7 +147,11 @@ def test_stated_length_is_read_in_every_registry_language():
     cases = {"ja": [("約一分です。", 60), ("約2分です。", 120), ("一分半ほど。", 90), ("約十二分間。", 720),
                     ("1分以内です。", (60, True)), ("3分の1", None)],
              "ko": [("약 2분입니다.", 120), ("약2분.", 120), ("1분 반 정도.", 90), ("약 한 분이 나옵니다.", None), ("약 세 분이 왔다.", None),
-                    ("1분 미만입니다.", (60, True)), ("3분의 1", None), ("부분 분석", None)],
+                    ("1분 미만입니다.", (60, True)), ("3분의 1", None), ("부분 분석", None),
+                    ("약 오 분입니다.", 300), ("오 분 정도.", 300), ("약 일 분 반.", 90), ("약이분.", 120),
+                    ("십오 분 정도.", 900), ("이십 분쯤.", 1200), ("두 분 정도.", 120), ("열 분 남짓.", 600),
+                    ("한 오 분 정도.", 300), ("일 분 반이에요.", 90), ("이 분이 코치입니다.", None),
+                    ("세 분이 왔다.", None), ("약 오 분석.", None), ("통일 분야.", None)],
              "es": [("Dura unos 2 minutos.", 120), ("Un minuto y medio.", 90), ("Menos de un minuto.", (60, True)),
                     ("Unos 1,5 minutos.", 90)],
              "fr": [("Environ deux minutes.", 120), ("Une minute et demie.", 90), ("Moins d'une minute.", (60, True))],
@@ -165,6 +169,15 @@ def test_japanese_length_warning_for_the_cold_test_script():
     warn = N.check_length(["約一分です。" + "あ" * 395], "ja")
     assert warn and "about 1 min" in warn
     assert N.check_length(["約一分です。" + "あ" * 280], "ja") is None
+
+
+def test_korean_read_rate_and_spelled_length_from_the_cold_test():
+    """442 Hangul characters in 6 paragraphs read in 112 s (ko-KR-InJoonNeural); 「약 일 분 반」 is about right,
+    「약 오 분」 is not."""
+    paras = ["가" * 74] * 5 + ["가" * 72]
+    assert 108 <= N.estimate_s(paras, "ko") <= 116
+    assert N.check_length(["약 일 분 반입니다."] + paras[1:], "ko") is None
+    assert "about 5 min" in N.check_length(["약 오 분입니다."] + paras[1:], "ko")
 
 
 def test_length_warning_when_the_script_is_off_by_more_than_30_s():

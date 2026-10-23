@@ -12,8 +12,8 @@ A spoken version of the report, rendered to MP3 by `sports-video-coach narrate <
 - Before rendering, estimate the length so the "about N minutes" sentence is right the first time. Count
   characters, not words: English about 950 characters a minute with spaces (130-190 words, depending on word
   length), Chinese about 235 characters a minute without punctuation, Japanese about 285 (kana and kanji, without
-  punctuation), Korean about 270 (Hangul without spaces), Spanish about 850, French and German about 950,
+  punctuation), Korean about 245 (Hangul without spaces), Spanish about 850, French and German about 950,
   Portuguese about 800 characters a minute with spaces. `narrate` prints this estimate
   before it renders, warns when the sentence is clearly off, and prints the real length after.
-- Write each script wholly in its own language, numbers and the length sentence too (Japanese: 「約三分」), with no
+- Write each script wholly in its own language, numbers and the length sentence too (Japanese: 「約三分」, Korean: 「약 이 분」), with no
   other language's words left in: the voice reads them with the wrong accent.

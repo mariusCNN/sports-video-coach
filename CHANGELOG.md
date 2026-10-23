@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Fixed
+
+- Korean narration: the length check reads spelled-out lengths (약 이 분, 일 분 반, 오 분 정도), and the Korean
+  read rate is 245 Hangul a minute (was 270, about 10% short of the real audio).
+
 ## 0.3.0 - 2026-10-23
 
 ### Added

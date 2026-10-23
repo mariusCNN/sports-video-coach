@@ -110,7 +110,7 @@ def stated_sentence(paras: list[str], lang: str) -> str:
 
 
 def stated(paras: list[str], lang: str) -> tuple[float, bool] | None:
-    """The length the script says it runs ("约 2 分钟", "一分半", "約一分", "약 2분", "about three minutes"; the
+    """The length the script says it runs ("约 2 分钟", "一分半", "約一分", "약 2분", "약 이 분", "about three minutes"; the
     pattern is the language's `minutes` in the registry) in seconds, and whether it
     is only an upper bound ("不到一分钟", "under a minute"); None when it names none. The first mention counts:
     the opening "this runs about N minutes"."""

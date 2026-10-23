@@ -50,8 +50,15 @@ _KANJI = "[一两二三四五六七八九十]{1,3}"
 MIN_ZH = rf"(?P<under>不到|少于)?\s*(?P<n>\d+(?:\.\d+)?|{_KANJI})\s*分(?:(?P<h1>半)钟?|钟(?P<h2>半)?)"  # not 三分球
 MIN_JA = (rf"(?P<n>\d+(?:\.\d+)?|{_KANJI})\s*分(?!の[\d一二三四五六七八九十])間?(?P<h1>半)?(?P<h2>)"
           r"(?P<under>以内|未満|弱)?")  # 約2分, 約一分, 1分半, 1分以内 (not 3分の1)
-MIN_KO = (r"(?P<n>\d+(?:\.\d+)?)\s*분(?!의\s*\d)"
-          r"(?P<h1>\s*반)?(?P<h2>)(?P<under>\s*(?:이내|미만|이하|도 안|이 안))?")  # 약 2분, 1분 반 (digits: 한 분 is a person)
+# Korean: digits; Sino-Korean words (이 분, 십오 분) after 약 or before 정도 / 쯤 / 반; native words (두 분, 열 분)
+# only before those: 한 분 / 세 분 alone are people, 이 분 alone is "this person"
+_KO_SINO = "[이삼사오육칠팔구]?십[일이삼사오육칠팔구]?|[일이삼사오육칠팔구]"
+_KO_NATIVE = "열(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)?|한|두|세|네|다섯|여섯|일곱|여덟|아홉"
+_KO_TAIL = r"(?=\s*(?:정도|쯤|가량|남짓|이내|미만|이하|동안))"
+MIN_KO = (rf"(?P<pre>(?<![가-힣])약\s*)?(?P<n>\d+(?:\.\d+)?|(?:(?<![가-힣])|(?<=약))(?:(?P<sino>{_KO_SINO})|"
+          rf"(?P<native>{_KO_NATIVE})))\s*분(?!의\s*\d)(?![석야류리배해할명위])(?P<h1>\s*반)?(?P<h2>)"
+          rf"(?(native)(?(h1)|{_KO_TAIL})|(?(sino)(?(pre)|(?(h1)|{_KO_TAIL}))))"
+          r"(?P<under>\s*(?:이내|미만|이하|도 안|이 안))?")  # 약 2분, 1분 반, 약 이 분, 일 분 반, 오 분 정도
 MIN_EN = (r"\b(?P<under>under\s+|less\s+than\s+)?(?P<n>\d+(?:\.\d+)?|a|one|two|three|four|five|six|seven|eight|"
           r"nine|ten)(?P<h1>\s+and\s+a\s+half)?\s+min(?:ute)?s?\b(?P<h2>\s+and\s+a\s+half)?")
 MIN_ES = (r"\b(?P<under>menos\s+de\s+)?(?P<n>\d+(?:[.,]\d+)?|una?|uno|dos|tres|cuatro|cinco|seis|siete|ocho|"
@@ -77,6 +84,13 @@ NUM_DE = _words({"anderthalb": 1.5, "ein": 1, "eine": 1, "einer": 1}, "zwei", "d
                 "sieben", "acht", "neun", "zehn")
 NUM_PT = _words({"um": 1, "uma": 1, "duas": 2}, "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove",
                 "dez")
+_KO_ONES = "일이삼사오육칠팔구"
+_KO_NATIVE_ONES = ("한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉")
+NUM_KO = {**{w: i for i, w in enumerate(_KO_ONES, 1)},  # 일 .. 구, 십 .. 구십구
+          **{(_KO_ONES[t - 1] if t > 1 else "") + "십" + (_KO_ONES[o - 1] if o else ""): t * 10 + o
+             for t in range(1, 10) for o in range(10)},
+          **{w: i for i, w in enumerate(_KO_NATIVE_ONES, 1)}, "열": 10,  # 한 .. 아홉, 열, 열한 .. 열아홉
+          **{"열" + w: 10 + i for i, w in enumerate(_KO_NATIVE_ONES, 1)}}
 
 
 UI_ZH = dict(contents="目录", switch="切换语言", reports="报告",
@@ -160,7 +174,8 @@ SPORT_PT = _sports("Tênis", "Basquete", "Futebol", "Futebol", "Badminton", "Tê
 
 # per_min: zh and en measured on rendered report scripts (zh: Chinese characters without punctuation, en: characters
 # with spaces; English words a minute range 130-190 with word length). The others come from one ~25 s sample
-# paragraph per default voice (2026-10-23), not from full scripts: treat them as rough until measured (ja 285: an 84 s report script).
+# paragraph per default voice (2026-10-23), not from full scripts: treat them as rough until measured (ja 285: an 84 s
+# report script; ko 245: a 442-character report script that read in 112 s).
 LANGS: dict[str, Lang] = {l.code: l for l in (
     Lang("zh", "zh-CN", "Chinese", "中文", "zh-CN-YunjianNeural", "zh-CN-XiaoxiaoNeural", 235, cjk=True, sub_chars=30,
          fonts=CJK_SC_FONTS, ui=UI_ZH, film=dict(slow="慢放", freeze="定格"), date="{y}年{m}月{d}日",
@@ -174,11 +189,11 @@ LANGS: dict[str, Lang] = {l.code: l for l in (
          page_font='"Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif',
          ui=UI_JA, film=dict(slow="スロー", freeze="一時停止"), date="{y}年{m}月{d}日",
          minutes=MIN_JA, sports=SPORT_JA),
-    Lang("ko", "ko", "Korean", "한국어", "ko-KR-InJoonNeural", "ko-KR-SunHiNeural", 270, cjk=True, sub_chars=34,
+    Lang("ko", "ko", "Korean", "한국어", "ko-KR-InJoonNeural", "ko-KR-SunHiNeural", 245, cjk=True, sub_chars=34,
          fonts={"win32": "Malgun Gothic", "darwin": "Apple SD Gothic Neo", "other": "Noto Sans CJK KR"},
          page_font='"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif',
          ui=UI_KO, film=dict(slow="슬로모션", freeze="일시정지"), date="{y}년 {m}월 {d}일",
-         minutes=MIN_KO, sports=SPORT_KO),
+         minutes=MIN_KO, numbers=NUM_KO, sports=SPORT_KO),
     Lang("es", "es", "Spanish", "ES", "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 850,
          ui=UI_ES, film=dict(slow="Cámara lenta", freeze="Pausa"), date="{d} {mon} {y}",
          months=("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"),
