@@ -109,3 +109,12 @@ def test_an_upright_phone_clip_keeps_its_shape_on_the_page(tmp_path, monkeypatch
     assert render_html.portrait(tmp_path / "wide.mp4") == ""
     monkeypatch.setattr(render_html, "video_size", lambda p: (_ for _ in ()).throw(RuntimeError("not a video")))
     assert render_html.portrait(tmp_path / "stub.mp4") == ""
+
+
+def test_bold_next_to_cjk_punctuation_renders():  # CommonMark alone leaves these asterisks as text
+    md = render_html.MD.renderInline
+    assert md("**一句话：**第 4 次") == "<strong>一句话：</strong>第 4 次"
+    assert md("看**「球拍头」**的位置") == "看<strong>「球拍头」</strong>的位置"
+    assert md("**練習：**次は") == "<strong>練習：</strong>次は"
+    assert md("**Bottom line:**next") == "**Bottom line:**next"     # Latin text renders as CommonMark says
+    assert md("a **b** c *d*") == "a <strong>b</strong> c <em>d</em>"

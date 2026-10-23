@@ -28,6 +28,9 @@ from pathlib import Path
 from typing import Callable
 
 from markdown_it import MarkdownIt
+from markdown_it.common.utils import isMdAsciiPunct, isPunctChar, isWhiteSpace
+from markdown_it.rules_inline import StateInline
+from markdown_it.rules_inline.state_inline import Scanned
 
 from sports_video_coach import clips as clipmod
 from sports_video_coach import langs as langs_
@@ -39,6 +42,44 @@ from sports_video_coach.media import duration_s  # ffprobe with a timeout: a clo
 # Raw HTML is off: README text is agent-written and quotes league data, so a <script> or <img onerror> in it must
 # show as text, never run on the published site. Pages use markdown only (clips and images come from markers).
 MD = MarkdownIt("commonmark", {"html": False}).enable("table")
+
+
+def _cjk(ch: str) -> bool:
+    """Han, kana, hangul, CJK punctuation and full-width forms."""
+    o = ord(ch)
+    return (0x1100 <= o <= 0x11FF or 0x2E80 <= o <= 0x9FFF or 0xA960 <= o <= 0xA97F or 0xAC00 <= o <= 0xD7FF
+            or 0xF900 <= o <= 0xFAFF or 0xFE30 <= o <= 0xFE4F or 0xFF00 <= o <= 0xFFEF or 0x20000 <= o <= 0x3FFFF)
+
+
+class _CJKInline(StateInline):
+    """CommonMark leaves the asterisks of `**一句话：**第 4 次` as text: a run between CJK punctuation and a CJK letter
+    is not right-flanking. As in markdown-it-cjk-friendly, a CJK character beside the run counts like whitespace or
+    punctuation for the punctuation rule, so the run still opens or closes. Latin text renders as before."""
+
+    def scanDelims(self, start: int, canSplitWord: bool) -> Scanned:
+        pos, marker = start, self.src[start]
+        last = self.src[start - 1] if start > 0 else " "
+        while pos < self.posMax and self.src[pos] == marker:
+            pos += 1
+        nxt = self.src[pos] if pos < self.posMax else " "
+        last_p = isMdAsciiPunct(ord(last)) or isPunctChar(last)
+        next_p = isMdAsciiPunct(ord(nxt)) or isPunctChar(nxt)
+        last_w, next_w = isWhiteSpace(ord(last)), isWhiteSpace(ord(nxt))
+        left = not (next_w or (next_p and not (last_w or last_p or _cjk(last))))
+        right = not (last_w or (last_p and not (next_w or next_p or _cjk(nxt))))
+        return Scanned(left and (canSplitWord or not right or last_p), right and (canSplitWord or not left or next_p),
+                       pos - start)
+
+
+def _parse_inline(src, md, env, tokens):  # ParserInline.parse with the CJK-aware state
+    state = _CJKInline(src, md, env, tokens)
+    MD.inline.tokenize(state)
+    for rule in MD.inline.ruler2.getRules(""):
+        rule(state)
+    return state.tokens
+
+
+MD.inline.parse = _parse_inline
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
 # (code, html lang, switch label, README) per registry language, zh first (langs.py)
 LANGS = [(c, l.tag, l.button, langs_.readme(c)) for c, l in langs_.LANGS.items()]

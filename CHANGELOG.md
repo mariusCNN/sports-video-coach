@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Bold next to CJK punctuation renders on the page: `**一句话：**第 4 次` showed its asterisks (CommonMark's
+  flanking rule); the renderer now treats a CJK character beside `**` the way markdown-it-cjk-friendly does.
+  Latin text renders as before. `page-check` warns about any literal `**` left in a report part.
+- README.zh matches README.md again: frames go to the agent's model provider (it said everything stays on your
+  computer), publish links are unlisted, not private, and it gains the `--focus`, `--artifacts html`, Python 3.11 /
+  ffprobe and basketball-language notes; it says the terminal messages are English, written for the agent.
 - Several videos joined into one unit: each contact-sheet tile label and each clip caption on the page also names
   the file and the time in it (`00:42.5  side.mp4 00:17.5`); README and `run --help` say the files are joined in
   the order given, and that two camera angles of one set are better run as two units for now.

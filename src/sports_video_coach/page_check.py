@@ -190,9 +190,10 @@ def texts(folder: Path) -> list[tuple[str, str, str]]:
 
 def warnings(folder: Path) -> list[str]:
     """Things a reader or listener may trip on that are not broken, in the page's report parts and the scripts
-    (texts()): English phrases inside a text that is not English (up to 5 shown each; a Latin-script language
-    such as es or fr is checked for the guides' hedge words and section labels only), mojibake (UTF-8 read as
-    Latin-1: "Ã©", "â€™"), and in French straight double quotes used as quotation marks (« … » instead)."""
+    (texts()): leftover ** in a report part (bold that did not render), English phrases inside a text that is not
+    English (up to 5 shown each; a Latin-script language such as es or fr is checked for the guides' hedge words and
+    section labels only), mojibake (UTF-8 read as Latin-1: "Ã©", "â€™"), and in French straight double quotes used
+    as quotation marks (« … » instead)."""
     out = []
     for where, code, text in texts(folder):
         runs = english(text, L.cjk(code)) if code != "en" else []
@@ -204,6 +205,10 @@ def warnings(folder: Path) -> list[str]:
         if bad:
             out.append(f"mojibake in {where} ({len(bad)}x, e.g. {bad[0]!r}): the text was saved or read in the "
                        f"wrong encoding; rewrite it as UTF-8")
+        marks = re.findall(r".{0,12}\*\*.{0,12}", text) if where.endswith(" report") else []
+        if marks:
+            out.append(f"{len(marks)} literal ** in {where}, e.g. {marks[0].strip()!r}: the bold did not render; "
+                       f"put a space or line break around it in the README and re-run `sports-video-coach html`")
         quoted = QUOTED.findall(text) if code == "fr" else []
         if quoted:
             out.append(f"{len(quoted)} straight-quoted phrase(s) in {where}, e.g. {quoted[0][:40]!r}: French "

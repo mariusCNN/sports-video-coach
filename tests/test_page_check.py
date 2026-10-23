@@ -57,6 +57,14 @@ def test_english_left_in_the_chinese_report_is_a_warning_not_a_failure(tmp_path,
     assert "2 English phrase" in PC.warnings(tmp_path)[0]                 # the guides' hedges, even in a gloss
 
 
+def test_bold_that_did_not_render_is_a_warning(tmp_path):
+    page(tmp_path, '<article class="report" lang="zh-CN"><p>**一句话：**第 4 次挥拍击球点偏低。</p></article>')
+    warns = PC.warnings(tmp_path)
+    assert len(warns) == 1 and "1 literal ** in the Chinese report" in warns[0]
+    page(tmp_path, '<article class="report" lang="zh-CN"><p><strong>一句话：</strong>第 4 次挥拍击球点偏低。</p></article>')
+    assert PC.warnings(tmp_path) == []
+
+
 def test_scripts_are_checked_for_leftover_english_mojibake_and_french_quotes(tmp_path, monkeypatch):
     monkeypatch.setattr(PC, "playable_s", lambda p: 4.0)
     page(tmp_path, '<article class="report" lang="fr-FR"><p>Le service tombe court.</p></article>')
