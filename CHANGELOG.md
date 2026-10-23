@@ -9,6 +9,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - New languages: `--lang ja ko es fr de pt` beside zh and en, from one table (`src/sports_video_coach/langs.py`).
   Japanese gets its own page labels, fonts, subtitle wrapping and length checks; the others use English page
   labels. Basketball units stay zh/en.
+- Training-plan app: an optional 决策 tab from `decide.html` (in-game decisions, e.g. a decision flow with the
+  new `.flow` boxes), and a big looping play button for any `<audio class="loop" src="x.mp3">` in a fragment, so a
+  cue track from `narrate --script --chime` plays on repeat with the screen locked. `publish` now copies the
+  audio an app page links to, and `…/p/<token>/#decide` opens that tab directly.
 
 ### Changed
 

@@ -8,7 +8,10 @@ A program folder (e.g. workspace/players/<player>/program/<date>/) holds program
 calendar, game-day targets; schema in templates/program.example.json), optional videos.json ({video key:
 [{url, title, verified}]}, keys listed in an exercise's "v") and refs.json ({key: {s, lab, t, src: [[label,
 url]]}}, keys listed in an exercise's "r"), and optional HTML fragments cal.html / game.html / tests.html /
-lib.html placed into the matching tab as they are (static text, no scripts).
+decide.html / lib.html placed into the matching tab as they are (static text, no scripts; the 决策 and 资料 tabs
+show only when their fragment exists). An `<audio class="loop" src="x.mp3" title="...">` in a fragment becomes a
+big looping play button (e.g. a cue track from `sports-video-coach narrate --script x.zh.md --chime`); publish
+copies the mp3 next to the page.
 
 The page is the engine program_app.html with that data inlined. Ticks, finished workouts and the game log are
 saved in the browser (localStorage). `hoop-tape-miner publish <program folder> --deploy` gives it a random
@@ -29,7 +32,7 @@ from sports_video_coach import media
 from . import workspace as ws
 
 ENGINE = Path(__file__).with_name("program_app.html")
-FRAGMENTS = ("cal", "game", "tests", "lib")
+FRAGMENTS = ("cal", "game", "tests", "decide", "lib")
 REQUIRED = ("title", "storageKey", "start", "days", "week1", "phases", "weekdays", "sessions", "exercises")
 
 

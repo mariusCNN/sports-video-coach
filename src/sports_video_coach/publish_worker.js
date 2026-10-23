@@ -26,13 +26,14 @@ const SECURITY = {
 };
 
 // Plan apps: YouTube players (which refuse to play with error 153 when the page sends no Referer, so the
-// origin is sent), their thumbnails, and fetch() to the sync API on this site.
+// origin is sent), their thumbnails, audio from the site itself, and fetch() to the sync API on this site.
 const PLAN_CSP = [
   "default-src 'none'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src https://fonts.gstatic.com",
   "img-src 'self' data: https://i.ytimg.com",
+  "media-src 'self'",
   "connect-src 'self'",
   "frame-src https://www.youtube-nocookie.com https://www.youtube.com",
   "base-uri 'none'",

@@ -51,7 +51,7 @@ def test_page_inlines_data_fragments_and_verified_videos_only(tmp_path):
     assert page.count("<script>") == 1 and page.count("</script>") == 1  # the data cannot close the script
     assert '\\u003c/script>' in page
     assert "game notes" in page and "aaaaaaaaaaa" in page and "bbbbbbbbbbb" not in page
-    for marker in ("/*PLAN*/", "/*VIDEOS*/", "/*REFS*/", "<!--TITLE-->", "<!--CAL-->", "<!--LIB-->"):
+    for marker in ("/*PLAN*/", "/*VIDEOS*/", "/*REFS*/", "<!--TITLE-->", "<!--CAL-->", "<!--DECIDE-->", "<!--LIB-->"):
         assert marker not in page
 
 
@@ -86,6 +86,23 @@ def test_publish_puts_program_under_p_with_stable_link(tmp_path, monkeypatch):
     assert key not in reg["reports"] and "hub" not in reg  # never listed on the team hub
     publish.main([str(folder)])
     assert json.loads((tmp_path / "publish.json").read_text(encoding="utf8"))["programs"][key] == tok
+
+
+def test_publish_copies_the_loop_audio_of_a_fragment(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path))
+    folder = plan_folder(tmp_path)
+    (folder / "decide.html").write_text('<h2>Reads</h2><audio class="loop" src="cues.zh.mp3" title="Cues"></audio>'
+                                        '<audio class="loop" src="../secret.mp3"></audio>', encoding="utf8")
+    (folder / "cues.zh.mp3").write_bytes(b"ID3")
+    (folder / "cues.zh.md").write_text("not linked, not published", encoding="utf8")
+    assert '<section data-panel="decide" hidden><h2>Reads</h2>' in program.page(folder)
+    publish.main([str(folder)])
+    tok = json.loads((tmp_path / "publish.json").read_text(encoding="utf8"))["programs"]["players/p0/program/2026-11-02"]
+    out = tmp_path / "site" / "p" / tok
+    assert sorted(f.name for f in out.iterdir()) == ["cues.zh.mp3", "index.html"]
+    page = (out / "index.html").read_text(encoding="utf8")
+    assert 'src="cues.zh.mp3"' in page and "../secret.mp3" not in page
+    assert "i.ytimg.com/vi/${yid}" in page  # the app's own script is left as it is
 
 
 def test_worker_config_binds_sync_kv(tmp_path):
@@ -152,5 +169,6 @@ def test_worker_sync_api(tmp_path):
     page = out["page"]["headers"]
     assert page["referrer-policy"] == "strict-origin-when-cross-origin"
     assert "frame-src https://www.youtube-nocookie.com" in page["content-security-policy"]
+    assert "media-src 'self'" in page["content-security-policy"]  # the loop audio next to the app
     assert "connect-src 'self'" in page["content-security-policy"]
     assert out["get"]["headers"]["referrer-policy"] == "no-referrer"  # only plan pages send a referrer

@@ -154,10 +154,14 @@ def pin_scripts(page: str) -> str:
 
 
 def build_report(folder: Path, dest: Path) -> list[str]:
-    """Render the web page into dest (emptied first) and copy the audio/clip files it links to. Only media files
-    inside the report folder are copied; any other reference is dropped from the page with a warning.
+    """Render the web page into dest (emptied first) and copy the audio/clip files it links to.
     Returns warnings (missing, outside or oversized files)."""
-    page = _html().page(folder, share=True, embed=False)
+    return write_page(folder, _html().page(folder, share=True, embed=False), dest)
+
+
+def write_page(folder: Path, page: str, dest: Path) -> list[str]:
+    """page as dest/index.html (dest emptied first), its scripts pinned, plus the media files it links to. Only
+    media files inside `folder` are copied; any other reference is dropped from the page with a warning."""
     if dest.exists():
         shutil.rmtree(dest)
     dest.mkdir(parents=True)
@@ -185,16 +189,13 @@ def build_report(folder: Path, dest: Path) -> list[str]:
     return sorted(set(warnings))
 
 
-def build_program(folder: Path, dest: Path, hooks: SiteHooks | None = None) -> None:
-    """The app page of an app folder (e.g. a training program) into dest (emptied first)."""
+def build_program(folder: Path, dest: Path, hooks: SiteHooks | None = None) -> list[str]:
+    """The app page of an app folder (e.g. a training program) into dest (emptied first), with the audio it links
+    to (an app page's own script may change at runtime, so only its src= / poster= files are copied)."""
     hooks = hooks or app_hooks(folder)
     if hooks is None:
         sys.exit(f"{folder}: no plugin publishes it as an app page")
-    page = pin_scripts(hooks.app_page(folder))
-    if dest.exists():
-        shutil.rmtree(dest)
-    dest.mkdir(parents=True)
-    (dest / "index.html").write_text(page, encoding="utf8")
+    return write_page(folder, hooks.app_page(folder), dest)
 
 
 def is_program(folder: Path) -> bool:
@@ -436,7 +437,7 @@ def main(argv=None):
                 if old and (site / "p" / old).exists():
                     shutil.rmtree(site / "p" / old)
                 reg["programs"][key] = token()
-            build_program(folder, site / "p" / reg["programs"][key], app)
+            warnings += build_program(folder, site / "p" / reg["programs"][key], app)
             continue
         if not has_report(folder):
             sys.exit(f"{folder} has no report README (README.md, README.en.md or README.<lang>.md)")
