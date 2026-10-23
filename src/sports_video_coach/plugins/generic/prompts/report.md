@@ -44,8 +44,8 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 - Every claim has a time or a clip from `review.json`. Never add what the review did not see.
 - Clips: `![caption](clip:mm:ss-mm:ss)` in video time (`mm:ss.s` works too),
   4-15 s, one per section at least. The clips stage cuts them. Several videos joined: these are times on the
-  joined `video.mp4` (`analysis.json` `sources` gives each file's `start`); say which part a clip is from when it
-  helps the reader find it in their own file (e.g. "part 2, 00:08").
+  joined `video.mp4` (`analysis.json` `sources` gives each file's `start`). The page's clip captions already add
+  the file and the time in it (e.g. "00:42.5 · side.mp4 00:17.5"), so the text need not repeat it.
 - Numbers and cues go in bold or their own bullet, not mid-sentence.
 - At most two levels of nesting. Details (long reasoning, references) go at the end under `## Notes`.
 - Write the labels in the report's language. In `README.md` (Chinese) use these, so every Chinese report reads the

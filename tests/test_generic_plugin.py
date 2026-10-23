@@ -100,9 +100,21 @@ def test_joined_videos_print_their_parts_and_the_sheets_mark_them(tmp_path, vide
     data = json.loads((a.run / "frames" / "frames.json").read_text(encoding="utf8"))
     assert [p["file"] for p in data["parts"]] == ["clip.mp4", "part2.mp4"] and data["parts"][1]["start"] == "00:06.0"
     assert "the first tile of each later file is marked" in capsys.readouterr().out
+    assert data["labels"] == "frame+file"  # each tile also names its file and the time in it
     assert frames.part_starts([0.5, 1.5, 6.5, 7.5], a.game["sources"]) == {6.5: "part 2/2"}
     if sys.platform == "win32":  # one path style in run output: it pastes into Git Bash as printed
         assert P.slash(r"C:\ws\a\run") == "C:/ws/a/run"
+
+
+def test_joined_times_name_the_file_and_the_time_in_it():
+    from sports_video_coach import media, render_html
+    src = [dict(file="/v/front.mp4", start=0.0, duration=25.0), dict(file="/v/side.mp4", start=25.0, duration=25.0)]
+    assert media.source_at(src, 42.5) == "side.mp4 00:17.5" and media.source_at(src, 3, 0) == "front.mp4 00:03"
+    assert media.source_at([dict(file="/v/a-very-long-name.mp4", start=0)], 1, 0, 12) == "a-very-~.mp4 00:01"
+    assert media.joined(src) == src and media.joined(src[:1]) is None and media.joined(None) is None
+    assert render_html.in_files(src, "00:40", "00:45") == " · side.mp4 00:15–00:20"
+    assert render_html.in_files(src, "00:22.5", "00:27") == " · front.mp4 00:22.5–side.mp4 00:02.0"
+    assert render_html.in_files(None, "00:40", "00:45") == ""  # one video: the caption stays as it was
 
 
 def test_frames_sheets_and_index(tmp_path, video, capsys):

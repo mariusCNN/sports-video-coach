@@ -32,7 +32,8 @@ from markdown_it import MarkdownIt
 from sports_video_coach import clips as clipmod
 from sports_video_coach import langs as langs_
 from sports_video_coach import plugin, units
-from sports_video_coach.media import video_size
+from sports_video_coach.media import joined, source_at, video_size
+from sports_video_coach.timefmt import seconds
 from sports_video_coach.media import duration_s  # ffprobe with a timeout: a cloud placeholder file can hang it
 
 # Raw HTML is off: README text is agent-written and quotes league data, so a <script> or <img onerror> in it must
@@ -195,9 +196,23 @@ def portrait(mp4: Path) -> str:
     return f' style="aspect-ratio: {w} / {h}"' if h > w else ""
 
 
-def clip_players(body: str, folder: Path | None, lang: str, embed: bool, windows: dict, ui: dict | None = None) -> str:
+def in_files(sources: list[dict] | None, start: str, end: str) -> str:
+    """'' for one video, else ' · side.mp4 00:15–00:20': where a clip of the joined video sits in its own file
+    (both ends named when it spans two files)."""
+    if not sources or not start:
+        return ""
+    dec = 1 if "." in start + end or any(not float(s["start"]).is_integer() for s in sources) else 0
+    a, b = source_at(sources, seconds(start), dec), source_at(sources, seconds(end), dec)
+    if a.rsplit(" ", 1)[0] == b.rsplit(" ", 1)[0]:
+        b = b.rsplit(" ", 1)[1]
+    return html.escape(f" · {a}–{b}")
+
+
+def clip_players(body: str, folder: Path | None, lang: str, embed: bool, windows: dict, ui: dict | None = None,
+                 sources: list[dict] | None = None) -> str:
     """Clip images (from `clip:` markers) -> numbered <figure> with a video player, poster and slow-mo button.
-    Paths stay relative in index.html (clips/ sits next to it); embed (--share) inlines them. ui: labels (UI)."""
+    Paths stay relative in index.html (clips/ sits next to it); embed (--share) inlines them. ui: labels (UI).
+    sources: the joined files of a unit made from several videos (each caption then says where it is in its file)."""
     t = (ui or UI)[lang]
     n = 0
 
@@ -207,7 +222,8 @@ def clip_players(body: str, folder: Path | None, lang: str, embed: bool, windows
         name, alt = m.group(2), m.group(3)
         start, end = windows.get(name, ("", ""))
         mp4 = folder / "clips" / f"{name}.mp4" if folder else None
-        cap = (f'<figcaption><span class="clip-no">{t["clip"]} {n} · {start}–{end}</span>{alt}</figcaption>')
+        cap = (f'<figcaption><span class="clip-no">{t["clip"]} {n} · {start}–{end}{in_files(sources, start, end)}'
+               f'</span>{alt}</figcaption>')
         if mp4 is None or not mp4.exists():
             print(f"warning: clips/{name}.mp4 missing; run the clips stage on {folder}", file=sys.stderr)
             return f'<figure class="clip missing" id="{lang}-clip-{name}">{cap}<p>{t["missing"]}</p></figure>'
@@ -224,7 +240,7 @@ def clip_players(body: str, folder: Path | None, lang: str, embed: bool, windows
 
 
 def render(md_text: str, lang: str, share: bool = False, folder: Path | None = None, embed: bool | None = None,
-           ui: dict | None = None):
+           ui: dict | None = None, sources: list[dict] | None = None):
     md_text = re.sub(r"^# .*\n", "", md_text, count=1)  # H1 becomes the page header
     if share:
         md_text = for_sharing(md_text)
@@ -236,7 +252,7 @@ def render(md_text: str, lang: str, share: bool = False, folder: Path | None = N
         return f"](clips/{name}.mp4)"
     md_text = clipmod.CLIP_RE.sub(clip_md, md_text)
     body = MD.render(md_text)  # CommonMark: lists need no blank line before them, 2-space nesting works
-    body = clip_players(body, folder, lang, share if embed is None else embed, windows, ui)
+    body = clip_players(body, folder, lang, share if embed is None else embed, windows, ui, sources)
     if share:  # any repo-relative link left would be dead for the recipient
         body = re.sub(r'<a href="(?!https?:|#)[^"]*">(.*?)</a>', r"\1", body)
     heads = []
@@ -326,7 +342,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
     for code, attr, _, fname in langs:
         text = (folder / fname).read_text(encoding="utf8")
         titles[code] = re.match(r"# (.*)", text).group(1).strip()
-        body, heads = render(text, code, share, folder, embed, ui)
+        body, heads = render(text, code, share, folder, embed, ui, joined(data.get("sources")))
         if hooks.sections:  # plugin sections after the report (e.g. charts, tables from the plugin's data)
             more, more_heads, more_assets = hooks.sections(folder, code, embed, len(heads) + 1)
             body, heads, assets = body + more, heads + more_heads, assets or more_assets

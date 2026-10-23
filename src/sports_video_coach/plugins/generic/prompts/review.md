@@ -6,9 +6,10 @@ whole-second sheets, mm:ss.s when tiles are under a second apart): use the label
 `frames.json` lists the sheets in time order, with the same labels.
 
 When the unit has several videos (`frames.json` lists `parts`), they are joined in order into one `video.mp4`:
-every time (tiles, review, report, clips) is on that joined timeline. `parts` says where each file starts, and the
-first tile of each later file is marked "part N/M": the athlete may jump between those two tiles, which is a cut,
-not a movement.
+every time (tiles, review, report, clips) is on that joined timeline. `parts` says where each file starts. Each
+tile label then shows the joined time first, then the file and the time in it (`00:42.5  side.mp4 00:17.5`): write
+the first one in review.json. The first tile of each later file is marked "part N/M": the athlete may jump between
+those two tiles, which is a cut, not a movement.
 One file can have cuts too (trimmed rests, a looped or edited clip): when the athlete jumps across the frame
 between two tiles faster than they can move, zoom in on those seconds before coaching it.
 

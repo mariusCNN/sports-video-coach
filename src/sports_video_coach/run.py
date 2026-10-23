@@ -115,6 +115,8 @@ Turns your sports video into a film review, a coaching page with narration and c
 The first run starts a folder from the videos; later runs take that folder and go on where it stopped. A later
 run's --artifacts or --lang changes what the folder builds (e.g. `--lang en zh` adds Chinese: only the new
 language's scripts, audio and film are made, the English ones are kept).
+Several videos are joined in the order given into one timeline (sheets and clip captions also name each file and
+the time in it); two camera angles of the same set are better run as two units for now.
 
 Exit codes: 0 done (the deliverables are listed), 3 an agent step is waiting (the output says what to write and
 with which guide; do it, run again), 1 a command failed (read the log it names, fix, run again), 2 a usage

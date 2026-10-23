@@ -38,6 +38,8 @@ until it exits 0, then show me the coaching page.
 ```
 
 A match, a drill or a workout: soccer, tennis, badminton, running, the gym, basketball ...
+Several videos are joined in the order given into one timeline; two camera angles of the same set are better run
+as two units for now.
 In our test a 40-second clip took about 3 minutes and 5 agent steps; a full game takes longer and more of your
 agent plan.
 

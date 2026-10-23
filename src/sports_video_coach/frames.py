@@ -8,7 +8,8 @@ whole frame, so x,y fractions read off a tile are fractions of the frame, as `fi
 `frames.json`:
   {"video", "duration_s", "every_s", "sheets": [{"file", "start", "end", "tiles": ["mm:ss", ...]}]}
 When the video joins several files (the unit json's `sources`), frames.json lists them as `parts` (file, start,
-end on the joined timeline) and the first tile of each later file is labelled "part N/M".
+end on the joined timeline), the first tile of each later file is labelled "part N/M" and every label also names
+the file and the time in it ("00:42.5  side.mp4 00:17.5").
 Each label sits bottom left (clear of a clock or score burned in top left) and is the video time of the frame
 shown: mm:ss when every tile falls on a whole second, else mm:ss.s (tiles under a second apart fall on whole
 tenths).
@@ -120,6 +121,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     if start is not None or end is not None:  # a window; whole-video sheets keep their old settings keys
         settings.update(start_s=start or 0.0, end_s=end)
     if sources:
+        settings["labels"] = "frame+file"  # the joined time, then the file and the time in that file
         settings["parts"] = [dict(file=Path(s["file"]).name, start=mmss(s["start"], 1),
                                   end=mmss(s["start"] + s["duration"], 1)) for s in sources]
     index = out / "frames.json"
@@ -135,6 +137,10 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     ts = times(stop, every, start or 0.0)
     dec = labels(ts)  # 0:12.5 unless every tile is on a whole second
     marks = part_starts(ts, sources)
+    local = dec if all(float(x["start"]).is_integer() for x in sources or []) else 1  # a file starting off the second
+
+    def label(t: float) -> str:
+        return mmss(t, dec) + (f"  {media.source_at(sources, t, local, 14)}" if sources else "")
     for i, group in enumerate(sheets(ts, cols * rows), 1):
         tiles = []
         for t in group:
@@ -143,7 +149,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
             if not ok:
                 continue
             s = shown_at(cap, t)
-            tiles.append((s, tile(frame, mmss(s, dec), width, marks.get(t, ""))))
+            tiles.append((s, tile(frame, label(s), width, marks.get(t, ""))))
         if not tiles:
             continue
         th = max(f.shape[0] for _, f in tiles)
@@ -163,7 +169,8 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     print(f"frames: {len(data['sheets'])} sheets ({every:g} s per tile) in {out.as_posix()}")
     if sources:
         print(f"frames: {len(sources)} joined files, times are on the joined timeline: {media.parts_line(sources)}; "
-              'the first tile of each later file is marked "part N/M"')
+              'each label also names the file and the time in it; the first tile of each later file is marked '
+              '"part N/M"')
     return data
 
 

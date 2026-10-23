@@ -185,3 +185,22 @@ def parts_line(sources: list[dict]) -> str:
     """'part1.mp4 = 00:00-00:22, part2.mp4 = 00:22-01:02': where each joined file sits on the joined timeline."""
     from .timefmt import mmss
     return ", ".join(f"{Path(s['file']).name} = {mmss(round(s['start']))}-{mmss(round(s['start'] + s['duration']))}" for s in sources)
+
+
+def joined(sources) -> list[dict] | None:
+    """The unit json's `sources` when the video joins several files (each with file, start, duration), else None."""
+    ok = isinstance(sources, list) and len(sources) > 1 and all(
+        isinstance(s, dict) and s.get("file") and isinstance(s.get("start"), (int, float)) for s in sources)
+    return sources if ok else None
+
+
+def source_at(sources: list[dict], t: float, decimals: int = 1, width: int = 0) -> str:
+    """'side.mp4 00:17.5': the joined file a joined-timeline time `t` falls in and the time in that file (the last
+    file that starts at or before it); `width` > 0 shortens a longer file name to about that many characters."""
+    from .timefmt import mmss
+    s = next((s for s in reversed(sources) if s["start"] <= t + 1e-6), sources[0])
+    name = Path(str(s["file"]).replace("\\", "/")).name
+    if 0 < width < len(name):
+        stem, ext = Path(name).stem, Path(name).suffix
+        name = stem[:max(3, width - len(ext) - 1)] + "~" + ext
+    return f"{name} {mmss(t - s['start'], decimals)}"
