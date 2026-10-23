@@ -124,6 +124,19 @@ def test_lang_on_a_basketball_game_keeps_its_zh_en_limit(tmp_path, monkeypatch, 
     assert R.Game.load(game).langs == ("en",)    # the game json wins over the profile's zh + en
 
 
+def test_language_switch_names_every_language_in_its_own_words(tmp_path):
+    assert {c: l.button for c, l in L.LANGS.items()} == {
+        "zh": "中文", "en": "English", "ja": "日本語", "ko": "한국어", "es": "Español", "fr": "Français",
+        "de": "Deutsch", "pt": "Português"}   # no mix of names and codes (한국어 beside EN)
+    assert L.ui("ko")["slow"] == "느리게"
+    (tmp_path / "README.ko.md").write_text("# 스윙\n\n![클립](clip:00:01-00:05)\n", encoding="utf8")
+    (tmp_path / "README.en.md").write_text("# Swing\n", encoding="utf8")
+    (tmp_path / "clips").mkdir()
+    (tmp_path / "clips" / "0001-0005.mp4").write_bytes(b"")
+    page = render_html.page(tmp_path)
+    assert ">한국어</button>" in page and ">English</button>" in page and "느리게 ½×" in page
+
+
 def test_page_in_japanese(tmp_path):
     (tmp_path / "README.ja.md").write_text("# スイングの見直し\n\n## 続けること\n\n構えは安定しています。\n", encoding="utf8")
     page = render_html.page(tmp_path)

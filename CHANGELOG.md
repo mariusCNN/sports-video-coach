@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Korean narration: the length check reads spelled-out lengths (약 이 분, 일 분 반, 오 분 정도), and the Korean
   read rate is 245 Hangul a minute (was 270, about 10% short of the real audio).
+- The Korean page's slow-motion button reads 느리게 ½× (was 슬로).
+
+### Changed
+
+- The page's language switch names every language in its own words (English, Español, Français, Deutsch,
+  Português, beside 中文, 日本語, 한국어), not a mix of names and codes (EN).
 
 ## 0.3.0 - 2026-10-23
 

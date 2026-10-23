@@ -27,7 +27,7 @@ class Lang:
     code: str             # file suffix and --lang value
     tag: str              # BCP 47, the page's lang attribute
     name: str             # in English, for messages ("missing: listen.ja.md (Japanese)")
-    button: str           # the page's language switch
+    button: str           # the page's language switch: the language's own name (English, 日本語, Español)
     voice: str            # default edge-tts voice
     alt_voice: str        # another voice of the language (the other gender), for narration.voices
     per_min: int          # read speed of `voice`: what count() counts, a minute
@@ -109,7 +109,7 @@ UI_JA = dict(contents="目次", switch="言語を切り替える", reports="レ�
 UI_KO = dict(contents="목차", switch="언어 바꾸기", reports="리포트",
              listen="리포트 듣기", listen_sub="약 {m}분. 읽으면서 들어도, 듣기만 해도 됩니다",
              listen_sub_s="약 {s}초. 읽으면서 들어도, 듣기만 해도 됩니다", play="재생 / 일시정지", seek="재생 위치",
-             speed="재생 속도", clip="클립", slow="슬로", missing="(클립이 아직 없습니다: clips 단계를 실행하세요)")
+             speed="재생 속도", clip="클립", slow="느리게", missing="(클립이 아직 없습니다: clips 단계를 실행하세요)")
 UI_ES = dict(contents="Índice", switch="Cambiar idioma", reports="Informes",
              listen="Escucha el informe", listen_sub="Unos {m} min. Léelo mientras escuchas o solo escucha.",
              listen_sub_s="Unos {s} segundos. Léelo mientras escuchas o solo escucha.", play="Reproducir / pausa",
@@ -180,7 +180,7 @@ LANGS: dict[str, Lang] = {l.code: l for l in (
     Lang("zh", "zh-CN", "Chinese", "中文", "zh-CN-YunjianNeural", "zh-CN-XiaoxiaoNeural", 235, cjk=True, sub_chars=30,
          fonts=CJK_SC_FONTS, ui=UI_ZH, film=dict(slow="慢放", freeze="定格"), date="{y}年{m}月{d}日",
          minutes=MIN_ZH, sports=SPORT_ZH),
-    Lang("en", "en", "English", "EN", "en-US-AndrewNeural", "en-US-AvaNeural", 960,
+    Lang("en", "en", "English", "English", "en-US-AndrewNeural", "en-US-AvaNeural", 960,
          ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused"), date="{d} {mon} {y}",
          months=("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
          minutes=MIN_EN, numbers=NUM_EN),
@@ -194,18 +194,18 @@ LANGS: dict[str, Lang] = {l.code: l for l in (
          page_font='"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif',
          ui=UI_KO, film=dict(slow="슬로모션", freeze="일시정지"), date="{y}년 {m}월 {d}일",
          minutes=MIN_KO, numbers=NUM_KO, sports=SPORT_KO),
-    Lang("es", "es", "Spanish", "ES", "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 850,
+    Lang("es", "es", "Spanish", "Español", "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 850,
          ui=UI_ES, film=dict(slow="Cámara lenta", freeze="Pausa"), date="{d} {mon} {y}",
          months=("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"),
          minutes=MIN_ES, numbers=NUM_ES, sports=SPORT_ES),
-    Lang("fr", "fr", "French", "FR", "fr-FR-HenriNeural", "fr-FR-DeniseNeural", 950,
+    Lang("fr", "fr", "French", "Français", "fr-FR-HenriNeural", "fr-FR-DeniseNeural", 950,
          ui=UI_FR, film=dict(slow="Ralenti", freeze="Pause"), date="{d} {mon} {y}",
          months=("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."),
          minutes=MIN_FR, numbers=NUM_FR, sports=SPORT_FR),
-    Lang("de", "de", "German", "DE", "de-DE-ConradNeural", "de-DE-KatjaNeural", 950,
+    Lang("de", "de", "German", "Deutsch", "de-DE-ConradNeural", "de-DE-KatjaNeural", 950,
          ui=UI_DE, film=dict(slow="Zeitlupe", freeze="Standbild"), date="{dd}.{mm}.{y}",
          minutes=MIN_DE, numbers=NUM_DE, sports=SPORT_DE),
-    Lang("pt", "pt-BR", "Portuguese", "PT", "pt-BR-AntonioNeural", "pt-BR-FranciscaNeural", 800,
+    Lang("pt", "pt-BR", "Portuguese", "Português", "pt-BR-AntonioNeural", "pt-BR-FranciscaNeural", 800,
          ui=UI_PT, film=dict(slow="Câmera lenta", freeze="Pausa"), date="{dd}/{mm}/{y}",
          minutes=MIN_PT, numbers=NUM_PT, sports=SPORT_PT),
 )}
