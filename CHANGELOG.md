@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format follows [Kee
   new `.flow` boxes), and a big looping play button for any `<audio class="loop" src="x.mp3">` in a fragment, so a
   cue track from `narrate --script --chime` plays on repeat with the screen locked. `publish` now copies the
   audio an app page links to, and `…/p/<token>/#decide` opens that tab directly.
+- Loop player: speed chips (0.8× to 1.5×, pitch kept) and a repeat / play-once toggle, remembered on the device;
+  lock-screen and headset controls through the Media Session API (play, pause, ±10 s, previous / next track); a
+  warning inside WeChat and other in-app browsers, which stop audio when the screen locks. Playback events are
+  synced with the log, and `program pull` prints the last ones and the browser, to see where playback stopped.
 
 ### Changed
 

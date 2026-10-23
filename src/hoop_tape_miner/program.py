@@ -120,6 +120,11 @@ def pull(folder: Path) -> Path:
     when = time.strftime("%Y-%m-%d %H:%M", time.localtime(data["updated"] / 1000)) if data.get("updated") else "never"
     print(f"{out}\n  last update {when}\n  workouts finished {len(fin)}"
           f"{' (' + ', '.join(sorted(fin)[-5:]) + ')' if fin else ''}\n  games logged {len(log)}\n  set rows {len(sets)}")
+    for e in (data.get("au") or [])[-8:]:  # loop-audio events, to see where playback stopped on a locked phone
+        print(f"  audio {time.strftime('%m-%d %H:%M:%S', time.localtime(e.get('t', 0) / 1000))} {e.get('ev')} "
+              f"{e.get('src')} at {e.get('at')} s ({e.get('vis')})")
+    if data.get("au") and data.get("ua"):
+        print(f"  browser {data['ua']}")
     return out
 
 

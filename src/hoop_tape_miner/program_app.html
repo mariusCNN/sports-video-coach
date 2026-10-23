@@ -378,8 +378,8 @@ details.fold>summary{cursor:pointer;font-weight:600;color:var(--pri)}
 .vthumb img{width:100%;height:100%;object-fit:cover;opacity:.6}
 .vthumb .pb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:0 18px;text-align:center;font-size:13px;text-shadow:0 1px 4px #000}
 .vthumb .pb .ic{width:54px;height:54px;padding:17px;border-radius:50%;background:var(--pri);color:var(--pri-fg)}
-/* loop player: an <audio class="loop" src title> in a fragment becomes one big button; the native loop keeps
-   playing with the screen locked (no script has to restart it) */
+/* loop player: an <audio class="loop" src title> in a fragment becomes one big button (the native loop restarts
+   it, no script has to), with speed / loop chips (.actl) under the last one */
 audio.loop{display:none}
 .aplay{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--p10);border:1px solid var(--p35);border-radius:1rem;padding:12px 14px;margin:10px 0 4px;cursor:pointer}
 .aplay .pi{flex:none;width:52px;height:52px;border-radius:50%;background:var(--pri);position:relative}
@@ -388,6 +388,11 @@ audio.loop{display:none}
 .aplay .at{display:flex;flex-direction:column;line-height:1.35;min-width:0}
 .aplay .at b{font-size:15.5px}
 .aplay .as{font-size:12.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+.actl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 4px}
+.actl .k{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--mute);margin:0 2px 0 4px}
+.actl .k:not(:first-child){margin-left:10px}
+.actl button{border:1px solid var(--p15);background:var(--p8);border-radius:999px;padding:7px 12px;font-size:13px;line-height:1.2;cursor:pointer;min-height:36px}
+.actl button.on{background:var(--pri);color:var(--pri-fg);border-color:var(--pri);font-weight:700}
 /* decision flow in a fragment: .fn boxes (.fq a question, .y the go answer), .ar arrows, .fs answers side by side */
 .flow{display:flex;flex-direction:column;gap:6px;margin:10px 0}
 .flow .fn{border:1px solid var(--line);border-radius:.9rem;padding:10px 12px;text-align:center;background:color-mix(in oklch,var(--card-s) 70%,transparent)}
@@ -980,28 +985,95 @@ window.addEventListener("online", ()=>{ if (SYNC_URL && sync.dirty) push(); });
 const refBox = document.getElementById("refs");
 if (refBox) refBox.innerHTML = Object.entries(REFS).map(([k,r])=>
   `<div class="card" id="ref-${k}"><b>[${r.s}]</b> <span class="tag ${r.lab}">${{h:"强",m:"中",l:"弱"}[r.lab]}</span> ${r.t}<br>${(r.src||[]).map(u=>`<a href="${esc(u[1])}" target="_blank" rel="noopener">${u[0]}</a>`).join(" · ")}</div>`).join("");
-/* loop players */
+/* loop players: one big button per <audio class="loop">, then speed and loop chips (this browser's own choice, not
+   synced). Phones may still stop a web page's audio on the lock screen (in-app browsers such as WeChat, battery
+   savers), so the lock-screen controls are wired and playback events are kept in the synced log (store.au, with
+   store.ua) to see afterwards where it stopped. */
 const mmss = t => (t = Math.floor(t||0), Math.floor(t/60) + ":" + String(t%60).padStart(2,"0"));
-document.querySelectorAll("audio.loop").forEach(a=>{
-  a.loop = true;
+const players = [...document.querySelectorAll("audio.loop")], RATES = [0.8, 1, 1.25, 1.5], AKEY = KEY + ":audio";
+const apref = (() => { try { return {rate:1, loop:true, ...JSON.parse(localStorage.getItem(AKEY) || "{}")}; } catch (e) { return {rate:1, loop:true}; } })();
+let cur = players[0], played = false;
+/* sync=false only keeps it in this browser: it goes up with the next real save (no write on every screen wake) */
+function aLog(a, ev, sync = true){
+  store.au = (store.au || []).slice(-39);
+  store.au.push({t:Date.now(), ev, src:a.getAttribute("src"), at:Math.round(a.currentTime), vis:document.visibilityState});
+  store.ua = navigator.userAgent;
+  if (sync) save(); else persist();
+}
+function aSession(a){
+  if (!("mediaSession" in navigator)) return;
+  const ms = navigator.mediaSession;
+  try {
+    ms.playbackState = a.paused ? "paused" : "playing";
+    if (a.duration && ms.setPositionState) ms.setPositionState({duration:a.duration, playbackRate:a.playbackRate, position:Math.min(a.currentTime, a.duration)});
+  } catch (e) {}
+}
+function aApply(){
+  players.forEach(a => { a.loop = apref.loop; a.playbackRate = apref.rate; a.defaultPlaybackRate = apref.rate; a.preservesPitch = true; });
+  document.querySelectorAll(".actl [data-rate]").forEach(b => b.classList.toggle("on", +b.dataset.rate === apref.rate));
+  document.querySelectorAll(".actl [data-loop]").forEach(b => b.classList.toggle("on", (b.dataset.loop === "1") === apref.loop));
+  players.forEach(a => a.dispatchEvent(new Event("pause-draw")));
+}
+players.forEach(a => {
   const b = document.createElement("button"), st = document.createElement("span");
   b.type = "button"; b.className = "aplay";
   b.innerHTML = `<span class="pi"></span><span class="at"><b>${esc(a.title || "播放")}</b></span>`;
   st.className = "as"; b.lastChild.append(st); a.before(b);
   let n = 1, last = 0;
-  const draw = ()=>{ b.classList.toggle("on", !a.paused);
-    st.textContent = a.paused ? `${a.duration ? mmss(a.duration) + " · " : ""}单曲循环，锁屏也继续`
-                              : `播放中 · 第 ${n} 遍 · ${mmss(a.currentTime)} / ${mmss(a.duration)}`; };
-  a.addEventListener("timeupdate", ()=>{ if (a.currentTime < last - 1) n++; last = a.currentTime; draw(); });
-  ["play","pause","loadedmetadata"].forEach(ev=>a.addEventListener(ev, draw));
-  a.addEventListener("play", ()=>{
-    document.querySelectorAll("audio.loop").forEach(o=>{ if (o!==a) o.pause(); });
+  const draw = () => { b.classList.toggle("on", !a.paused);
+    const mode = (apref.loop ? "单曲循环" : "播一遍") + (apref.rate !== 1 ? ` · ${apref.rate}×` : "");
+    st.textContent = a.paused ? `${a.duration ? mmss(a.duration) + " · " : ""}${mode}`
+                              : `播放中 · 第 ${n} 遍 · ${mmss(a.currentTime)} / ${mmss(a.duration)} · ${mode}`; };
+  a.addEventListener("timeupdate", () => { if (a.currentTime < last - 1) n++; last = a.currentTime; draw(); });
+  ["play","pause","loadedmetadata","ended","pause-draw"].forEach(ev => a.addEventListener(ev, draw));
+  a.addEventListener("play", () => {
+    cur = a; played = true; players.forEach(o => { if (o !== a) o.pause(); });
+    a.playbackRate = apref.rate;
     if ("mediaSession" in navigator && window.MediaMetadata)
       navigator.mediaSession.metadata = new MediaMetadata({title: a.title || PLAN.title, artist: PLAN.brand || PLAN.title});
+    aSession(a); aLog(a, "play");
   });
-  b.addEventListener("click", ()=>{ if (a.paused) a.play().catch(()=>{}); else a.pause(); });
-  draw();
+  a.addEventListener("pause", () => { aSession(a); aLog(a, "pause"); });
+  a.addEventListener("ended", () => aLog(a, "ended"));
+  a.addEventListener("error", () => aLog(a, "error"));
+  a.addEventListener("loadedmetadata", () => aSession(a));
+  b.addEventListener("click", () => { if (a.paused) a.play().catch(e => aLog(a, "blocked " + e.name)); else a.pause(); });
 });
+if (players.length){
+  const ctl = document.createElement("div");
+  ctl.className = "actl";
+  ctl.innerHTML = `<span class="k">速度</span>${RATES.map(r => `<button type="button" data-rate="${r}">${r}×</button>`).join("")}` +
+    `<span class="k">循环</span><button type="button" data-loop="1">单曲循环</button><button type="button" data-loop="0">播一遍</button>`;
+  players[players.length - 1].after(ctl);
+  ctl.addEventListener("click", e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.rate) apref.rate = +t.dataset.rate;
+    if (t.dataset.loop) apref.loop = t.dataset.loop === "1";
+    try { localStorage.setItem(AKEY, JSON.stringify(apref)); } catch (e) {}
+    aApply();
+  });
+  if (/MicroMessenger|; wv\)|FBAN|FBAV|Instagram|Line\//.test(navigator.userAgent)){
+    const w = document.createElement("div");
+    w.className = "card warnbox small";
+    w.innerHTML = "<b>你在微信 / App 内置浏览器里，锁屏后声音会停。</b><br>点右上角 ⋯ →「在浏览器打开」，用 Chrome 或 Safari 播。";
+    players[0].previousElementSibling.before(w);
+  }
+  if ("mediaSession" in navigator){
+    const h = (k, f) => { try { navigator.mediaSession.setActionHandler(k, f); } catch (e) {} };
+    h("play", () => cur.play()); h("pause", () => cur.pause());
+    h("seekbackward", d => { cur.currentTime = Math.max(0, cur.currentTime - (d.seekOffset || 10)); });
+    h("seekforward", d => { cur.currentTime = Math.min(cur.duration || 0, cur.currentTime + (d.seekOffset || 10)); });
+    if (players.length > 1){
+      const swap = k => { const i = (players.indexOf(cur) + k + players.length) % players.length; players[i].currentTime = 0; players[i].play(); };
+      h("previoustrack", () => swap(-1)); h("nexttrack", () => swap(1));
+    }
+  }
+  /* screen off / back on while a track plays, and Chrome freezing the page: in the log too */
+  document.addEventListener("visibilitychange", () => { if (played) aLog(cur, document.visibilityState + (cur.paused ? " paused" : " playing"), false); });
+  document.addEventListener("freeze", () => { if (played) aLog(cur, "freeze", false); });
+  document.addEventListener("resume", () => { if (played) aLog(cur, "resume", false); });
+  aApply();
+}
 for (const t of ["decide","lib"]) if (!document.querySelector(`[data-panel="${t}"]`).children.length) document.querySelector(`nav.tabs [data-tab="${t}"]`).hidden = true;
 document.getElementById("brand").textContent = PLAN.brand || PLAN.title;
 document.getElementById("topDate").textContent = md(START) + " → " + md(DAYS[DAYS.length-1]);
