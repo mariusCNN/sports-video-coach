@@ -62,8 +62,9 @@ sports-video-coach demo
 - **The film review behind it:** timed moments, what happened and why, in a json your agent can build on.
 - In Chinese, English, Japanese, Korean, Spanish, French, German and Portuguese (`--lang`).
 
-**What it can't do (yet):** the agent reviews frame sheets (one frame every half second by default), so very fast
-details can slip between frames; tracking and numbers need the basketball plugin. Each run uses some of your
+**What it can't do (yet):** the agent reviews frame sheets (by default one frame every 0.5 s for a video up to
+30 s, every second up to 3 minutes, every 2 s beyond), so very fast details can slip between frames unless it cuts
+a denser zoom sheet of that moment; tracking and numbers need the basketball plugin. Each run uses some of your
 agent plan.
 
 <br clear="right">
@@ -86,7 +87,7 @@ a real run, step by step, is in [docs/architecture.md](https://github.com/marius
 |---|---|
 | `generic` (built in) | any sport, any clip; the agent reviews the frames (pickup basketball too: `--sport basketball`) |
 | `basketball` | league games with a stats link, or tracking from a clone with a GPU: team and player pages, shot charts ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)) |
-| yours | `sports-video-coach new-plugin badminton` writes a working plugin to start from ([guide](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)) |
+| yours | `sports-video-coach new-plugin <your-sport>` writes a working plugin to start from ([guide](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)) |
 
 <details><summary><b>Install for your agent</b> (Claude Code plugin, Agent Skills, uv, clone)</summary>
 

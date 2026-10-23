@@ -18,6 +18,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - After a language is added, the report step's headline names only the README still missing.
 - `page-check --write-qa` keeps the agent's notes (a `## Agent notes` heading and everything below it) when it
   writes qa.md again.
+- README: the frame-sheet sentence gives the real default (0.5 s up to 30 s, 1 s up to 3 minutes, 2 s beyond),
+  and the "Any sport" table's plugin example is `new-plugin <your-sport>`, not a sport the generic plugin covers.
 - `page-check --strict` prints `FAIL (n warnings, --strict)` for a folder with warnings, not `OK`, as it exits 1.
 
 ### Changed

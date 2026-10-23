@@ -60,7 +60,8 @@ sports-video-coach demo --lang zh en
 - **背后的看片复盘**：带时间的关键时刻、发生了什么、为什么，存成 json，agent 可以接着用。
 - 支持中文、英文、日文、韩文、西班牙文、法文、德文、葡萄牙文（`--lang`）。
 
-**目前做不到的**：agent 看的是帧拼图（默认每半秒一帧），非常快的细节可能落在两帧之间；跟踪和数据要用篮球插件。
+**目前做不到的**：agent 看的是帧拼图（默认 30 秒以内的视频每 0.5 秒一帧，3 分钟以内每秒一帧，更长的每 2 秒一帧），
+非常快的细节可能落在两帧之间，除非它对那一刻再切一张更密的放大拼图；跟踪和数据要用篮球插件。
 每次运行会用掉一些你的 agent 订阅额度。
 
 <br clear="right">
@@ -81,7 +82,7 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 |---|---|
 | `generic`（内置） | 任何运动、任何片段；agent 看帧复盘（野球也行：`--sport basketball`） |
 | `basketball` | 有数据网站链接的联赛比赛，或在克隆的仓库里用 GPU 跟踪：球队和球员页面、投篮分布图（[文档](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)） |
-| 你自己的 | `sports-video-coach new-plugin badminton` 生成一个能跑的插件做起点（[指南](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)） |
+| 你自己的 | `sports-video-coach new-plugin <your-sport>` 生成一个能跑的插件做起点（[指南](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)） |
 
 <details><summary><b>给你的 agent 安装</b>（Claude Code 插件、Agent Skills、uv、克隆）</summary>
 
