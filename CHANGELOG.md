@@ -84,9 +84,12 @@ All notable changes to this project are documented here. The format follows [Kee
   page (`23 oct. 2026`).
 - Contact sheets start with a tile at 0:00, and the time label sits bottom left, clear of a clock burned into the
   video's top left.
-- README (en, zh) rewritten: the explained video first, a "Tell your agent" prompt to paste into Claude Code or
-  Codex, what you get and what it can't do yet, three steps for how it works; install options, costs and data,
-  and the developer pattern folded away.
+- README (en, zh) rewritten: the explained video first, then one path (see the demo page, then a "Tell your
+  agent" prompt that asks before installing and sets `--sport` / `--lang`), sports it fits, how long a run took
+  in our test, what you get and what it can't do yet, three steps for how it works; the local demo, install
+  options, costs and data, and the developer pattern folded away.
+- The demo site's landing page says "Built from master (..., not released yet)" for a development build, rather
+  than a version that is not on the releases page.
 - docs/plugins.md: a stage module skeleton, what the light install can import, and how a stage's numbers reach the
   agent (`fill_values`) and the page (`PageHooks`). README: the Git Bash PATH form for a `C:/` bin dir.
 - Narration guide lists every language's read rate; the review guide writes likely/unclear in the review's

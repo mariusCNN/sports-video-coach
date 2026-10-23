@@ -57,6 +57,12 @@ def test_film_scripts_check_clean(tmp_path):
 
 
 @needs_ffmpeg
+def test_version_note_marks_a_build_from_master():
+    assert demo.version_note("0.3.0") == " Version 0.3.0."
+    assert "not released yet" in demo.version_note("0.3.1.dev0") and "Version" not in demo.version_note("0.3.1.dev0")
+    assert demo.version_note("") == ""
+
+
 def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
     from sports_video_coach import page_check
     monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
@@ -66,6 +72,6 @@ def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
     assert '<html lang="en">' in home and demo.TAGLINE in home and 'href="demo/"' in home
     assert all(f"<h2>{t}</h2>" in home for t, _ in demo.CARDS)
     assert all(cmd in home for cmd in demo.TRY) and f'href="{demo.PLUGINS_URL}"' in home
-    assert demo.version() and f"Version {demo.version()}." in home
+    assert demo.version() and demo.version_note(demo.version()) in home
     assert "noindex" not in (site / "demo" / "index.html").read_text(encoding="utf8")   # meant to be found
     assert page_check.problems(site) == [] and page_check.problems(site / "demo") == []

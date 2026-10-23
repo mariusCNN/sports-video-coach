@@ -24,24 +24,31 @@
 
 ## 试一下
 
-**对你的 agent 说**（粘贴到 Claude Code、Codex 或任何编程 agent）：
+**1. 先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
+（[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。
+
+**2. 对你的 agent 说**（粘贴到 Claude Code、Codex 或任何编程 agent；把运动和语言换成你的）：
 
 ```text
-读 https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md ，用
-`uv tool install git+https://github.com/mariusDing/sports-video-coach` 安装（需要 ffmpeg），然后给我的视频
-<你的视频路径> 做教练复盘：运行 `sports-video-coach run <视频> --lang zh`，它交给你的每一步（退出码 3）都做完，
+给我的运动视频 <你的视频路径> 做教练复盘。安装任何东西之前先问我。
+安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach`（需要 ffmpeg）。
+运行 `sports-video-coach run <视频> --sport badminton --lang zh`，它交给你的每一步（退出码 3）都做完，
 直到退出码 0，再把教练网页给我看。
 ```
 
-**先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，
-以及它的讲解视频（[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、
-[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。
-或者自己跑一遍 demo：约一分钟，不需要 agent，也不需要你的视频（程序画的练习视频，复盘是预先写好的）：
+比赛、练习、训练都行：足球、网球、羽毛球、跑步、健身房、篮球……
+我们的测试里，一段 40 秒的视频约 3 分钟、5 个 agent 步骤跑完；整场比赛更久，也更耗 agent 额度。
+
+<details><summary>在自己电脑上跑 demo（约一分钟，不需要 agent，也不需要你的视频）</summary>
+
+程序画的练习视频，复盘是预先写好的，从头渲染到尾：
 
 ```bash
 uv tool install git+https://github.com/mariusDing/sports-video-coach   # PATH 上要有 ffmpeg
 sports-video-coach demo --lang zh en
 ```
+
+</details>
 
 ## 你会拿到什么
 
@@ -56,8 +63,6 @@ sports-video-coach demo --lang zh en
 每次运行会用掉一些你的 agent 订阅额度。
 
 <br clear="right">
-
-如果看完 demo 你也想给自己的比赛来一份，点个 star，能让更多运动员找到它。
 
 ## 怎么工作
 
@@ -121,5 +126,6 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md)、
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
 不要在 issue 或 PR 里附上真实球员的视频、帧或名字。
+如果它帮到了你，点个 star，能让更多运动员找到它。
 
 [MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)。运行时下载的模型保留各自的许可证。

@@ -93,6 +93,16 @@ def version() -> str:
         return ""
 
 
+def version_note(ver: str) -> str:
+    """The landing page's version line: a build from master between releases says so, rather than looking like a
+    release that is not on the releases page."""
+    if not ver:
+        return ""
+    if ".dev" in ver:
+        return f" Built from master ({ver}, not released yet)."
+    return f" Version {ver}."
+
+
 def landing(films: list[str]) -> str:
     """The English landing page of the demo site: tagline, pitch, the explained video, three cards, how to try it,
     links and the version."""
@@ -148,7 +158,7 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <pre><code>{try_it}</code></pre>
 <p>Your sport needs more than frames? <a href="{PLUGINS_URL}">Write a plugin for your sport</a>.</p>
 <small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
-no person appears. {("Other languages: " + other) if other else ""}{f" Version {ver}." if ver else ""}</small>
+no person appears. {("Other languages: " + other) if other else ""}{version_note(ver)}</small>
 </main>
 </body>
 </html>

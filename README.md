@@ -24,24 +24,32 @@ explained video. It runs on your machine; free and MIT.
 
 ## Try it
 
-**Tell your agent** (paste into Claude Code, Codex or any coding agent):
+**1. See what you get, no install:** the [demo coaching page](https://mariusding.github.io/sports-video-coach/demo/) and its explained video
+([English](https://mariusding.github.io/sports-video-coach/film.en.mp4), [中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)).
+
+**2. Tell your agent** (paste into Claude Code, Codex or any coding agent; set your sport and language):
 
 ```text
-Read https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md, install the CLI with
-`uv tool install git+https://github.com/mariusDing/sports-video-coach` (it needs ffmpeg), then coach me on
-my video <path to your video>: run `sports-video-coach run <video>`, do each step it hands you (exit code 3)
-until it exits 0, and show me the coaching page.
+Coach me on my sports video <path to your video>. Ask me before installing anything.
+Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach` (it needs ffmpeg).
+Run `sports-video-coach run <video> --sport soccer --lang en`, do each step it hands you (exit code 3)
+until it exits 0, then show me the coaching page.
 ```
 
-**See the output first, no install:** the [demo coaching page](https://mariusding.github.io/sports-video-coach/demo/)
-and its explained video ([English](https://mariusding.github.io/sports-video-coach/film.en.mp4),
-[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)).
-Or run the demo yourself: about a minute, no agent or video needed (a synthetic drill with a pre-written review):
+A match, a drill or a workout: soccer, tennis, badminton, running, the gym, basketball ...
+In our test a 40-second clip took about 3 minutes and 5 agent steps; a full game takes longer and more of your
+agent plan.
+
+<details><summary>Run the demo on your machine (about a minute, no agent or video needed)</summary>
+
+A synthetic drill with a pre-written review, rendered end to end:
 
 ```bash
 uv tool install git+https://github.com/mariusDing/sports-video-coach   # needs ffmpeg on PATH
 sports-video-coach demo
 ```
+
+</details>
 
 ## What you get
 
@@ -58,8 +66,6 @@ details can slip between frames; tracking and numbers need the basketball plugin
 agent plan.
 
 <br clear="right">
-
-If the demo made you want this for your own game, a star helps other athletes find it.
 
 ## How it works
 
@@ -126,5 +132,6 @@ Plugins for a sport you know, prompts, fixes and docs are welcome:
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md),
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 Never attach real players' videos, frames or names to issues or pull requests.
+If it helped your game, a star helps other athletes find it.
 
 [MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE). Models downloaded at run time keep their own licences.
