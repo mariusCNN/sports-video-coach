@@ -101,12 +101,28 @@ _EN_LEN = re.compile(r"\b(?P<under>under\s+|less\s+than\s+)?"
                      r"(?P<h1>\s+and\s+a\s+half)?\s+min(?:ute)?s?\b(?P<h2>\s+and\s+a\s+half)?", re.I)
 
 
+def _len_match(paras: list[str], lang: str) -> re.Match | None:
+    pattern = {"zh": _ZH_LEN, "ja": _JA_LEN}.get(lang, _EN_LEN if lang == "en" or not L.cjk(lang) else None)
+    return pattern.search(" ".join(paras)) if pattern else None  # Korean: no check yet; es / fr / ...: "2 minutes"
+
+
+def stated_sentence(paras: list[str], lang: str) -> str:
+    """The sentence that states the length ('' when none), as the writer has to find it."""
+    m = _len_match(paras, lang)
+    if not m:
+        return ""
+    text = " ".join(paras)
+    ends = re.compile(r"[.!?。！？]")
+    start = max((e.end() for e in ends.finditer(text, 0, m.start())), default=0)
+    end = next((e.end() for e in ends.finditer(text, m.end())), len(text))
+    return text[start:end].strip()
+
+
 def stated(paras: list[str], lang: str) -> tuple[float, bool] | None:
     """The length the script says it runs ("约 2 分钟", "一分半", "about three minutes") in seconds, and whether it
     is only an upper bound ("不到一分钟", "under a minute"); None when it names none. The first mention counts:
     the opening "this runs about N minutes"."""
-    pattern = {"zh": _ZH_LEN, "ja": _JA_LEN}.get(lang, _EN_LEN if lang == "en" or not L.cjk(lang) else None)
-    m = pattern.search(" ".join(paras)) if pattern else None  # Korean: no check yet; es / fr / ...: "2 minutes"
+    m = _len_match(paras, lang)
     if not m:
         return None
     w = m["n"].lower()
@@ -148,6 +164,16 @@ def check_length(paras: list[str], lang: str) -> str | None:
         return None
     return (f"[narrate] warning: the {lang} script says {'under' if under else 'about'} {said / 60:g} min but reads in about {est:.0f} s; "
             "fix that sentence (the real length prints when the mp3 is written)")
+
+
+def length_problem(script: Path, lang: str) -> str | None:
+    """check_length of a listen.<lang>.md, naming the sentence to fix (the driven run waits on it before rendering)."""
+    paras = paragraphs(script.read_text(encoding="utf8"))
+    if not check_length(paras, lang):
+        return None
+    (said, under), est = stated(paras, lang), estimate_s(paras, lang)
+    return (f"{script.name} says {'under' if under else 'about'} {said / 60:g} min but reads in about {est:.0f} s: "
+            f"fix the sentence \"{stated_sentence(paras, lang)}\"")
 
 
 def silence(seconds: float, out: Path) -> Path:

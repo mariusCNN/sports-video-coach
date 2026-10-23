@@ -24,6 +24,7 @@ class Session(P.Session):
     """A training session folder (session.json), driven by pipeline.drive with TRAIN_STEPS."""
     JSON = "session.json"
     PLUGIN = "basketball"
+    LANG_CHOICES = P.LANGS   # basketball pages know zh and en
     VIDEO = "session.mp4"
     REVIEW = "train_review"
     LABEL = "train"
@@ -36,7 +37,8 @@ class Session(P.Session):
     def load(cls, folder: Path) -> "Session":
         if not T.is_session(folder):
             sys.exit(f"{folder / 'session.json'} not found: start with `hoop-tape-miner train <phone videos>`")
-        return cls(Path(folder), T.load_session(folder), P.profile_langs(P.LANGS))
+        data = T.load_session(folder)
+        return cls(Path(folder), data, P.unit_langs(data, cls.LANG_CHOICES))
 
 
 def review_done(g: Session) -> bool:

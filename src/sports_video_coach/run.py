@@ -6,7 +6,8 @@ The target is one of:
   - a target a plugin claims (e.g. a league game url): that plugin's `run` stage takes it;
   - one or more video files: the plugin's `new` stage (default: the plugin named for `--sport`, else the generic
     plugin) starts a unit from them and the driver goes on with the folder it made.
-A later run's `--artifacts a b ...` replaces "artifacts" in the unit json (with what they imply), then drives on.
+A later run's `--artifacts a b ...` replaces "artifacts" in the unit json (with what they imply) and `--lang a b ...`
+replaces "languages" (each one the unit's plugin knows: langs.py, or fewer), then it drives on.
 Exit codes as every driver: 0 done, 3 an agent step is waiting (do it, run again), 1 a command failed, 2 a usage
 error (argparse).
 """
@@ -18,7 +19,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import artifacts, media, pipeline, plugin, units
+from . import artifacts, langs, media, pipeline, plugin, units
 
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".mkv", ".avi", ".webm"}
 
@@ -34,20 +35,36 @@ def add_artifacts_arg(ap: argparse.ArgumentParser, allowed=artifacts.NAMES) -> N
                     "\"artifacts\" in the unit json); " + artifacts.IMPLIED_HELP)
 
 
+def add_lang_arg(ap: argparse.ArgumentParser, allowed=langs.CODES) -> None:
+    ap.add_argument("--lang", nargs="+", choices=allowed, metavar="LANG",
+                    help="report languages from now on (replaces \"languages\" in the unit json; the run goes on to "
+                         f"what a new one needs and keeps the rest): {', '.join(allowed)}")
+
+
 def choose_artifacts(folder: Path, kind: plugin.Kind, rest: list[str]) -> list[str]:
-    """Take `--artifacts ...` out of `rest` and write the choice, with what it implies, to the unit json; the other
-    options go on to the driver."""
+    """Take `--artifacts ...` and `--lang ...` out of `rest` and write them to the unit json (artifacts with what
+    they imply, languages checked against what the unit's plugin knows); the other options go on to the driver."""
     ap = argparse.ArgumentParser(prog="sports-video-coach run <folder>", add_help=False)
-    allowed = artifacts.known(kind.unit_class() if kind.unit else None)
+    cls = kind.unit_class() if kind.unit else None
+    allowed = artifacts.known(cls)
     add_artifacts_arg(ap, allowed)
+    add_lang_arg(ap, tuple(cls.LANG_CHOICES) if cls else langs.CODES)
     a, rest = ap.parse_known_args(rest)
+    if not (a.artifacts or a.lang):
+        return rest
+    if a.lang and cls is None:
+        sys.exit(f"{folder}: {kind.name} units take no --lang (their languages come from the profile)")
+    path = units.unit_json(folder)
+    data = json.loads(path.read_text(encoding="utf8"))
     if a.artifacts:
-        names = artifacts.check(a.artifacts, allowed)
-        path = units.unit_json(folder)
-        data = json.loads(path.read_text(encoding="utf8"))
-        data["artifacts"] = list(names)
-        media.write_json_atomic(path, data, indent=1)
-        print(f"[run] artifacts in {path.name}: {', '.join(names)}")
+        data["artifacts"] = list(artifacts.check(a.artifacts, allowed))
+    if a.lang:
+        data["languages"] = list(dict.fromkeys(a.lang))
+    media.write_json_atomic(path, data, indent=1)
+    if a.artifacts:
+        print(f"[run] artifacts in {path.name}: {', '.join(data['artifacts'])}")
+    if a.lang:
+        print(f"[run] languages in {path.name}: {', '.join(data['languages'])}")
     return rest
 
 
@@ -91,11 +108,13 @@ def for_sport(argv: list[str]) -> tuple[plugin.Plugin, str]:
 
 
 HELP = """usage: sports-video-coach run <videos...> [--plugin NAME] [start options]
-       sports-video-coach run <folder> [driver options]
+       sports-video-coach run <folder> [--artifacts A ...] [--lang LANG ...] [driver options]
        sports-video-coach run <url> [--plugin NAME]
 
 Turns your sports video into a film review, a coaching page with narration and clips, and an explained video.
-The first run starts a folder from the videos; later runs take that folder and go on where it stopped.
+The first run starts a folder from the videos; later runs take that folder and go on where it stopped. A later
+run's --artifacts or --lang changes what the folder builds (e.g. `--lang en zh` adds Chinese: only the new
+language's scripts, audio and film are made, the English ones are kept).
 
 Exit codes: 0 done (the deliverables are listed), 3 an agent step is waiting (the output says what to write and
 with which guide; do it, run again), 1 a command failed (read the log it names, fix, run again), 2 a usage
@@ -121,6 +140,7 @@ def help_text(name: str | None = None) -> str:
     ap = argparse.ArgumentParser(add_help=False)
     pipeline.add_drive_args(ap, ["STEP"])
     add_artifacts_arg(ap)
+    add_lang_arg(ap)
     for a in ap._actions:
         if a.dest in ("until", "redo", "accept"):
             a.choices, a.metavar = None, "STEP"

@@ -17,7 +17,10 @@ on its first walk (`--status` and `--dry` never write).
 Agent steps keep their own checks; one that declares `derives` (each output with the files it is written from)
 is also out of date when one of those inputs changed after the output was last seen and the agent has not
 touched the output since: a corrected review or report waits for the narration and film scripts to follow it.
-`--accept X` records agent step X as it is (the scripts still hold).
+An agent step may also declare `checks` (e.g. a narration script whose stated length is off its read time): what
+they find keeps the step waiting until the files are fixed. `--accept X [Y ...]` records agent steps as they are
+(the scripts still hold, the findings are fine). A step marked `needs_all` (QA) counts as done only while every
+step before it is done. A stop on agent steps lists every one that waits that way, so one pass fixes them all.
 """
 from __future__ import annotations
 
@@ -52,6 +55,17 @@ def profile_langs(allowed: tuple = L.CODES) -> tuple:
     return langs
 
 
+def unit_langs(data: dict, allowed: tuple = L.CODES) -> tuple:
+    """Report languages of a unit: its json `languages` (what `run <folder> --lang` writes), else the profile's."""
+    if not data.get("languages"):
+        return profile_langs(allowed)
+    langs = tuple(dict.fromkeys(data["languages"]))
+    bad = [l for l in langs if l not in allowed]
+    if bad:
+        sys.exit(f"unit json languages {list(langs)}: {bad} not supported (choose from {list(allowed)})")
+    return langs
+
+
 def readme(lang: str) -> str:
     """README.md is the Chinese report, README.<lang>.md any other language (langs.readme)."""
     return L.readme(lang)
@@ -74,6 +88,7 @@ class Unit:
 
     JSON = "game.json"
     PLUGIN: ClassVar[str | None] = None   # the plugin whose stages the cmd steps run (None: core stages only)
+    LANG_CHOICES: ClassVar[tuple] = L.CODES  # what `run <folder> --lang` may choose (a plugin's charts may know fewer)
 
     @property
     def gj(self) -> Path:
@@ -169,6 +184,8 @@ class Step:
     again: tuple = ()                           # cmd: extra argv when it re-runs over existing outputs
     artifact: str | None = None                 # the deliverable it builds (artifacts.NAMES); None = always runs
     derives: Callable[[Unit], list[tuple[Path, list[Path]]]] | None = None  # agent: (output, files it follows)
+    checks: Callable[[Unit], list[str]] | None = None   # agent: what to fix in its outputs first (--accept keeps it)
+    needs_all: bool = False                     # done only while every step before it is done (QA checks them)
 
 
 def newer(out: Path, *inputs: Path, slack: float = 2.0) -> bool:
@@ -285,8 +302,28 @@ def note_outputs(step: Step, g: Unit, store: Store) -> bool:
     now = derived(step, g)
     if (store.get(step.name) or {}).get("outputs") == now:
         return False
-    store.steps[step.name] = dict(outputs=now, at=dt.datetime.now().isoformat(timespec="seconds"))
+    store.steps[step.name] = dict(store.get(step.name) or {}, outputs=now,
+                                  at=dt.datetime.now().isoformat(timespec="seconds"))
     return True
+
+
+def flagged(step: Step, g: Unit, store: Store) -> list[str]:
+    """What the step's `checks` find now, less what `--accept` recorded as fine."""
+    if not step.checks:
+        return []
+    ok = (store.get(step.name) or {}).get("accepted") or []
+    return [c for c in step.checks(g) if c not in ok]
+
+
+def pending(step: Step, g: Unit, store: Store) -> list[str]:
+    """Why an agent step whose files exist still waits: outputs out of date, then check findings."""
+    return outdated(step, g, store) + flagged(step, g, store)
+
+
+def accept_step(step: Step, g: Unit, store: Store) -> None:
+    """`--accept`: the step's check findings as they are now count as fine (its outputs are noted after)."""
+    if step.checks:
+        store.steps[step.name] = dict(store.get(step.name) or {}, accepted=step.checks(g))
 
 
 def adopt(steps: list[Step], g: Unit, store: Store) -> None:
@@ -405,6 +442,14 @@ def missing(paths: list[Path], g: Unit) -> list[str]:
     return [f"missing: {slash(p.as_posix())}{note(p)}" for p in paths if not p.exists()]
 
 
+def listen_checks(g: Unit) -> list[str]:
+    """A narration script whose stated length ("about 2 minutes") is off its read time, per script written."""
+    from . import narrate
+    found = [narrate.length_problem(d / f"listen.{l}.md", l) for d in g.reports() for l in g.langs
+             if (d / f"listen.{l}.md").exists()]
+    return [p for p in found if p]
+
+
 def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film_script_how: str,
                film_run: bool = False) -> list[Step]:
     """The steps every driver ends with: clips -> narration -> page -> QA -> publish -> explained video.
@@ -418,12 +463,13 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              lambda g: all((d / f"listen.{l}.md").exists() for d in g.reports() for l in g.langs), how=listen_how,
              artifact="narration",
              errors=lambda g: missing([d / f"listen.{l}.md" for d in g.reports() for l in g.langs], g),
-             derives=lambda g: [(d / f"listen.{l}.md", [d / readme(l)]) for d in g.reports() for l in g.langs]),
+             derives=lambda g: [(d / f"listen.{l}.md", [d / readme(l)]) for d in g.reports() for l in g.langs],
+             checks=listen_checks),  # a wrong "about N minutes" is fixed before the TTS render, not after
         Step("narrate", "cmd", listen_done, lambda g: [["narrate", str(d), "--lang", *g.langs] for d in g.reports()],
              inputs=lambda g: [d / f"listen.{l}.md" for d in g.reports() for l in g.langs], artifact="narration"),
         Step("html", "cmd", html_done, lambda g: [["html", str(d)] for d in g.reports()], inputs=html_inputs,
              artifact="html"),
-        Step("qa", "agent", qa_done, how=qa_how + QA_STAMP, errors=qa_errors, artifact="qa"),
+        Step("qa", "agent", qa_done, how=qa_how + QA_STAMP, errors=qa_errors, artifact="qa", needs_all=True),
         Step("publish", "cmd", published, lambda g: [["publish", *map(str, g.reports()), "--deploy"]],
              artifact="publish"),
         Step("film-script", "agent", lambda g: all((g.folder / f"film.{l}.md").exists() for l in g.langs),
@@ -431,7 +477,8 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              errors=lambda g: missing([g.folder / f"film.{l}.md" for l in g.langs], g),
              derives=lambda g: [(g.folder / f"film.{l}.md", [d / readme(l) for d in g.reports()]) for l in g.langs]),
         Step("film", "cmd", film_done, film_args, long=True,
-             inputs=lambda g: [*(g.folder / f"film.{l}.md" for l in g.langs), video(g)], artifact="film"),
+             inputs=lambda g: [*(g.folder / f"film.{l}.md" for l in g.langs), video(g)], again=("--force",),
+             artifact="film"),  # film keeps a language whose mp4 is newer than its script; a new video re-renders all
     ]
 
 
@@ -495,10 +542,14 @@ def rows(g: Unit, steps: list[Step]) -> list[tuple[str, str, bool, list[str]]]:
     """(name, kind, done, what changed) per step, read-only: a step whose own check passes but whose inputs
     changed since its record is not done, and the changes say why."""
     store = Store(g.folder)
-    out = []
+    out, waiting = [], []
     for s in artifacts.keep(steps, g):
         ok = s.done(g)
-        why = (changes(s, g, store) + outdated(s, g, store)) if ok else []
+        why = (changes(s, g, store) + (pending(s, g, store) if s.kind == "agent" else [])) if ok else []
+        if ok and not why and s.needs_all and waiting:
+            why = [f"waits for {', '.join(waiting)}"]
+        if not (ok and not why) and s.name != "publish":
+            waiting.append(s.name)
         out.append((s.name, s.kind, ok and not why, why))
     return out
 
@@ -517,13 +568,15 @@ def print_status(g: Unit, steps: list[Step]) -> None:
 
 
 def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None = None, publish: bool = False,
-          dry: bool = False, runner=subprocess.run, accept: str | None = None) -> int:
-    """Walk `steps` and return the exit code: 0 done (or stopped at --until), 3 waiting for the agent, 1 failed."""
+          dry: bool = False, runner=subprocess.run, accept: str | list[str] | None = None) -> int:
+    """Walk `steps` and return the exit code: 0 done (or stopped at --until), 3 waiting for the agent, 1 failed.
+    `accept`: the agent steps (one name or several) to take as they are."""
     steps = artifacts.keep(steps, g)  # exits on a bad `artifacts` choice before any step runs
+    accept = {accept} if isinstance(accept, str) else set(accept or ())
     store = Store(g.folder)
     if not dry:
         adopt(steps, g, store)
-    for s in steps:
+    for i, s in enumerate(steps):
         if s.name == "publish" and not publish:
             if not s.done(g):
                 print("[run] publish skipped: re-run with --publish to deploy the pages as links")
@@ -533,9 +586,11 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             continue
         own = s.done(g)
         why = changes(s, g, store) if own else []
-        stale = outdated(s, g, store) if own else []
-        if stale and s.name == accept and not dry:
-            print(f"[run] {s.name}: accepted as it is ({len(stale)} output(s) kept although their inputs changed)")
+        stale = pending(s, g, store) if own and s.kind == "agent" else []
+        if stale and s.name in accept and not dry:
+            print(f"[run] {s.name}: accepted as it is ({len(stale)} finding(s) kept: inputs changed or a check)")
+            accept_step(s, g, store)
+            store.save()
             stale = []
         if own and not why and not stale and s.name != redo:
             if not dry and note_outputs(s, g, store):
@@ -547,13 +602,19 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
         if s.kind == "agent":
             if not dry:
                 g.review.mkdir(parents=True, exist_ok=True)   # where review.json and the helpers' parts go
-            if stale:
-                print(f"[run] waiting for the agent: {s.name} is out of date")
-                for e in stale[:12]:
-                    print(f"[run]   {slash(e)}")
-                print(slash(f"[run] Bring those files in line with what changed, then run again. They still hold "
-                            f"as they are? `run {g.folder} --accept {s.name}`.\n[run] The step, for reference: "
-                            f"{g.fill(s.how)}"))
+            if stale:  # every agent step waiting this way, so one pass fixes them all
+                later = [(t, pending(t, g, store)) for t in steps[i + 1:]
+                         if t.kind == "agent" and t.name not in accept and t.done(g)]
+                waits = [(s, stale), *((t, w) for t, w in later if w)]
+                for k, (t, w) in enumerate(waits):
+                    what = "is out of date" if outdated(t, g, store) else "has something to fix"
+                    print(f"[run] waiting for the agent: {t.name} {what}" if k == 0 else f"[run] {t.name} {what} too")
+                    for e in w[:12]:
+                        print(f"[run]   {slash(e)}")
+                names = [t.name for t, _ in waits]
+                print(f"[run] Fix those files (bring them in line with what changed), then run again. They hold as "
+                      f"they are? `{run_hint(g, '--accept', *names)}`.\n"
+                      + slash(f"[run] The step, for reference: {g.fill(s.how)}"))
                 return WAITING
             print(f"[run] waiting for the agent: {s.name}\n{g.fill(s.how)}")
             errs = s.errors(g) if s.errors else []
@@ -601,9 +662,14 @@ def built_line(g: Unit, publish: bool) -> str:
         line += f"; left out by \"artifacts\" in {getattr(g, 'JSON', 'the unit json')}: {', '.join(off)}"
     if [n for n in off if n != "publish"]:
         more = [n for n in known if n in chosen or n != "publish"]
-        folder = f'"{g.folder}"' if " " in str(g.folder) else g.folder
-        line += slash(f"\n[run] to build them too: sports-video-coach run {folder} --artifacts {' '.join(more)}")
+        line += f"\n[run] to build them too: {run_hint(g, '--artifacts', *more)}"
     return line
+
+
+def run_hint(g: Unit, *args: str) -> str:
+    """The full later-run command for a hint: `sports-video-coach run <folder> <args>` (folder quoted if needed)."""
+    folder = f'"{g.folder}"' if " " in str(g.folder) else g.folder
+    return slash(f"sports-video-coach run {folder} {' '.join(args)}".rstrip())
 
 
 def add_drive_args(ap, names: list[str], pages: str = "pages") -> None:
@@ -614,5 +680,6 @@ def add_drive_args(ap, names: list[str], pages: str = "pages") -> None:
     ap.add_argument("--redo", choices=names, help="run this step again even if its output exists (steps that "
                                                   "depend on it run again too)")
     ap.add_argument("--publish", action="store_true", help=f"also deploy the {pages} (publish --deploy) at the end")
-    ap.add_argument("--accept", choices=names, help="an agent step reported out of date (its inputs changed) still "
-                                                    "holds as it is: record it and go on")
+    ap.add_argument("--accept", nargs="+", choices=names, metavar="STEP",
+                    help="agent steps reported out of date (their inputs changed, or a check flagged them) that still "
+                         "hold as they are: record them and go on (one or several: --accept listen-script film-script)")

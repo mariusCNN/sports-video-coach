@@ -33,6 +33,7 @@ KB = Path(__file__).resolve().parents[2] / "prompts" / "coach_kb.md"   # coachin
 class Game(Unit):
     """A game folder: game.json, run/ (the CV pass and the review), the team page and the focus player's page."""
     PLUGIN = "basketball"
+    LANG_CHOICES = LANGS   # basketball charts know zh and en
 
     @property
     def run(self) -> Path:
@@ -98,8 +99,8 @@ class Game(Unit):
         gj = folder / "game.json"
         if not gj.exists():
             sys.exit(f"{gj} not found: start with `hoop-tape-miner fetch <league game url>` or `new-game`")
-        langs = profile_langs(LANGS)  # basketball charts know zh and en
-        return cls(folder, json.loads(gj.read_text(encoding="utf8")), langs)
+        data = json.loads(gj.read_text(encoding="utf8"))
+        return cls(folder, data, pipeline.unit_langs(data, cls.LANG_CHOICES))
 
 
 def _exists(*rel: str, base: str = "run") -> Callable[[Game], bool]:
@@ -427,7 +428,8 @@ def status(g: Game) -> list[tuple[str, str, bool]]:
 
 
 def drive(g: Game, until: str | None = None, redo: str | None = None, publish: bool = False,
-          dry: bool = False, runner=subprocess.run, steps: list[Step] | None = None, accept: str | None = None) -> int:
+          dry: bool = False, runner=subprocess.run, steps: list[Step] | None = None,
+          accept: str | list[str] | None = None) -> int:
     """Walk `steps` (default: the game STEPS) with pipeline.drive; `g` may be any pipeline.Unit."""
     return pipeline.drive(g, STEPS if steps is None else steps, until, redo, publish, dry, runner, accept)
 

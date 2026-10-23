@@ -346,6 +346,31 @@ def test_unknown_scene_prefix_names_the_known_ones(tmp_path):
     assert probs == ["scene 2: unknown scene prefix 'reel:' (known here: clip:, stat:, court:; a plugin adds more)"]
 
 
+def test_film_keeps_a_language_newer_than_its_script_and_what_it_shows(tmp_path, monkeypatch, capsys):
+    """Adding zh renders only zh: film.en.mp4 newer than film.en.md, the video and its pictures is kept."""
+    import os
+    import time
+    video, pic = tmp_path / "v.mp4", tmp_path / "chart.png"
+    for p in (video, pic):
+        p.write_bytes(b"x")
+    for lang in ("en", "zh"):
+        (tmp_path / f"film.{lang}.md").write_text("Hi.\n\n![c](clip:0:01-0:03)\nGo.\n![m](chart.png)\nSee.\n",
+                                                  encoding="utf8")
+    (tmp_path / "film.en.mp4").write_bytes(b"old")
+    later = time.time() + 30
+    os.utime(tmp_path / "film.en.mp4", (later, later))
+    built = []
+    monkeypatch.setattr(film, "build", lambda folder, lang, *a, **k: built.append(lang))
+    film.main([str(tmp_path), "--video", str(video)])
+    assert built == ["zh"] and "[film] en: film.en.mp4 is newer than film.en.md, kept" in capsys.readouterr().out
+    assert film.inputs(tmp_path, "en", video) == [tmp_path / "film.en.md", video, pic]
+    film.main([str(tmp_path), "--video", str(video), "--lang", "en", "--force"])
+    assert built == ["zh", "en"]
+    os.utime(pic, (later + 30, later + 30))                    # a picture it shows changed: render again
+    film.main([str(tmp_path), "--video", str(video), "--lang", "en"])
+    assert built == ["zh", "en", "en"]
+
+
 def test_basketball_folder_gets_court_scenes_and_player_marks(tmp_path):
     (tmp_path / "game.json").write_text("{}", encoding="utf8")
     hooks, kinds = film.hooks_for(tmp_path)

@@ -316,3 +316,75 @@ def test_session_tables_share_the_tail_and_train_sheets_is_not_tracked():
     by = {s.name: s for s in train_run.TRAIN_STEPS}
     assert by["sheets"].inputs is None and by["summary"].inputs and by["scan"].inputs
     assert train_run.NAMES[-8:] == tail and move_run.NAMES[-8:] == tail
+
+
+def two_scripts(unit):
+    """Two agent steps that both follow src.txt, recorded as they are; then src.txt changes."""
+    src = unit / "src.txt"
+    outs = [unit / "one.md", unit / "two.md"]
+    for o in outs:
+        o.write_text("v1", encoding="utf8")
+    s = [P.Step(o.stem, "agent", lambda g, o=o: o.exists(), how="write {folder}/" + o.name,
+                derives=lambda g, o=o: [(o, [src])]) for o in outs]
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0
+    src.write_text("b", encoding="utf8")
+    return s
+
+
+def test_one_stop_lists_every_out_of_date_agent_step_and_accept_takes_several(unit, capsys):
+    s = two_scripts(unit)
+    capsys.readouterr()
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    said = capsys.readouterr().out
+    assert "one is out of date" in said and "two is out of date too" in said and "two.md: src.txt changed" in said
+    assert f"`sports-video-coach run {P.slash(unit)} --accept one two`" in said  # the full command
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit), accept=["one", "two"]) == 0
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0
+
+
+def test_accept_takes_one_or_several_steps_on_the_command_line():
+    import argparse
+    ap = argparse.ArgumentParser()
+    P.add_drive_args(ap, ["one", "two"])
+    assert ap.parse_args(["--accept", "one"]).accept == ["one"]
+    assert ap.parse_args(["--accept", "one", "two"]).accept == ["one", "two"]
+
+
+def test_checks_keep_an_agent_step_waiting_until_fixed_or_accepted(unit, capsys):
+    out = unit / "script.md"
+    out.write_text("bad", encoding="utf8")
+    s = [P.Step("script", "agent", lambda g: out.exists(), how="write it",
+                checks=lambda g: ["script.md: fix the sentence"] if out.read_text(encoding="utf8") == "bad" else []),
+         P.Step("after", "cmd", made("after"), lambda g: [["after"]])]
+    r = Runner(unit)
+    assert P.drive(Unit.load(unit), s, runner=r) == P.WAITING and r.calls == []
+    said = capsys.readouterr().out
+    assert "script has something to fix" in said and "script.md: fix the sentence" in said
+    assert P.rows(Unit.load(unit), s)[0][2:] == (False, ["script.md: fix the sentence"])
+    assert P.drive(Unit.load(unit), s, runner=r, accept="script") == 0 and r.calls == [["after"]]
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0          # accepted stays accepted
+
+
+def test_listen_script_waits_on_a_wrong_stated_length_before_narrate(unit, capsys):
+    tail = {t.name: t for t in P.tail_steps(lambda g: g.folder / "v.mp4", "write listen", "qa", "film")}
+    s = [tail["listen-script"], tail["narrate"]]
+    (unit / "README.md").write_text("# r\n", encoding="utf8")
+    (unit / "listen.zh.md").write_text("这份报告大约五分钟。传球要快。\n", encoding="utf8")
+    r = Runner(unit)
+    assert P.drive(Unit.load(unit), s, runner=r) == P.WAITING and r.calls == []   # no TTS render yet
+    said = capsys.readouterr().out
+    assert "listen.zh.md says about 5 min" in said and '"这份报告大约五分钟。"' in said
+    assert "--accept listen-script" in said
+    assert P.drive(Unit.load(unit), s, runner=r, accept=["listen-script"]) == 0 and r.calls[0][0] == "narrate"
+    (unit / "listen.zh.md").write_text("传球要快。\n", encoding="utf8")          # fixed: nothing left to flag
+    assert P.listen_checks(Unit.load(unit)) == []
+
+
+def test_qa_is_not_done_while_a_step_before_it_is_not(unit):
+    s = [P.Step("html", "cmd", made("html"), lambda g: [["html"]]),
+         P.Step("qa", "agent", lambda g: True, how="check", needs_all=True)]
+    assert P.rows(Unit.load(unit), s)[1] == ("qa", "agent", False, ["waits for html"])
+    (unit / "run" / "html.out").write_text("x", encoding="utf8")
+    assert [ok for _, _, ok, _ in P.rows(Unit.load(unit), s)] == [True, True]
+    tail = {t.name: t for t in P.tail_steps(lambda g: None, "", "", "")}
+    assert tail["qa"].needs_all and tail["film"].again == ("--force",)   # film keeps languages that are up to date

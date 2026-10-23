@@ -29,6 +29,12 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    run replaces the unit json's choice; `qa` comes with `html`, `clips` with `html` and `film`; `narration`, the
    page's audio, only when chosen). `publish` (private links, needs a Cloudflare account)
    runs only with `--publish`, and only when your user asks for links.
+5. Languages: `--lang en zh` on the first run, or on a later run to add or drop one (it replaces `languages` in the
+   unit json; basketball units take zh and en). The run then asks only for the new language's files; the audio and
+   film of the others are kept (`narrate` / `film` keep an mp3 / mp4 newer than its script).
+6. Out of date (exit 3 after an edit): the run lists every agent step whose files no longer follow what changed, or
+   that a check flagged (a narration script whose stated length is off), in one message. Fix them all, or keep them:
+   `--accept listen-script film-script`.
 
 Plugin choice: a plugin that claims the target (a league url) or owns the folder wins. Otherwise use the plugin for
 the sport if `plugins` lists one, else `generic`. Do not write a plugin just to analyse one video. Basketball: the

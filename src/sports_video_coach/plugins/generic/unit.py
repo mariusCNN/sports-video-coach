@@ -53,8 +53,7 @@ class Analysis(P.Session):
         if not p.exists():
             sys.exit(f"{p} not found: start with `sports-video-coach run <video files>`")
         data = json.loads(p.read_text(encoding="utf8"))
-        langs = tuple(data.get("languages") or P.profile_langs())
-        return cls(folder, data, langs)
+        return cls(folder, data, P.unit_langs(data, cls.LANG_CHOICES))
 
 
 def split_hint(g: Analysis) -> str:

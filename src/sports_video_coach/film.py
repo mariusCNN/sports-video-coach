@@ -35,11 +35,13 @@ Each paragraph is spoken by edge-tts (needs internet: the text is sent to Micros
 $FFPROBE override the binaries).
 
 usage: sports-video-coach film <report folder> [--lang zh en] [--video game.mp4] [--run run/]
-       [--height 720] [--crf 23] [--font "Microsoft YaHei"] [--scenes 3-6] [--dry]
+       [--height 720] [--crf 23] [--font "Microsoft YaHei"] [--scenes 3-6] [--dry] [--force]
 --crf trades size for quality (x264: +6 is about half the size; 23 makes ~75 MB for 10 min at 720p).
 A full render also writes film.<lang>.jpg, a poster frame from the title card (~1 s).
 --dry checks the script and prints the scene list with estimated lengths (no TTS, no rendering).
 --scenes renders only those scenes (1-based) into film.<lang>.preview.mp4, for a quick look.
+A film.<lang>.mp4 newer than its script and the files it shows (the video, pictures, plugin scene files) is kept,
+so adding a language renders only that one; --force renders it again.
 """
 from __future__ import annotations
 
@@ -841,6 +843,20 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
     return out
 
 
+def inputs(folder: Path, lang: str, video: Path | None) -> list[Path]:
+    """What film.<lang>.mp4 is made from: its script, the video (when a clip scene cuts from it), the pictures and
+    plugin scene files it shows."""
+    script = folder / f"film.{lang}.md"
+    scenes = parse_script(script.read_text(encoding="utf8"), hooks_for(folder)[0]) if script.exists() else []
+    out = [script, *([video] if video and any(sc.kind == "clip" for sc in scenes) else [])]
+    return out + [folder / sc.src for sc in scenes if sc.kind not in ("title", "card", "clip", "stat") and sc.src]
+
+
+def up_to_date(out: Path, ins: list[Path], slack: float = 2.0) -> bool:
+    """out exists and no input changed after it (as narrate.up_to_date, over every input)."""
+    return out.exists() and all(not p.exists() or p.stat().st_mtime <= out.stat().st_mtime + slack for p in ins)
+
+
 def poster(mp4: Path, jpg: Path, at: float = POSTER_S) -> Path:
     """One frame (the title card at ~1 s) as the page player's poster."""
     t = min(at, duration_s(mp4) / 2)
@@ -865,6 +881,8 @@ def main(argv=None):
                                    f"for zh, en and Latin scripts, {L.font('ja')} for ja, {L.font('ko')} for ko)")
     ap.add_argument("--scenes", help="render only scenes A-B (1-based) into film.<lang>.preview.mp4")
     ap.add_argument("--dry", action="store_true", help="check the script and print scenes with estimated lengths")
+    ap.add_argument("--force", action="store_true", help="re-render a language whose film is newer than its script "
+                                                         "and the files it shows")
     a = ap.parse_args(argv)
     folder = Path(a.folder)
     have = sorted(p.name.split(".")[1] for p in folder.glob("film.*.md"))
@@ -883,6 +901,10 @@ def main(argv=None):
     if video and not Path(video).is_absolute():
         video = (folder / video).resolve()
     for lang in langs:
+        out = folder / f"film.{lang}.mp4"
+        if not (a.force or a.dry or pick) and up_to_date(out, inputs(folder, lang, Path(video) if video else None)):
+            print(f"[film] {lang}: {out.name} is newer than film.{lang}.md, kept (--force re-renders)")
+            continue
         build(folder, lang, Path(video) if video else None, a.height, a.font, pick, a.dry,
               Path(a.run) if a.run else None, a.crf)
 

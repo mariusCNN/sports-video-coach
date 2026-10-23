@@ -27,6 +27,7 @@ class Session(P.Session):
     """A movement session folder (movement.json), driven by pipeline.drive with MOVE_STEPS."""
     JSON = "movement.json"
     PLUGIN = "basketball"
+    LANG_CHOICES = P.LANGS   # basketball pages know zh and en
     VIDEO = "reel.mp4"
     REVIEW = "move_review"
     LABEL = "move"
@@ -44,7 +45,8 @@ class Session(P.Session):
     def load(cls, folder: Path) -> "Session":
         if not M.is_movement(folder):
             sys.exit(f"{folder / 'movement.json'} not found: start with `hoop-tape-miner move --spec segments.json`")
-        return cls(Path(folder), M.load(folder), P.profile_langs(P.LANGS))
+        data = M.load(folder)
+        return cls(Path(folder), data, P.unit_langs(data, cls.LANG_CHOICES))
 
 
 def side_segments(g: Session) -> list[str]:

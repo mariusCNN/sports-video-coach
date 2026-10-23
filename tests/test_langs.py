@@ -92,6 +92,38 @@ def test_profile_languages_take_every_registry_code_unless_a_plugin_limits_them(
         P.profile_langs(P.LANGS)   # basketball: zh and en only
 
 
+def test_lang_on_a_later_run_replaces_the_unit_languages(tmp_path, monkeypatch, capsys):
+    """An existing unit adds a language with `run <folder> --lang`, as with --artifacts; a wrong code is a usage
+    error and writes nothing."""
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path))
+    folder = tmp_path / "a"
+    folder.mkdir()
+    aj = folder / "analysis.json"
+    aj.write_text(json.dumps({"plugin": "generic", "sport": "tennis", "languages": ["en"]}), encoding="utf8")
+    assert run.drive_unit(folder, ["--lang", "en", "zh", "--status"]) == 0
+    assert json.loads(aj.read_text(encoding="utf8"))["languages"] == ["en", "zh"]
+    assert "[run] languages in analysis.json: en, zh" in capsys.readouterr().out
+    with pytest.raises(SystemExit) as e:
+        run.drive_unit(folder, ["--lang", "xx"])
+    assert e.value.code == 2 and json.loads(aj.read_text(encoding="utf8"))["languages"] == ["en", "zh"]
+    assert "--lang LANG" in run.help_text() and "[--lang LANG ...]" in run.HELP
+
+
+def test_lang_on_a_basketball_game_keeps_its_zh_en_limit(tmp_path, monkeypatch, capsys):
+    from hoop_tape_miner import run as R
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path))
+    game = tmp_path / "teams" / "red-foxes" / "2025-03-08"
+    (game / "run").mkdir(parents=True)
+    gj = game / "game.json"
+    gj.write_text(json.dumps({"video": "v.mp4", "periods": [[0, 60]], "us": {"team": "A"}, "them": {"team": "B"}}),
+                  encoding="utf8")
+    with pytest.raises(SystemExit) as e:
+        run.drive_unit(game, ["--lang", "en", "ja"])
+    assert e.value.code == 2 and "languages" not in json.loads(gj.read_text(encoding="utf8"))
+    run.drive_unit(game, ["--lang", "en", "--status"])
+    assert R.Game.load(game).langs == ("en",)    # the game json wins over the profile's zh + en
+
+
 def test_page_in_japanese(tmp_path):
     (tmp_path / "README.ja.md").write_text("# スイングの見直し\n\n## 続けること\n\n構えは安定しています。\n", encoding="utf8")
     page = render_html.page(tmp_path)
