@@ -164,10 +164,16 @@ class Session(Unit):
         return dict(super().fill_values(), player=self.game.get("player"))
 
     def finished(self):
-        print(f"[{self.LABEL}] done. Page: {slash(self.folder / 'index.html')}")
-        print(f"[{self.LABEL}] explained video (send it yourself, it is not published): "
-              + ", ".join(slash(self.folder / f"film.{l}.mp4") for l in self.langs))
+        films = [self.folder / f"film.{l}.mp4" for l in self.langs]
+        got, old = kept(self, html=[self.folder / "index.html"], film=films)
+        print(f"[{self.LABEL}] done. Page: {slash(self.folder / 'index.html')}" if "html" in got
+              else f"[{self.LABEL}] done.")
+        if "film" in got:
+            print(f"[{self.LABEL}] explained video (send it yourself, it is not published): "
+                  + ", ".join(map(slash, films)))
         print(f"[{self.LABEL}] {self.PLAN}: {slash(self.folder / 'plan.json')}")
+        if old:
+            print(f"[{self.LABEL}] {old}")
 
 
 @dataclass
@@ -731,6 +737,25 @@ def built_line(g: Unit, publish: bool) -> str:
         more = [n for n in known if n in chosen or n != "publish"]
         line += f"\n[run] to build them too: {run_hint(g, '--artifacts', *more)}"
     return line
+
+
+def kept(g: Unit, **files: list[Path]) -> tuple[dict[str, list[Path]], str]:
+    """Deliverable files per artifact (html=[...], film=[...]) split by the unit's `artifacts` choice: the existing
+    files of the chosen ones, and a closing line naming the others' files left from an earlier run ('' when none),
+    so the closing list never claims what this run left out."""
+    chosen = artifacts.selected(g)
+    shown, old = {}, []
+    for name, paths in files.items():
+        there = [p for p in paths if p.exists()]
+        if name in chosen:
+            shown[name] = there
+        else:
+            old += there
+    if not old:
+        return shown, ""
+    names = [p.relative_to(g.folder).as_posix() if p.is_relative_to(g.folder) else slash(p) for p in old]
+    audio = " (the page still plays it)" if "html" in chosen and any(p.name.startswith("listen.") for p in old) else ""
+    return shown, f"kept from an earlier run, not built this time: {', '.join(names)}{audio}"
 
 
 def run_hint(g: Unit, *args: str) -> str:

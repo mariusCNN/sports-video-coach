@@ -90,9 +90,14 @@ class Game(Unit):
         return LEGACY if errors and step in GATED and reports_done(self) else None
 
     def finished(self):
-        print("[run] done. Pages: " + ", ".join(str(d / "index.html") for d in self.reports()))
-        print("[run] explained video (send it yourself, it is not published): "
-              + ", ".join(str(self.folder / f"film.{l}.mp4") for l in self.langs))
+        films = [self.folder / f"film.{l}.mp4" for l in self.langs]
+        got, old = pipeline.kept(self, html=[d / "index.html" for d in self.reports()], film=films)
+        print("[run] done. Pages: " + ", ".join(str(d / "index.html") for d in self.reports()) if "html" in got
+              else "[run] done.")
+        if "film" in got:
+            print("[run] explained video (send it yourself, it is not published): " + ", ".join(map(str, films)))
+        if old:
+            print(f"[run] {old}")
 
     @classmethod
     def load(cls, folder: Path) -> "Game":

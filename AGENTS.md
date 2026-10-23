@@ -27,8 +27,9 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
 4. Deliverables (artifacts): `clips`, `narration`, `html`, `qa`, `publish`, `film`; default all. Pick them with
    `"artifacts": ["html", "film"]` in the unit json or the profile, or `--artifacts html film` on any run (a later
    run replaces the unit json's choice; `qa` comes with `html`, `clips` with `html` and `film`; `narration`, the
-   page's audio, only when chosen). `publish` (private links, needs a Cloudflare account)
-   runs only with `--publish`, and only when your user asks for links.
+   page's audio, only when chosen). Narrowing the choice deletes nothing: files of artifacts left out stay (an
+   earlier mp3 stays on the page) and the closing list names them "kept from an earlier run". `publish` (private
+   links, needs a Cloudflare account) runs only with `--publish`, and only when your user asks for links.
 5. Languages: `--lang en zh` on the first run, or on a later run to add or drop one (it replaces `languages` in the
    unit json; basketball units take zh and en). The run then asks only for the new language's files; the audio and
    film of the others are kept (`narrate` / `film` keep an mp3 / mp4 newer than its script).

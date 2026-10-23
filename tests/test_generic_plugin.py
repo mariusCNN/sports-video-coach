@@ -338,6 +338,23 @@ def test_built_line_names_what_was_built_and_what_was_left_out(tmp_path):
     assert "to build them too" not in P.built_line(g, publish=False)  # only publish is left out
 
 
+def test_closing_list_names_only_what_was_chosen(tmp_path, capsys):
+    g = U.Analysis(tmp_path, {"plugin": "generic", "artifacts": ["clips", "html", "qa"]}, ("en",))
+    for f in ("index.html", "film.en.mp4", "listen.en.mp3", "clips/0000-0005.mp4"):
+        (tmp_path / f).parent.mkdir(exist_ok=True)
+        (tmp_path / f).write_bytes(b"x")
+    g.finished()
+    out = capsys.readouterr().out
+    assert "explained video" not in out and "narration (also" not in out  # left out by artifacts: not claimed
+    assert "[analysis] clips (also on the page): 1 in" in out
+    assert ("[analysis] kept from an earlier run, not built this time: film.en.mp4, listen.en.mp3 (the page still "
+            "plays it)") in out
+    del g.game["artifacts"]  # every artifact
+    g.finished()
+    out = capsys.readouterr().out
+    assert "explained video" in out and "kept from" not in out
+
+
 def test_artifacts_on_a_later_run_replace_the_choice(analysis, capsys):
     gj = analysis.folder / "analysis.json"
     data = json.loads(gj.read_text(encoding="utf8"))

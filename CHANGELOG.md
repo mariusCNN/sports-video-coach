@@ -9,6 +9,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - Several videos joined into one unit: each contact-sheet tile label and each clip caption on the page also names
   the file and the time in it (`00:42.5  side.mp4 00:17.5`); README and `run --help` say the files are joined in
   the order given, and that two camera angles of one set are better run as two units for now.
+- `--artifacts html` on a unit that already has narration and film: the closing list names only what was chosen,
+  and lists the rest as "kept from an earlier run, not built this time: film.en.mp4, listen.en.mp3"; the help
+  says an earlier mp3 stays on the page.
 - Korean narration: the length check reads spelled-out lengths (약 이 분, 일 분 반, 오 분 정도), and the Korean
   read rate is 245 Hangul a minute (was 270, about 10% short of the real audio).
 - The Korean page's slow-motion button reads 느리게 ½× (was 슬로).
