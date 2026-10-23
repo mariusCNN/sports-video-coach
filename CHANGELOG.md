@@ -17,6 +17,14 @@ All notable changes to this project are documented here. The format follows [Kee
   lock-screen and headset controls through the Media Session API (play, pause, ±10 s, previous / next track); a
   warning inside WeChat and other in-app browsers, which stop audio when the screen locks. Playback events are
   synced with the log, and `program pull` prints the last ones and the browser, to see where playback stopped.
+- Training-plan app feedback loop (all optional in `program.json`, see `templates/program.example.json`):
+  - a pre-session check on every training day (legs, pain 0–10 and where, red flag, sleep) that gives advice and
+    options but never changes the session; `"readiness": false` turns it off, `painSites` sets the places;
+  - exercises of kind `rep` record successes per set, with an `ok` text saying what counts as one;
+  - `game.counters` replaces the game log's counters, and `game.trees` asks which decision tree went worst;
+  - a session with `review` opens with the last game's log (worst tree and counters);
+  - `program pull` prints the checks, success counts and last games.
+- `?preview` on a plan link shows the page without saving or syncing anything, for checks and demos.
 
 ### Changed
 
@@ -83,6 +91,13 @@ All notable changes to this project are documented here. The format follows [Kee
   run transcript of the exit-3 loop under "How it works".
 - `sports-video-coach demo --site <dir>` writes the demo site: an English landing page, the coaching page under
   `demo/`; the GitHub Pages site opens on that landing page.
+
+### Fixed
+
+- The game log's counters start empty instead of 0, so a count that was not taken is not read as zero (zeros in
+  a draft left by an earlier version are cleared too).
+- Loop-audio events record the device and browser of each event (older events print as "device unknown"), so a
+  check run on another device can be told apart from the player's phone.
 
 ## 0.2.6 - 2026-10-23
 

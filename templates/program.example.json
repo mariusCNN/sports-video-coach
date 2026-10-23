@@ -22,7 +22,8 @@
  "sessions": {
   "M": {"title": "Ball handling + mobility", "tag": "easy", "dur": "45 min", "rpe": "effort 4/10", "focus": "Eyes up on every dribble.", "letter": "M", "color": "#e5736b",
         "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]},
-                  {"block": "Handling", "ex": "pound", "dose": "4 × 45 s each hand", "sets": [4, "45 s"], "note": "Ball no higher than the hip."}]},
+                  {"block": "Handling", "ex": "pound", "dose": "4 × 45 s each hand", "sets": [4, "45 s"], "note": "Ball no higher than the hip."},
+                  {"block": "Decisions", "ex": "reads", "dose": "3 × 10 calls", "sets": [3, "10 calls"]}]},
   "C": {"title": "Shooting", "tag": "mid", "dur": "50 min", "rpe": "effort 5/10", "focus": "Same release on every shot.", "letter": "C", "color": "#e5b13a",
         "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]},
                   {"block": "Shooting", "ex": "spotup", "dose": ["", "4 spots × 10", "4 spots × 12", "4 spots × 15", "4 spots × 8"],
@@ -30,6 +31,7 @@
   "G": {"title": "League game", "tag": "hard", "dur": "game", "rpe": "game", "focus": "Three things on the game tab.", "letter": "G", "color": "#7fb3ff", "game": "league",
         "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]}]},
   "L": {"title": "Legs", "tag": "hard", "dur": "60 min", "rpe": "effort 7/10", "focus": "Strength, then landing.", "letter": "L", "color": "#f28c28",
+        "review": "Spend the decision block on the tree that went worst.",
         "items": [{"block": "Warm-up", "ex": "W", "dose": "12 min", "sets": ["done"]},
                   {"block": "Strength", "ex": "gobletsq", "dose": "4 × 6", "sets": [4, "6 reps"]}]},
   "Z": {"title": "Easy aerobic", "tag": "easy", "dur": "30 min", "rpe": "effort 3/10", "focus": "You can still talk.", "letter": "Z", "color": "#56d4dd",
@@ -38,7 +40,8 @@
          "items": [{"block": null, "ex": "spotup", "dose": "4 spots × 10", "sets": [4, "10 shots"]}]},
   "R": {"title": "Rest", "tag": "easy", "dur": "0 min", "rpe": "—", "focus": "Sleep.", "letter": "R", "color": "#8b949e", "items": []}
  },
- "kind": {"spotup": "shot", "pound": "time", "gobletsq": "kg", "z2": "time"},
+ "kind": {"spotup": "shot", "pound": "time", "gobletsq": "kg", "z2": "time", "reads": "rep"},
+ "painSites": ["knee", "ankle", "Achilles", "hamstring", "hip", "lower back", "other"],
  "game": {
   "three": {"half": [], "full": [], "league": [["Box out first", "A shot goes up", "Find a body, then go to the ball", "rebounds lost to my player"]]},
   "mission": [],
@@ -47,13 +50,16 @@
   "rules": {"half": [], "full": [], "league": []},
   "warm": ["Jog, carioca, leg swings (5 min)", "Form shots 10"],
   "watch": [["Talk on every screen", "Call it early: \"screen left\", \"switch\"."]],
-  "targets": [{"label": "Rebounds", "value": "4+", "note": "per game"}]
+  "targets": [{"label": "Rebounds", "value": "4+", "note": "per game"}],
+  "counters": [["ast", "Assists", ""], ["to", "Turnovers", ""], ["quick", "Caught and acted at once", "shot, drive or pass in 0.5 s"], ["held", "Caught and held", "1 s or more"]],
+  "trees": ["On the catch", "Past half court", "Dribble stalls", "After the drive"]
  },
  "tests": [{"group": "Shooting"}, {"label": "Spot-up, 40 shots (makes)", "key": "su40"}],
  "messages": ["Every set counts."],
  "exercises": {
   "W": {"n": "Warm-up", "en": "basketball dynamic warm-up", "v": [], "r": [], "how": "Jog, shuffle, leg swings, three build-up sprints.", "cue": "Sweat, not tired", "why": "A neuromuscular warm-up cuts lower-limb injuries.", "fix": "", "tips": ["Light sweat, not tired", "Slow on the mobility moves", "Phone away"]},
   "pound": {"n": "Pound dribble", "en": "pound dribble", "v": [], "r": [], "how": "Hard dribbles at hip height, one hand, eyes on a spot on the wall.", "cue": "Eyes up", "why": "Control without looking at the ball.", "fix": "", "tips": ["Fingertips, not palm", "Stay low", "Same rhythm both hands"]},
+  "reads": {"n": "Read the call", "en": "basketball read and react drill", "v": [], "r": [], "how": "A partner or a call track says open / closing / gone; shoot, drive or pass on the call.", "cue": "Decide on the catch", "why": "Game decisions are made before the ball arrives.", "fix": "", "ok": "The right action within 0.5 s of the call; the first move is a shot fake, pass or shot, not a dribble. Makes do not count.", "tips": ["Feet ready before the catch", "Look at the defender, not the ball"]},
   "spotup": {"n": "Spot-up shooting", "en": "spot-up shooting", "v": [], "r": [], "how": "Four spots; feet set and square before the catch.", "cue": "Same release", "why": "Most open shots in a game are catch-and-shoot.", "fix": "", "tips": ["Hop into the catch", "Hold the follow-through", "Log makes per spot"]},
   "gobletsq": {"n": "Goblet squat", "en": "goblet squat", "v": [], "r": [], "how": "Hold a dumbbell at the chest; sit down between the heels, stand up tall.", "cue": "Chest up", "why": "Leg strength for braking, landing and jumping.", "fix": "", "tips": ["3 s down", "Knees follow the toes", "Same depth each rep"]},
   "z2": {"n": "Zone 2", "en": "zone 2 cardio", "v": [], "r": [], "how": "Bike, jog or row at a talking pace.", "cue": "Can talk", "why": "Aerobic base for late-game legs.", "fix": "", "tips": ["Nose breathing if you can", "Same pace start to end", "Heart rate about 60–70% of max"]}
