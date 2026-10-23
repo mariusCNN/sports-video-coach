@@ -17,6 +17,18 @@ All notable changes to this project are documented here. The format follows [Kee
 - `film` uses each language's subtitle font and line length and prints which voice and font it used (`--font`
   still overrides).
 - The page, the publish hub and `page-check` follow each report's language (lang attribute, CJK headings).
+- `run <folder> --lang en zh` works on a later run, like `--artifacts`: it replaces `languages` in the unit json
+  (checked against what the plugin supports; basketball: zh and en). A unit's own `languages` now wins over the
+  profile's.
+- `film` keeps a `film.<lang>.mp4` newer than its script, video and pictures ("film.en.mp4 is newer than
+  film.en.md, kept"); `film --force` renders again. Adding a language renders only that language.
+- A run that stops on out-of-date agent steps lists all of them at once; `--accept` takes several steps
+  (`--accept listen-script film-script`), and its hint prints the full command.
+- In a driven run, a narration script whose stated length is off stops with exit 3 before any audio is rendered
+  and quotes the sentence to fix (`--accept listen-script` keeps it). The bare `narrate` command only warns.
+- `--status` no longer shows `qa` as done while an earlier step is pending or out of date.
+- Narration guide lists every language's read rate; the review guide writes likely/unclear in the review's
+  language.
 
 - Basketball without a league (pickup games, phone clips, no GPU) goes to `generic` with `--sport basketball`;
   the `basketball` plugin is for league games or tracking from a clone. README, AGENTS.md and `plugins` say so,
