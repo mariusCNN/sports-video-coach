@@ -223,20 +223,51 @@ def input_key(g: Unit, p: Path) -> str:
 
 
 class Store:
-    """<folder>/.hoop-steps.json: {"version": 1, "steps": {name: record}}; an unreadable file counts as empty."""
+    """<folder>/.hoop-steps.json: {"version": 1, "steps": {name: record}, "notes": {...}}; an unreadable file counts
+    as empty. `notes` holds what the run remembers outside the steps (the READMEs' signatures: language_drift)."""
 
     def __init__(self, folder: Path):
         self.path = Path(folder) / STORE
         try:
-            self.steps = json.loads(self.path.read_text(encoding="utf8")).get("steps") or {}
+            data = json.loads(self.path.read_text(encoding="utf8"))
+            self.steps, self.notes = data.get("steps") or {}, data.get("notes") or {}
         except (OSError, ValueError, AttributeError):
-            self.steps = {}
+            self.steps, self.notes = {}, {}
 
     def get(self, name: str) -> dict | None:
         return self.steps.get(name)
 
     def save(self):
-        media.write_json_atomic(self.path, {"version": 1, "steps": self.steps}, indent=1)
+        data = {"version": 1, "steps": self.steps, **({"notes": self.notes} if self.notes else {})}
+        media.write_json_atomic(self.path, data, indent=1)
+
+
+def language_drift(g: Unit, store: Store) -> list[str]:
+    """One warning per README edited since the last run while another language's README stayed as it was: that
+    language's README, listen and film scripts may no longer say the same (the guides: the same facts in every
+    language). Records the READMEs' signatures in the store's notes (the caller saves), so each edit warns once.
+    A README written for the first time (a language added) is not an edit."""
+    if len(g.langs) < 2:
+        return []
+    old = store.notes.get("readmes") or {}
+    now = {input_key(g, d / readme(l)): signature(d / readme(l))
+           for d in g.reports() for l in g.langs if (d / readme(l)).exists()}
+    out = []
+    for d in g.reports():
+        keys = {l: input_key(g, d / readme(l)) for l in g.langs}
+        edited = [l for l, k in keys.items() if k in old and k in now and old[k] != now[k]]
+        kept = [l for l, k in keys.items() if k in old and old[k] == now.get(k)]
+        if not edited or not kept:
+            continue
+        others = [p for o in kept for p in (d / readme(o), d / f"listen.{o}.md", g.folder / f"film.{o}.md")
+                  if p.exists()]
+        names = ", ".join(dict.fromkeys(slash(p.as_posix()) for p in others))
+        out.append(f"{' and '.join(keys[l] for l in edited)} changed since the last run; the other languages' "
+                   f"files may no longer match it: {names} (bring them in line if the facts changed; nothing "
+                   f"waits on this)")
+    if now != old:
+        store.notes["readmes"] = now
+    return out
 
 
 def current(step: Step, g: Unit, store: Store) -> dict | None:
@@ -597,6 +628,11 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
     store = Store(g.folder)
     if not dry:
         adopt(steps, g, store)
+        before = json.dumps(store.notes, sort_keys=True)
+        for w in language_drift(g, store):
+            print(f"[run] warning: {w}")
+        if json.dumps(store.notes, sort_keys=True) != before:
+            store.save()
     for i, s in enumerate(steps):
         if s.name == "publish" and not publish:
             if not s.done(g):

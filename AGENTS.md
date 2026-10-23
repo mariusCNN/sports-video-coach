@@ -34,7 +34,8 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    film of the others are kept (`narrate` / `film` keep an mp3 / mp4 newer than its script).
 6. Out of date (exit 3 after an edit): the run lists every agent step whose files no longer follow what changed, or
    that a check flagged (a narration script whose stated length is off), in one message. Fix them all, or keep them:
-   `--accept listen-script film-script`.
+   `--accept listen-script film-script`. An edit to one language's README also prints, once, a warning naming the
+   other languages' README / listen / film files that may no longer say the same; nothing waits on it.
 
 Plugin choice: a plugin that claims the target (a league url) or owns the folder wins. Otherwise use the plugin for
 the sport if `plugins` lists one, else `generic`. Do not write a plugin just to analyse one video. Basketball: the

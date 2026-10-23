@@ -141,6 +141,27 @@ def test_report_step_names_only_the_missing_readme_after_a_language_is_added(ana
     assert report.errors(g) == [f"missing: {P.slash((g.folder / 'README.fr.md').as_posix())} (French)"]
 
 
+def test_editing_one_languages_readme_warns_once_about_the_others(analysis, video, capsys):
+    g = U.Analysis(analysis.folder, analysis.game, ("fr", "en"))
+    for n, text in (("README.fr.md", "# fr\n"), ("README.en.md", "# en\n"), ("listen.en.md", "en\n"),
+                    ("film.en.md", "en\n")):
+        (g.folder / n).write_text(text, encoding="utf8")
+    store = P.Store(g.folder)
+    assert P.language_drift(g, store) == []                 # first run: recorded, nothing to compare with
+    store.save()
+    (g.folder / "README.fr.md").write_text("# fr, edited\n", encoding="utf8")
+    frames.build(video, g.run / "frames", every=2)
+    assert P.drive(g, U.STEPS) == P.WAITING                  # a warning, not a stop of its own
+    out = capsys.readouterr().out
+    assert out.count("[run] warning: README.fr.md changed since the last run") == 1
+    assert "README.en.md" in out and "listen.en.md" in out and "film.en.md" in out
+    P.drive(g, U.STEPS)
+    assert "[run] warning" not in capsys.readouterr().out    # once per edit
+    (g.folder / "README.fr.md").write_text("# fr, again\n", encoding="utf8")
+    (g.folder / "README.en.md").write_text("# en, again\n", encoding="utf8")
+    assert P.language_drift(g, P.Store(g.folder)) == []      # every language edited together
+
+
 def test_review_validator(analysis, video):
     assert U.review_errors(analysis) == [f"{analysis.review / 'review.json'} missing"]
     analysis.review.mkdir(parents=True)
