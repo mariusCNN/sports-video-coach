@@ -119,7 +119,7 @@ $ sports-video-coach run drill.mp4 --sport tennis
 frames: 4 sheets (0.5 s per tile) in .../run/frames
 [run] waiting for the agent: review
 Film review: open every sheet in .../run/frames (frames.json lists them in time order) and write
-.../run/review/review.json as the review guide says (`sports-video-coach guide review --plugin generic` ...) ...
+.../run/review/review.json as the review guide says (`sports-video-coach guide review --unit ...` ...) ...
 [run]   .../run/review/review.json missing                                     # 退出码 3
 
 $ sports-video-coach run workspace/analysis/tennis/2025-03-15                  # agent 写了一份太薄的复盘
@@ -129,7 +129,7 @@ $ sports-video-coach run workspace/analysis/tennis/2025-03-15                  #
 $ sports-video-coach run workspace/analysis/tennis/2025-03-15                  # agent 补好了
 [run] waiting for the agent: report
 Write the coaching report README.en.md in ... from .../run/review/review.json, as
-`sports-video-coach guide report --plugin generic` says (en) ...               # 退出码 3：下一步
+`sports-video-coach guide report --unit ...` says (en) ...                      # 退出码 3：下一步
 ```
 
 细节：[docs/architecture.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/architecture.md)。

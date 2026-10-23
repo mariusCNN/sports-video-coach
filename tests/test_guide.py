@@ -25,6 +25,12 @@ def test_guide_says_where_a_plugins_missing_guides_live(monkeypatch, tmp_path):
     assert "which this install does not have" in str(e.value.code)
 
 
+def test_guide_unit_needs_a_unit_folder(tmp_path):
+    with pytest.raises(SystemExit) as e:
+        guide.main(["review", "--unit", str(tmp_path)])
+    assert "no unit json here" in str(e.value.code)
+
+
 def test_cli_prints_chinese_through_a_non_utf8_pipe(monkeypatch):
     import io
     import sys

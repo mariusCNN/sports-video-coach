@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Changed
+
+- The agent steps print `guide <name> --unit <folder>`: the guide of the unit's own plugin, found from any folder
+  (also a plugin in a `plugins/` folder above the unit); `<plugin>:<stage> <unit path>` finds such a plugin too.
+
 ### Added
 
 - New languages: `--lang ja ko es fr de pt` beside zh and en, from one table (`src/sports_video_coach/langs.py`).

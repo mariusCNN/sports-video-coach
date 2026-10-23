@@ -21,7 +21,9 @@ command with `uv run`. `new-plugin` also prints the command for the tests it wro
 
 The copy gets its own name everywhere: `summary` and `use_when` (rewrite them: agents pick a plugin by them), the
 stage names in its texts (`tennis:review-check`) and its agent steps, which say
-`sports-video-coach guide review --plugin tennis` so the agent reads your guides, not the generic ones.
+`sports-video-coach guide review --unit <folder>`: the unit's own plugin's guide (yours, not the generic one), from
+any folder, also when your plugin lives in a `plugins/` folder above the unit. `guide review --plugin tennis`
+prints the same file.
 
 The copy runs as it is. Make it yours in this order:
 

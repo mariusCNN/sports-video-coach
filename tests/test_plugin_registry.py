@@ -114,7 +114,7 @@ def test_missing_packages_are_listed_with_the_install_hint(monkeypatch, capsys):
 def test_a_stage_that_needs_a_missing_package_exits_with_a_hint(monkeypatch):
     def stage(argv):
         raise ModuleNotFoundError("No module named 'pandas'", name="pandas")
-    monkeypatch.setattr(cli, "resolve", lambda stage, default: ("fake_stage_mod", "html"))
+    monkeypatch.setattr(cli, "resolve", lambda stage, default, args=(): ("fake_stage_mod", "html"))
     monkeypatch.setitem(sys.modules, "fake_stage_mod", type(sys)("fake_stage_mod"))
     sys.modules["fake_stage_mod"].main = stage
     with pytest.raises(SystemExit) as e:

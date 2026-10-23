@@ -193,9 +193,9 @@ def test_scaffolded_plugin_names_itself_and_its_own_guides(tmp_path, monkeypatch
         steps = p.kinds[0].step_table()
         unit = p.kinds[0].unit_class()(tmp_path / "a", {"plugin": "swimming"}, ("en",))
         hows = {s.name: unit.fill(s.how) for s in steps if s.kind == "agent" and s.how}
-        assert "guide review --plugin swimming" in hows["review"] and "swimming:review-check" in hows["review"]
-        assert "guide report --plugin swimming" in hows["report"]
-        assert "guide film --plugin swimming" in hows["film-script"]
+        assert "guide review --unit " in hows["review"] and "swimming:review-check" in hows["review"]
+        assert "guide report --unit " in hows["report"]
+        assert "guide film --unit " in hows["film-script"]
         assert "generic" not in " ".join(hows.values())
     finally:
         monkeypatch.undo()
@@ -240,9 +240,12 @@ def test_a_command_stage_added_as_docs_plugins_md_says_runs_qualified(tmp_path):
     assert (tmp_path / "pose.json").read_text() == "ok"
 
 
-def test_generic_steps_point_at_the_generic_guides(analysis):
+def test_generic_steps_point_at_the_units_guides(analysis, capsys):
+    from sports_video_coach import guide
     review = next(s for s in U.STEPS if s.name == "review")
-    assert "guide review --plugin generic" in analysis.fill(review.how)
+    assert "guide review --unit " in analysis.fill(review.how)
+    assert guide.main(["review", "--unit", str(analysis.folder)]) == 0  # the unit's plugin, from any cwd
+    assert "review.json" in capsys.readouterr().out
 
 
 def test_logs_stay_with_a_unit_outside_the_workspace(analysis, tmp_path, monkeypatch):
