@@ -15,7 +15,7 @@ Warnings do not fail the check unless `--strict` is given (the run's qa step wai
 It does not see layout, playback or the 390 px phone view: a browser check still covers those. `--write-qa`
 writes a qa.md draft in the unit folder that lists what was checked and says layout, audio and clip playback were
 NOT checked (PASS only when nothing was found, with the unit's `checked:` stamp); it never replaces a qa.md
-written by hand.
+written by hand, and a rewrite keeps the agent's own notes (a `## Agent notes` heading and everything below it).
 """
 from __future__ import annotations
 
@@ -234,12 +234,21 @@ CHECKED = ("every local link, image, clip and audio file exists; every #anchor h
 NOT_CHECKED = ("the layout and the 390 px phone view, audio playback, clip playback, the language switch "
                "(no browser was used)")
 QA_MARK = "Written by `sports-video-coach page-check --write-qa`"
+NOTES = "## Agent notes"  # the agent's own part of a draft: kept when the draft is written again
 
 
-def qa_text(results: list[tuple[Path, list[str], list[str]]], stamp: str | None) -> str:
-    """qa.md from (folder, problems, warnings) per report folder: PASS only when nothing was found."""
+def agent_notes(text: str) -> str:
+    """The `## Agent notes` heading of a qa.md and everything below it ('' when it has none)."""
+    m = re.search(rf"^{re.escape(NOTES)}\b.*", text, re.M | re.S)
+    return m.group(0).rstrip() + "\n" if m else ""
+
+
+def qa_text(results: list[tuple[Path, list[str], list[str]]], stamp: str | None, notes: str = "") -> str:
+    """qa.md from (folder, problems, warnings) per report folder: PASS only when nothing was found; `notes` (the
+    agent's section of the last draft) goes at the end."""
     ok = not any(errs or warns for _, errs, warns in results)
-    lines = ["PASS" if ok else "FAIL", "", f"{QA_MARK} (a static check, not a browser check).", "",
+    lines = ["PASS" if ok else "FAIL", "", f"{QA_MARK} (a static check, not a browser check). Add your own notes "
+             f"under a `{NOTES}` heading at the end: writing the draft again keeps them.", "",
              f"Checked: {CHECKED}.", "", f"NOT checked: {NOT_CHECKED}.", ""]
     for folder, errs, warns in results:
         lines.append(f"- {folder.as_posix()}: " + ("OK" if not (errs or warns) else f"{len(errs)} problem(s), "
@@ -247,7 +256,7 @@ def qa_text(results: list[tuple[Path, list[str], list[str]]], stamp: str | None)
         lines += [f"  - {e}" for e in errs] + [f"  - warning: {w}" for w in warns]
     if stamp:
         lines += ["", f"checked: {stamp}"]
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines) + "\n" + (f"\n{notes}" if notes else "")
 
 
 def write_qa(folders: list[Path], results) -> Path | None:
@@ -257,7 +266,8 @@ def write_qa(folders: list[Path], results) -> Path | None:
     path = units.unit_json(folders[0])
     where = path.parent if path else folders[0]
     qa = where / "qa.md"
-    if qa.exists() and QA_MARK not in qa.read_text(encoding="utf8"):
+    old = qa.read_text(encoding="utf8") if qa.exists() else ""
+    if qa.exists() and QA_MARK not in old:
         print(f"[page-check] {qa.as_posix()} was not written by page-check: left as it is (delete it to write a "
               f"draft)")
         return None
@@ -266,7 +276,7 @@ def write_qa(folders: list[Path], results) -> Path | None:
     if found and found[1].unit:
         from . import pipeline
         stamp = pipeline.qa_hash(found[1].unit_class().load(where))
-    media.write_text_atomic(qa, qa_text(results, stamp))
+    media.write_text_atomic(qa, qa_text(results, stamp, agent_notes(old)))
     print(f"[page-check] wrote {qa.as_posix()} ({qa.read_text(encoding='utf8').split()[0]}; layout and playback "
           f"marked as not checked)")
     return qa
@@ -291,7 +301,9 @@ def main(argv=None) -> int:
             print(f"[page-check] {folder.as_posix()}: {e}")
         for w in warns:
             print(f"[page-check] {folder.as_posix()}: warning: {w}")
-        if not errs:
+        if not errs and a.strict and warns:  # exits 1: never print OK over it
+            print(f"[page-check] {folder.as_posix()}: FAIL ({len(warns)} warning{'s' * (len(warns) > 1)}, --strict)")
+        elif not errs:
             print(f"[page-check] {folder.as_posix()}: OK (links, anchors, media; layout and playback not checked)")
         bad += bool(errs) or (a.strict and bool(warns))
         results.append((folder, errs, warns))

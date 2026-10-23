@@ -16,6 +16,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - The cross-language edit warning no longer ping-pongs: bringing the other language's README in line after a
   warning does not warn back about the first one.
 - After a language is added, the report step's headline names only the README still missing.
+- `page-check --write-qa` keeps the agent's notes (a `## Agent notes` heading and everything below it) when it
+  writes qa.md again.
+- `page-check --strict` prints `FAIL (n warnings, --strict)` for a folder with warnings, not `OK`, as it exits 1.
 
 ### Changed
 

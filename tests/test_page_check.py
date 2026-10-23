@@ -48,7 +48,11 @@ def test_english_left_in_the_chinese_report_is_a_warning_not_a_failure(tmp_path,
     warns = PC.warnings(tmp_path)
     assert len(warns) == 1 and "1 English phrase" in warns[0] and "'keep your hips low'" in warns[0]
     assert PC.main([str(tmp_path)]) == 0
-    assert "warning: 1 English phrase" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "warning: 1 English phrase" in out and ": OK (" in out
+    assert PC.main([str(tmp_path), "--strict"]) == 1
+    out = capsys.readouterr().out
+    assert ": FAIL (1 warning, --strict)" in out and ": OK (" not in out   # never OK over an exit 1
     page(tmp_path, '<article class="report" lang="zh"><p>重心偏后（unclear），可能是likely站位。</p></article>')
     assert "2 English phrase" in PC.warnings(tmp_path)[0]                 # the guides' hedges, even in a gloss
 
@@ -85,8 +89,14 @@ def test_write_qa_drafts_qa_md_that_says_what_was_not_checked(tmp_path, monkeypa
     (folder / "listen.en.md").write_text("Ã© broken\n", encoding="utf8")
     assert P.qa_checks(g) and "mojibake" in P.qa_checks(g)[0]        # the run's qa step waits on it
     assert next(s for s in U.STEPS if s.name == "qa").checks is P.qa_checks
+    with (folder / "qa.md").open("a", encoding="utf8") as f:
+        f.write("\n## Agent notes\n\n- language switch checked by hand\n")
     PC.main([str(folder), "--write-qa"])                              # its own draft is rewritten
-    assert (folder / "qa.md").read_text(encoding="utf8").startswith("FAIL")
+    text = (folder / "qa.md").read_text(encoding="utf8")
+    assert text.startswith("FAIL") and text.endswith("## Agent notes\n\n- language switch checked by hand\n")
+    assert text.count("\n## Agent notes") == 1 and "mojibake" not in text.split("\n## Agent notes")[1]
+    PC.main([str(folder), "--write-qa"])
+    assert (folder / "qa.md").read_text(encoding="utf8") == text      # the notes kept once, not stacked
     (folder / "qa.md").write_text("PASS\n\nchecked by hand in a browser\n", encoding="utf8")
     PC.main([str(folder), "--write-qa"])
     assert "by hand" in (folder / "qa.md").read_text(encoding="utf8")  # a qa.md written by hand is kept
