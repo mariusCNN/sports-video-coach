@@ -146,6 +146,15 @@ def test_film_wraps_japanese_subtitles():
     assert film.SLOW_TAG["ja"] == "スロー" and film.FREEZE_TAG["ja"] == "一時停止"
 
 
+def test_japanese_subtitles_break_after_a_particle_not_inside_a_word():
+    text = "四球中四球、同じ方向へ飛び出しました"
+    assert film.fit(text, 12) == ["四球中四球、同じ方", "向へ飛び出しました"]   # zh rules: cut where the width is
+    assert film.fit(text, 12, "ja") == ["四球中四球、同じ方向へ", "飛び出しました"]
+    lines = film.fit("インパクトの直前に右肩が早く開いてしまい、ボールが右に出やすくなっています。", 14, "ja")
+    assert lines[:2] == ["インパクトの直前に", "右肩が早く開いてしまい、"] and all(film.em_width(x) <= 14 for x in lines)
+    assert film.ja_score("へ", "飛") == 3 and film.ja_score("方", "向") == 0 and film.ja_score("ボ", "ー") == 0
+
+
 def test_page_check_flags_english_left_in_a_japanese_or_french_report(tmp_path):
     (tmp_path / "index.html").write_text(
         '<article class="report" data-lang="ja" lang="ja"><p>右肩が開くのは likely です。</p>'

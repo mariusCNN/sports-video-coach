@@ -60,6 +60,6 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 - The title's `<who>` is the focus person: `focus` in `analysis.json`, named in each report's own words (e.g.
   "the player in orange" -> 穿橙色的球员 in `README.md`). No `focus`: name who the review coached.
 - The page shows the sport under the title. A sport the page cannot name in Chinese (it knows tennis, basketball,
-  football and about 25 more) is left out of the zh header; to name it, set `"sport": {"zh": "折返跑", "en": "shuttle
-  run"}` in `analysis.json`. Japanese works the same way (`"ja": "シャトルラン"`); other languages show the English
-  name unless the dict gives theirs.
+  football and about 25 more) is left out of the zh header; to name it, start with `--sport-name zh=折返跑` (repeat it per
+  language: `--sport-name ja=シャトルラン`), or later set `"sport": {"zh": "折返跑", "ja": "シャトルラン", "en":
+  "shuttle run"}` in `analysis.json`. Other languages show the English name unless given theirs.

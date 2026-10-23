@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 import sys
 from dataclasses import dataclass, field
+from functools import cache
 
 # the film's subtitle font since the first release; it covers Latin scripts too
 DEFAULT_FONTS = {"win32": "Microsoft YaHei", "darwin": "PingFang SC", "other": "Noto Sans CJK SC"}
@@ -32,6 +33,43 @@ class Lang:
     page_font: str = ""   # CSS font stack for the page body (empty: the default stack)
     ui: dict | None = None  # page labels (None: English)
     film: dict = field(default_factory=dict)  # film tags: slow, freeze (missing: English)
+    minutes: str = ""     # regex of a stated length ("about 2 minutes"): groups n, h1 / h2 (half), under; "": no check
+    numbers: dict = field(default_factory=dict)  # number words of `minutes` (kanji numbers are read without them)
+
+
+# stated lengths: the number (digits, a number word, kanji), the minute word, a half before or after it, and an
+# upper bound ("under a minute"). Every pattern has the groups n, h1, h2 and under.
+_KANJI = "[一两二三四五六七八九十]{1,3}"
+MIN_ZH = rf"(?P<under>不到|少于)?\s*(?P<n>\d+(?:\.\d+)?|{_KANJI})\s*分(?:(?P<h1>半)钟?|钟(?P<h2>半)?)"  # not 三分球
+MIN_JA = (rf"(?P<n>\d+(?:\.\d+)?|{_KANJI})\s*分(?!の[\d一二三四五六七八九十])間?(?P<h1>半)?(?P<h2>)"
+          r"(?P<under>以内|未満|弱)?")  # 約2分, 約一分, 1分半, 1分以内 (not 3分の1)
+MIN_KO = (r"(?P<n>\d+(?:\.\d+)?)\s*분(?!의\s*\d)"
+          r"(?P<h1>\s*반)?(?P<h2>)(?P<under>\s*(?:이내|미만|이하|도 안|이 안))?")  # 약 2분, 1분 반 (digits: 한 분 is a person)
+MIN_EN = (r"\b(?P<under>under\s+|less\s+than\s+)?(?P<n>\d+(?:\.\d+)?|a|one|two|three|four|five|six|seven|eight|"
+          r"nine|ten)(?P<h1>\s+and\s+a\s+half)?\s+min(?:ute)?s?\b(?P<h2>\s+and\s+a\s+half)?")
+MIN_ES = (r"\b(?P<under>menos\s+de\s+)?(?P<n>\d+(?:[.,]\d+)?|una?|uno|dos|tres|cuatro|cinco|seis|siete|ocho|"
+          r"nueve|diez)\s+minutos?\b(?P<h1>\s+y\s+medio)?(?P<h2>)")  # unos 2 minutos, un minuto y medio
+MIN_FR = (r"(?P<under>\bmoins\s+d['\u2019]\s*)?\b(?P<n>\d+(?:[.,]\d+)?|une?|deux|trois|quatre|cinq|six|sept|"
+          r"huit|neuf|dix)\s+minutes?\b(?P<h1>\s+et\s+demie?)?(?P<h2>)")  # environ 2 minutes, moins d'une minute
+MIN_DE = (r"\b(?P<under>unter\s+|weniger\s+als\s+)?(?P<n>\d+(?:[.,]\d+)?|anderthalb|einer|eine|ein|zwei|drei|"
+          r"vier|fünf|sechs|sieben|acht|neun|zehn)(?P<h1>einhalb)?\s+Minuten?\b(?P<h2>)")  # etwa 2 Minuten, zweieinhalb
+MIN_PT = (r"\b(?P<under>menos\s+de\s+)?(?P<n>\d+(?:[.,]\d+)?|uma?|dois|duas|três|quatro|cinco|seis|sete|oito|"
+          r"nove|dez)\s+minutos?\b(?P<h1>\s+e\s+meio)?(?P<h2>)")  # cerca de 2 minutos, um minuto e meio
+
+
+def _words(first: dict, *rest: str) -> dict:
+    """Number words: `first` as given, then `rest` from two up."""
+    return {**first, **{w: i for i, w in enumerate(rest, 2)}}
+
+
+NUM_EN = _words({"a": 1, "one": 1}, "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+NUM_ES = _words({"un": 1, "una": 1, "uno": 1}, "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve",
+                "diez")
+NUM_FR = _words({"un": 1, "une": 1}, "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix")
+NUM_DE = _words({"anderthalb": 1.5, "ein": 1, "eine": 1, "einer": 1}, "zwei", "drei", "vier", "fünf", "sechs",
+                "sieben", "acht", "neun", "zehn")
+NUM_PT = _words({"um": 1, "uma": 1, "duas": 2}, "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove",
+                "dez")
 
 
 UI_ZH = dict(contents="目录", switch="切换语言", reports="报告",
@@ -53,25 +91,33 @@ UI_JA = dict(contents="目次", switch="言語を切り替える", reports="レ�
 # paragraph per default voice (2026-10-23), not from full scripts: treat them as rough until measured (ja 285: an 84 s report script).
 LANGS: dict[str, Lang] = {l.code: l for l in (
     Lang("zh", "zh-CN", "Chinese", "中文", "zh-CN-YunjianNeural", "zh-CN-XiaoxiaoNeural", 235, cjk=True, sub_chars=30,
-         ui=UI_ZH, film=dict(slow="慢放", freeze="定格")),
+         ui=UI_ZH, film=dict(slow="慢放", freeze="定格"),
+         minutes=MIN_ZH),
     Lang("en", "en", "English", "EN", "en-US-AndrewNeural", "en-US-AvaNeural", 960,
-         ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused")),
+         ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused"),
+         minutes=MIN_EN, numbers=NUM_EN),
     Lang("ja", "ja", "Japanese", "日本語", "ja-JP-KeitaNeural", "ja-JP-NanamiNeural", 285, cjk=True, sub_chars=30,
          fonts={"win32": "Yu Gothic", "darwin": "Hiragino Sans", "other": "Noto Sans CJK JP"},
          page_font='"Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif',
-         ui=UI_JA, film=dict(slow="スロー", freeze="一時停止")),
+         ui=UI_JA, film=dict(slow="スロー", freeze="一時停止"),
+         minutes=MIN_JA),
     Lang("ko", "ko", "Korean", "한국어", "ko-KR-InJoonNeural", "ko-KR-SunHiNeural", 270, cjk=True, sub_chars=34,
          fonts={"win32": "Malgun Gothic", "darwin": "Apple SD Gothic Neo", "other": "Noto Sans CJK KR"},
          page_font='"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif',
-         film=dict(slow="슬로모션", freeze="일시정지")),
+         film=dict(slow="슬로모션", freeze="일시정지"),
+         minutes=MIN_KO),
     Lang("es", "es", "Spanish", "ES", "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 850,
-         film=dict(slow="Cámara lenta", freeze="Pausa")),
+         film=dict(slow="Cámara lenta", freeze="Pausa"),
+         minutes=MIN_ES, numbers=NUM_ES),
     Lang("fr", "fr", "French", "FR", "fr-FR-HenriNeural", "fr-FR-DeniseNeural", 950,
-         film=dict(slow="Ralenti", freeze="Pause")),
+         film=dict(slow="Ralenti", freeze="Pause"),
+         minutes=MIN_FR, numbers=NUM_FR),
     Lang("de", "de", "German", "DE", "de-DE-ConradNeural", "de-DE-KatjaNeural", 950,
-         film=dict(slow="Zeitlupe", freeze="Standbild")),
+         film=dict(slow="Zeitlupe", freeze="Standbild"),
+         minutes=MIN_DE, numbers=NUM_DE),
     Lang("pt", "pt-BR", "Portuguese", "PT", "pt-BR-AntonioNeural", "pt-BR-FranciscaNeural", 800,
-         film=dict(slow="Câmera lenta", freeze="Pausa")),
+         film=dict(slow="Câmera lenta", freeze="Pausa"),
+         minutes=MIN_PT, numbers=NUM_PT),
 )}
 CODES = tuple(LANGS)
 
@@ -121,6 +167,12 @@ def font(code: str, platform: str = sys.platform) -> str:
     """The subtitle font for the language on this platform (win32, darwin, other)."""
     fonts = LANGS[code].fonts if code in LANGS else DEFAULT_FONTS
     return fonts.get(platform) or fonts["other"]
+
+
+@cache
+def minutes_re(code: str) -> re.Pattern | None:
+    """The compiled stated-length pattern of a language (None: it has none, so its length is not checked)."""
+    return re.compile(LANGS[code].minutes, re.I) if code in LANGS and LANGS[code].minutes else None
 
 
 def count(text: str, code: str) -> int:

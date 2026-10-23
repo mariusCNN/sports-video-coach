@@ -90,20 +90,11 @@ async def speak(paras: list[str], voice: str, rate: str, tmp: Path) -> list[Path
 
 
 _ZH_NUM = {"一": 1, "两": 2, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
-_EN_NUM = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
-           "nine": 9, "ten": 10}
-_ZH_LEN = re.compile(r"(?P<under>不到|少于)?\s*(?P<n>\d+(?:\.\d+)?|[一两二三四五六七八九十]{1,3})\s*"
-                     r"分(?:(?P<h1>半)钟?|钟(?P<h2>半)?)")  # not 三分球
-_JA_LEN = re.compile(r"(?P<n>\d+(?:\.\d+)?|[一二三四五六七八九十]{1,3})\s*分(?!の[\d一二三四五六七八九十])"
-                     r"間?(?P<h1>半)?(?P<h2>)(?P<under>以内|未満|弱)?")  # 約2分, 1分半, 1分以内 (not 3分の1)
-_EN_LEN = re.compile(r"\b(?P<under>under\s+|less\s+than\s+)?"
-                     r"(?P<n>\d+(?:\.\d+)?|a|one|two|three|four|five|six|seven|eight|nine|ten)"
-                     r"(?P<h1>\s+and\s+a\s+half)?\s+min(?:ute)?s?\b(?P<h2>\s+and\s+a\s+half)?", re.I)
 
 
 def _len_match(paras: list[str], lang: str) -> re.Match | None:
-    pattern = {"zh": _ZH_LEN, "ja": _JA_LEN}.get(lang, _EN_LEN if lang == "en" or not L.cjk(lang) else None)
-    return pattern.search(" ".join(paras)) if pattern else None  # Korean: no check yet; es / fr / ...: "2 minutes"
+    pattern = L.minutes_re(lang if lang in L.LANGS else "en")  # the registry's; an unknown code reads like English
+    return pattern.search(" ".join(paras)) if pattern else None
 
 
 def stated_sentence(paras: list[str], lang: str) -> str:
@@ -119,17 +110,18 @@ def stated_sentence(paras: list[str], lang: str) -> str:
 
 
 def stated(paras: list[str], lang: str) -> tuple[float, bool] | None:
-    """The length the script says it runs ("约 2 分钟", "一分半", "about three minutes") in seconds, and whether it
+    """The length the script says it runs ("约 2 分钟", "一分半", "約一分", "약 2분", "about three minutes"; the
+    pattern is the language's `minutes` in the registry) in seconds, and whether it
     is only an upper bound ("不到一分钟", "under a minute"); None when it names none. The first mention counts:
     the opening "this runs about N minutes"."""
     m = _len_match(paras, lang)
     if not m:
         return None
-    w = m["n"].lower()
+    w, words = m["n"].lower(), (L.LANGS.get(lang) or L.LANGS["en"]).numbers
     if w[0].isdigit():
-        n = float(w)
-    elif w in _EN_NUM:
-        n = _EN_NUM[w]
+        n = float(w.replace(",", "."))  # 1,5 minutos
+    elif w in words:
+        n = words[w]
     else:  # 三, 十二, 二十, 二十五
         tens, _, ones = w.rpartition("十") if "十" in w else ("", "", w)
         n = (_ZH_NUM.get(tens, 1) * 10 if "十" in w else 0) + _ZH_NUM.get(ones, 0)

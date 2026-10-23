@@ -143,6 +143,30 @@ def test_stated_length_is_read_in_both_languages():
     assert N.stated(["No length here."], "en") is None
 
 
+def test_stated_length_is_read_in_every_registry_language():
+    cases = {"ja": [("約一分です。", 60), ("約2分です。", 120), ("一分半ほど。", 90), ("約十二分間。", 720),
+                    ("1分以内です。", (60, True)), ("3分の1", None)],
+             "ko": [("약 2분입니다.", 120), ("약2분.", 120), ("1분 반 정도.", 90), ("약 한 분이 나옵니다.", None), ("약 세 분이 왔다.", None),
+                    ("1분 미만입니다.", (60, True)), ("3분의 1", None), ("부분 분석", None)],
+             "es": [("Dura unos 2 minutos.", 120), ("Un minuto y medio.", 90), ("Menos de un minuto.", (60, True)),
+                    ("Unos 1,5 minutos.", 90)],
+             "fr": [("Environ deux minutes.", 120), ("Une minute et demie.", 90), ("Moins d'une minute.", (60, True))],
+             "de": [("Etwa 2 Minuten.", 120), ("Eineinhalb Minuten.", 90), ("Anderthalb Minuten.", 90),
+                    ("Unter einer Minute.", (60, True)), ("Zweieinhalb Minuten.", 150)],
+             "pt": [("Cerca de 2 minutos.", 120), ("Um minuto e meio.", 90), ("Menos de um minuto.", (60, True))]}
+    for lang, said in cases.items():
+        for text, want in said:
+            want = want if want is None or isinstance(want, tuple) else (want, False)
+            assert N.stated([text], lang) == want, (lang, text)
+
+
+def test_japanese_length_warning_for_the_cold_test_script():
+    """「約一分です。」 over an 84 s script (the cold test said a minute, the page showed 約 1.5 分)."""
+    warn = N.check_length(["約一分です。" + "あ" * 395], "ja")
+    assert warn and "about 1 min" in warn
+    assert N.check_length(["約一分です。" + "あ" * 280], "ja") is None
+
+
 def test_length_warning_when_the_script_is_off_by_more_than_30_s():
     long_zh = ["这是报告，一分钟。" + "练" * 345]                    # 352 characters, about 90 s
     warn = N.check_length(long_zh, "zh")

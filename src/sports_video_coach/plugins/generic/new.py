@@ -1,7 +1,7 @@
 """Start an analysis: <workspace>/analysis/<name>/<date>/ with analysis.json, from one or more videos.
 
 usage: sports-video-coach generic:new <video> [<video> ...] [--sport tennis] [--focus "player in red"]
-           [--name my-serve] [--date 2025-03-16] [--lang en zh] [--sport-zh 发球] [--every 1] [--out <folder>]
+           [--name my-serve] [--date 2025-03-16] [--lang en ja] [--sport-name ja=サーブ] [--every 1] [--out <folder>]
            [--artifacts html film]
 
 One video is used where it is (analysis.json `video` points to it); several are joined in order into the
@@ -39,12 +39,22 @@ def folder_inputs(folder: Path) -> list[str] | None:
     return [s["file"] for s in old["sources"]] if old.get("sources") else [old.get("video")]
 
 
+def sport_name(value: str) -> tuple[str, str]:
+    """One --sport-name LANG=NAME: (lang, name), the language checked against the registry."""
+    code, eq, text = value.partition("=")
+    if not eq or not text.strip() or code.strip() not in langs.LANGS:
+        raise argparse.ArgumentTypeError(f"{value!r}: give LANG=NAME with LANG one of {', '.join(langs.CODES)}")
+    return code.strip(), text.strip()
+
+
 def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog=f"sports-video-coach {NAME}:new", description=__doc__.split("\n\n")[0])
     ap.add_argument("videos", nargs="+")
     ap.add_argument("--sport", default=SPORT, help="what the video shows (tennis, swimming, ...)")
-    ap.add_argument("--sport-zh", help="the sport's Chinese name for a zh page, e.g. 折返跑 (most sports have one "
-                    "built in: tennis shows as 网球)")
+    ap.add_argument("--sport-name", action="append", type=sport_name, metavar="LANG=NAME",
+                    help="the sport's name on that language's page, e.g. ja=シャトルラン or zh=折返跑; repeat it per "
+                    "language (most sports have zh and ja names built in: tennis shows as 网球 / テニス)")
+    ap.add_argument("--sport-zh", metavar="NAME", help="the same as --sport-name zh=NAME")
     ap.add_argument("--focus", default="", help="who to coach, e.g. 'the player in red' or a jersey number")
     ap.add_argument("--name", help="folder name (default: sport or the first video's name)")
     ap.add_argument("--date", help="YYYY-MM-DD (default: the first video's recording date, else today)")
@@ -74,7 +84,8 @@ def main(argv=None) -> Path:
         n += 1  # another video of the same sport on the same day: its own folder, not the first one's
         folder = base.with_name(f"{base.name}-{n}")
     folder.mkdir(parents=True, exist_ok=True)
-    sport = {"zh": a.sport_zh, "en": a.sport} if a.sport_zh else a.sport
+    names = dict(([("zh", a.sport_zh)] if a.sport_zh else []) + (a.sport_name or []))
+    sport = {**names, "en": names.get("en") or a.sport} if names else a.sport
     data = dict(plugin=NAME, kind="analysis", sport=sport, focus=a.focus, date=date,
                 languages=a.lang or langs_default(), every_s=a.every or auto_every(info["duration"]))
     if a.artifacts:
@@ -96,12 +107,13 @@ def main(argv=None) -> Path:
     media.write_text_atomic(p, json.dumps(data, ensure_ascii=False, indent=1) + "\n")
     sport = data.get("sport")
     if "zh" in data["languages"] and isinstance(sport, str) and not sport_names(sport, ("zh", "en")).get("zh"):
-        print(f"[new] sport {sport!r} has no Chinese name for the zh page: start again with --sport-zh, e.g. "
-              f'`--sport "{sport.replace("-", " ")}" --sport-zh 折返跑`, or set "sport": {{"zh": "折返跑", "en": '
+        print(f"[new] sport {sport!r} has no Chinese name for the zh page: start again with --sport-name, e.g. "
+              f'`--sport "{sport.replace("-", " ")}" --sport-name zh=折返跑`, or set "sport": {{"zh": "折返跑", "en": '
               f'"{sport.replace("-", " ")}"}} in analysis.json')
     if "ja" in data["languages"] and isinstance(sport, str) and not sport_names(sport, ("ja", "en")).get("ja"):
-        print(f"[new] sport {sport!r} has no Japanese name for the ja page: set \"sport\": {{\"ja\": \"<name>\", "
-              f'"en": "{sport.replace("-", " ")}"}} in analysis.json')
+        print(f"[new] sport {sport!r} has no Japanese name for the ja page: start again with --sport-name, e.g. "
+              f'`--sport "{sport.replace("-", " ")}" --sport-name ja=シャトルラン`, or set "sport": {{"ja": '
+              f'"<name>", "en": "{sport.replace("-", " ")}"}} in analysis.json')
     print(pipeline.slash(folder))
     return folder
 

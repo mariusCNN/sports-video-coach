@@ -109,7 +109,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     if index.exists():
         old = json.loads(index.read_text(encoding="utf8"))
         if {k: old.get(k) for k in settings} == settings and all((out / s["file"]).exists() for s in old["sheets"]):
-            print(f"frames: up to date ({len(old['sheets'])} sheets in {out})")
+            print(f"frames: up to date ({len(old['sheets'])} sheets in {out.as_posix()})")
             return old
     out.mkdir(parents=True, exist_ok=True)
     cap = cv2.VideoCapture(str(video))
@@ -140,7 +140,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
                                    tiles=[mmss(t, dec) for t, _ in tiles]))
     cap.release()
     media.write_json_atomic(index, data, indent=1)
-    print(f"frames: {len(data['sheets'])} sheets ({every:g} s per tile) in {out}")
+    print(f"frames: {len(data['sheets'])} sheets ({every:g} s per tile) in {out.as_posix()}")
     if sources:
         print(f"frames: {len(sources)} joined files, times are on the joined timeline: {media.parts_line(sources)}; "
               'the first tile of each later file is marked "part N/M"')

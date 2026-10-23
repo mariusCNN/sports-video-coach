@@ -111,7 +111,8 @@ def test_frames_sheets_and_index(tmp_path, video, capsys):
     assert data["sheets"][0]["tiles"] == ["00:01", "00:02", "00:03", "00:04", "00:05"]  # whole seconds from 1 s
     assert (tmp_path / "f" / "sheet_001.jpg").stat().st_size > 1000
     frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
-    assert "up to date" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "up to date" in out and f"in {(tmp_path / 'f').as_posix()}" in out and "\\" not in out  # Git Bash paths
     assert frames.times(5, 2) == [1.0, 3.0] and frames.times(1, 0.1)[-1] == 0.9
 
 
@@ -311,4 +312,19 @@ def test_sport_zh_names_the_sport_on_the_zh_page(tmp_path, video, capsys):
     assert data["sport"] == {"zh": "折返跑", "en": "shuttle-run"}
     assert "no Chinese name" not in capsys.readouterr().out
     new.main([str(video), "--sport", "shuttle-run", "--lang", "zh", "--out", str(tmp_path / "b")])
-    assert '--sport "shuttle run" --sport-zh 折返跑' in capsys.readouterr().out
+    assert '--sport "shuttle run" --sport-name zh=折返跑' in capsys.readouterr().out
+
+
+def test_sport_name_names_the_sport_per_language(tmp_path, video, capsys):
+    folder = new.main([str(video), "--sport", "shuttle-run", "--sport-name", "ja=シャトルラン", "--sport-name",
+                       "zh=折返跑", "--lang", "ja", "zh", "--out", str(tmp_path / "a")])
+    data = json.loads((folder / "analysis.json").read_text(encoding="utf8"))
+    assert data["sport"] == {"ja": "シャトルラン", "zh": "折返跑", "en": "shuttle-run"}
+    assert "no Japanese name" not in capsys.readouterr().out
+    new.main([str(video), "--sport", "shuttle-run", "--lang", "ja", "--out", str(tmp_path / "b")])
+    assert "--sport-name ja=" in capsys.readouterr().out
+    for bad in ("xx=Name", "ja", "ja="):
+        with pytest.raises(SystemExit) as e:
+            new.parser().parse_args(["v.mp4", "--sport-name", bad])
+        assert e.value.code == 2
+    assert "--sport-name LANG=NAME" in run.help_text("generic") and "--sport-zh" in run.help_text("generic")

@@ -394,23 +394,60 @@ def em_width(text: str) -> float:
     return sum(1.0 if unicodedata.east_asian_width(c) in "WF" else 0.55 for c in text)
 
 
-def fit(text: str, cap: float) -> list[str]:
+def _kind(c: str) -> str:
+    """h (hiragana), k (katakana and ー), c (kanji), p (punctuation), else o."""
+    return ("h" if "぀" <= c <= "ゟ" else "k" if "゠" <= c <= "ヿ" else "c" if "一" <= c <= "鿿" or c == "々"
+            else "p" if c in "，、；：。！？,;:" else "o")
+
+
+def ja_score(a: str, b: str) -> int:
+    """How good a Japanese line break between `a` and `b` is: 3 after punctuation or a particle before a new word,
+    2 at another kana-to-kanji / katakana step, 1 between hiragana or kanji and katakana, 0 inside a kanji run, a
+    katakana word, before okurigana, punctuation or a small kana."""
+    ka, kb = _kind(a), _kind(b)
+    if kb == "p" or b in "ゃゅょっぁぃぅぇぉャュョッァィゥェォー":
+        return 0
+    if ka == "p" or ka == "h" and kb in "ck":
+        return 3 if ka == "p" or a in "はがをにへでとのも" else 2
+    return 1 if (ka, kb) in (("h", "h"), ("k", "c"), ("c", "k")) else 0
+
+
+def ja_break(text: str, at: int, lo: int, near: int = 3) -> int:
+    """The best break in `text` within `near` characters of `at` (not before `lo`): `at` when none is better."""
+    ks = range(max(lo, at - near), min(len(text) - 1, at + near) + 1)
+    best = max(ks, key=lambda k: (ja_score(text[k - 1], text[k]), -abs(k - at)), default=at)
+    return best if ja_score(text[best - 1], text[best]) > ja_score(text[at - 1], text[at]) else at
+
+
+def fit(text: str, cap: float, lang: str = "") -> list[str]:
     """`text` as balanced lines of at most `cap` ems. libass wraps at spaces only, so CJK text with no spaces runs
     off a narrow frame; this breaks it, after punctuation when one is close, never inside a Latin word or number.
+    Japanese also breaks after a particle or at a kana-kanji step close by, not inside a word (ja_break).
     Text with no wide characters is left to libass (one line)."""
     width = em_width(text)
     if width <= cap or not any(unicodedata.east_asian_width(c) in "WF" for c in text):
         return [text]
     for n in range(math.ceil(width / cap), math.ceil(width / cap) + 3):
-        target, lines, cur = width / n, [], ""
+        target, lines, cur, hold = width / n, [], "", 0
         for i, c in enumerate(text):
             cur += c
             nxt = text[i + 1:i + 2]
-            if len(lines) == n - 1 or em_width(cur) < target or (c.isascii() and c.isalnum() and nxt.isascii()
-                                                                 and nxt.isalnum()):
-                continue
-            back = max(cur.rfind(p) for p in "，、；：。,;:")
-            cut = back + 1 if 0 <= back < len(cur) - 1 and em_width(cur[:back + 1]) >= target * 0.7 else len(cur)
+            if hold:  # a better Japanese break a few characters on
+                if i + 1 < hold:
+                    continue
+                cut, hold = len(cur), 0
+            else:
+                if len(lines) == n - 1 or em_width(cur) < target or (c.isascii() and c.isalnum() and nxt.isascii()
+                                                                     and nxt.isalnum()):
+                    continue
+                back = max(cur.rfind(p) for p in "，、；：。,;:")
+                cut = back + 1 if 0 <= back < len(cur) - 1 and em_width(cur[:back + 1]) >= target * 0.7 else len(cur)
+                if lang == "ja" and cut == len(cur) and nxt:
+                    k = ja_break(text, i + 1, i + 2 - len(cur))
+                    if k > i + 1:
+                        hold = k
+                        continue
+                    cut -= i + 1 - k
             lines.append(cur[:cut])
             cur = cur[cut:]
         lines = [x.strip() for x in [*lines, cur] if x.strip()]
@@ -491,23 +528,26 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
     m, side = round(h * 0.04), round(fw * 0.08)  # the margins and font sizes ass_doc gives Sub, Banner, Title
     sub_fs, small, big = round(h * 0.057), round(h * 0.036), round(h * 0.075)
     ev = []
+
+    def wrap(text: str, cap: float) -> str:
+        return "\\N".join(ass_escape(y) for y in fit(text, cap, lang))
     if sc.kind == "title":
         ev.append((0, length, "Title", title))
     elif sc.kind == "card":  # " · " separates lines; the text grows upwards from just above the accent bar
-        lines = "\\N".join(ass_escape(y) for x in sc.text.split(" · ") for y in fit(x.strip(), (fw - 2 * m) / big))
+        lines = "\\N".join(wrap(x.strip(), (fw - 2 * m) / big) for x in sc.text.split(" · "))
         ev.append((0, length, "Title", f"{{\\an2\\pos({round(fw / 2)},{round(fh / 2 + h * 0.055)})}}" + lines))
     elif sc.kind == "stat":
         ev.append((0, length, "Big", f"{ass_escape(sc.src)}\\N{{\\fs{round(h * 0.055)}\\c&HFFFFFF&\\bord0}}"
                    f"{ass_escape(sc.text)}"))
     elif sc.text:
-        ev.append((0, length, "Banner", "\\N".join(ass_escape(y) for y in fit(sc.text, (fw - 2.5 * side) / small))))
+        ev.append((0, length, "Banner", wrap(sc.text, (fw - 2.5 * side) / small)))
     if slow:
         ev.append((clip_s, clip_s + slow, "Tag", SLOW_TAG.get(lang, SLOW_TAG["en"])))
     subs = sorted((LEAD + s, LEAD + e, t) for s, e, t in cues)
     for i, (s, e, t) in enumerate(subs):
         if i + 1 < len(subs) and subs[i + 1][0] - e < 0.6:  # no flicker between close subtitles
             e = subs[i + 1][0]
-        ev.append((s, min(e, length), "Sub", "\\N".join(ass_escape(y) for y in fit(t, (fw - 3 * m) / sub_fs))))
+        ev.append((s, min(e, length), "Sub", wrap(t, (fw - 3 * m) / sub_fs)))
     return ev + list(extra)
 
 

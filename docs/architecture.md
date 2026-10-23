@@ -64,7 +64,9 @@ Add a language: one `Lang(...)` in `LANGS` with its code (the file suffix), BCP 
 label, two edge-tts voices (`edge-tts --list-voices`), read rate (`per_min`: what `count()` counts in a minute;
 measure it on a rendered script), `cjk=True` for a language written without spaces (counts characters, wraps
 anywhere, gets the CJK heading style), its subtitle fonts per platform, an optional page font stack, page labels
-(`ui`, keys as in `UI_EN`) and film tags. Then add the language's report labels to the guides in
+(`ui`, keys as in `UI_EN`), film tags, and how a script states its length (`minutes`: a regex with the groups
+`n`, `h1` / `h2` for a half and `under`, plus its number words in `numbers`; `narrate` warns when the stated
+length is off the read time). Then add the language's report labels to the guides in
 `plugins/generic/prompts/` and a test.
 
 See [plugins.md](plugins.md) to write a plugin and [pipeline.md](pipeline.md) for the basketball stages.
