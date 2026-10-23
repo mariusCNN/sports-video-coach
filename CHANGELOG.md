@@ -27,9 +27,14 @@ All notable changes to this project are documented here. The format follows [Kee
 - In a driven run, a narration script whose stated length is off stops with exit 3 before any audio is rendered
   and quotes the sentence to fix (`--accept listen-script` keeps it). The bare `narrate` command only warns.
 - `--status` no longer shows `qa` as done while an earlier step is pending or out of date.
+- The stated-length check reads every language: Japanese 約一分 / 一分半 / 1分以内, Korean 약 2분 / 1분 반, and
+  es / fr / de / pt ("unos 2 minutos", "moins d'une minute", "eineinhalb Minuten", "cerca de 2 minutos").
+- `run <videos> --sport-name ja=シャトルラン` (repeatable) names the sport in any language at the start; `--sport-zh`
+  still works.
+- Japanese film subtitles break after a particle or at a kana-kanji step, not inside a word (同じ方向へ / 飛び出しました).
+- The `frames:` lines print forward-slash paths like every other line.
 - Narration guide lists every language's read rate; the review guide writes likely/unclear in the review's
   language.
-
 - Basketball without a league (pickup games, phone clips, no GPU) goes to `generic` with `--sport basketball`;
   the `basketball` plugin is for league games or tracking from a clone. README, AGENTS.md and `plugins` say so,
   and `generic`'s listing says it does no detection (the agent reviews the frames).
