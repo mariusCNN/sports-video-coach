@@ -59,7 +59,7 @@ def test_run_help_lists_the_start_and_driver_options(capsys):
 
 def test_frames_label_tenths_under_a_second(tmp_path, video):
     data = frames.build(video, tmp_path / "f", every=0.5, cols=2, rows=2)
-    assert data["sheets"][0]["tiles"] == ["00:00.3", "00:00.8", "00:01.3", "00:01.8"]  # whole tenths, even gaps
+    assert data["sheets"][0]["tiles"] == ["00:00.0", "00:00.5", "00:01.0", "00:01.5"]  # whole tenths, from 0:00
 
 
 def test_frames_window_for_a_close_look(tmp_path, video, capsys):
@@ -108,12 +108,12 @@ def test_joined_videos_print_their_parts_and_the_sheets_mark_them(tmp_path, vide
 def test_frames_sheets_and_index(tmp_path, video, capsys):
     data = frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     assert [s["file"] for s in data["sheets"]] == ["sheet_001.jpg"]
-    assert data["sheets"][0]["tiles"] == ["00:01", "00:02", "00:03", "00:04", "00:05"]  # whole seconds from 1 s
+    assert data["sheets"][0]["tiles"] == ["00:00", "00:01", "00:02", "00:03", "00:04", "00:05"]  # from 0:00
     assert (tmp_path / "f" / "sheet_001.jpg").stat().st_size > 1000
     frames.build(video, tmp_path / "f", every=1, cols=3, rows=2)
     out = capsys.readouterr().out
     assert "up to date" in out and f"in {(tmp_path / 'f').as_posix()}" in out and "\\" not in out  # Git Bash paths
-    assert frames.times(5, 2) == [1.0, 3.0] and frames.times(1, 0.1)[-1] == 0.9
+    assert frames.times(5, 2) == [0, 2, 4] and frames.times(1, 0.1)[-1] == 0.9
 
 
 def test_status_and_waiting_on_review(analysis, video):

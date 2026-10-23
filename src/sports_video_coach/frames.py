@@ -3,16 +3,18 @@
 usage: sports-video-coach frames <video> --out <folder>/run/frames [--every 2] [--cols 4] [--rows 3] [--width 480]
            [--start mm:ss.s --end mm:ss.s]
 
-Writes `sheet_NNN.jpg` (cols x rows tiles, in time order, split by a thin dark gap; each tile is one whole frame, so
-x,y fractions read off a tile are fractions of the frame, as `film` freeze marks take them) and `frames.json`:
+Writes `sheet_NNN.jpg` (cols x rows tiles from 0:00, in time order, split by a thin dark gap; each tile is one
+whole frame, so x,y fractions read off a tile are fractions of the frame, as `film` freeze marks take them) and
+`frames.json`:
   {"video", "duration_s", "every_s", "sheets": [{"file", "start", "end", "tiles": ["mm:ss", ...]}]}
 When the video joins several files (the unit json's `sources`), frames.json lists them as `parts` (file, start,
 end on the joined timeline) and the first tile of each later file is labelled "part N/M".
-Each label is the video time of the frame shown: mm:ss when every tile falls on a whole second (whole-second
-sheets start at a whole second), else mm:ss.s (tiles under a second apart fall on whole tenths).
+Each label sits bottom left (clear of a clock or score burned in top left) and is the video time of the frame
+shown: mm:ss when every tile falls on a whole second, else mm:ss.s (tiles under a second apart fall on whole
+tenths).
 An agent opens the sheets in order, notes what happens and when, then cuts closer looks with `clips`. Sheets that
-already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width`, `labels`, `gap_px`
-and the video size).
+already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width`, `labels`, `gap_px`,
+`label_at` and the video size).
 A close look at one moment: `--start 0:12 --end 0:14 --every 0.1 --out run/frames-zoom` (tenths in the labels).
 """
 from __future__ import annotations
@@ -27,10 +29,10 @@ from .timefmt import mmss, seconds
 
 
 def times(duration: float, every: float, start: float = 0.0) -> list[float]:
-    """Tile times every `every` seconds before `duration`: from `start` (a window), else from every/2 (skips the
-    black first frame), rounded up to a whole second when `every` is whole. Other gaps fall on whole tenths, so the
-    labels are exact."""
-    t0 = start if start > 0 else math.ceil(every / 2) if float(every).is_integer() else every / 2
+    """Tile times every `every` seconds before `duration`: from `start` (a window), else from 0:00 (the first frame
+    is a tile too: a serve or a start can happen there). A window off the second with a gap under a whole second
+    starts on the next whole tenth, so the labels are exact."""
+    t0 = start
     if not float(every).is_integer():
         t0 = math.ceil(round(t0 * 10, 6)) / 10
     out, k = [], 0
@@ -54,6 +56,7 @@ def labels(ts: list[float]) -> int:
 
 
 GAP, GAP_BGR = 3, (40, 40, 40)  # a thin dark line between tiles, so tile edges show on a uniform court
+LABEL_H = 30                     # the time label: a black strip this high at a tile's bottom left
 
 
 def tile_origin(n: int, cols: int, width: int, th: int) -> tuple[int, int]:
@@ -67,16 +70,20 @@ def sheets(ts: list[float], per: int) -> list[list[float]]:
 
 
 def tile(frame, label: str, width: int, part: str = ""):
-    """The frame scaled to `width`, its time label top left; `part` ("part 2/2") marks where a new file starts."""
+    """The frame scaled to `width`, its time label bottom left (the top left often holds a clock or score burned
+    into the video); `part` ("part 2/2") marks where a new file starts."""
     import cv2
     h, w = frame.shape[:2]
     frame = cv2.resize(frame, (width, max(2, round(h * width / w))))
-    cv2.rectangle(frame, (0, 0), (92, 30), (0, 0, 0), -1)
-    cv2.putText(frame, label, (6, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
+    y = frame.shape[0] - LABEL_H
+    w_label = 12 + cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.65, 2)[0][0]
+    cv2.rectangle(frame, (0, y), (w_label, y + LABEL_H), (0, 0, 0), -1)
+    cv2.putText(frame, label, (6, y + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
     if part:
+        x = w_label + 4
         cv2.rectangle(frame, (0, 0), (frame.shape[1] - 1, frame.shape[0] - 1), (0, 212, 255), 4)
-        cv2.rectangle(frame, (96, 0), (96 + 14 * len(part), 30), (0, 212, 255), -1)
-        cv2.putText(frame, part, (102, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 0), 2, cv2.LINE_AA)
+        cv2.rectangle(frame, (x, y), (x + 14 * len(part), y + LABEL_H), (0, 212, 255), -1)
+        cv2.putText(frame, part, (x + 6, y + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 0), 2, cv2.LINE_AA)
     return frame
 
 
@@ -109,7 +116,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     import numpy as np
     duration = media.duration_s(video)
     settings = dict(every_s=every, cols=cols, rows=rows, width=width, labels="frame",  # labels: shown frame's time
-                    gap_px=GAP, size=list(media.video_size(video)))
+                    gap_px=GAP, label_at="bottom-left", size=list(media.video_size(video)))
     if start is not None or end is not None:  # a window; whole-video sheets keep their old settings keys
         settings.update(start_s=start or 0.0, end_s=end)
     if sources:

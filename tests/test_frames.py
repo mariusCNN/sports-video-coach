@@ -20,12 +20,12 @@ def video(tmp_path_factory):
 
 
 def shown(sheet, n: int, cols: int, width: int) -> int:
-    """Frame number (mod 32) of tile `n` of a sheet, from its grey level away from the label."""
+    """Frame number (mod 32) of tile `n` of a sheet, from its grey level away from the label (bottom left)."""
     import cv2
     img = cv2.imread(str(sheet), cv2.IMREAD_GRAYSCALE)
     th = round(120 * width / 160)
     x, y = frames.tile_origin(n, cols, width, th)
-    cell = img[y + th // 2:y + th, x + width // 2:x + width]
+    cell = img[y:y + th // 2, x + width // 2:x + width]
     return round(cell.mean() / STEP) % 32
 
 
@@ -56,13 +56,26 @@ def test_every_label_is_the_time_of_the_frame_shown(tmp_path, video, args):
 
 
 def test_whole_second_sheets_sample_whole_seconds_and_say_so():
-    assert frames.times(6, 1) == [1, 2, 3, 4, 5] and frames.times(6, 2) == [1, 3, 5] and frames.times(9, 3) == [2, 5, 8]
+    assert frames.times(6, 1) == [0, 1, 2, 3, 4, 5] and frames.times(6, 2) == [0, 2, 4] and frames.times(9, 3) == [0, 3, 6]
     assert frames.labels(frames.times(6, 2)) == 0
-    assert frames.times(3, 1.5) == [0.8, 2.3] and frames.labels(frames.times(3, 1.5)) == 1  # not whole: tenths
+    assert frames.times(3, 1.5) == [0, 1.5] and frames.labels(frames.times(3, 1.5)) == 1  # not whole: tenths
     assert frames.labels(frames.times(6, 2, start=seconds("0:02.5"))) == 1  # a window off the second keeps tenths
 
 
 def test_main_and_zoom_sheets_label_the_same_moment_alike(tmp_path, video):
     main = frames.build(video, tmp_path / "m", every=1)
     zoom = frames.build(video, tmp_path / "z", every=0.2, start=2, end=3)
-    assert main["sheets"][0]["tiles"][:2] == ["00:01", "00:02"] and zoom["sheets"][0]["tiles"][0] == "00:02.0"
+    assert main["sheets"][0]["tiles"][:3] == ["00:00", "00:01", "00:02"] and zoom["sheets"][0]["tiles"][0] == "00:02.0"
+
+
+def test_the_first_tile_is_0_00_and_labels_leave_the_top_left_corner_clear(tmp_path, video):
+    """A clock burned into the video's top left stays readable: the label is a strip at the tile's bottom left."""
+    import cv2
+    cols, width = 4, 160
+    data = frames.build(video, tmp_path / "f", every=1, cols=cols, rows=3, width=width)
+    assert data["sheets"][0]["tiles"][0] == "00:00" and data["label_at"] == "bottom-left"
+    img = cv2.imread(str(tmp_path / "f" / data["sheets"][0]["file"]), cv2.IMREAD_GRAYSCALE)
+    th = round(120 * width / 160)
+    x, y = frames.tile_origin(1, cols, width, th)              # 00:01 shows frame 25: grey 25 * STEP
+    assert abs(img[y + 2:y + 12, x + 2:x + 30].mean() - 25 * STEP) < 12       # top left: the frame itself
+    assert img[y + th - frames.LABEL_H + 2:y + th - 2, x + 2:x + 4].mean() < 30   # bottom left: the label strip
