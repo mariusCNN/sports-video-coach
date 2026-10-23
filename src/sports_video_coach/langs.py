@@ -50,13 +50,13 @@ UI_JA = dict(contents="目次", switch="言語を切り替える", reports="レ�
 
 # per_min: zh and en measured on rendered report scripts (zh: Chinese characters without punctuation, en: characters
 # with spaces; English words a minute range 130-190 with word length). The others come from one ~25 s sample
-# paragraph per default voice (2026-10-23), not from full scripts: treat them as rough until measured.
+# paragraph per default voice (2026-10-23), not from full scripts: treat them as rough until measured (ja 285: an 84 s report script).
 LANGS: dict[str, Lang] = {l.code: l for l in (
     Lang("zh", "zh-CN", "Chinese", "中文", "zh-CN-YunjianNeural", "zh-CN-XiaoxiaoNeural", 235, cjk=True, sub_chars=30,
          ui=UI_ZH, film=dict(slow="慢放", freeze="定格")),
     Lang("en", "en", "English", "EN", "en-US-AndrewNeural", "en-US-AvaNeural", 960,
          ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused")),
-    Lang("ja", "ja", "Japanese", "日本語", "ja-JP-KeitaNeural", "ja-JP-NanamiNeural", 315, cjk=True, sub_chars=30,
+    Lang("ja", "ja", "Japanese", "日本語", "ja-JP-KeitaNeural", "ja-JP-NanamiNeural", 285, cjk=True, sub_chars=30,
          fonts={"win32": "Yu Gothic", "darwin": "Hiragino Sans", "other": "Noto Sans CJK JP"},
          page_font='"Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif',
          ui=UI_JA, film=dict(slow="スロー", freeze="一時停止")),

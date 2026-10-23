@@ -17,7 +17,7 @@ def test_registry_lookups():
     assert L.font("ja", "win32") == "Yu Gothic" and L.font("ja", "linux") == "Noto Sans CJK JP"
     assert L.font("zh") == film.FONT and L.font("es", "darwin") == "PingFang SC"
     assert L.film_tag("ja", "slow") == "スロー" and L.film_tag("xx", "freeze") == "Paused"
-    assert L.count("こんにちは、世界。", "ja") == 7 and abs(L.read_s("あ" * 315, "ja") - 60) < 0.1
+    assert L.count("こんにちは、世界。", "ja") == 7 and abs(L.read_s("あ" * 285, "ja") - 60) < 0.1
     with pytest.raises(L.Unknown, match="unknown language 'xx'.*ja"):
         L.get("xx")
 
