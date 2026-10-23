@@ -12,8 +12,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 
 - New languages: `--lang ja ko es fr de pt` beside zh and en, from one table (`src/sports_video_coach/langs.py`).
-  Japanese gets its own page labels, fonts, subtitle wrapping and length checks; the others use English page
-  labels. Basketball units stay zh/en.
+  Every language has its own page labels, dates, voice, read rate and subtitle font; Japanese and Korean also get
+  CJK fonts and subtitle wrapping. Basketball units stay zh/en.
 - Training-plan app: an optional 决策 tab from `decide.html` (in-game decisions, e.g. a decision flow with the
   new `.flow` boxes), and a big looping play button for any `<audio class="loop" src="x.mp3">` in a fragment, so a
   cue track from `narrate --script --chime` plays on repeat with the screen locked. `publish` now copies the
@@ -53,6 +53,21 @@ All notable changes to this project are documented here. The format follows [Kee
   to add one (`SVC_PLUGIN_PATH`, `SVC_WORKSPACE`, or cd).
 - The run log echoes the command that really runs (`sports-video-coach rowing:strokes ...`).
 - `--until` prints "paused after X (--until): the steps after it run next time" instead of "stopped after".
+- The page's default language and `<html lang>` follow the unit's `languages` order (an es+en page opened in
+  English before). Dates read the reader's way (23 oct 2026, 2026年10月23日, 23.10.2026); files and json keep ISO.
+- Latin-script films use a Latin subtitle font (Segoe UI, Helvetica Neue, DejaVu Sans); Chinese keeps its CJK font.
+- `page-check` fails when another language's page label sits in a language's part of the page.
+- `film --dry` states the target band the guide gives (60-120 s for a 30 s video) and says under/over only when the
+  estimate is outside it.
+- Contact sheets have a 3 px gap between tiles; x,y fractions read off a tile stay correct. The report guide and
+  `--focus` help say one report can cover several players, one section each.
+- Agent-step commands work from any folder: `guide <name> --unit <folder>` uses the unit's own plugin.
+- `new-plugin --summary "..." --use-when "..."`; `plugins` marks a placeholder summary and shows a plugin with
+  missing packages on one line (`--json` keeps the full list).
+- The new-plugin test checks step order only and has a commented stage test; docs/plugins.md: `--redo <stage>`
+  after editing a stage, and a single source video is referenced, not copied.
+- The landing page shows the install and demo commands, a "Write a plugin for your sport" link and the version.
+  README: one star request and an alpha status line.
 - docs/plugins.md: a stage module skeleton, what the light install can import, and how a stage's numbers reach the
   agent (`fill_values`) and the page (`PageHooks`). README: the Git Bash PATH form for a `C:/` bin dir.
 - Narration guide lists every language's read rate; the review guide writes likely/unclear in the review's
