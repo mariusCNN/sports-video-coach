@@ -202,6 +202,21 @@ def test_scaffolded_plugin_names_itself_and_its_own_guides(tmp_path, monkeypatch
         plugin.plugins(refresh=True)
 
 
+def test_new_plugin_writes_to_the_workspace_and_prints_a_test_command_that_fits_the_install(tmp_path, monkeypatch,
+                                                                                             capsys):
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
+    scaffold.main(["rowing"])
+    out = capsys.readouterr().out
+    assert (tmp_path / "ws" / "plugins" / "rowing" / "__init__.py").exists()
+    assert f"test:   uv run pytest {(tmp_path / 'ws' / 'plugins' / 'rowing').as_posix()}" in out   # this clone
+    monkeypatch.setattr(scaffold, "in_clone", lambda: False)                                     # a tool install
+    cmd = scaffold.test_command(tmp_path / "p" / "rowing")
+    assert cmd.startswith("uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://")
+    assert cmd.endswith(f"pytest {(tmp_path / 'p' / 'rowing').as_posix()}")
+    scaffold.main(["kayak", "--dir", str(tmp_path / "mine")])                                    # --dir still wins
+    assert (tmp_path / "mine" / "kayak" / "__init__.py").exists()
+
+
 def test_scaffolded_plugin_tests_pass(tmp_path):
     out = scaffold.scaffold("swimming", tmp_path / "plugins")
     assert (out / "tests" / "test_swimming.py").exists()

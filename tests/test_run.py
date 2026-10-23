@@ -426,7 +426,7 @@ def test_until_stops_when_the_step_is_already_done(game, capsys):
     touch(game, "run/calib/grid_1.jpg")
     runner = Runner(game)
     assert R.drive(R.Game.load(game), until="calib-grid", runner=runner) == 0
-    assert not runner.calls and "stopped after calib-grid" in capsys.readouterr().out
+    assert not runner.calls and "paused after calib-grid" in capsys.readouterr().out
 
 
 def test_until_stops_in_custom_step_lists(game, capsys):

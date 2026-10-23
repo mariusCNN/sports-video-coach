@@ -516,14 +516,23 @@ def child_env() -> dict:
     """The environment for stage subprocesses: UTF-8 stdio, so Chinese text in a log file or on a cp1252 / GBK
     Windows console never raises UnicodeEncodeError; unbuffered, so an agent reading the run through a pipe sees
     each progress line when it is printed, not all of them when the stage ends."""
-    return {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
+    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
+    from . import plugin
+    if found := plugin.search_path():  # e.g. a plugin found above the unit folder: its stages find it too
+        env["SVC_PLUGIN_PATH"] = found
+    return env
+
+
+def shown(argv: list[str], plugin: str | None = None) -> str:
+    """The stage command as a user can paste it: `sports-video-coach <plugin>:<stage> ...` (what stage_cmd runs)."""
+    return slash("sports-video-coach " + " ".join(stage_cmd(argv, plugin)[3:]))
 
 
 def run_cmd(step: Step, g: Unit, runner=subprocess.run, argvs: list[list[str]] | None = None) -> bool:
     """Run a command step; long ones log to a file and only the tail is printed on failure."""
     env = child_env()
     for i, argv in enumerate(step.args(g) if argvs is None else argvs):
-        print(slash(f"[run] {step.name}: sports-video-coach {' '.join(argv)}"), flush=True)
+        print(f"[run] {step.name}: {shown(argv, g.PLUGIN)}", flush=True)
         if step.long:
             log = logs_dir(g) / f"{g.folder.parent.name}-{g.folder.name}-{step.name}{i or ''}.log"
             print(f"[run]   log: {slash(log)}", flush=True)
@@ -581,7 +590,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             if not s.done(g):
                 print("[run] publish skipped: re-run with --publish to deploy the pages as links")
             if s.name == until:
-                print(f"[run] stopped after {until}")
+                print(f"[run] paused after {until} (--until): the steps after it run next time")
                 return 0
             continue
         own = s.done(g)
@@ -596,7 +605,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             if not dry and note_outputs(s, g, store):
                 store.save()
             if s.name == until:
-                print(f"[run] stopped after {until} (already done)")
+                print(f"[run] paused after {until} (--until; it was already done)")
                 return 0
             continue
         if s.kind == "agent":
@@ -616,7 +625,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
                       f"they are? `{run_hint(g, '--accept', *names)}`.\n"
                       + slash(f"[run] The step, for reference: {g.fill(s.how)}"))
                 return WAITING
-            print(f"[run] waiting for the agent: {s.name}\n{g.fill(s.how)}")
+            print(slash(f"[run] waiting for the agent: {s.name}\n{g.fill(s.how)}"))
             errs = s.errors(g) if s.errors else []
             for e in errs[:12]:
                 print(f"[run]   {slash(e)}")
@@ -631,7 +640,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             print(f"[run] {s.name}: changed since its last run: {', '.join(why[:6])}{' ...' if len(why) > 6 else ''}")
         if dry:
             for argv in argvs:
-                print(slash(f"[dry] {s.name}: sports-video-coach {' '.join(argv)}"))
+                print(f"[dry] {s.name}: {shown(argv, g.PLUGIN)}")
             return 0
         if not run_cmd(s, g, runner, argvs):
             return 1
@@ -642,7 +651,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             print(f"[run] {s.name} did not produce its output; see its log")
             return 1
         if s.name == until:
-            print(f"[run] stopped after {until}")
+            print(f"[run] paused after {until} (--until): the steps after it run next time")
             return 0
     print(built_line(g, publish))
     g.finished()

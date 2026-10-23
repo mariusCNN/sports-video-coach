@@ -11,11 +11,13 @@ again and again with its own prompts, measurements (pose, tracking, a scoreboard
 ## Start from the template
 
 ```bash
-uv run sports-video-coach new-plugin tennis            # writes ./plugins/tennis/ (a copy of generic)
-uv run sports-video-coach plugins                      # lists tennis
-uv run pytest plugins/tennis                           # the tests it wrote
-uv run sports-video-coach run serve.mp4 --plugin tennis
+sports-video-coach new-plugin tennis            # writes <workspace>/plugins/tennis/ (a copy of generic)
+sports-video-coach plugins                      # lists tennis
+sports-video-coach run serve.mp4 --plugin tennis
 ```
+
+`<workspace>` is `$SVC_WORKSPACE`, else `./workspace`; `--dir <folder>` writes elsewhere. In a clone, prefix each
+command with `uv run`. `new-plugin` also prints the command for the tests it wrote (see [Test it](#test-it)).
 
 The copy gets its own name everywhere: `summary` and `use_when` (rewrite them: agents pick a plugin by them), the
 stage names in its texts (`tennis:review-check`) and its agent steps, which say
@@ -27,12 +29,17 @@ The copy runs as it is. Make it yours in this order:
 2. `prompts/report.md`: the report's sections (what to work on, drills, a checkable target).
 3. Stages for your own measurements, added to the step table before the review.
 
-Local plugins load from `<dir>/<name>/` for three kinds of `<dir>`:
+Local plugins load from `<dir>/<name>/` for these `<dir>`:
 
-- `./plugins`: the `plugins` folder in the current working directory (where you run the command), not the repo
-  or the install folder. Run from another folder and the plugin is not found.
-- `<workspace>/plugins`.
 - every folder on `$SVC_PLUGIN_PATH` (separated by `;` on Windows, `:` elsewhere).
+- `<workspace>/plugins` (where `new-plugin` writes). Set `SVC_WORKSPACE` and it is found from any folder.
+- `./plugins`: the `plugins` folder in the current working directory, not the repo or the install folder.
+- a `plugins/` folder above a unit folder whose json names the plugin (`"plugin": "tennis"`), so
+  `run <unit folder>` finds the plugin of a unit inside the workspace from any folder. The driver passes the
+  folders it found to its stages (`SVC_PLUGIN_PATH`).
+
+A plugin that is not found exits with `unknown plugin 'tennis'`, the folders searched (`(missing)` when one does not
+exist) and how to add one.
 
 A local plugin imports as the package `svc_plugin_<name>` (`-` becomes `_`), so its own modules are
 `svc_plugin_<name>.unit` and so on; inside the plugin use relative imports (`from . import NAME`).
@@ -106,7 +113,59 @@ P.Step("pose", "cmd", lambda g: (g.run / "pose" / "pose.json").exists(),
        inputs=lambda g: [g.video], long=True),
 ```
 
-Try the stage alone with `sports-video-coach tennis:pose <video> --out <folder>`.
+Try the stage alone with `sports-video-coach tennis:pose <video> --out <folder>`; the run log echoes it in that
+form (`[run] pose: sports-video-coach tennis:pose ...`), so a failed step can be pasted and run again.
+
+`pose.py` is a module with `main(argv)`; the CLI calls it with the arguments after the stage name. The light
+install has the core's dependencies: OpenCV (`cv2`), NumPy, edge-tts and markdown-it-py. Anything else (a pose
+model, pandas) goes in `requires` and `install` so `plugins` says what is missing.
+
+```python
+"""Stage `pose <video> --out <folder>`: body angles per frame -> <folder>/pose.json."""
+import argparse
+import json
+from pathlib import Path
+
+import cv2
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="sports-video-coach tennis:pose")
+    ap.add_argument("video")
+    ap.add_argument("--out", required=True)
+    a = ap.parse_args(argv)
+    cap = cv2.VideoCapture(a.video)
+    fps, frames = cap.get(cv2.CAP_PROP_FPS) or 30.0, []
+    ok, img = cap.read()
+    while ok:
+        frames.append({"t": round(len(frames) / fps, 2), "knee_deg": None})  # your measurement here
+        ok, img = cap.read()
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "pose.json").write_text(json.dumps({"frames": frames}), encoding="utf8")
+```
+
+The agent sees the json through the review step: add its path to `fill_values()` in `unit.py` and name it in the
+step's `how` text, which the driver prints with the placeholders filled in:
+
+```python
+def fill_values(self) -> dict:          # in class Analysis
+    return dict(super().fill_values(), ..., pose=self.run / "pose" / "pose.json")
+
+P.Step("review", "agent", ..., how="Film review: ... Use the knee angles in {pose} (one row per frame) ...")
+```
+
+The page shows it through the `page` hook (`render_html.PageHooks`, see [Hooks](#hooks)); `before` returns HTML
+above the report:
+
+```python
+def pose_box(folder, band, langs):      # page.py; band data and langs as render_html passes them
+    from .unit import Analysis
+    p = Analysis.load(folder).run / "pose" / "pose.json"
+    return f"<p>{len(json.loads(p.read_text(encoding='utf8'))['frames'])} frames measured</p>" if p.exists() else ""
+
+PLUGIN = Plugin(..., page=PageHooks(before=pose_box))   # in __init__.py: from .page import pose_box
+```
 
 Rules that keep agents honest: every agent step has a validator (`errors`), every number the agent writes comes from
 a file a command step made, and the review format says "unclear" is a valid answer.
@@ -132,11 +191,15 @@ The basketball plugin (`src/hoop_tape_miner/plugin.py`) uses every hook; read it
 
 ## Test it
 
-`new-plugin` writes `plugins/<name>/tests/test_<name>.py`. Run it from the folder that holds `plugins/`:
+`new-plugin` writes `<name>/tests/test_<name>.py` in the plugin folder and prints the command that runs it.
+After `uv tool install` the tool's environment has no pytest (and a plain `uv run pytest` may pick up an unrelated
+project), so it runs in a throwaway environment:
 
 ```bash
-uv run pytest plugins/tennis
+uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach pytest workspace/plugins/tennis
 ```
+
+In a clone: `uv run pytest workspace/plugins/tennis` (or the folder you gave `--dir`).
 
 It checks three things, and is the pattern for your own tests:
 

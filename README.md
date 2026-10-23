@@ -36,6 +36,8 @@ sports-video-coach demo                                   # about a minute: page
 - No git, or git fails behind a proxy: `uv tool install https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`.
 - `sports-video-coach: command not found`: run `uv tool update-shell` and open a new terminal.
   Or in bash (Git Bash too): `export PATH="$HOME/.local/bin:$PATH"` (the default; `uv tool dir --bin` prints yours).
+- Git Bash: uv's hint shows PowerShell syntax; a `C:/...` bin folder goes on PATH as `/c/...`
+  (`export PATH="/c/Users/<you>/.local/bin:$PATH"`).
 
 </details>
 

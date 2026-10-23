@@ -4,7 +4,8 @@ A plugin is a `Plugin` object. The core finds plugins in three places, in this o
   1. built in: the `generic` plugin (any sport, no computer vision: frame sheets -> agent review -> report);
   2. installed packages: entry points in the group `sports_video_coach.plugins` (`name = "pkg.module:PLUGIN"`);
   3. local folders: every `<dir>/<name>/__init__.py` defining `PLUGIN`, for each dir in $SVC_PLUGIN_PATH
-     (os.pathsep-separated), `<workspace>/plugins` and `./plugins` (what `sports-video-coach new-plugin` writes).
+     (os.pathsep-separated), `<workspace>/plugins` (where `sports-video-coach new-plugin` writes) and `./plugins`;
+     a unit folder that names a plugin not found there also finds it in a `plugins/` folder above the unit.
 A plugin that fails to load is reported by `errors()` and skipped; the others still load.
 
 A unit is one folder the driver works on (a game, a training session, ...). It is owned by the plugin named in its
@@ -76,19 +77,41 @@ def _attr(ref: str):
 
 _CACHE: dict[str, Plugin] | None = None
 _ERRORS: dict[str, str] = {}
+_EXTRA: list[Path] = []   # plugin folders found above a unit folder (see `owner`)
 
 
-def plugin_dirs() -> list[Path]:
-    """Folders searched for local plugins."""
+def searched_dirs() -> list[Path]:
+    """Every folder looked in for local plugins, in order, whether it exists or not."""
     from . import workspace
     dirs = [Path(p) for p in os.environ.get("SVC_PLUGIN_PATH", "").split(os.pathsep) if p]
-    dirs += [workspace.root() / "plugins", Path.cwd() / "plugins"]
+    dirs += [workspace.root() / "plugins", Path.cwd() / "plugins", *_EXTRA]
     out = []
     for d in dirs:
         d = d.expanduser().resolve()
-        if d not in out and d.is_dir():
+        if d not in out:
             out.append(d)
     return out
+
+
+def plugin_dirs() -> list[Path]:
+    """Folders searched for local plugins (the ones that exist)."""
+    return [d for d in searched_dirs() if d.is_dir()]
+
+
+def search_path() -> str:
+    """SVC_PLUGIN_PATH for a child process: every plugin folder this one found, so its stages resolve the same."""
+    return os.pathsep.join(str(d) for d in plugin_dirs())
+
+
+def _find_above(name: str, start: Path) -> bool:
+    """Add the first `plugins/` folder above `start` that holds plugin `name`; True when one was added."""
+    for d in [start, *start.parents]:
+        cand = (d / "plugins").resolve()
+        if (cand / name / "__init__.py").is_file() and cand not in searched_dirs():
+            _EXTRA.append(cand)
+            plugins(refresh=True)
+            return True
+    return False
 
 
 def _load_folder(folder: Path) -> Plugin:
@@ -151,8 +174,20 @@ def errors() -> dict[str, str]:
 def get(name: str) -> Plugin:
     found = plugins()
     if name not in found:
-        sys.exit(f"unknown plugin {name!r}; installed: {', '.join(found) or 'none'}")
+        sys.exit(not_found(name))
     return found[name]
+
+
+def not_found(name: str) -> str:
+    """Why plugin `name` is not there: what is installed, where local plugins were looked for, how to add one."""
+    lines = [f"unknown plugin {name!r}; installed: {', '.join(plugins()) or 'none'}",
+             "local plugin folders searched (<dir>/<name>/__init__.py):"]
+    lines += [f"  {d.as_posix()}{'' if d.is_dir() else '  (missing)'}" for d in searched_dirs()]
+    lines += [f"broken plugin ({where}): {e}" for where, e in errors().items()]
+    lines.append(f"to add one: put the folder that holds {name}/ on SVC_PLUGIN_PATH (several: separated by "
+                 f"'{os.pathsep}'), set SVC_WORKSPACE to the workspace whose plugins/ holds it, or cd to the folder "
+                 "that holds plugins/")
+    return "\n".join(lines)
 
 
 def json_names() -> list[tuple[str, int]]:
@@ -173,6 +208,8 @@ def owner(folder: Path | str) -> tuple[Plugin, Kind, dict] | None:
     data = json.loads(path.read_text(encoding="utf8"))
     data = data if isinstance(data, dict) else {}
     named = data.get("plugin")
+    if named and named not in plugins():
+        _find_above(named, path.parent.resolve())
     cands = [get(named)] if named else list(plugins().values())
     for p in cands:
         for k in p.kinds:

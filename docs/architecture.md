@@ -40,7 +40,7 @@ unique across plugins (ambiguous names are an error). The driver always passes q
 ## Plugin discovery
 
 Built in (`generic`) ▶ entry points (`sports_video_coach.plugins`) ▶ local folders (`$SVC_PLUGIN_PATH`,
-`<workspace>/plugins`, `./plugins`). A plugin that fails to import is listed with its error and skipped.
+`<workspace>/plugins`, `./plugins`, a `plugins/` folder above a unit that names its plugin). A plugin that fails to import is listed with its error and skipped.
 
 ## Workspace
 

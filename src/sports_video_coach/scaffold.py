@@ -1,9 +1,10 @@
 """Write a new plugin folder from the generic plugin: `sports-video-coach new-plugin <name> [--sport tennis]`.
 
-The copy goes to ./plugins/<name>/ (or --dir), where the core finds it without installing anything (also found:
-$SVC_PLUGIN_PATH and <workspace>/plugins). It runs as is (frames -> review -> report -> artifacts); then make it
-yours: the prompts first (prompts/review.md is what the agent looks for), then stages for your own measurements.
-It also writes tests/test_<name>.py (`uv run pytest plugins/<name>`). See docs/plugins.md.
+The copy goes to <workspace>/plugins/<name>/ (or --dir), where the core finds it without installing anything (also
+found: ./plugins, $SVC_PLUGIN_PATH, and a plugins/ folder above a unit that names it). It runs as is (frames -> review
+-> report -> artifacts); then make it yours: the prompts first (prompts/review.md is what the agent looks for), then
+stages for your own measurements. It also writes tests/test_<name>.py (`test_command` says how to run them). See
+docs/plugins.md.
 """
 from __future__ import annotations
 
@@ -12,10 +13,14 @@ import re
 import shutil
 from pathlib import Path
 
+from . import workspace
+
 TEMPLATE = Path(__file__).parent / "plugins" / "generic"
+REPO = "git+https://github.com/mariusDing/sports-video-coach"
 
 
-TEST = '''"""Tests for the {name} plugin; from the folder that holds plugins/: `uv run pytest plugins/{name}`."""
+TEST = '''"""Tests for the {name} plugin. In a clone: `uv run pytest <this folder>`; after `uv tool install`:
+`uv run --isolated --no-project --with pytest --with sports-video-coach@{repo} pytest <this folder>`."""
 import json
 import sys
 from pathlib import Path
@@ -80,23 +85,39 @@ def scaffold(name: str, dest: Path, sport: str = "") -> Path:
         f.write_text(t.replace("sports-video-coach generic:", f"sports-video-coach {name}:")
                      .replace("(generic plugin)", f"({name} plugin)"), encoding="utf8")
     (out / "tests").mkdir()
-    (out / "tests" / f"test_{name.replace('-', '_')}.py").write_text(TEST.format(name=name), encoding="utf8")
+    (out / "tests" / f"test_{name.replace('-', '_')}.py").write_text(TEST.format(name=name, repo=REPO), encoding="utf8")
     return out
+
+
+def in_clone() -> bool:
+    """True when this package runs from a source checkout (src/sports_video_coach next to pyproject.toml)."""
+    root = Path(__file__).resolve().parents[2]
+    return (root / "pyproject.toml").is_file() and (root / "src" / "sports_video_coach").is_dir()
+
+
+def test_command(out: Path) -> str:
+    """How to run a scaffolded plugin's tests: `uv run pytest` in a clone; a tool install has no pytest and no
+    project, so a throwaway env with both."""
+    if in_clone():
+        return f"uv run pytest {out.as_posix()}"
+    return f"uv run --isolated --no-project --with pytest --with sports-video-coach@{REPO} pytest {out.as_posix()}"
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="sports-video-coach new-plugin", description=__doc__.split("\n\n")[0])
     ap.add_argument("name", help="plugin name, e.g. tennis")
     ap.add_argument("--sport", default="", help="the sport it analyses (default: the name)")
-    ap.add_argument("--dir", default="plugins", help="parent folder (default ./plugins)")
+    ap.add_argument("--dir", help="parent folder (default <workspace>/plugins: $SVC_WORKSPACE/plugins, else "
+                                   "./workspace/plugins)")
     a = ap.parse_args(argv)
-    out = scaffold(a.name, Path(a.dir), a.sport or a.name)
-    print(f"wrote {out}")
-    print(f"check:  sports-video-coach plugins      (lists {a.name}; run from this folder or set SVC_PLUGIN_PATH)")
+    out = scaffold(a.name, Path(a.dir) if a.dir else workspace.root() / "plugins", a.sport or a.name)
+    print(f"wrote {out.as_posix()}")
+    print(f"check:  sports-video-coach plugins      (lists {a.name}; from another folder: set SVC_WORKSPACE, or "
+          f"SVC_PLUGIN_PATH={out.parent.as_posix()})")
     print(f"use:    sports-video-coach run <video> --plugin {a.name}")
-    print(f"test:   uv run pytest {out}")
-    print(f"next:   edit {out / 'prompts' / 'review.md'} and {out / 'prompts' / 'report.md'} for {a.sport or a.name}, "
-          f"and summary / use_when in {out / '__init__.py'}")
+    print(f"test:   {test_command(out)}")
+    print(f"next:   edit {(out / 'prompts').as_posix()}/review.md and report.md for {a.sport or a.name}, "
+          f"and summary / use_when in {(out / '__init__.py').as_posix()}")
 
 
 if __name__ == "__main__":

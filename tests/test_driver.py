@@ -135,7 +135,7 @@ def test_until_stops_on_a_stale_step_after_running_it(unit, capsys):
     (unit / "src.txt").write_text("b", encoding="utf8")
     r = Runner(unit)
     assert P.drive(Unit.load(unit), steps(), until="a", runner=r) == 0
-    assert r.calls == [["a", "--force"]] and "stopped after a" in capsys.readouterr().out
+    assert r.calls == [["a", "--force"]] and "paused after a" in capsys.readouterr().out
 
 
 def test_dry_prints_the_rerun_with_its_extra_args(unit, capsys):

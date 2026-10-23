@@ -35,6 +35,8 @@ sports-video-coach demo --lang zh en                      # 约一分钟：网�
 - 没装 git，或 git 被代理挡住：`uv tool install https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`。
 - 装完提示 `sports-video-coach: command not found`：运行 `uv tool update-shell`，再开一个新终端。
   或者在 bash（包括 Git Bash）里：`export PATH="$HOME/.local/bin:$PATH"`（默认位置；`uv tool dir --bin` 显示你的位置）。
+- Git Bash：uv 的提示是 PowerShell 写法；`C:/...` 的 bin 目录在 PATH 里要写成 `/c/...`
+  （`export PATH="/c/Users/<you>/.local/bin:$PATH"`）。
 
 </details>
 

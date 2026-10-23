@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 
 import pytest
@@ -173,3 +174,53 @@ def test_run_says_which_plugin_starts_the_unit_and_why(swimming, capsys, monkeyp
     monkeypatch.setattr(run, "stage_main", lambda p, stage: lambda argv: None)
     run.main([str(video), "--sport", "tennis"])
     assert "[run] plugin: generic (no plugin named for --sport tennis" in capsys.readouterr().out
+
+
+def test_an_unknown_plugin_lists_the_folders_searched_and_how_to_add_one(tmp_path, monkeypatch):
+    monkeypatch.setenv("SVC_PLUGIN_PATH", str(tmp_path / "mine"))
+    monkeypatch.chdir(tmp_path)
+    plugin.plugins(refresh=True)
+    try:
+        with pytest.raises(SystemExit) as e:
+            plugin.get("rowing")
+    finally:
+        monkeypatch.undo()
+        plugin.plugins(refresh=True)
+    msg = str(e.value.code)
+    assert msg.startswith("unknown plugin 'rowing'; installed: generic")
+    assert f"{(tmp_path / 'mine').resolve().as_posix()}  (missing)" in msg       # $SVC_PLUGIN_PATH
+    assert (tmp_path / "plugins").resolve().as_posix() in msg                    # ./plugins
+    assert "SVC_PLUGIN_PATH" in msg and "SVC_WORKSPACE" in msg and "cd to" in msg
+
+
+def test_a_unit_finds_its_plugin_in_a_plugins_folder_above_it_from_any_folder(tmp_path, monkeypatch):
+    ws = tmp_path / "ws"
+    (ws / "plugins" / "rowing").mkdir(parents=True)
+    (ws / "plugins" / "rowing" / "__init__.py").write_text(
+        LOCAL.format(name="rowing").replace('"drill", "drill.json"', '"analysis", "analysis.json"'), encoding="utf8")
+    unit = ws / "analysis" / "rowing" / "2026-01-01"
+    unit.mkdir(parents=True)
+    (unit / "analysis.json").write_text(json.dumps({"plugin": "rowing"}), encoding="utf8")
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)               # not where plugins/ is; the workspace (HOOP_WORKSPACE) is another one
+    monkeypatch.delitem(sys.modules, "svc_plugin_rowing", raising=False)
+    try:
+        assert "rowing" not in plugin.plugins(refresh=True)
+        p, k, _ = plugin.owner(unit)
+        assert p.name == "rowing" and k.json == "analysis.json"
+        assert str((ws / "plugins").resolve()) in pipeline.child_env()["SVC_PLUGIN_PATH"].split(os.pathsep)
+    finally:
+        monkeypatch.undo()
+        plugin.plugins(refresh=True)
+
+
+def test_the_run_echo_is_the_command_that_runs(capsys):
+    class G:
+        PLUGIN = "rowing"
+    step = pipeline.Step("strokes", "cmd", lambda g: False, lambda g: [["strokes", "v.mp4", "--out", "o"]])
+    seen = []
+    assert pipeline.run_cmd(step, G(), runner=lambda cmd, **kw: seen.append(cmd) or type("R", (), {"returncode": 0}))
+    assert "[run] strokes: sports-video-coach rowing:strokes v.mp4 --out o" in capsys.readouterr().out
+    assert seen[0][3:] == ["rowing:strokes", "v.mp4", "--out", "o"]
+    assert pipeline.shown(["frames", "v.mp4"], "rowing") == "sports-video-coach frames v.mp4"   # a core stage: bare

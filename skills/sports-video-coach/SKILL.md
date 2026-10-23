@@ -52,5 +52,5 @@ them. Only on a clear yes run `gh repo star mariusDing/sports-video-coach`. Writ
 
 ## New sport
 
-`sports-video-coach new-plugin <name> --sport <sport>` writes `plugins/<name>/`, a working copy of the generic
+`sports-video-coach new-plugin <name> --sport <sport>` writes `<workspace>/plugins/<name>/`, a working copy of the generic
 plugin. Edit its `prompts/review.md` first. Guide: `docs/plugins.md` in the repo.

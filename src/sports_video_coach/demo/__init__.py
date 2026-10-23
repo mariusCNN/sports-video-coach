@@ -192,6 +192,7 @@ def main(argv=None) -> int:
     copy_files(folder, a.lang)
     code = P.drive(U.Analysis.load(folder), U.STEPS, until="html")
     if code == 0:
+        print("[demo] the page is built; next the QA stand-in, then the rest (the run goes on, nothing failed)")
         g = U.Analysis.load(folder)
         if not P.qa_done(g):
             write_qa(g)
@@ -201,15 +202,16 @@ def main(argv=None) -> int:
         print(f"[demo] stopped with exit {code}; the lines above say why. Fix that, then run the same command again "
               "to resume. No network for narration? `sports-video-coach demo --offline` makes the clips and the page.")
         return code
-    print(f"\n[demo] done in {time.monotonic() - t0:.0f} s. Open {folder / 'index.html'} in a browser.")
+    print(f"\n[demo] done in {time.monotonic() - t0:.0f} s. Open {(folder / 'index.html').as_posix()} in a browser.")
     for lang in a.lang:
         if (folder / f"film.{lang}.mp4").exists():
-            print(f"[demo] explained video: {folder / f'film.{lang}.mp4'}")
+            print(f"[demo] explained video: {(folder / f'film.{lang}.mp4').as_posix()}")
     if a.site:
         warnings = build_site(folder, Path(a.site))
         if warnings:
             sys.exit("[demo] site: " + "; ".join(warnings))
-        print(f"[demo] site: {Path(a.site) / 'index.html'} (landing page), {Path(a.site) / 'demo' / 'index.html'}")
+        print(f"[demo] site: {(Path(a.site) / 'index.html').as_posix()} (landing page), "
+              f"{(Path(a.site) / 'demo' / 'index.html').as_posix()}")
     print("[demo] The video is drawn and the review is pre-written. With your own video, your agent writes them:\n"
           "       sports-video-coach run my_video.mp4 --sport tennis")
     return 0
