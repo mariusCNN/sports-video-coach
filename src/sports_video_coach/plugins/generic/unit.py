@@ -143,7 +143,7 @@ STEPS = [
            inputs=lambda g: [g.video], params=lambda g: {"every_s": g.game.get("every_s", 2)}),
     P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors,
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
-               "{review}/review.json as the review guide says (`sports-video-coach guide review --plugin {plugin}` "
+               "{review}/review.json as the review guide says (`sports-video-coach guide review --unit {folder}` "
                "prints it; sport: {sport}; focus: {focus}). Delegate the sheets to helpers (subagents), if your "
                "tool has them, at "
                "most 3 at once, one contiguous range each, writing {review}/part<N>.json; `sports-video-coach "
@@ -152,17 +152,17 @@ STEPS = [
     P.Step("report", "agent", reports_written,
            derives=lambda g: [(g.folder / P.readme(l), [g.review / "review.json"]) for l in g.langs],
            how="Write the coaching report {readmes} in {folder} from {review}/review.json, as `sports-video-coach "
-               "guide report --plugin {plugin}` says ({langs}); mark the moments to show with "
+               "guide report --unit {folder}` says ({langs}); mark the moments to show with "
                "![caption](clip:mm:ss-mm:ss)."),
     *P.tail_steps(
         lambda g: g.video,
         listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} (`sports-video-coach guide "
-                   "narration --plugin {plugin}`).",
+                   "narration --unit {folder}`).",
         qa_how="QA: serve {folder} over http (a browser helper, if your tool has one) and check the page in every "
                "language, the audio and every clip on a 390 px wide screen. Write the result to {folder}/qa.md, "
                "first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "
-                        "report (`sports-video-coach guide film --plugin {plugin}`); check them with "
+                        "report (`sports-video-coach guide film --unit {folder}`); check them with "
                         "`sports-video-coach film {folder} --video {video} --dry`."),
 ]
 NAMES = [s.name for s in STEPS]

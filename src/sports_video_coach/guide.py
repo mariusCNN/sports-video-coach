@@ -1,8 +1,9 @@
-"""`sports-video-coach guide [<name>] [--plugin NAME]`: print a plugin's writing guide, or list its guides.
+"""`sports-video-coach guide [<name>] [--plugin NAME | --unit FOLDER]`: print a plugin's writing guide, or list them.
 
 The agent steps name their guide by path, and after `uv tool install` that path is deep in the tool's folder
-(an agent sandboxed to the project may not read it). This prints the same file, so `guide review --plugin <name>` is enough
-(the agent steps name their plugin).
+(an agent sandboxed to the project may not read it). This prints the same file. The agent steps print
+`guide review --unit <folder>`: the unit's own plugin, found as `run <folder>` finds it (also a plugin in a
+`plugins/` folder above the unit), so the command works from any folder.
 """
 from __future__ import annotations
 
@@ -18,13 +19,24 @@ def guides(p: plugin.Plugin) -> dict[str, Path]:
     return {f.stem: f for f in sorted(p.prompts.glob("*.md"))} if p.prompts and p.prompts.is_dir() else {}
 
 
+def unit_plugin(folder: str) -> plugin.Plugin:
+    """The plugin that owns the unit at `folder`; exits when it is no unit folder."""
+    found = plugin.owner(folder)
+    if found is None:
+        sys.exit(f"{folder}: no unit json here (or above a sub-report); give a folder `sports-video-coach run` made")
+    return found[0]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="sports-video-coach guide", description=__doc__.split("\n\n")[0])
     ap.add_argument("name", nargs="?", help="the guide, e.g. review, report, narration, film (default: list them)")
-    ap.add_argument("--plugin", default="generic", help="whose guides (default generic)")
+    who = ap.add_mutually_exclusive_group()
+    who.add_argument("--plugin", default="generic", help="whose guides (default generic)")
+    who.add_argument("--unit", metavar="FOLDER", help="the guides of this unit folder's plugin (the form the agent "
+                     "steps print)")
     ap.add_argument("--path", action="store_true", help="print the file's path instead of its text")
     a = ap.parse_args(argv)
-    p = plugin.get(a.plugin)
+    p = unit_plugin(a.unit) if a.unit else plugin.get(a.plugin)
     found = guides(p)
     if not a.name:
         if not found:

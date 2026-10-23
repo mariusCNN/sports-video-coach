@@ -5,7 +5,8 @@ A plugin is a `Plugin` object. The core finds plugins in three places, in this o
   2. installed packages: entry points in the group `sports_video_coach.plugins` (`name = "pkg.module:PLUGIN"`);
   3. local folders: every `<dir>/<name>/__init__.py` defining `PLUGIN`, for each dir in $SVC_PLUGIN_PATH
      (os.pathsep-separated), `<workspace>/plugins` (where `sports-video-coach new-plugin` writes) and `./plugins`;
-     a unit folder that names a plugin not found there also finds it in a `plugins/` folder above the unit.
+     a unit folder that names a plugin not found there also finds it in a `plugins/` folder above the unit (so do
+     `<plugin>:<stage> <unit path ...>` and `guide --unit <folder>`, the commands the driver prints for the agent).
 A plugin that fails to load is reported by `errors()` and skipped; the others still load.
 
 A unit is one folder the driver works on (a game, a training session, ...). It is owned by the plugin named in its
@@ -110,6 +111,17 @@ def _find_above(name: str, start: Path) -> bool:
         if (cand / name / "__init__.py").is_file() and cand not in searched_dirs():
             _EXTRA.append(cand)
             plugins(refresh=True)
+            return True
+    return False
+
+
+def find_near(name: str, paths) -> bool:
+    """Plugin `name` not found: look in a `plugins/` folder above each existing path (a stage's unit or output
+    arguments), as `owner` does for a unit, so the commands the driver prints work from any folder."""
+    if name in plugins():
+        return True
+    for a in paths:
+        if a and not str(a).startswith("-") and Path(a).exists() and _find_above(name, Path(a).resolve()):
             return True
     return False
 

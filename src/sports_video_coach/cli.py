@@ -28,10 +28,12 @@ CORE = {
 }
 
 
-def resolve(stage: str, default: str | None = None) -> tuple[str, str]:
-    """(module, label) for a stage name; exits with a message when it is unknown or ambiguous."""
+def resolve(stage: str, default: str | None = None, args=()) -> tuple[str, str]:
+    """(module, label) for a stage name; exits with a message when it is unknown or ambiguous. A `<plugin>:<stage>`
+    whose plugin is not on the search path is also looked for above the paths in `args` (see plugin.find_near)."""
     if ":" in stage:
         name, _, st = stage.partition(":")
+        plugin.find_near(name, args)
         p = plugin.get(name)
         if st not in p.stages:
             sys.exit(f"plugin {name!r} has no stage {st!r}; its stages: {', '.join(p.stages)}")
@@ -106,7 +108,7 @@ def main(argv=None, prog: str = "sports-video-coach", default: str | None = None
         sys.exit(0)
     if argv[0] == "plugins":
         return list_plugins(argv[1:])
-    name, label = resolve(argv[0], default)
+    name, label = resolve(argv[0], default, argv[1:])
     if not name:
         print(f"unknown stage {argv[0]!r}\n\n{usage(prog, default)}")
         sys.exit(1)
