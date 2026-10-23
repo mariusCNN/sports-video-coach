@@ -410,7 +410,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
         html_lang=first_attr,
         page_title=html.escape(titles[first]), titles_js=json.dumps(json.dumps(titles, ensure_ascii=False)).replace("</", "<\\/"),
         ui_js=json.dumps(json.dumps(ui_js, ensure_ascii=False)),
-        buttons=buttons, switch=ui[first]["switch"], heading=title_spans(), board=board,
+        lang_switch=f'<div class="lang" role="group" aria-label="{ui[first]["switch"]}">{buttons}</div>' if buttons else "", heading=title_spans(), board=board,
         us_hex=us_hex, them_hex=them_hex, us_light=us_light, them_light=them_light,
         us_light_rgb=", ".join(map(str, units.hex_to_rgb(us_light))),
         listen=listen, mini=mini, tocs="".join(tocs), lang_css=LANG_CSS,
@@ -576,7 +576,7 @@ td strong {{ color: var(--whistle); }}
   <div class="bar">
     <h1>{heading}</h1>
     {mini}
-    <div class="lang" role="group" aria-label="{switch}">{buttons}</div>
+    {lang_switch}
   </div>
 </div>
 <header class="board">

@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- A one-language page no longer shows an empty language switch outline; `review-check --help` prints its usage
+  instead of treating `--help` as a folder; `frames --help` says `--end` is exclusive (found by a cold Codex run).
 
 - Bold next to CJK punctuation renders on the page: `**一句话：**第 4 次` showed its asterisks (CommonMark's
   flanking rule); the renderer now treats a CJK character beside `**` the way markdown-it-cjk-friendly does.

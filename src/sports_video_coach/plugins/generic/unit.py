@@ -189,8 +189,9 @@ def main(argv=None):
     """Stage `review-check <folder>`: merge helpers' run/review/part*.json into review.json when there is none, then
     print what review.json still lacks; exit 1 when anything does."""
     argv = sys.argv[1:] if argv is None else argv
-    if not argv:
-        sys.exit("usage: review-check <analysis folder>")
+    if not argv or argv[0] in ("-h", "--help"):
+        print("usage: review-check <analysis folder>: merge run/review/part*.json, then list what review.json lacks")
+        sys.exit(0 if argv else 2)
     g = Analysis.load(Path(argv[0]))
     merge_parts(g)
     errs = review_errors(g)

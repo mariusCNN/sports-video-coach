@@ -183,7 +183,7 @@ def main(argv=None):
     ap.add_argument("--rows", type=int, default=3)
     ap.add_argument("--width", type=int, default=480, help="tile width in pixels (default 480)")
     ap.add_argument("--start", type=seconds, help="only from this video time (mm:ss.s or seconds)")
-    ap.add_argument("--end", type=seconds, help="only up to this video time")
+    ap.add_argument("--end", type=seconds, help="only before this video time (exclusive: the last tile is earlier)")
     a = ap.parse_args(argv)
     video = Path(a.video)
     if not video.is_file():

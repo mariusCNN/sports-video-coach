@@ -118,3 +118,13 @@ def test_bold_next_to_cjk_punctuation_renders():  # CommonMark alone leaves thes
     assert md("**練習：**次は") == "<strong>練習：</strong>次は"
     assert md("**Bottom line:**next") == "**Bottom line:**next"     # Latin text renders as CommonMark says
     assert md("a **b** c *d*") == "a <strong>b</strong> c <em>d</em>"
+
+
+def test_one_language_page_has_no_switch(tmp_path):  # an empty outlined pill looked like a broken control
+    folder = tmp_path / "u" / "2025-03-15"
+    folder.mkdir(parents=True)
+    (folder / "README.en.md").write_text("# Serve practice\n\n## Key points\n\n- Steady toss\n", encoding="utf8")
+    (folder / "analysis.json").write_text(json.dumps({"plugin": "generic", "languages": ["en"]}), encoding="utf8")
+    page = render_html.page(folder)
+    assert "Serve practice" in page and 'class="lang" role="group"' not in page and 'data-set-lang="' not in page
+    assert 'class="lang" role="group"' in render_html.page(_generic(tmp_path / "two" / "2025-03-15", None))

@@ -432,3 +432,10 @@ def test_sport_name_names_the_sport_per_language(tmp_path, video, capsys):
             new.parser().parse_args(["v.mp4", "--sport-name", bad])
         assert e.value.code == 2
     assert "--sport-name LANG=NAME" in run.help_text("generic") and "--sport-zh" in run.help_text("generic")
+
+
+def test_review_check_help_prints_usage(capsys):
+    from sports_video_coach.plugins.generic import unit
+    with pytest.raises(SystemExit) as e:
+        unit.main(["--help"])
+    assert e.value.code == 0 and "usage: review-check <analysis folder>" in capsys.readouterr().out
