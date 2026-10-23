@@ -35,3 +35,6 @@ Seven of ten tosses in front of the head: that is the target for next week.
 - Keep it to 2-4 minutes; for a source video under a minute, two to four times its length (a 22 s drill:
   45-90 s). Same facts as the report; a short report makes a shorter film, never pad it. `film --dry`
   estimates the length.
+- One `film.<lang>.md` per language of `languages`, each wholly in its own language (captions, freeze labels and
+  chapter titles too), with no other language's words left in. The subtitles, the voice and the font follow the
+  file's language (`film` prints which voice and font it used).

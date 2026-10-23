@@ -11,5 +11,8 @@ A spoken version of the report, rendered to MP3 by `sports-video-coach narrate <
   to an online text-to-speech service).
 - Before rendering, estimate the length so the "about N minutes" sentence is right the first time. Count
   characters, not words: English about 950 characters a minute with spaces (130-190 words, depending on word
-  length), Chinese about 235 characters a minute without punctuation. `narrate` prints this estimate before it
-  renders, warns when the sentence is clearly off, and prints the real length after.
+  length), Chinese about 235 characters a minute without punctuation, Japanese about 315 (kana and kanji, without
+  punctuation); the other languages' rates are in `sports_video_coach/langs.py`. `narrate` prints this estimate
+  before it renders, warns when the sentence is clearly off, and prints the real length after.
+- Write each script wholly in its own language, numbers and the length sentence too (Japanese: 「約三分」), with no
+  other language's words left in: the voice reads them with the wrong accent.

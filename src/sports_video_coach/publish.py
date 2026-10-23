@@ -39,6 +39,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from . import langs as L
 from . import media, plugin
 from . import workspace as ws
 
@@ -214,8 +215,7 @@ def titles_of(folder: Path) -> dict[str, str]:
     return {c: title_of(folder, folder / f) for c, _, _, f in _html().report_langs(folder)}
 
 
-HUB_UI = {"zh": dict(title="报告", switch="切换语言"),
-          "en": dict(title="Reports", switch="Switch language")}
+HUB_UI = {c: dict(title=L.ui(c)["reports"], switch=L.ui(c)["switch"]) for c in L.CODES}  # langs.py labels
 
 HUB_JS = """<script>
 (() => {
@@ -225,7 +225,7 @@ HUB_JS = """<script>
     document.querySelectorAll("main [data-lang]").forEach(el => { el.hidden = el.dataset.lang !== lang; });
     buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)));
     document.querySelector(".lang").setAttribute("aria-label", ui[lang].switch);
-    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.documentElement.lang = document.querySelector('[data-set-lang="' + lang + '"]')?.lang || lang;
     document.title = ui[lang].title;
     try { localStorage.setItem("report-lang", lang); } catch (e) {}  // same key as the report pages
     document.querySelectorAll("li a").forEach(a => {  // reports open in the language picked here
@@ -234,7 +234,8 @@ HUB_JS = """<script>
   buttons.forEach(b => b.addEventListener("click", () => setLang(b.dataset.setLang)));
   let start = new URLSearchParams(location.search).get("lang");
   if (!start) { try { start = localStorage.getItem("report-lang"); } catch (e) {} }
-  if (!start && !/^zh/i.test(navigator.language || "")) start = "en";
+  const nav = (navigator.language || "").slice(0, 2).toLowerCase();  // the reader's language, else English
+  if (!start) start = ui[nav] ? nav : "en";
   setLang(start || Object.keys(ui)[0]);
 })();
 </script>
@@ -246,7 +247,7 @@ def hub_page(entries: list[tuple[str, dict, str]], pinned: list[tuple[str, dict,
     """entries: (folder name, {lang: title}, token) of the listed reports, newest first; pinned: (folder name,
     {lang: title}, token, group key) of pinned reports, listed first (basketball: season pages), labelled
     "<wording[lang][group key]> <folder name>". wording: hub text per lang over HUB_UI. With more than one
-    language the page gets the reports' 中文 / EN switch and shares their remembered choice."""
+    language the page gets the reports' language switch and shares their remembered choice."""
     have = {c for _, ts, *_ in [*pinned, *entries] for c in ts}
     langs = [l for l in _html().LANGS if l[0] in have] or _html().LANGS[:1]
     first = langs[0][0]
@@ -408,7 +409,7 @@ def deploy(site: Path, project: str, workdir: Path, kv_id: str | None = None) ->
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="publish", description=__doc__.split("\n\n")[0])
-    ap.add_argument("folders", nargs="*", help="report folders (README.md + README.en.md) or app folders "
+    ap.add_argument("folders", nargs="*", help="report folders (README.md, README.<lang>.md) or app folders "
                     "(e.g. a training program.json) inside the workspace")
     ap.add_argument("--deploy", action="store_true", help="upload the site to Cloudflare (Workers static assets) with wrangler")
     ap.add_argument("--project", help="Cloudflare Worker name, part of the URL (remembered after the first use)")
@@ -438,7 +439,7 @@ def main(argv=None):
             build_program(folder, site / "p" / reg["programs"][key], app)
             continue
         if not has_report(folder):
-            sys.exit(f"{folder} has no README.md / README.en.md")
+            sys.exit(f"{folder} has no report README (README.md, README.en.md or README.<lang>.md)")
         key = report_key(folder, root)
         old = reg["reports"].get(key)
         if a.new_link or not old:

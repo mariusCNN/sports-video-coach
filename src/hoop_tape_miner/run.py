@@ -98,7 +98,7 @@ class Game(Unit):
         gj = folder / "game.json"
         if not gj.exists():
             sys.exit(f"{gj} not found: start with `hoop-tape-miner fetch <league game url>` or `new-game`")
-        langs = profile_langs()
+        langs = profile_langs(LANGS)  # basketball charts know zh and en
         return cls(folder, json.loads(gj.read_text(encoding="utf8")), langs)
 
 

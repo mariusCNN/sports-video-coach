@@ -4,9 +4,9 @@ A report marks a clip as a markdown image with a `clip:` link in video time (mm:
 
     ![#7 drives into #11's press, steal, and-one](clip:03:10-03:19)
 
-This stage scans README.md and README.en.md in the folder, cuts every referenced window from the game video
-into `clips/<from>-<to>.mp4` (small H.264, 480 px on the short side, so 480x854 upright, mono audio) plus a `.jpg` poster, and skips files that already
-exist. `sports-video-coach html` turns the same markers into players (embedded in --share pages).
+This stage scans the README of every language in the folder (README.md, README.en.md, README.ja.md ...), cuts every
+referenced window from the game video into `clips/<from>-<to>.mp4` (small H.264, 480 px on the short side, so
+480x854 upright, mono audio) plus a `.jpg` poster, and skips files that already exist. `sports-video-coach html` turns the same markers into players (embedded in --share pages).
 It also cuts the short windows the page's shot chart and playlists need (one per reviewed shot, turnover and foul
 with a video time, see film_index.py); a window shared by a marker, the chart and a playlist is cut once.
 
@@ -21,11 +21,12 @@ import re
 import sys
 from pathlib import Path
 
+from . import langs as L
 from . import units
 from . import media
 from .timefmt import seconds
 
-READMES = ("README.md", "README.en.md")
+READMES = tuple(L.readme(c) for c in L.CODES)  # zh, en first (langs.py)
 CLIP_RE = re.compile(r"\]\(clip:(\d{1,2}:\d{2}(?:\.\d)?)-(\d{1,2}:\d{2}(?:\.\d)?)\)")
 LONG_CLIP_S = 45  # longer clips get a warning: they bloat the shared page and nobody watches them to the end
 
@@ -91,7 +92,7 @@ def cut(video: Path, start: str, end: str, out: Path, height: int = 480):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="sports-video-coach clips", description=__doc__.split("\n\n")[0])
-    ap.add_argument("folder", help="report folder with README.md / README.en.md")
+    ap.add_argument("folder", help="report folder with README.md / README.<lang>.md")
     ap.add_argument("--video", help="our game video (default: game.json video)")
     ap.add_argument("--height", type=int, default=480, help="clip size in pixels on the short side (default 480: 854x480, or 480x854 upright)")
     ap.add_argument("--force", action="store_true", help="re-cut clips that already exist")

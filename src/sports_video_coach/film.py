@@ -57,10 +57,11 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import film_draw as fd
+from . import langs as L
 from . import media, units
 from .clips import seconds
 from .media import duration_s, ffmpeg, has_audio, video_size
-from .narrate import voices
+from .narrate import voice_for, voices
 
 FPS = 30
 CRF = 23                         # x264 quality (--crf): higher = smaller file
@@ -69,10 +70,10 @@ LEAD, TAIL, GAP = 0.3, 0.5, 0.4  # silence before the voice, after it, and betwe
 CARD_S, IMAGE_S = 3.0, 4.0       # scene length without narration
 SLOW = 0.5                       # replay speed when the narration outlasts a clip
 DUCK = 0.2                       # game sound volume under the voice
-MAX_CHARS = {"zh": 30, "en": 84}  # one subtitle at most (about two lines at 720p)
+MAX_CHARS = {c: l.sub_chars for c, l in L.LANGS.items()}  # one subtitle at most (about two lines at 720p)
 FREEZE_S = 2.0                   # a freeze without narration
-SLOW_TAG = {"zh": "慢放", "en": "Slow motion"}
-FREEZE_TAG = {"zh": "定格", "en": "Paused"}
+SLOW_TAG = {c: L.film_tag(c, "slow") for c in L.CODES}
+FREEZE_TAG = {c: L.film_tag(c, "freeze") for c in L.CODES}
 TARGET_S = (120, 240)  # film length the guides ask for (2-4 min)
 
 
@@ -84,8 +85,7 @@ def target_s(video_s: float | None) -> tuple[int, int]:
     return max(30, int(round(2 * video_s))), TARGET_S[1]
 WORD_RE = re.compile(r"[^\W_]")  # a letter, digit or CJK character: something to speak
 STILL_MAX_S = 12.0  # --dry notes a still scene (title, stat, picture) that talks longer than this
-SPEECH_RATE = {"zh": 4.7, "en": 15.0}  # characters per second, only for --dry estimates (measured on edge-tts runs)
-FONT = {"win32": "Microsoft YaHei", "darwin": "PingFang SC"}.get(sys.platform, "Noto Sans CJK SC")
+FONT = L.font("zh")  # the default subtitle font (zh, en and Latin scripts); ja / ko have their own (langs.font)
 BG = "#14161f"
 
 TIME = r"\d{1,2}:\d{2}(?:\.\d)?"
@@ -524,7 +524,7 @@ def report_title(folder: Path, lang: str | None) -> str:
     """The `# ` heading of the report in that language (README.md is Chinese, README.<lang>.md the others), or ""."""
     if not lang:
         return ""
-    p = folder / ("README.md" if lang == "zh" else f"README.{lang}.md")
+    p = folder / L.readme(lang)
     m = re.match(r"#\s+(.+)", p.read_text(encoding="utf8")) if p.exists() else None
     return m.group(1).strip() if m else ""
 
@@ -722,8 +722,10 @@ def plan(sc: Scene, voice_s: list[float], para_starts: list[float], n_steps: int
     return length, slow, None, [LEAD], [], steps
 
 
-def build(folder: Path, lang: str, video: Path | None, height: int, font: str, pick: tuple[int, int] | None = None,
-          dry: bool = False, run: Path | None = None, crf: int = CRF) -> Path | None:
+def build(folder: Path, lang: str, video: Path | None, height: int, font: str | None,
+          pick: tuple[int, int] | None = None, dry: bool = False, run: Path | None = None,
+          crf: int = CRF) -> Path | None:
+    """Render film.<lang>.mp4 (font None: the language's subtitle font, langs.font)."""
     script = folder / f"film.{lang}.md"
     hooks, kinds = hooks_for(folder)
     scenes = parse_script(script.read_text(encoding="utf8"), hooks)
@@ -750,11 +752,11 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
     if dry:
         if h > w:
             print(f"film {w}x{h}: upright, like the video")
-        total, rate = 0.0, SPEECH_RATE.get(lang, 15.0)
+        total = 0.0
         for i, sc in enumerate(scenes, 1):
             groups = [sc.paras] + [fz.paras for fz in sc.freezes]
-            voice_s = [sum(len(p) / rate for p in g) + GAP * max(0, len(g) - 1) for g in groups]
-            starts = [sum(len(p) / rate + GAP for p in sc.paras[:k]) for k in range(len(sc.paras))]
+            voice_s = [sum(L.read_s(p, lang) for p in g) + GAP * max(0, len(g) - 1) for g in groups]
+            starts = [sum(L.read_s(p, lang) + GAP for p in sc.paras[:k]) for k in range(len(sc.paras))]
             length, slow, *_ = plan(sc, voice_s, starts, steps.get(i, 0), anim.get(i, 1.0))
             total += length
             n_resume = sum(fz.resume for fz in sc.freezes)  # a bare > resumes the play: not a freeze
@@ -784,7 +786,9 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str, p
 
     accent, second = hooks.colours(game) if hooks.colours else (DEFAULT_ACCENT, DEFAULT_SECOND)
     ctx = FilmCtx(folder, game, lang, w, h, FPS, accent, second)
-    voice, rate = voices(game)[lang]
+    voice, rate = voice_for(lang, voices(game))
+    font = font or L.font(lang)
+    print(f"[film] {lang}: voice {voice} (edge-tts, online, rate {rate}), subtitle font {font}", flush=True)
     title = title_text(folder, game, height, hooks, lang)
     cache = folder / ".film-cache"
     game_audio = has_audio(video) if needs_video else False
@@ -857,7 +861,8 @@ def main(argv=None):
     ap.add_argument("--height", type=int, default=720, help="video height in pixels (default 720)")
     ap.add_argument("--crf", type=int, default=CRF, help=f"x264 quality, higher = smaller file (default {CRF}; "
                                                           "28 is about half the size)")
-    ap.add_argument("--font", default=FONT, help=f"subtitle font, must cover the script's language (default {FONT})")
+    ap.add_argument("--font", help=f"subtitle font, must cover the script's language (default per language: {FONT} "
+                                   f"for zh, en and Latin scripts, {L.font('ja')} for ja, {L.font('ko')} for ko)")
     ap.add_argument("--scenes", help="render only scenes A-B (1-based) into film.<lang>.preview.mp4")
     ap.add_argument("--dry", action="store_true", help="check the script and print scenes with estimated lengths")
     a = ap.parse_args(argv)

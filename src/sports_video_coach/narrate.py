@@ -5,7 +5,8 @@ usage:
       report narration: listen.zh.md / listen.en.md -> listen.zh.mp3 / listen.en.mp3 in that folder; an mp3
       newer than its script is kept (--force re-renders it), so a rerun after a network error redoes only the rest
   sports-video-coach narrate --script cues.zh.md [--gap 6 --chime --loud --rate -5%]
-      any single script -> cues.zh.mp3 next to it (language from the .zh/.en suffix). --chime plays a short
+      any single script -> cues.zh.mp3 next to it (language from the .<lang>.md suffix, else --lang; a
+      language with no voice is an error, never another language's voice). --chime plays a short
       two-tone bell before every paragraph and --gap leaves silence after it, which makes a loop you can
       listen to on court; --loud normalises to -14 LUFS so it cuts through gym noise; --tight trims the
       silence the TTS voice leaves around each paragraph, so --gap is the real pause (e.g. --gap 0.4).
@@ -14,7 +15,7 @@ Uses edge-tts (Microsoft neural voices, needs internet: the script text is sent 
 service) and ffmpeg ($FFMPEG overrides the binary). Lines starting with '#' are notes for the writer and are
 not read. Voices: optional `narration.voices` in game.json (folder or its parent), e.g.
   "narration": {"voices": {"en": "en-GB-RyanNeural", "zh": {"voice": "zh-CN-YunxiNeural", "rate": "-5%"}}}
-otherwise the defaults in VOICES.
+otherwise the defaults in VOICES (one per language in langs.py).
 """
 from __future__ import annotations
 
@@ -24,17 +25,17 @@ import re
 import sys
 from pathlib import Path
 
+from . import langs as L
 from . import media
 from .units import load as load_game
 from .media import ffmpeg
 
-VOICES = {"zh": ("zh-CN-YunjianNeural", "+0%"), "en": ("en-US-AndrewNeural", "+0%")}
+VOICES = {c: (l.voice, "+0%") for c, l in L.LANGS.items()}
 PAUSE_S = 0.7
 MP3 = ["-ac", "1", "-ar", "24000", "-c:a", "libmp3lame", "-b:a", "48k"]
 TRIES, BACKOFF_S = 3, 2.0  # edge-tts sometimes returns no audio for a moment; a retry usually gets it
-# read speed of the default voices, measured on rendered scripts (the narration guide quotes it): Chinese characters
-# without punctuation / English characters with spaces a minute; English words a minute range 130-190 with word length
-PER_MIN = {"zh": 235, "en": 960}
+# read speed of the default voices (langs.py says how each was found; the narration guide quotes zh and en)
+PER_MIN = {c: l.per_min for c, l in L.LANGS.items()}
 
 
 class TTSFailed(SystemExit):
@@ -44,6 +45,15 @@ class TTSFailed(SystemExit):
 def paragraphs(text: str) -> list[str]:
     lines = [l for l in text.splitlines() if not l.lstrip().startswith("#")]
     return [" ".join(p.split()) for p in "\n".join(lines).split("\n\n") if p.strip()]
+
+
+def voice_for(lang: str, table: dict | None = None) -> tuple[str, str]:
+    """(voice, rate) of a language; a language with no voice stops the run, never reads with another one's voice."""
+    table = table or VOICES
+    if lang not in table:
+        raise L.Unknown(f"no voice for language {lang!r} (known: {', '.join(table)}); add it to langs.py or set "
+                        f'"narration": {{"voices": {{"{lang}": "<edge-tts voice>"}}}} in the unit json')
+    return table[lang]
 
 
 def voices(game: dict) -> dict[str, tuple[str, str]]:
@@ -84,6 +94,8 @@ _EN_NUM = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 
            "nine": 9, "ten": 10}
 _ZH_LEN = re.compile(r"(?P<under>不到|少于)?\s*(?P<n>\d+(?:\.\d+)?|[一两二三四五六七八九十]{1,3})\s*"
                      r"分(?:(?P<h1>半)钟?|钟(?P<h2>半)?)")  # not 三分球
+_JA_LEN = re.compile(r"(?P<n>\d+(?:\.\d+)?|[一二三四五六七八九十]{1,3})\s*分(?!の[\d一二三四五六七八九十])"
+                     r"間?(?P<h1>半)?(?P<h2>)(?P<under>以内|未満|弱)?")  # 約2分, 1分半, 1分以内 (not 3分の1)
 _EN_LEN = re.compile(r"\b(?P<under>under\s+|less\s+than\s+)?"
                      r"(?P<n>\d+(?:\.\d+)?|a|one|two|three|four|five|six|seven|eight|nine|ten)"
                      r"(?P<h1>\s+and\s+a\s+half)?\s+min(?:ute)?s?\b(?P<h2>\s+and\s+a\s+half)?", re.I)
@@ -93,13 +105,14 @@ def stated(paras: list[str], lang: str) -> tuple[float, bool] | None:
     """The length the script says it runs ("约 2 分钟", "一分半", "about three minutes") in seconds, and whether it
     is only an upper bound ("不到一分钟", "under a minute"); None when it names none. The first mention counts:
     the opening "this runs about N minutes"."""
-    m = (_ZH_LEN if lang == "zh" else _EN_LEN).search(" ".join(paras))
+    pattern = {"zh": _ZH_LEN, "ja": _JA_LEN}.get(lang, _EN_LEN if lang == "en" or not L.cjk(lang) else None)
+    m = pattern.search(" ".join(paras)) if pattern else None  # Korean: no check yet; es / fr / ...: "2 minutes"
     if not m:
         return None
     w = m["n"].lower()
     if w[0].isdigit():
         n = float(w)
-    elif lang != "zh":
+    elif w in _EN_NUM:
         n = _EN_NUM[w]
     else:  # 三, 十二, 二十, 二十五
         tens, _, ones = w.rpartition("十") if "十" in w else ("", "", w)
@@ -108,8 +121,8 @@ def stated(paras: list[str], lang: str) -> tuple[float, bool] | None:
 
 
 def count(paras: list[str], lang: str) -> int:
-    """What PER_MIN counts: Chinese characters without punctuation, else every character."""
-    return sum(len(re.findall(r"\w", p)) if lang == "zh" else len(p) for p in paras)
+    """What PER_MIN counts: Chinese / Japanese / Korean characters without punctuation, else every character."""
+    return sum(L.count(p, lang) for p in paras)
 
 
 def estimate_s(paras: list[str], lang: str) -> float:
@@ -119,8 +132,8 @@ def estimate_s(paras: list[str], lang: str) -> float:
 
 def size_text(paras: list[str], lang: str) -> str:
     """One line for the writer: paragraphs, words / characters and the estimated read time."""
-    words = "" if lang == "zh" else f"{sum(len(p.split()) for p in paras)} words, "
-    what = "characters without punctuation" if lang == "zh" else "characters"
+    words = "" if L.cjk(lang) else f"{sum(len(p.split()) for p in paras)} words, "
+    what = "characters without punctuation" if L.cjk(lang) else "characters"
     return (f"{len(paras)} paragraphs, {words}{count(paras, lang)} {what}, "
             f"reads in about {estimate_s(paras, lang):.0f} s")
 
@@ -181,7 +194,7 @@ def stitch(parts: list[Path], out: Path, tmp: Path, gap: float = PAUSE_S, bell: 
 def render(src: Path, out: Path, lang: str, gap: float, bell: bool, loud: bool, rate: str | None,
            voice_table: dict | None = None, tight: bool = False):
     paras = paragraphs(src.read_text(encoding="utf8"))
-    voice, default_rate = (voice_table or VOICES)[lang]
+    voice, default_rate = voice_for(lang, voice_table)
     if warn := check_length(paras, lang):
         print(warn, flush=True)
     print(f"[narrate] {lang}: {size_text(paras, lang)}; rendering with {voice} (edge-tts, online)...", flush=True)
@@ -211,7 +224,12 @@ def main(argv=None):
     a = ap.parse_args(argv)
     if a.script:
         vt = voices(load_game(a.script.parent))
-        lang = next((c for c in vt if a.script.name.endswith(f".{c}.md")), (a.lang or list(VOICES))[0])
+        lang = next((c for c in vt if a.script.name.endswith(f".{c}.md")), None) or (a.lang or [None])[0]
+        if lang is None:  # never read a script with another language's voice
+            parts = a.script.name.split(".")
+            sys.exit(f"{a.script.name}: " + (f"no voice for language {parts[-2]!r}" if len(parts) > 2 else
+                                             "no .<lang>.md suffix") +
+                     f" (known: {', '.join(vt)}); name the file <name>.<lang>.md or pass --lang")
         render(a.script, a.out or a.script.with_suffix(".mp3"), lang, a.gap, a.chime, a.loud, a.rate, vt, a.tight)
         return
     if not a.folder:

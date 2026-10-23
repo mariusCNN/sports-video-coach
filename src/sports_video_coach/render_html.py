@@ -1,5 +1,6 @@
-"""Render a report folder (README.md = 中文, README.en.md = English; either or both) into one HTML page with
-a 中文 / EN switch. Images are inlined; if listen.zh.mp3 / listen.en.mp3 sit next to the READMEs
+"""Render a report folder (README.md = 中文, README.<code>.md = any other language of langs.py, e.g. README.en.md,
+README.ja.md; one or several) into one HTML page with a language switch (中文 / EN / 日本語). Images are inlined; if
+listen.<code>.mp3 files (listen.zh.mp3, listen.en.mp3) sit next to the READMEs
 (the `narrate` stage makes them) the page gets a play button that reads the report aloud. Clip markers
 `![caption](clip:03:10-03:19)` become numbered video players (cut them first with the `clips` stage).
 
@@ -29,6 +30,7 @@ from typing import Callable
 from markdown_it import MarkdownIt
 
 from sports_video_coach import clips as clipmod
+from sports_video_coach import langs as langs_
 from sports_video_coach import plugin, units
 from sports_video_coach.media import video_size
 from sports_video_coach.media import duration_s  # ffprobe with a timeout: a cloud placeholder file can hang it
@@ -37,16 +39,15 @@ from sports_video_coach.media import duration_s  # ffprobe with a timeout: a clo
 # show as text, never run on the published site. Pages use markdown only (clips and images come from markers).
 MD = MarkdownIt("commonmark", {"html": False}).enable("table")
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
-LANGS = [("zh", "zh-CN", "中文", "README.md"), ("en", "en", "EN", "README.en.md")]
-UI = {
-    "zh": dict(contents="目录", switch="切换语言",
-               listen="听报告", listen_sub="约 {m} 分钟，可以边看边听", listen_sub_s="约 {s} 秒，可以边看边听", play="播放 / 暂停", seek="播放进度", speed="播放速度",
-               clip="片段", slow="慢放", missing="（片段还没剪：运行 clips）"),
-    "en": dict(contents="Contents", switch="Switch language",
-               listen="Listen to the report", listen_sub="About {m} min. Read along or just listen.", listen_sub_s="About {s} seconds. Read along or just listen.", play="Play / pause",
-               seek="Playback position", speed="Playback speed",
-               clip="Clip", slow="Slow-mo", missing="(clip not cut yet: run the clips stage)"),
-}
+# (code, html lang, switch label, README) per registry language, zh first (langs.py)
+LANGS = [(c, l.tag, l.button, langs_.readme(c)) for c, l in langs_.LANGS.items()]
+UI = {c: langs_.ui(c) for c in langs_.CODES}  # labels per language; English where a language has none
+# CJK headings use the body face; Japanese and Korean text gets its own fonts (not the Chinese glyph forms)
+LANG_CSS = "\n".join(
+    [", ".join(f'.report[lang="{l.tag}"] h2' for l in langs_.LANGS.values() if l.cjk) +
+     " { font-family: var(--body); font-weight: 700; font-size: clamp(1.3rem, 2.8vw, 1.65rem); }"] +
+    [f'[lang="{l.tag}"] {{ --body: {l.page_font}; font-family: var(--body); }}'
+     for l in langs_.LANGS.values() if l.page_font])
 PLAY_ICON = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5.5v13l10.5-6.5z"/>'
              '<path class="i-pause" d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg>')
 
@@ -80,19 +81,31 @@ SPORT_ZH = {"tennis": "网球", "basketball": "篮球", "football": "足球", "s
             "skateboarding": "滑板", "martial arts": "武术", "gymnastics": "体操", "yoga": "瑜伽",
             "weightlifting": "举重", "fitness": "健身", "dance": "舞蹈", "pickleball": "匹克球", "squash": "壁球",
             "rugby": "橄榄球", "hockey": "曲棍球", "ice hockey": "冰球", "cricket": "板球", "athletics": "田径"}
+SPORT_JA = {"tennis": "テニス", "basketball": "バスケットボール", "football": "サッカー", "soccer": "サッカー",
+            "badminton": "バドミントン", "table tennis": "卓球", "volleyball": "バレーボール", "swimming": "水泳",
+            "running": "ランニング", "golf": "ゴルフ", "baseball": "野球", "boxing": "ボクシング",
+            "climbing": "クライミング", "cycling": "自転車", "skiing": "スキー", "skateboarding": "スケートボード",
+            "martial arts": "武道", "gymnastics": "体操", "yoga": "ヨガ", "weightlifting": "ウエイトリフティング",
+            "fitness": "フィットネス", "dance": "ダンス", "pickleball": "ピックルボール", "squash": "スカッシュ",
+            "rugby": "ラグビー", "hockey": "ホッケー", "ice hockey": "アイスホッケー", "cricket": "クリケット",
+            "athletics": "陸上競技"}
+SPORTS = {"zh": SPORT_ZH, "ja": SPORT_JA}  # other languages show the English name
 
 
 def sport_names(sport, langs=("en",)) -> dict[str, str]:
-    """{lang: sport name} for the page languages: a per-language dict as given, else SPORT_ZH both ways. With
-    several languages, a name that is not in the page's script is left out ("" ) rather than shown untranslated."""
+    """{lang: sport name} for the page languages: a per-language dict as given, else the SPORTS tables both ways.
+    With several languages, a name that is not in the page's script is left out ("" ) rather than shown
+    untranslated."""
     if isinstance(sport, dict):
         fallback = next((str(v) for v in sport.values() if v), "")
         return {c: label(str(sport.get(c) or fallback)) for c in langs}
     raw = str(sport or "").strip()
-    cjk = bool(re.search(r"[㐀-鿿]", raw))
-    zh = SPORT_ZH.get(raw.lower(), raw if cjk or len(langs) == 1 else "")
-    en = next((k for k, v in SPORT_ZH.items() if v == raw), "" if cjk and len(langs) > 1 else raw)
-    return {c: label(zh if c == "zh" else en) for c in langs}
+    native = bool(re.search(r"[぀-ヿ㐀-鿿가-힯]", raw))  # Chinese, kana or Hangul
+    key = raw.lower() if raw.lower() in SPORT_ZH else next(
+        (k for t in SPORTS.values() for k, v in t.items() if v == raw), None)
+    en = (key or ("" if len(langs) > 1 else raw)) if native else raw
+    own = {c: t[key] if key else (raw if native or len(langs) == 1 else "") for c, t in SPORTS.items()}
+    return {c: label(own.get(c, en)) for c in langs}
 
 
 def label(name: str) -> str:
@@ -270,9 +283,9 @@ def length_label(ui: dict, seconds: float) -> str:
 
 def listen_block(folder: Path, embed: bool, langs: list[tuple] | None = None):
     """Big play button + progress for the narration, or empty strings when there is no audio yet."""
-    langs = langs or LANGS
+    langs = langs or report_langs(folder)
     first = langs[0][0]
-    files = {c: folder / f"listen.{c}.mp3" for c, *_ in langs}
+    files ={c: folder / f"listen.{c}.mp3" for c, *_ in langs}
     if not all(p.exists() for p in files.values()):
         return "", ""
     audios, labels = [], []
@@ -305,7 +318,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
     """share: drop repo links and local paths; embed (default: same as share): inline audio and clips."""
     embed = share if embed is None else embed
     hooks, sport, data = hooks_of(folder)
-    ui = {c: {**t, **hooks.ui.get(c, {})} for c, t in UI.items()}
+    ui = {c: {**t, **hooks.ui.get(c, hooks.ui.get("en", {}))} for c, t in UI.items()}  # plugin labels, else English
     sb = hooks.board(folder) if hooks.board else None
     arts, tocs, titles = [], [], {}
     assets = ""
@@ -347,7 +360,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
         buttons=buttons, switch=ui[first]["switch"], heading=title_spans(), board=board,
         us_hex=us_hex, them_hex=them_hex, us_light=us_light, them_light=them_light,
         us_light_rgb=", ".join(map(str, units.hex_to_rgb(us_light))),
-        listen=listen, mini=mini, tocs="".join(tocs),
+        listen=listen, mini=mini, tocs="".join(tocs), lang_css=LANG_CSS,
         articles=(hooks.before(folder, sb, langs) if hooks.before else "") + "".join(arts) + assets,
     )
 
@@ -450,7 +463,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {{ outline: 3px solid
 .report > p:nth-child(2) {{ font-size: 1.12rem; line-height: 1.8; border-left: 4px solid var(--whistle); padding: .2rem 0 .2rem 1.1rem; margin: 1.5rem 0; }}
 .report h2 {{ font: 700 clamp(1.5rem, 3.2vw, 2rem)/1.2 var(--display); letter-spacing: .01em; margin: 3.25rem 0 1rem;
   padding-top: 1.25rem; border-top: 3px solid var(--ink); }}
-.report[lang="zh-CN"] h2 {{ font-family: var(--body); font-weight: 700; font-size: clamp(1.3rem, 2.8vw, 1.65rem); }}
+{lang_css}
 .report h3 {{ font-size: 1.08rem; margin: 2rem 0 .6rem; color: var(--ink); }}
 .report p, .report li {{ max-width: 42rem; }}
 .report ul, .report ol {{ padding-left: 1.3rem; }}
@@ -530,7 +543,7 @@ td strong {{ color: var(--whistle); }}
   const buttons = document.querySelectorAll("[data-set-lang]");
   const playBtns = document.querySelectorAll("[data-play]");
   const seek = document.querySelector(".seek"), clock = document.querySelector(".clock"), speedBtn = document.querySelector(".speed");
-  const audios = {{ zh: document.getElementById("audio-zh"), en: document.getElementById("audio-en") }};
+  const audios = Object.fromEntries([...document.querySelectorAll("audio[data-lang]")].map(a => [a.dataset.lang, a]));
   const speeds = [1, 1.25, 1.5];
   let lang = Object.keys(titles)[0], speed = 0;
   const fmt = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
@@ -607,20 +620,21 @@ td strong {{ color: var(--whistle); }}
     seek?.setAttribute("aria-label", ui[lang].seek);
     speedBtn?.setAttribute("aria-label", ui[lang].speed);
     document.querySelector(".lang").setAttribute("aria-label", ui[lang].switch);
-    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.documentElement.lang = document.querySelector('.report[data-lang="' + lang + '"]')?.lang || lang;
     document.title = titles[lang];
     try {{ localStorage.setItem("report-lang", lang); }} catch (e) {{}}
     const url = new URL(location.href); url.searchParams.set("lang", lang);
-    if (keepPlace && /^#(zh|en)-s\\d+$/.test(url.hash)) url.hash = section ? lang + "-s" + section : "";
+    if (keepPlace && /^#([a-z]{{2,3}})-s\\d+$/.test(url.hash)) url.hash = section ? lang + "-s" + section : "";
     history.replaceState(null, "", url);
     if (section) document.getElementById(lang + "-s" + section)?.scrollIntoView();
     syncAudio();
   }}
   buttons.forEach(b => b.addEventListener("click", () => setLang(b.dataset.setLang, true)));
-  const fromHash = location.hash.match(/^#(zh|en)-s\\d+$/);
+  const fromHash = location.hash.match(/^#([a-z]{{2,3}})-s\\d+$/);
   let start = fromHash ? fromHash[1] : new URLSearchParams(location.search).get("lang");
   if (!start) {{ try {{ start = localStorage.getItem("report-lang"); }} catch (e) {{}} }}
-  if (!start && !/^zh/i.test(navigator.language || "")) start = "en";
+  const nav = (navigator.language || "").slice(0, 2).toLowerCase();  // the reader's language, else English
+  if (!start) start = titles[nav] ? nav : "en";
   setLang(start || Object.keys(titles)[0], false);
   if (fromHash) document.querySelector(location.hash)?.scrollIntoView();  // target was hidden at load
   const clipHash = location.hash.match(/^#clip-([0-9_-]+)$/);  // language-free link to a clip

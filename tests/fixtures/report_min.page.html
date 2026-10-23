@@ -96,7 +96,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .report > p:nth-child(2) { font-size: 1.12rem; line-height: 1.8; border-left: 4px solid var(--whistle); padding: .2rem 0 .2rem 1.1rem; margin: 1.5rem 0; }
 .report h2 { font: 700 clamp(1.5rem, 3.2vw, 2rem)/1.2 var(--display); letter-spacing: .01em; margin: 3.25rem 0 1rem;
   padding-top: 1.25rem; border-top: 3px solid var(--ink); }
-.report[lang="zh-CN"] h2 { font-family: var(--body); font-weight: 700; font-size: clamp(1.3rem, 2.8vw, 1.65rem); }
+.report[lang="zh-CN"] h2, .report[lang="ja"] h2, .report[lang="ko"] h2 { font-family: var(--body); font-weight: 700; font-size: clamp(1.3rem, 2.8vw, 1.65rem); }
+[lang="ja"] { --body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif; font-family: var(--body); }
+[lang="ko"] { --body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; font-family: var(--body); }
 .report h3 { font-size: 1.08rem; margin: 2rem 0 .6rem; color: var(--ink); }
 .report p, .report li { max-width: 42rem; }
 .report ul, .report ol { padding-left: 1.3rem; }
@@ -239,7 +241,7 @@ td strong { color: var(--whistle); }
   const buttons = document.querySelectorAll("[data-set-lang]");
   const playBtns = document.querySelectorAll("[data-play]");
   const seek = document.querySelector(".seek"), clock = document.querySelector(".clock"), speedBtn = document.querySelector(".speed");
-  const audios = { zh: document.getElementById("audio-zh"), en: document.getElementById("audio-en") };
+  const audios = Object.fromEntries([...document.querySelectorAll("audio[data-lang]")].map(a => [a.dataset.lang, a]));
   const speeds = [1, 1.25, 1.5];
   let lang = Object.keys(titles)[0], speed = 0;
   const fmt = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
@@ -316,20 +318,21 @@ td strong { color: var(--whistle); }
     seek?.setAttribute("aria-label", ui[lang].seek);
     speedBtn?.setAttribute("aria-label", ui[lang].speed);
     document.querySelector(".lang").setAttribute("aria-label", ui[lang].switch);
-    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.documentElement.lang = document.querySelector('.report[data-lang="' + lang + '"]')?.lang || lang;
     document.title = titles[lang];
     try { localStorage.setItem("report-lang", lang); } catch (e) {}
     const url = new URL(location.href); url.searchParams.set("lang", lang);
-    if (keepPlace && /^#(zh|en)-s\d+$/.test(url.hash)) url.hash = section ? lang + "-s" + section : "";
+    if (keepPlace && /^#([a-z]{2,3})-s\d+$/.test(url.hash)) url.hash = section ? lang + "-s" + section : "";
     history.replaceState(null, "", url);
     if (section) document.getElementById(lang + "-s" + section)?.scrollIntoView();
     syncAudio();
   }
   buttons.forEach(b => b.addEventListener("click", () => setLang(b.dataset.setLang, true)));
-  const fromHash = location.hash.match(/^#(zh|en)-s\d+$/);
+  const fromHash = location.hash.match(/^#([a-z]{2,3})-s\d+$/);
   let start = fromHash ? fromHash[1] : new URLSearchParams(location.search).get("lang");
   if (!start) { try { start = localStorage.getItem("report-lang"); } catch (e) {} }
-  if (!start && !/^zh/i.test(navigator.language || "")) start = "en";
+  const nav = (navigator.language || "").slice(0, 2).toLowerCase();  // the reader's language, else English
+  if (!start) start = titles[nav] ? nav : "en";
   setLang(start || Object.keys(titles)[0], false);
   if (fromHash) document.querySelector(location.hash)?.scrollIntoView();  // target was hidden at load
   const clipHash = location.hash.match(/^#clip-([0-9_-]+)$/);  // language-free link to a clip

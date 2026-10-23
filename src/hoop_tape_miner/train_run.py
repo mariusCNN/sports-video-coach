@@ -36,7 +36,7 @@ class Session(P.Session):
     def load(cls, folder: Path) -> "Session":
         if not T.is_session(folder):
             sys.exit(f"{folder / 'session.json'} not found: start with `hoop-tape-miner train <phone videos>`")
-        return cls(Path(folder), T.load_session(folder), P.profile_langs())
+        return cls(Path(folder), T.load_session(folder), P.profile_langs(P.LANGS))
 
 
 def review_done(g: Session) -> bool:

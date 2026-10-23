@@ -44,7 +44,7 @@ class Session(P.Session):
     def load(cls, folder: Path) -> "Session":
         if not M.is_movement(folder):
             sys.exit(f"{folder / 'movement.json'} not found: start with `hoop-tape-miner move --spec segments.json`")
-        return cls(Path(folder), M.load(folder), P.profile_langs())
+        return cls(Path(folder), M.load(folder), P.profile_langs(P.LANGS))
 
 
 def side_segments(g: Session) -> list[str]:

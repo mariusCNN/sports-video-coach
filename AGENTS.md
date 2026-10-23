@@ -15,7 +15,8 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    `sports-video-coach plugins` lists the plugins, what each analyses and when to use it (`--json` for you).
 2. `sports-video-coach run <video...> [--plugin NAME] [--sport S] [--focus WHO] [--lang en zh]` starts a unit
    folder from the videos and drives it. Later runs take that folder: `sports-video-coach run <folder>`. `--status`
-   lists every step; `run --help` lists every option.
+   lists every step; `run --help` lists every option. `--lang` takes `zh en ja ko es fr de pt` (one or several;
+   basketball units: zh and en).
 3. Exit codes:
    - `3` an agent step is waiting: the output names the step and says exactly what to write and with which guide
      (`sports-video-coach guide <name>` prints a guide). Do it, then run again.

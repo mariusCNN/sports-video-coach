@@ -50,12 +50,16 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 - At most two levels of nesting. Details (long reasoning, references) go at the end under `## Notes`.
 - Write the labels in the report's language. In `README.md` (Chinese) use these, so every Chinese report reads the
   same: **录像里看到的** / **为什么会这样** / **正确的样子** / **练习** / **下次怎么检查**, `## 继续保持`, `## 备注`,
-  and `**一句话：**` for the bottom line.
-- review.json is written in the first language of `languages`. The report in that language may use its words;
-  every other report translates them. English words left in a Chinese report: `likely` / `unclear` become
-  **可能** / **看不清（不确定）**, and every other English phrase is translated unless it is a name.
+  and `**一句话：**` for the bottom line. In `README.ja.md` (Japanese): **映像で見えたこと** / **なぜ起きるか** /
+  **正しい形** / **練習** / **次回の確認方法**, `## 続けること`, `## 備考`, and `**ひとことで：**`. Any other
+  language: the same labels in that language.
+- Write every deliverable in its own language, with no other language's words left in. review.json is written in
+  the first language of `languages`; the report in that language may use its words, every other report translates
+  them. `likely` / `unclear` become **可能** / **看不清（不确定）** in Chinese, **おそらく** / **見えない（不確か）**
+  in Japanese, and every other English phrase is translated unless it is a name (`page-check` flags the ones left).
 - The title's `<who>` is the focus person: `focus` in `analysis.json`, named in each report's own words (e.g.
   "the player in orange" -> 穿橙色的球员 in `README.md`). No `focus`: name who the review coached.
 - The page shows the sport under the title. A sport the page cannot name in Chinese (it knows tennis, basketball,
   football and about 25 more) is left out of the zh header; to name it, set `"sport": {"zh": "折返跑", "en": "shuttle
-  run"}` in `analysis.json`.
+  run"}` in `analysis.json`. Japanese works the same way (`"ja": "シャトルラン"`); other languages show the English
+  name unless the dict gives theirs.

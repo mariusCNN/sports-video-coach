@@ -47,4 +47,24 @@ Built in (`generic`) ▶ entry points (`sports_video_coach.plugins`) ▶ local f
 Personal data lives in `$SVC_WORKSPACE` (or `$HOOP_WORKSPACE`), default `./workspace`, gitignored. The profile
 (languages, who to coach, default artifacts) is `profile.json` there, or `team.json` for basketball.
 
+## Languages
+
+`langs.py` is the one table of report languages: zh, en, ja, ko, es, fr, de, pt. Every core stage reads it:
+`run` / `new` take its codes for `--lang`, `narrate` its voices (an unknown code is an error, never another
+language's voice), `film` its subtitle fonts, line lengths and tags, the page its `lang` attributes, CJK headings,
+fonts and labels, `publish` its hub labels, `page-check` which reports to scan for English left in.
+
+- Files: `README.md` is the Chinese report, `README.<code>.md` every other language; `listen.<code>.md` and
+  `film.<code>.md` for all of them.
+- Page labels: zh, en and ja have their own; a language without them (ko, es, fr, de, pt for now) shows the
+  English labels around its own report text.
+- Basketball units stay zh + en: its charts and stat tables know only those two.
+
+Add a language: one `Lang(...)` in `LANGS` with its code (the file suffix), BCP 47 tag, English name, switch
+label, two edge-tts voices (`edge-tts --list-voices`), read rate (`per_min`: what `count()` counts in a minute;
+measure it on a rendered script), `cjk=True` for a language written without spaces (counts characters, wraps
+anywhere, gets the CJK heading style), its subtitle fonts per platform, an optional page font stack, page labels
+(`ui`, keys as in `UI_EN`) and film tags. Then add the language's report labels to the guides in
+`plugins/generic/prompts/` and a test.
+
 See [plugins.md](plugins.md) to write a plugin and [pipeline.md](pipeline.md) for the basketball stages.

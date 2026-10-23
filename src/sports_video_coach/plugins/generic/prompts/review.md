@@ -42,7 +42,8 @@ between two tiles faster than they can move, zoom in on those seconds before coa
 }
 ```
 
-- Write `what`, `why` and `summary` in the first language of `languages` (the report is written from them).
+- Write `what`, `why` and `summary` in the first language of `languages` (the report is written from them), wholly
+  in that language: no other language's words left in.
 - `start` / `end`: video time, mm:ss or mm:ss.s, a window of 4-15 s that shows the moment (it becomes a clip).
 - `what`: what is seen, concretely (body part, ball, position). No praise words without a fact.
   When only position and timing are visible (a far camera, a small figure), coach those and say so in

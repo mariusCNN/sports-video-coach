@@ -210,7 +210,7 @@ def four_factors_panel(folder: Path, names: dict | None = None, langs: list[tupl
     ff, pp = allv["four_factors"], allv.get("ppp") or {}
     us, them = ff.get("us") or {}, ff.get("them") or {}
     names = names or {}
-    langs = langs or LANGS
+    langs = langs or LANGS[:2]  # basketball pages are zh + en
     first = langs[0][0]
 
     def hide(c):

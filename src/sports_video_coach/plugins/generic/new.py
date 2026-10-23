@@ -14,7 +14,7 @@ import datetime as dt
 import json
 from pathlib import Path
 
-from sports_video_coach import artifacts, media, pipeline, workspace
+from sports_video_coach import artifacts, langs, media, pipeline, workspace
 from sports_video_coach.render_html import sport_names
 
 from . import NAME, SPORT
@@ -48,7 +48,7 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--focus", default="", help="who to coach, e.g. 'the player in red' or a jersey number")
     ap.add_argument("--name", help="folder name (default: sport or the first video's name)")
     ap.add_argument("--date", help="YYYY-MM-DD (default: the first video's recording date, else today)")
-    ap.add_argument("--lang", nargs="+", choices=pipeline.LANGS, help="report languages (default: profile, else en)")
+    ap.add_argument("--lang", nargs="+", choices=langs.CODES, help="report languages (default: profile, else en)")
     ap.add_argument("--artifacts", nargs="+", choices=artifacts.NAMES, help="deliverables to build (default: "
                     "profile, else all); " + artifacts.IMPLIED_HELP)
     ap.add_argument("--every", type=float, help="seconds between contact-sheet tiles (default: 0.5 up to 30 s "
@@ -99,6 +99,9 @@ def main(argv=None) -> Path:
         print(f"[new] sport {sport!r} has no Chinese name for the zh page: start again with --sport-zh, e.g. "
               f'`--sport "{sport.replace("-", " ")}" --sport-zh 折返跑`, or set "sport": {{"zh": "折返跑", "en": '
               f'"{sport.replace("-", " ")}"}} in analysis.json')
+    if "ja" in data["languages"] and isinstance(sport, str) and not sport_names(sport, ("ja", "en")).get("ja"):
+        print(f"[new] sport {sport!r} has no Japanese name for the ja page: set \"sport\": {{\"ja\": \"<name>\", "
+              f'"en": "{sport.replace("-", " ")}"}} in analysis.json')
     print(pipeline.slash(folder))
     return folder
 

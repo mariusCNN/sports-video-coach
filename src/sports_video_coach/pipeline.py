@@ -34,25 +34,27 @@ from pathlib import Path
 from typing import Callable, ClassVar
 
 from . import artifacts, clips, media, workspace
+from . import langs as L
 
 WAITING = 3
-LANGS = ("zh", "en")
+LANGS = ("zh", "en")  # the default report languages; langs.CODES lists every one the core knows
 STORE = ".hoop-steps.json"
 SMALL = 1 << 20      # files below this size are signed by content, larger ones by size + mtime
 
 
-def profile_langs() -> tuple:
-    """Report languages from team.json `languages` (default zh + en); the page, voices and charts know zh and en."""
+def profile_langs(allowed: tuple = L.CODES) -> tuple:
+    """Report languages from team.json `languages` (default zh + en), each one of `allowed` (default: every
+    language of langs.py; a plugin whose charts know fewer passes its own)."""
     langs = tuple(dict.fromkeys(workspace.profile().get("languages") or LANGS))
-    bad = [l for l in langs if l not in LANGS]
+    bad = [l for l in langs if l not in allowed]
     if bad:
-        sys.exit(f"team.json languages {list(langs)}: {bad} not supported (choose from {list(LANGS)})")
+        sys.exit(f"team.json languages {list(langs)}: {bad} not supported (choose from {list(allowed)})")
     return langs
 
 
 def readme(lang: str) -> str:
-    """README.md is the Chinese report, README.<lang>.md any other language (same rule as render_html)."""
-    return "README.md" if lang == "zh" else f"README.{lang}.md"
+    """README.md is the Chinese report, README.<lang>.md any other language (langs.readme)."""
+    return L.readme(lang)
 
 
 def localised(name: str, lang: str) -> str:
@@ -302,10 +304,13 @@ def adopt(steps: list[Step], g: Unit, store: Store) -> None:
 
 def qa_hash(g: Unit) -> str:
     """Stamp of what QA checks: the text of each report's pages and READMEs, plus the name and size of its audio
-    and clips. Any edit after QA changes it."""
+    and clips. Any edit after QA changes it. READMEs of languages beyond zh / en count only when they exist, so
+    the stamps of zh / en units stay as they were."""
     h = hashlib.sha256()
+    more = [L.readme(c) for c in L.CODES if c not in ("zh", "en")]
     for d in g.reports():
-        for p in [d / n for n in ("index.html", "README.md", "README.en.md")]:
+        names = ["index.html", "README.md", "README.en.md", *(n for n in more if (d / n).exists())]
+        for p in [d / n for n in names]:
             h.update(f"{p.relative_to(g.folder).as_posix()}\0".encode())
             h.update(p.read_bytes() if p.exists() else b"-")
         for p in sorted([*d.glob("listen.*.mp3"), *d.glob("clips/*")]):
@@ -392,9 +397,12 @@ def html_done(g: Unit) -> bool:
 
 
 def missing(paths: list[Path], g: Unit) -> list[str]:
-    """`missing: <path> (Chinese)` per file not written yet, so the agent sees each exact name (listen.zh.md)."""
-    return [f"missing: {slash(p.as_posix())}" + (" (Chinese)" if p.name.split(".")[-2:-1] == ["zh"] else "")
-            for p in paths if not p.exists()]
+    """`missing: <path> (Chinese)` per file not written yet, so the agent sees each exact name (listen.zh.md); every
+    language but English is named."""
+    def note(p):
+        code = "".join(p.name.split(".")[-2:-1])
+        return f" ({L.name(code)})" if code in L.LANGS and code != "en" else ""
+    return [f"missing: {slash(p.as_posix())}{note(p)}" for p in paths if not p.exists()]
 
 
 def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film_script_how: str,

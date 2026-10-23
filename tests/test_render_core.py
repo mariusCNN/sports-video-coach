@@ -7,7 +7,8 @@ from hoop_tape_miner import page_hooks
 from sports_video_coach import plugin, render_html
 
 FIXTURE = Path(__file__).parent / "fixtures" / "report_min"
-# page(FIXTURE) rendered by hoop_tape_miner.render_html before it moved into the core (commit 65734f0).
+# page(FIXTURE) rendered by hoop_tape_miner.render_html before it moved into the core (commit 65734f0); since then
+# only the language registry changed it (CJK / Japanese / Korean CSS, a language-free switch script).
 GOLDEN = Path(__file__).parent / "fixtures" / "report_min.page.html"
 
 
