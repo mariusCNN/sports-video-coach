@@ -26,7 +26,8 @@ Seven of ten tosses in front of the head: that is the target for next week.
 - Scene lines: `## Title` (chapter card), `![caption](clip:mm:ss-mm:ss)`, `![caption](stat:<number>)`,
   `![caption](picture.png)` (a figure in the folder).
 - Freeze lines after a clip: `> 0:12.5 0.45,0.80 "label"` stops the clip at 0:12.5 and rings that spot (x,y as
-  fractions of the frame from the top left, no brackets; read them off the contact-sheet tile; to mark a person,
+  fractions of the frame from the top left, no brackets; read them off the contact-sheet tile, whose frame ends at
+  the thin dark gap around it, not off the whole sheet; to mark a person,
   point at their feet). `0.2,0.8->0.6,0.8` draws an arrow; several marks may follow the time, but only one
   `"label"` per line, always last: `> 0:12.5 0.45,0.80 0.60,0.78 "both feet"` rings two spots. `>` alone resumes.
   The frame outside the rings is dimmed, so ring the ball too (a second spot) when the label is about it.

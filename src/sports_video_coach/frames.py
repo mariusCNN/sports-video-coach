@@ -3,15 +3,16 @@
 usage: sports-video-coach frames <video> --out <folder>/run/frames [--every 2] [--cols 4] [--rows 3] [--width 480]
            [--start mm:ss.s --end mm:ss.s]
 
-Writes `sheet_NNN.jpg` (cols x rows tiles, in time order) and `frames.json`:
+Writes `sheet_NNN.jpg` (cols x rows tiles, in time order, split by a thin dark gap; each tile is one whole frame, so
+x,y fractions read off a tile are fractions of the frame, as `film` freeze marks take them) and `frames.json`:
   {"video", "duration_s", "every_s", "sheets": [{"file", "start", "end", "tiles": ["mm:ss", ...]}]}
 When the video joins several files (the unit json's `sources`), frames.json lists them as `parts` (file, start,
 end on the joined timeline) and the first tile of each later file is labelled "part N/M".
 Each label is the video time of the frame shown: mm:ss when every tile falls on a whole second (whole-second
 sheets start at a whole second), else mm:ss.s (tiles under a second apart fall on whole tenths).
 An agent opens the sheets in order, notes what happens and when, then cuts closer looks with `clips`. Sheets that
-already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width`, `labels` and the
-video size).
+already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width`, `labels`, `gap_px`
+and the video size).
 A close look at one moment: `--start 0:12 --end 0:14 --every 0.1 --out run/frames-zoom` (tenths in the labels).
 """
 from __future__ import annotations
@@ -50,6 +51,15 @@ def shown_at(cap, t: float) -> float:
 def labels(ts: list[float]) -> int:
     """Decimals of the tile labels: 0 when every tile time is a whole second, else 1 (mm:ss.s)."""
     return 0 if all(float(t).is_integer() for t in ts) else 1
+
+
+GAP, GAP_BGR = 3, (40, 40, 40)  # a thin dark line between tiles, so tile edges show on a uniform court
+
+
+def tile_origin(n: int, cols: int, width: int, th: int) -> tuple[int, int]:
+    """Top left pixel (x, y) of tile `n` (0-based, row by row) on a sheet of `width` x `th` tiles split by GAP."""
+    r, c = divmod(n, cols)
+    return c * (width + GAP), r * (th + GAP)
 
 
 def sheets(ts: list[float], per: int) -> list[list[float]]:
@@ -99,7 +109,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
     import numpy as np
     duration = media.duration_s(video)
     settings = dict(every_s=every, cols=cols, rows=rows, width=width, labels="frame",  # labels: shown frame's time
-                    size=list(media.video_size(video)))
+                    gap_px=GAP, size=list(media.video_size(video)))
     if start is not None or end is not None:  # a window; whole-video sheets keep their old settings keys
         settings.update(start_s=start or 0.0, end_s=end)
     if sources:
@@ -130,10 +140,13 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
         if not tiles:
             continue
         th = max(f.shape[0] for _, f in tiles)
-        blank = np.zeros((th, width, 3), np.uint8)
-        cells = [cv2.copyMakeBorder(f, 0, th - f.shape[0], 0, 0, cv2.BORDER_CONSTANT) for _, f in tiles]
-        cells += [blank] * (cols * rows - len(cells))
-        grid = np.vstack([np.hstack(cells[r * cols:(r + 1) * cols]) for r in range(rows)])
+        grid = np.full((rows * th + (rows - 1) * GAP, cols * width + (cols - 1) * GAP, 3), GAP_BGR, np.uint8)
+        for n in range(cols * rows):  # each frame whole at its tile's top left (black below a shorter one, and in
+            x, y = tile_origin(n, cols, width, th)  # the empty tiles after the last); the gap lies outside it
+            grid[y:y + th, x:x + width] = 0
+            if n < len(tiles):
+                f = tiles[n][1]
+                grid[y:y + f.shape[0], x:x + width] = f
         name = f"sheet_{i:03d}.jpg"
         cv2.imwrite(str(out / name), grid, [cv2.IMWRITE_JPEG_QUALITY, 80])
         data["sheets"].append(dict(file=name, start=mmss(tiles[0][0], dec), end=mmss(tiles[-1][0], dec),

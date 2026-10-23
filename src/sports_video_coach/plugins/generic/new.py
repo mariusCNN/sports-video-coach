@@ -55,7 +55,8 @@ def parser() -> argparse.ArgumentParser:
                     help="the sport's name on that language's page, e.g. ja=シャトルラン or zh=折返跑; repeat it per "
                     "language (most sports have zh and ja names built in: tennis shows as 网球 / テニス)")
     ap.add_argument("--sport-zh", metavar="NAME", help="the same as --sport-name zh=NAME")
-    ap.add_argument("--focus", default="", help="who to coach, e.g. 'the player in red' or a jersey number")
+    ap.add_argument("--focus", default="", help="who to coach, e.g. 'the player in red' or a jersey number; "
+                    "several players in one report: --focus 'A in red, B in yellow' (one section each, in this order)")
     ap.add_argument("--name", help="folder name (default: sport or the first video's name)")
     ap.add_argument("--date", help="YYYY-MM-DD (default: the first video's recording date, else today)")
     ap.add_argument("--lang", nargs="+", choices=langs.CODES, help="report languages (default: profile, else en)")

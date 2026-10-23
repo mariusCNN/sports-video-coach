@@ -80,14 +80,20 @@ TARGET_S = (120, 240)  # film length the guides ask for (2-4 min)
 
 
 def target_s(video_s: float | None) -> tuple[int, int]:
-    """The film length (seconds) the guide asks for: 2-4 min, from about a minute when the source is under one
-    (a 20 s drill does not hold two minutes of explaining)."""
+    """The film length (seconds) the guide asks for: 2-4 min; for a source under a minute two to four times its
+    length to the nearest 5 s, as the guide states it (a 22 s drill: 45-90 s), at least 30-60 s."""
     if video_s is None or video_s >= 60:
         return TARGET_S
-    return max(30, int(round(2 * video_s))), TARGET_S[1]
+    lo = max(30, 5 * round(2 * video_s / 5))
+    return lo, max(60, 5 * round(4 * video_s / 5))
+
+
+def length_text(s: float) -> str:
+    """A film length as --dry prints it: seconds under 2 min (58 s never reads as 1.0 min), else minutes."""
+    return f"{s:.0f} s" if s < 120 else f"{s / 60:.1f} min"
 WORD_RE = re.compile(r"[^\W_]")  # a letter, digit or CJK character: something to speak
 STILL_MAX_S = 12.0  # --dry notes a still scene (title, stat, picture) that talks longer than this
-FONT = L.font("zh")  # the default subtitle font (zh, en and Latin scripts); ja / ko have their own (langs.font)
+FONT = L.font("zh")  # the Chinese subtitle font (plugin title cards); every language has its own (langs.font)
 BG = "#14161f"
 
 TIME = r"\d{1,2}:\d{2}(?:\.\d)?"
@@ -572,12 +578,16 @@ def report_title(folder: Path, lang: str | None) -> str:
 
 
 def title_text(folder: Path, data: dict, h: int, hooks: FilmHooks = GENERIC, lang: str | None = None) -> str:
-    """The title card: hooks.title, else the unit json `title`, the report's heading or the folder name, over its date."""
+    """The title card: hooks.title, else the unit json `title`, the report's heading or the folder name, over its date
+    (written the language's way, langs.date)."""
     if hooks.title:
         return hooks.title(folder, data, h)
-    head = str(data.get("title") or report_title(folder, lang) or folder.resolve().name)
+    def shown(d):
+        return L.date(d, lang) if lang else d
+    head = str(data.get("title") or report_title(folder, lang) or shown(folder.resolve().name))
     sub = str(data.get("date") or folder_date(folder))
-    return title_lines(head, "" if sub in head else sub, h)  # a heading "<sport>: <who>, <date>" has it
+    # a heading "<sport>: <who>, <date>" has it already
+    return title_lines(head, "" if sub in head or shown(sub) in head else shown(sub), h)
 
 
 # ---- speech ------------------------------------------------------------------------------------------------
@@ -815,12 +825,12 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
                       f"  label {label!r}")
             if sc.kind != "clip" and length > STILL_MAX_S:
                 print(f"      note: {length:.0f} s on a still picture; split the text or move part of it to a clip")
-        print(f"{len(scenes)} scenes, about {total / 60:.1f} min")
+        print(f"{len(scenes)} scenes, about {length_text(total)}")
         lo, hi = target_s(video_s)
-        if not lo <= total <= hi:  # a warning, not an error
-            span = f"{lo // 60}-{hi // 60} min" if lo >= 60 else f"{lo} s - {hi // 60} min"
+        if not lo <= round(total) <= hi:  # a warning, not an error; compared as printed
+            span = f"{lo // 60}-{hi // 60} min" if lo >= 120 else f"{lo}-{hi} s"
             source = f" with a {video_s:.0f} s video" if video_s is not None and video_s < 60 else ""
-            print(f"note: about {total / 60:.1f} min, {'under' if total < lo else 'over'} the {span} the film "
+            print(f"note: about {length_text(total)}, {'under' if total < lo else 'over'} the {span} the film "
                   f"guide aims for{source}; " + (
                       "add a moment the report covers or a slow replay of one; fine for a short report, never pad"
                       if total < lo else "cut scenes unless that is on purpose"))
@@ -918,7 +928,8 @@ def main(argv=None):
     ap.add_argument("--crf", type=int, default=CRF, help=f"x264 quality, higher = smaller file (default {CRF}; "
                                                           "28 is about half the size)")
     ap.add_argument("--font", help=f"subtitle font, must cover the script's language (default per language: {FONT} "
-                                   f"for zh, en and Latin scripts, {L.font('ja')} for ja, {L.font('ko')} for ko)")
+                                   f"for zh, {L.font('en')} for en and other Latin scripts, {L.font('ja')} for ja, "
+                                   f"{L.font('ko')} for ko)")
     ap.add_argument("--scenes", help="render only scenes A-B (1-based) into film.<lang>.preview.mp4")
     ap.add_argument("--dry", action="store_true", help="check the script and print scenes with estimated lengths")
     ap.add_argument("--force", action="store_true", help="re-render a language whose film is newer than its script "

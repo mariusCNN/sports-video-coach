@@ -2,7 +2,9 @@
 
 Reads `<folder>/index.html` and checks: every local src / href / poster exists, every `#anchor` has its id, every
 clip and listen.<lang>.mp3 in the folder is linked and readable (ffprobe duration > 0), no local disk path leaked
-into the page, and a mobile viewport is declared. Prints the problems and exits 1, else prints OK and exits 0.
+into the page, a mobile viewport is declared, and no page label of another language (langs.py `ui`: "Listen to
+the report" in the Spanish part) sits in a language's part. Prints the problems and exits 1, else prints OK and
+exits 0.
 It also warns (without failing) about English phrases left inside a report in another language (Chinese, Japanese,
 Korean: any English phrase; Spanish, French ...: the guides' hedge words).
 
@@ -15,6 +17,7 @@ import argparse
 import html as html_lib
 import re
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -69,7 +72,82 @@ def problems(folder: Path) -> list[str]:
         errs.append(f"a local disk path is in the page ({html[leak.start():leak.start() + 40]!r}...)")
     if 'name="viewport"' not in html:
         errs.append("no <meta name=\"viewport\">: phones will show a zoomed-out desktop page")
-    return errs
+    return errs + foreign_labels(html)
+
+
+class _Texts(HTMLParser):
+    """(language code, text) of every text node and aria-label: the language of the nearest data-lang (else lang)
+    around it, the page's <html lang> outside any; scripts and styles skipped."""
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack: list[tuple[str, str | None]] = []  # (tag, code)
+        self.out: list[tuple[str, str]] = []
+        self.skip = 0
+
+    def code(self, attrs: dict) -> str | None:
+        if attrs.get("data-lang"):
+            return attrs["data-lang"]
+        if attrs.get("lang"):
+            tag = attrs["lang"].lower()
+            return next((c for c, l in L.LANGS.items() if l.tag.lower() == tag), tag.split("-")[0])
+        return next((c for _, c in reversed(self.stack) if c), None)
+
+    def handle_starttag(self, tag, attrs):
+        a = {k: v or "" for k, v in attrs}
+        code = self.code(a)
+        if a.get("aria-label") and code:
+            self.out.append((code, a["aria-label"]))
+        if tag in self.VOID:
+            return
+        self.stack.append((tag, code))
+        self.skip += tag in ("script", "style")
+
+    def handle_endtag(self, tag):
+        while self.stack:  # close up to the matching tag (a missing end tag never shifts the languages)
+            t, _ = self.stack.pop()
+            if t == tag:
+                self.skip -= tag in ("script", "style")
+                break
+
+    def handle_data(self, data):
+        code = next((c for _, c in reversed(self.stack) if c), None)
+        if data.strip() and code and not self.skip:
+            self.out.append((code, data.strip()))
+
+
+def label_patterns() -> dict[str, list[tuple[str, re.Pattern]]]:
+    """{language: [(label, pattern)]}: each page label (langs.py `ui`) as a whole text, placeholders ({m}, {s})
+    matching a number; a label may be followed by numbers and punctuation only ("Clip 1 · 00:02–00:06", "Slow-mo ½×")."""
+    out = {}
+    for code in L.CODES:
+        pats = []
+        for label in dict.fromkeys(L.ui(code).values()):
+            body = "".join(r"[\d.,]+" if part.startswith("{") else re.escape(part)
+                           for part in re.split(r"(\{\w+\})", label) if part)
+            pats.append((label, re.compile(body + r"[\s\d.,:·–\-½×()]*")))
+        out[code] = pats
+    return out
+
+
+def foreign_labels(page: str) -> list[str]:
+    """Page labels of another language inside a language's part of the page ("Listen to the report" in the Spanish
+    part), unless the label is also that language's own ("Clip" is English, Spanish and German)."""
+    parser = _Texts()
+    parser.feed(page)
+    pats = label_patterns()
+    found: dict[tuple[str, str], str] = {}  # (part's language, text) -> the language whose label it is
+    for code, text in parser.out:
+        if code not in L.LANGS or (code, text) in found:
+            continue
+        own = set(L.ui(code).values())
+        other = next((o for o, labels in pats.items() if o != code
+                      for label, pat in labels if label not in own and pat.fullmatch(text)), None)
+        if other:
+            found[(code, text)] = other
+    return [f"{text!r}: {L.name(other)} page label inside the {L.name(code)} part of the page; the page labels "
+            f"come from langs.py `ui` (re-run `sports-video-coach html`)" for (code, text), other in found.items()]
 
 
 def warnings(folder: Path) -> list[str]:

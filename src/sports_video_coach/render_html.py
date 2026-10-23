@@ -41,7 +41,7 @@ MD = MarkdownIt("commonmark", {"html": False}).enable("table")
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
 # (code, html lang, switch label, README) per registry language, zh first (langs.py)
 LANGS = [(c, l.tag, l.button, langs_.readme(c)) for c, l in langs_.LANGS.items()]
-UI = {c: langs_.ui(c) for c in langs_.CODES}  # labels per language; English where a language has none
+UI = {c: langs_.ui(c) for c in langs_.CODES}  # labels per language (langs.py)
 # CJK headings use the body face; Japanese and Korean text gets its own fonts (not the Chinese glyph forms)
 LANG_CSS = "\n".join(
     [", ".join(f'.report[lang="{l.tag}"] h2' for l in langs_.LANGS.values() if l.cjk) +
@@ -122,14 +122,16 @@ def default_board(folder: Path, data: dict, sport: str, heading: str, langs=("en
 
 
 def default_band(sb: dict, lab) -> str:
+    """The plain band: the title over sport · date, both in each page language (the date the reader's way)."""
     names = sb["sport"] if isinstance(sb["sport"], dict) else {"": str(sb["sport"])}
-    def line(name):
-        return " · ".join(html.escape(x) for x in (name, sb["date"]) if x)
-    if len(set(names.values())) > 1:  # one span per language, the switch shows one (first language visible)
-        meta = "".join(f'<span data-lang="{c}"{" hidden" if i else ""}>{line(n)}</span>'
-                       for i, (c, n) in enumerate(names.items()))
+    def line(code, name):
+        return " · ".join(html.escape(x) for x in (name, langs_.date(sb["date"], code)) if x)
+    lines = {c: line(c, n) for c, n in names.items()}
+    if len(set(lines.values())) > 1:  # one span per language, the switch shows one (first language visible)
+        meta = "".join(f'<span data-lang="{c}"{" hidden" if i else ""}>{t}</span>'
+                       for i, (c, t) in enumerate(lines.items()))
     else:
-        meta = line(next(iter(names.values()), ""))
+        meta = next(iter(lines.values()), "")
     return f"""<div class="score" data-result="plain">
       <div class="team us"><span class="name">{sb["heading"]}</span><span class="side">{meta}</span></div>
     </div>"""
@@ -262,11 +264,13 @@ def readme_name(code: str) -> str:
 
 
 def report_langs(folder: Path) -> list[tuple]:
-    """LANGS entries whose README exists in folder, in LANGS order (zh first); the first one is the default."""
+    """LANGS entries whose README exists in folder, in the unit's `languages` order, then LANGS order (zh first);
+    the first one is the default (the page's lang, the visible text), as in `film`."""
     langs = [l for l in LANGS if (folder / l[3]).exists()]
     if not langs:
         raise SystemExit(f"{folder} has no report README ({' / '.join(l[3] for l in LANGS)})")
-    return langs
+    order = [c for c in (units.load(folder).get("languages") or []) if isinstance(c, str)]
+    return sorted(langs, key=lambda l: order.index(l[0]) if l[0] in order else len(order))
 
 
 def first_readme(folder: Path) -> Path:

@@ -2,8 +2,9 @@
 
 A language is its code (the file suffix: README.ja.md, listen.ja.md, film.ja.md; `--lang ja`), its BCP 47 tag for
 the page, the edge-tts voice that reads it, how its text is counted and wrapped (CJK: no spaces between words), its
-read speed for length estimates, the subtitle font per platform and the page's labels. README.md is the Chinese
-report, README.<code>.md every other language. A language without its own page labels shows the English ones.
+read speed for length estimates, the subtitle font per platform, the page's labels and how it writes a date.
+README.md is the Chinese report, README.<code>.md every other language. Every language has its own page labels; a
+code outside the table shows the English ones.
 
 Add a language: one `Lang(...)` in LANGS (docs/architecture.md says what each field does).
 """
@@ -14,8 +15,10 @@ import sys
 from dataclasses import dataclass, field
 from functools import cache
 
-# the film's subtitle font since the first release; it covers Latin scripts too
-DEFAULT_FONTS = {"win32": "Microsoft YaHei", "darwin": "PingFang SC", "other": "Noto Sans CJK SC"}
+# subtitle fonts: a Latin-script face per platform for en, es, fr, de, pt (and unknown codes); Chinese keeps the
+# CJK face it had since the first release; ja / ko set their own
+DEFAULT_FONTS = {"win32": "Segoe UI", "darwin": "Helvetica Neue", "other": "DejaVu Sans"}
+CJK_SC_FONTS = {"win32": "Microsoft YaHei", "darwin": "PingFang SC", "other": "Noto Sans CJK SC"}
 
 
 @dataclass(frozen=True)
@@ -35,6 +38,8 @@ class Lang:
     film: dict = field(default_factory=dict)  # film tags: slow, freeze (missing: English)
     minutes: str = ""     # regex of a stated length ("about 2 minutes"): groups n, h1 / h2 (half), under; "": no check
     numbers: dict = field(default_factory=dict)  # number words of `minutes` (kanji numbers are read without them)
+    date: str = "{y}-{mm}-{dd}"  # a date as the reader writes it: {d} {m} day / month, {dd} {mm} zero-padded, {mon}
+    months: tuple = ()     # {mon}: the short month names, January first
 
 
 # stated lengths: the number (digits, a number word, kanji), the minute word, a half before or after it, and an
@@ -85,38 +90,65 @@ UI_JA = dict(contents="目次", switch="言語を切り替える", reports="レ�
              listen="レポートを聞く", listen_sub="約 {m} 分。読みながらでも、聞くだけでも", listen_sub_s="約 {s} 秒。読みながらでも、聞くだけでも",
              play="再生 / 一時停止", seek="再生位置", speed="再生速度",
              clip="クリップ", slow="スロー", missing="（クリップがまだありません：clips を実行してください）")
+UI_KO = dict(contents="목차", switch="언어 바꾸기", reports="리포트",
+             listen="리포트 듣기", listen_sub="약 {m}분. 읽으면서 들어도, 듣기만 해도 됩니다",
+             listen_sub_s="약 {s}초. 읽으면서 들어도, 듣기만 해도 됩니다", play="재생 / 일시정지", seek="재생 위치",
+             speed="재생 속도", clip="클립", slow="슬로", missing="(클립이 아직 없습니다: clips 단계를 실행하세요)")
+UI_ES = dict(contents="Índice", switch="Cambiar idioma", reports="Informes",
+             listen="Escucha el informe", listen_sub="Unos {m} min. Léelo mientras escuchas o solo escucha.",
+             listen_sub_s="Unos {s} segundos. Léelo mientras escuchas o solo escucha.", play="Reproducir / pausa",
+             seek="Posición de reproducción", speed="Velocidad de reproducción",
+             clip="Clip", slow="Cámara lenta", missing="(clip aún sin cortar: ejecuta la etapa clips)")
+UI_FR = dict(contents="Sommaire", switch="Changer de langue", reports="Rapports",
+             listen="Écouter le rapport", listen_sub="Environ {m} min. Lisez en écoutant, ou écoutez simplement.",
+             listen_sub_s="Environ {s} secondes. Lisez en écoutant, ou écoutez simplement.", play="Lecture / pause",
+             seek="Position de lecture", speed="Vitesse de lecture",
+             clip="Extrait", slow="Ralenti", missing="(extrait pas encore découpé : lancez l’étape clips)")
+UI_DE = dict(contents="Inhalt", switch="Sprache wechseln", reports="Berichte",
+             listen="Bericht anhören", listen_sub="Etwa {m} Min. Mitlesen oder einfach zuhören.",
+             listen_sub_s="Etwa {s} Sekunden. Mitlesen oder einfach zuhören.", play="Abspielen / Pause",
+             seek="Wiedergabeposition", speed="Wiedergabetempo",
+             clip="Clip", slow="Zeitlupe", missing="(Clip noch nicht geschnitten: Schritt clips ausführen)")
+UI_PT = dict(contents="Sumário", switch="Mudar idioma", reports="Relatórios",
+             listen="Ouça o relatório", listen_sub="Cerca de {m} min. Leia junto ou só ouça.",
+             listen_sub_s="Cerca de {s} segundos. Leia junto ou só ouça.", play="Reproduzir / pausar",
+             seek="Posição da reprodução", speed="Velocidade de reprodução",
+             clip="Clipe", slow="Câmera lenta", missing="(clipe ainda não cortado: rode a etapa clips)")
 
 # per_min: zh and en measured on rendered report scripts (zh: Chinese characters without punctuation, en: characters
 # with spaces; English words a minute range 130-190 with word length). The others come from one ~25 s sample
 # paragraph per default voice (2026-10-23), not from full scripts: treat them as rough until measured (ja 285: an 84 s report script).
 LANGS: dict[str, Lang] = {l.code: l for l in (
     Lang("zh", "zh-CN", "Chinese", "中文", "zh-CN-YunjianNeural", "zh-CN-XiaoxiaoNeural", 235, cjk=True, sub_chars=30,
-         ui=UI_ZH, film=dict(slow="慢放", freeze="定格"),
+         fonts=CJK_SC_FONTS, ui=UI_ZH, film=dict(slow="慢放", freeze="定格"), date="{y}年{m}月{d}日",
          minutes=MIN_ZH),
     Lang("en", "en", "English", "EN", "en-US-AndrewNeural", "en-US-AvaNeural", 960,
-         ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused"),
+         ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused"), date="{d} {mon} {y}",
+         months=("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
          minutes=MIN_EN, numbers=NUM_EN),
     Lang("ja", "ja", "Japanese", "日本語", "ja-JP-KeitaNeural", "ja-JP-NanamiNeural", 285, cjk=True, sub_chars=30,
          fonts={"win32": "Yu Gothic", "darwin": "Hiragino Sans", "other": "Noto Sans CJK JP"},
          page_font='"Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif',
-         ui=UI_JA, film=dict(slow="スロー", freeze="一時停止"),
+         ui=UI_JA, film=dict(slow="スロー", freeze="一時停止"), date="{y}年{m}月{d}日",
          minutes=MIN_JA),
     Lang("ko", "ko", "Korean", "한국어", "ko-KR-InJoonNeural", "ko-KR-SunHiNeural", 270, cjk=True, sub_chars=34,
          fonts={"win32": "Malgun Gothic", "darwin": "Apple SD Gothic Neo", "other": "Noto Sans CJK KR"},
          page_font='"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif',
-         film=dict(slow="슬로모션", freeze="일시정지"),
+         ui=UI_KO, film=dict(slow="슬로모션", freeze="일시정지"), date="{y}년 {m}월 {d}일",
          minutes=MIN_KO),
     Lang("es", "es", "Spanish", "ES", "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 850,
-         film=dict(slow="Cámara lenta", freeze="Pausa"),
+         ui=UI_ES, film=dict(slow="Cámara lenta", freeze="Pausa"), date="{d} {mon} {y}",
+         months=("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"),
          minutes=MIN_ES, numbers=NUM_ES),
     Lang("fr", "fr", "French", "FR", "fr-FR-HenriNeural", "fr-FR-DeniseNeural", 950,
-         film=dict(slow="Ralenti", freeze="Pause"),
+         ui=UI_FR, film=dict(slow="Ralenti", freeze="Pause"), date="{d} {mon} {y}",
+         months=("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."),
          minutes=MIN_FR, numbers=NUM_FR),
     Lang("de", "de", "German", "DE", "de-DE-ConradNeural", "de-DE-KatjaNeural", 950,
-         film=dict(slow="Zeitlupe", freeze="Standbild"),
+         ui=UI_DE, film=dict(slow="Zeitlupe", freeze="Standbild"), date="{dd}.{mm}.{y}",
          minutes=MIN_DE, numbers=NUM_DE),
     Lang("pt", "pt-BR", "Portuguese", "PT", "pt-BR-AntonioNeural", "pt-BR-FranciscaNeural", 800,
-         film=dict(slow="Câmera lenta", freeze="Pausa"),
+         ui=UI_PT, film=dict(slow="Câmera lenta", freeze="Pausa"), date="{dd}/{mm}/{y}",
          minutes=MIN_PT, numbers=NUM_PT),
 )}
 CODES = tuple(LANGS)
@@ -155,6 +187,17 @@ def readme(code: str) -> str:
 def ui(code: str) -> dict[str, str]:
     """The page labels of a language, English where it has none."""
     return dict((LANGS.get(code) and LANGS[code].ui) or UI_EN)
+
+
+def date(iso: str, code: str) -> str:
+    """An ISO date ("2026-10-23") as the language writes it ("23 oct 2026", "2026年10月23日"); anything else (a
+    folder name, an unknown code) as it is. For display only: file names and json keep ISO dates."""
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", str(iso).strip())
+    if not m or code not in LANGS or not 1 <= int(m[2]) <= 12:
+        return str(iso)
+    y, mm, dd = m.groups()
+    months = LANGS[code].months or LANGS["en"].months
+    return LANGS[code].date.format(y=y, mm=mm, dd=dd, m=int(mm), d=int(dd), mon=months[int(mm) - 1])
 
 
 def film_tag(code: str, key: str) -> str:

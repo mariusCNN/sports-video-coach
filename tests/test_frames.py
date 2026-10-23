@@ -24,9 +24,23 @@ def shown(sheet, n: int, cols: int, width: int) -> int:
     import cv2
     img = cv2.imread(str(sheet), cv2.IMREAD_GRAYSCALE)
     th = round(120 * width / 160)
-    r, c = divmod(n, cols)
-    cell = img[r * th + th // 2:(r + 1) * th, c * width + width // 2:(c + 1) * width]
+    x, y = frames.tile_origin(n, cols, width, th)
+    cell = img[y + th // 2:y + th, x + width // 2:x + width]
     return round(cell.mean() / STEP) % 32
+
+
+def test_tiles_are_split_by_a_dark_gap_and_keep_the_whole_frame(tmp_path, video):
+    """The gap lies between tiles, outside the frames: a fraction read off a tile is a fraction of the frame."""
+    import cv2
+    cols, rows, width = 3, 2, 160
+    data = frames.build(video, tmp_path / "f", every=2, cols=cols, rows=rows, width=width)
+    img = cv2.imread(str(tmp_path / "f" / data["sheets"][0]["file"]))
+    th = round(120 * width / 160)
+    assert 2 <= frames.GAP <= 4 and data["gap_px"] == frames.GAP
+    assert img.shape[:2] == (rows * th + (rows - 1) * frames.GAP, cols * width + (cols - 1) * frames.GAP)
+    assert frames.tile_origin(4, cols, width, th) == (width + frames.GAP, th + frames.GAP)
+    gap = img[:, width:width + frames.GAP].astype(int)
+    assert abs(gap.mean() - frames.GAP_BGR[0]) < 12  # the dark line, not frame pixels
 
 
 @pytest.mark.parametrize("args", [dict(every=1), dict(every=2), dict(every=0.5),

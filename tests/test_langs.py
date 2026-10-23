@@ -13,9 +13,9 @@ def test_registry_lookups():
     assert L.tag("zh") == "zh-CN" and L.tag("ja") == "ja" and L.tag("pt") == "pt-BR"
     assert L.readme("zh") == "README.md" and L.readme("ja") == "README.ja.md"
     assert L.cjk("ja") and L.cjk("ko") and not L.cjk("fr")
-    assert L.ui("ja")["contents"] == "目次" and L.ui("ko") == L.UI_EN   # no labels of its own: English
+    assert L.ui("ja")["contents"] == "目次" and L.ui("ko") == L.UI_KO and L.ui("xx") == L.UI_EN  # unknown: English
     assert L.font("ja", "win32") == "Yu Gothic" and L.font("ja", "linux") == "Noto Sans CJK JP"
-    assert L.font("zh") == film.FONT and L.font("es", "darwin") == "PingFang SC"
+    assert L.font("zh") == film.FONT and L.font("es", "darwin") == "Helvetica Neue"
     assert L.film_tag("ja", "slow") == "スロー" and L.film_tag("xx", "freeze") == "Paused"
     assert L.count("こんにちは、世界。", "ja") == 7 and abs(L.read_s("あ" * 285, "ja") - 60) < 0.1
     with pytest.raises(L.Unknown, match="unknown language 'xx'.*ja"):
@@ -135,6 +135,60 @@ def test_page_in_japanese(tmp_path):
     assert '<html lang="zh-CN"' in page and 'data-set-lang="ja" lang="ja"' in page and ">日本語</button>" in page
     assert render_html.sport_names("tennis", ("zh", "ja", "en")) == {"zh": "网球", "ja": "テニス", "en": "Tennis"}
     assert render_html.sport_names("テニス", ("ja", "en")) == {"ja": "テニス", "en": "Tennis"}
+
+
+def test_every_language_has_its_own_page_labels_and_date():
+    for code in L.CODES:
+        assert set(L.ui(code)) == set(L.UI_EN), code
+        assert code == "en" or L.ui(code)["listen"] != L.UI_EN["listen"], code
+        assert "clips" in L.ui(code)["missing"]  # the stage name stays a command
+    dates = {c: L.date("2026-10-23", c) for c in L.CODES}
+    assert dates == {"zh": "2026年10月23日", "en": "23 Oct 2026", "ja": "2026年10月23日", "ko": "2026년 10월 23일",
+                     "es": "23 oct 2026", "fr": "23 oct. 2026", "de": "23.10.2026", "pt": "23/10/2026"}
+    assert L.date("2026-03-05", "de") == "05.03.2026" and L.date("2026-03-05", "es") == "5 mar 2026"
+    assert L.date("session-a", "es") == "session-a" and L.date("2026-10-23", "xx") == "2026-10-23"
+
+
+def test_latin_languages_get_a_latin_subtitle_font():
+    for code in ("en", "es", "fr", "de", "pt"):
+        assert L.font(code, "win32") == "Segoe UI" and L.font(code, "darwin") == "Helvetica Neue"
+        assert L.font(code, "linux") == "DejaVu Sans"
+    assert L.font("zh", "win32") == "Microsoft YaHei" and L.font("zh") == film.FONT  # Chinese keeps its CJK face
+    assert L.font("zh", "linux") == "Noto Sans CJK SC" and L.font("ko", "win32") == "Malgun Gothic"
+
+
+def test_spanish_page_has_spanish_labels_and_follows_the_unit_order(tmp_path, monkeypatch):
+    monkeypatch.setattr(render_html, "duration_s", lambda p: 70.0)
+    (tmp_path / "analysis.json").write_text(json.dumps({"languages": ["es", "en"], "date": "2026-10-23",
+                                                        "sport": "tennis"}), encoding="utf8")
+    (tmp_path / "README.es.md").write_text("# Dobles: la red\n\n## Qué mantener\n\n![El saque](clip:00:02-00:06)\n",
+                                           encoding="utf8")
+    (tmp_path / "README.en.md").write_text("# Doubles: the net\n\n## Keep\n\n![The serve](clip:00:02-00:06)\n",
+                                           encoding="utf8")
+    for c in ("es", "en"):
+        (tmp_path / f"listen.{c}.mp3").write_bytes(b"x")
+    page = render_html.page(tmp_path)
+    assert page.startswith('<!doctype html>\n<html lang="es"')  # the unit's first language, as in film
+    assert "Escucha el informe" in page and "Unos 1 min. Léelo" in page and "Índice" in page
+    assert 'aria-label="Reproducir / pausa"' in page and 'aria-label="Cambiar idioma"' in page
+    assert "23 oct 2026" in page and "23 Oct 2026" in page
+    assert page.index('data-lang="es"') < page.index('data-lang="en"')
+    assert page_check.foreign_labels(page) == []
+    stale = page.replace("Escucha el informe", "Listen to the report").replace(
+        'aria-label="Reproducir / pausa"', 'aria-label="Play / pause"')
+    errs = page_check.foreign_labels(stale)
+    assert len(errs) == 2 and all("English page label inside the Spanish part" in e for e in errs)
+    assert "'Listen to the report'" in errs[0] or "'Listen to the report'" in errs[1]
+    (tmp_path / "index.html").write_text(stale, encoding="utf8")
+    assert any("Listen to the report" in e for e in page_check.problems(tmp_path))
+
+
+def test_page_check_leaves_a_label_shared_by_both_languages():
+    page = ('<html lang="de"><body><div data-lang="de"><span class="clip-no">Clip 1 · 00:02–00:06</span></div>'
+            '<div data-lang="en" hidden><span>Clip 1 · 00:02–00:06</span><p>Clip 3 shows the serve.</p></div>'
+            '<div data-lang="fr" hidden><span>Clip 2 · 00:04–00:08</span><p>Inhalt</p></div></body></html>')
+    errs = page_check.foreign_labels(page)
+    assert len(errs) == 2 and all("inside the French part" in e for e in errs)  # "Clip" is English and German
 
 
 def test_film_wraps_japanese_subtitles():

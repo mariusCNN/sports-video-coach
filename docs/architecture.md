@@ -51,20 +51,26 @@ Personal data lives in `$SVC_WORKSPACE` (or `$HOOP_WORKSPACE`), default `./works
 
 `langs.py` is the one table of report languages: zh, en, ja, ko, es, fr, de, pt. Every core stage reads it:
 `run` / `new` take its codes for `--lang`, `narrate` its voices (an unknown code is an error, never another
-language's voice), `film` its subtitle fonts, line lengths and tags, the page its `lang` attributes, CJK headings,
-fonts and labels, `publish` its hub labels, `page-check` which reports to scan for English left in.
+language's voice), `film` its subtitle fonts, line lengths, tags and title-card date, the page its `lang`
+attributes, CJK headings, fonts, labels and header date, `publish` its hub labels, `page-check` which reports to
+scan for English left in and which page labels belong to which language.
 
 - Files: `README.md` is the Chinese report, `README.<code>.md` every other language; `listen.<code>.md` and
   `film.<code>.md` for all of them.
-- Page labels: zh, en and ja have their own; a language without them (ko, es, fr, de, pt for now) shows the
-  English labels around its own report text.
+- Page labels: every language has its own (`ui`); a code outside the table would show the English ones.
+- Order: the unit json's `languages` order picks the page's default language (its `<html lang>` and the text shown
+  first) and the film order; READMEs it does not list follow in table order (zh first).
+- Dates: shown the language's way (`date`, `months`: 23 oct 2026, 2026年10月23日, 23.10.2026); file and folder
+  names and json keep ISO dates.
+- Subtitle fonts: zh, ja and ko have CJK faces; en, es, fr, de and pt share a Latin face per platform
+  (`DEFAULT_FONTS`: Segoe UI, Helvetica Neue, DejaVu Sans).
 - Basketball units stay zh + en: its charts and stat tables know only those two.
 
 Add a language: one `Lang(...)` in `LANGS` with its code (the file suffix), BCP 47 tag, English name, switch
 label, two edge-tts voices (`edge-tts --list-voices`), read rate (`per_min`: what `count()` counts in a minute;
 measure it on a rendered script), `cjk=True` for a language written without spaces (counts characters, wraps
 anywhere, gets the CJK heading style), its subtitle fonts per platform, an optional page font stack, page labels
-(`ui`, keys as in `UI_EN`), film tags, and how a script states its length (`minutes`: a regex with the groups
+(`ui`, keys as in `UI_EN`), film tags, a date format, and how a script states its length (`minutes`: a regex with the groups
 `n`, `h1` / `h2` for a half and `under`, plus its number words in `numbers`; `narrate` warns when the stated
 length is off the read time). Then add the language's report labels to the guides in
 `plugins/generic/prompts/` and a test.
