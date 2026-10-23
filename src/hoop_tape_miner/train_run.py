@@ -81,6 +81,7 @@ TRAIN_STEPS = [
                              *(g.run / f for f in ("reps.json", "activity.json", "dribble.json"))],
            params=lambda g: {"targets": g.game.get("targets"), "game_focus": g.game.get("game_focus")}),
     P.Step("report", "agent", report_done,
+           errors=lambda g: P.missing([g.folder / n for n in (*(P.readme(l) for l in g.langs), "plan.json")], g),
            how="Write the session report (playbook, training step 7, prompts/training_report.md): {readmes} "
                "in {folder}, from {folder}/facts.md, the memos in {review} and the figures, with clip "
                "markers on the key reps; and {folder}/plan.json, the next session's drills with checkable targets."),

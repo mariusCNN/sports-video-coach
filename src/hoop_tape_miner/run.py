@@ -404,6 +404,7 @@ STEPS = [
          lambda g: (g.review / "players_facts.md").exists() and (not g.focus or (g.review / f"player{g.focus}_facts.md").exists()),
          how="Write the fact sheets (playbook step 9): {review}/players_facts.md and {review}/player{focus}_facts.md."),
     Step("reports", "agent", reports_done,
+         errors=lambda g: pipeline.missing([d / pipeline.readme(l) for d in g.reports() for l in g.langs], g),
          how="Write the reports (playbook step 10): {readmes} in {folder} (prompts/coach_report.md) "
              "and in {folder}/player-{focus} (prompts/player_deep_dive.md), with clip markers on the key plays."),
     *_with_posters(tail_steps(

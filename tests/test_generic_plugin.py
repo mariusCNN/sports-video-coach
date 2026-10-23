@@ -134,6 +134,13 @@ def test_clips_not_done_before_a_report_exists(analysis):
     assert ok["clips"] is True
 
 
+def test_report_step_names_only_the_missing_readme_after_a_language_is_added(analysis):
+    g = U.Analysis(analysis.folder, analysis.game, ("en", "fr"))
+    (g.folder / "README.en.md").write_text("# r\n", encoding="utf8")
+    report = next(s for s in U.STEPS if s.name == "report")
+    assert report.errors(g) == [f"missing: {P.slash((g.folder / 'README.fr.md').as_posix())} (French)"]
+
+
 def test_review_validator(analysis, video):
     assert U.review_errors(analysis) == [f"{analysis.review / 'review.json'} missing"]
     analysis.review.mkdir(parents=True)

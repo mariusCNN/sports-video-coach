@@ -145,6 +145,7 @@ MOVE_STEPS = [
                "and `move-sheets --force` again and review that group again."),
     P.Step("summary", "cmd", summary_done, lambda g: [["move-summary", str(g.folder)]], inputs=summary_inputs),
     P.Step("report", "agent", report_done,
+           errors=lambda g: P.missing([g.folder / n for n in (*(P.readme(l) for l in g.langs), "plan.json")], g),
            how="Write the movement report (playbook, movement step 7, prompts/movement_report.md): {readmes} "
                "in {folder}, from {folder}/facts.md, the memos in {review}, the figures and "
                "prompts/movement_kb.md + prompts/fuel_recovery_kb.md, with clip markers on the overlay reel; and "
