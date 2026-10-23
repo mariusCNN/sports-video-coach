@@ -16,7 +16,15 @@ copies the mp3 next to the page.
 The page is the engine program_app.html with that data inlined. Ticks, finished workouts and the game log are
 saved in the browser (localStorage). `hoop-tape-miner publish <program folder> --deploy` gives it a random
 /p/<token>/ link; opened from that link the page also syncs the whole log to the site's /api/sync/<token>
-(Workers KV, newest copy wins), so another device, or `program pull`, sees the same progress.
+(Workers KV, newest copy wins), so another device, or `program pull`, sees the same progress. Add `?preview` to
+the link for a look that writes nothing (checks, demos).
+
+Feedback loop, all optional in program.json: every training day opens with a pre-session check (legs, pain score,
+where and red flags, sleep; "readiness": false turns it off) that gives advice and never changes the session; an
+exercise with kind "rep" records successes per set and says what counts as one in its "ok" text; game.counters
+([key, label, hint]) replaces the log's counters (empty until counted, so a missing count is not a zero) and
+game.trees lists the decision trees the log asks "which went worst" about; a session with "review" (true or a hint
+text) opens with the last game's log. `program pull` prints all of it.
 """
 from __future__ import annotations
 
@@ -26,6 +34,7 @@ import json
 import sys
 import time
 import urllib.request
+from datetime import date
 from pathlib import Path
 
 from sports_video_coach import media
@@ -100,6 +109,49 @@ def build(folder: Path) -> Path:
     return out
 
 
+def session_of(plan: dict, day: str) -> str | None:
+    """Session code of an ISO date: a special date first, else the weekday (0 = Sunday, as in the page)."""
+    if day in (plan.get("special") or {}):
+        return plan["special"][day]
+    try:
+        wd = (date.fromisoformat(day).weekday() + 1) % 7
+    except ValueError:
+        return None
+    return plan["weekdays"].get(str(wd))
+
+
+def summary(plan: dict, data: dict) -> list[str]:
+    """Lines on what the synced log says about the plan's feedback loop: pre-session checks, success counts of
+    "rep" exercises (sum of successes / sets entered), and the last games' counters and worst decision tree."""
+    out = []
+    for day, r in sorted((data.get("rd") or {}).items())[-5:]:
+        where = "、".join(r.get("where") or [])
+        out.append(f"  ready {day} legs {r.get('legs', '–')}/4 pain {r.get('pain', '–')}/10"
+                   f"{' (' + where + ')' if where else ''}{' RED FLAG' if r.get('flag') else ''}"
+                   f"{' sleep ' + str(r['sleep']) + ' h' if r.get('sleep') else ''}")
+    kind, reps = plan.get("kind") or {}, {}
+    for key, row in (data.get("s") or {}).items():
+        day, k, _ = (key.split(":") + ["", ""])[:3]
+        items = (plan["sessions"].get(session_of(plan, day) or "") or {}).get("items") or []
+        ex = items[int(k)]["ex"] if k.isdigit() and int(k) < len(items) else None
+        if ex and kind.get(ex) == "rep" and str(row.get("v", "")).strip():
+            try:
+                got = float(row["v"])
+            except ValueError:
+                continue
+            tot = reps.setdefault(ex, [0.0, 0])
+            tot[0] += got
+            tot[1] += 1
+    for ex, (got, n) in sorted(reps.items()):
+        out.append(f"  reps {ex}: {got:g} successes over {n} sets")
+    labels = ({c[0]: c[1] for c in ((plan.get("game") or {}).get("counters") or [])}
+              or {k: k for k in ("ast", "to", "miss", "drive2")})
+    for g in [x for x in (data.get("log") or []) if x.get("type") != "shoot"][-3:]:
+        cts = " ".join(f"{labels.get(k, k)} {g[k]}" for k in labels if g.get(k) is not None)
+        out.append(f"  game {g.get('date')} {g.get('type')} worst {g.get('worst') or '–'}{' · ' + cts if cts else ''}")
+    return out
+
+
 def pull(folder: Path) -> Path:
     """Fetch the synced progress of a published program into <folder>/progress.json and print a summary."""
     root = ws.root()
@@ -120,11 +172,14 @@ def pull(folder: Path) -> Path:
     when = time.strftime("%Y-%m-%d %H:%M", time.localtime(data["updated"] / 1000)) if data.get("updated") else "never"
     print(f"{out}\n  last update {when}\n  workouts finished {len(fin)}"
           f"{' (' + ', '.join(sorted(fin)[-5:]) + ')' if fin else ''}\n  games logged {len(log)}\n  set rows {len(sets)}")
+    for line in summary(load(folder, "program.json"), data):
+        print(line)
     for e in (data.get("au") or [])[-8:]:  # loop-audio events, to see where playback stopped on a locked phone
+        # events from before the page tagged its device cannot be told apart from a check run: say so
         print(f"  audio {time.strftime('%m-%d %H:%M:%S', time.localtime(e.get('t', 0) / 1000))} {e.get('ev')} "
-              f"{e.get('src')} at {e.get('at')} s ({e.get('vis')})")
+              f"{e.get('src')} at {e.get('at')} s ({e.get('vis')}, {e.get('dev') or 'device unknown'})")
     if data.get("au") and data.get("ua"):
-        print(f"  browser {data['ua']}")
+        print(f"  last browser {data['ua']}")
     return out
 
 

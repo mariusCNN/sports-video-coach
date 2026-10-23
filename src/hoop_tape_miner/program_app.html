@@ -195,6 +195,13 @@ nav.tabs button.on{color:var(--pri);font-weight:600}
 .seg5{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px}
 .seg5 button{width:36px;height:36px;border-radius:.6rem;border:1px solid var(--line);background:var(--sec);cursor:pointer;font-size:14px}
 .seg5 button.on{background:var(--pri);color:var(--pri-fg);border-color:var(--pri);font-weight:700}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.opts button{border:1px solid var(--line);background:var(--sec);border-radius:999px;padding:7px 13px;font-size:13.5px;cursor:pointer;color:inherit}
+.opts button.on{background:var(--pri);color:var(--pri-fg);border-color:var(--pri);font-weight:700}
+.adv{margin-top:10px;border-radius:.8rem;padding:9px 12px;font-size:13.5px;line-height:1.5;border:1px solid var(--line)}
+.adv.ok{border-color:color-mix(in oklch,var(--ok) 50%,transparent)}
+.adv.warn{border-color:color-mix(in oklch,var(--warn) 55%,transparent);background:color-mix(in oklch,var(--warn) 10%,transparent)}
+.adv.bad{border-color:color-mix(in oklch,var(--bad) 60%,transparent);background:color-mix(in oklch,var(--bad) 12%,transparent)}
 
 /* calendar / this week rows */
 .drow{display:flex;align-items:center;gap:12px;border:1px solid color-mix(in oklch,var(--line) 60%,transparent);background:color-mix(in oklch,var(--sec) 30%,transparent);border-radius:.8rem;padding:10px 12px;cursor:pointer;width:100%;text-align:left}
@@ -497,35 +504,44 @@ const store = (() => {
   return {};
 })();
 const LEGACY_TYPE = {"联赛":"league","pickup 半场":"half","pickup 全场":"full","投篮日":"shoot"};
-/* s = set rows, fin = finished workouts, log = games, dr = live game draft, wu = warm-up checks, updated = last save (ms) */
+/* s = set rows, fin = finished workouts, log = games, dr = live game draft, wu = warm-up checks,
+   rd = pre-session check per day, updated = last save (ms) */
 function norm(){
-  store.s = store.s || {}; store.fin = store.fin || {}; store.wu = store.wu || {}; store.updated = +store.updated || 0;
+  store.s = store.s || {}; store.fin = store.fin || {}; store.wu = store.wu || {}; store.rd = store.rd || {}; store.updated = +store.updated || 0;
   store.log = (store.log || []).map(r => r.sh ? r : {date:r.date, type:LEGACY_TYPE[r.type]||"half",
     sh:{rim:[+r.rm||0,+r.ra||0],flo:[+r.fm||0,+r.fa||0],mid:[+r.mm||0,+r.ma||0],three:[+r.tm||0,+r.ta||0],ft:[+r.ftm||0,+r.fta||0]},
     ast:+r.ast||0,to:+r.to||0,miss:+r.miss||0,drive2:0,sleep:+r.sleep||0,legs:+r.legs||0,note:r.note||""});
+  // a draft from before counters could be empty started them at 0: a 0 there is "not counted yet"
+  const dr = store.dr;
+  if (dr && !("worst" in dr)){ for (const k of ["ast","to","miss","drive2"]) if (dr[k] === 0) dr[k] = null; dr.worst = ""; }
 }
 norm();
 const SYNC_URL = (() => {
   const m = /^\/p\/([0-9a-f]{16})\/?$/.exec(location.pathname);
   return /^https?:$/.test(location.protocol) && m ? "/api/sync/" + m[1] : null;
 })();
+/* ?preview (checks, demos): shows the cloud copy but never writes it, nor this browser's copy, so a look at the
+   live plan leaves nothing in its owner's log */
+const PREVIEW = /[?&]preview(?:[=&]|$)/.test(location.search);
 /* dirty = a local change the cloud has not confirmed yet; a failed push retries every 15 s and when back online */
-const sync = {t:null, st:SYNC_URL ? "wait" : "local", at:0, dirty:false};
+const sync = {t:null, st:PREVIEW ? "pv" : SYNC_URL ? "wait" : "local", at:0, dirty:false};
 const hm = d => d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
-function persist(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+function persist(){ if (PREVIEW) return; try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
 function save(){
   store.updated = Date.now(); persist();
-  if (SYNC_URL){ sync.dirty = true; clearTimeout(sync.t); sync.t = setTimeout(push, 1500); setSync("wait"); }
+  if (SYNC_URL && !PREVIEW){ sync.dirty = true; clearTimeout(sync.t); sync.t = setTimeout(push, 1500); setSync("wait"); }
 }
 function setSync(st){
+  if (PREVIEW) st = "pv";
   sync.st = st; if (st === "ok") sync.at = Date.now();
   const el = document.getElementById("syncChip"); if (!el) return;
-  el.className = "sync " + st;
-  el.innerHTML = "<i></i>" + {local:"仅本机", wait:"同步中…", ok:"已同步 " + hm(new Date(sync.at)), off:"离线 · 稍后同步"}[st];
-  el.title = st === "local" ? "本地打开：记录只存在这台设备的浏览器里" : "记录自动存到云端，换设备打开同一个链接也能看到";
+  el.className = "sync " + (st === "pv" ? "local" : st);
+  el.innerHTML = "<i></i>" + {local:"仅本机", wait:"同步中…", ok:"已同步 " + hm(new Date(sync.at)), off:"离线 · 稍后同步", pv:"预览 · 不保存"}[st];
+  el.title = st === "pv" ? "预览链接：只看，点了什么都不存" : st === "local" ? "本地打开：记录只存在这台设备的浏览器里" : "记录自动存到云端，换设备打开同一个链接也能看到";
 }
 async function push(keepalive){
   clearTimeout(sync.t); sync.t = null;
+  if (PREVIEW) return;
   const body = JSON.stringify(store), at = store.updated;
   try {
     const r = await fetch(SYNC_URL, {method:"PUT", headers:{"Content-Type":"application/json"}, body, keepalive:!!keepalive && body.length < 60000});
@@ -659,19 +675,69 @@ function renderToday(){
     </div>
     <div class="pbar"><i style="width:${n?Math.round(100*dn/n):0}%"></i></div>
    </div>
-   <div class="wstrip">${strip}</div>${back}${note}` +
+   <div class="wstrip">${strip}</div>${back}${note}${reviewCard(sess)}${readyCard(sess)}` +
    blocks.map(b=>`<div class="gcard glass grain"><div class="ghead">${ic("dumbbell")}<span>${esc(b.t||"今天")}</span></div><div class="gbody">${b.items.map(it=>exCard(it)).join("")}</div></div>`).join("");
   const fb = document.getElementById("finBtn");
   if (isGame(code)) fb.innerHTML = `${ic("pen")}打完了：去记录`;
   else fb.innerHTML = fin ? `${ic("check")}已完成 · 用力 ${fin.rpe||"–"}/10（点这里修改）` : `${ic("check")}完成训练`;
   fb.classList.toggle("did", !!fin && !isGame(code));
 }
+/* a session with "review" opens with the last game's log: which decision tree went worst, the counters */
+function reviewCard(sess){
+  if (!sess.review) return "";
+  const g = store.log.filter(x=>x.type!=="shoot" && x.date<=selD).sort((a,b)=>a.date<b.date?-1:1).pop();
+  const hint = typeof sess.review === "string" ? sess.review : "今天多练最差的那一张。";
+  const body = !g ? `<p class="small mute" style="margin:0">还没有记上一场：打完在「记录」记一场，这里就会显示最差的一张图。</p>`
+    : `<div class="kv"><div class="k">${LTYPE[g.type]||esc(g.type)} · ${g.date.slice(5).replace("-","/")}</div>
+       <div><b>最差：${g.worst ? esc(g.worst) : "没选"}</b></div>${ctLine(g)?`<div class="small mute">${ctLine(g)}</div>`:""}</div>
+       <div class="small">${esc(hint)}</div>`;
+  return `<div class="gcard glass grain"><div class="ghead">${ic("target")}<span>上一场</span></div><div class="gbody pad">${body}</div></div>`;
+}
+/* pre-session check: legs, pain (score, where, red flags), sleep. It gives advice and options, never changes the
+   session by itself: a pain score alone does not say what is safe. */
+const RD_LEGS = ["新鲜","正常","有点酸","很酸"];
+const RD_WHERE = PLAN.painSites || ["膝","踝","跟腱","小腿","腘绳肌","髋 / 腹股沟","腰背","肩","其他"];
+let rdEdit = null;
+function rdAdvice(r){
+  if (r.flag) return ["bad","新出现的锐痛、越来越痛或者肿了：今天不练会碰到这个部位的动作，先找理疗或医生看。"];
+  if (r.pain >= 4) return ["bad","疼痛超过 3/10：停掉让它更痛的动作，换成不碰这个部位的；明天还更痛就找理疗。"];
+  const tired = r.legs >= 3 || (r.sleep && r.sleep < 6);
+  const lines = [];
+  if (r.pain >= 1) lines.push("疼痛 ≤ 3/10 可以练：练的时候别超过 3/10，第二天不加重才继续。");
+  if (tired) lines.push("可以减量（你自己选）：每个动作少 1 组；跳、冲刺和重量都降一档；体能块不做。");
+  return lines.length ? ["warn", lines.join("<br>")] : ["ok","正常练。"];
+}
+function readyCard(sess){
+  if (PLAN.readiness === false || sess.game || sess.items.every(i=>i.ex==="rest")) return "";
+  const r = store.rd[selD], done = r && r.legs && r.pain != null;
+  const head = `<div class="ghead">${ic("alert")}<span>练前 30 秒</span><span class="rt">${done?"已填":"先填再练"}</span></div>`;
+  if (done && rdEdit !== selD){
+    const [lv, tx] = rdAdvice(r);
+    return `<div class="gcard glass grain">${head}<div class="gbody pad">
+      <div class="small">腿 ${RD_LEGS[r.legs-1]} · 疼痛 ${r.pain}/10${(r.where||[]).length?"（"+r.where.map(esc).join("、")+"）":""}${r.sleep?" · 睡 "+r.sleep+" 小时":""}
+       <button class="linkbtn" data-act="rdedit">改</button></div>
+      <div class="adv ${lv}">${tx}</div></div></div>`;
+  }
+  const x = r || {};
+  return `<div class="gcard glass grain">${head}<div class="gbody pad">
+    <div class="flab" style="margin-top:0">腿感觉</div>
+    <div class="opts">${RD_LEGS.map((t,j)=>`<button class="${x.legs===j+1?"on":""}" data-act="rd" data-f="legs" data-v="${j+1}">${t}</button>`).join("")}</div>
+    <div class="flab">哪里疼，几分（0 = 不疼，10 = 最疼）</div>
+    <div class="seg5">${Array.from({length:11},(_,j)=>`<button class="${x.pain===j?"on":""}" data-act="rd" data-f="pain" data-v="${j}">${j}</button>`).join("")}</div>
+    ${x.pain>0?`<div class="opts" style="margin-top:8px">${RD_WHERE.map(t=>`<button class="${(x.where||[]).includes(t)?"on":""}" data-act="rdw" data-v="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+    <button class="chk ${x.flag?"on":""}" style="margin-top:8px" data-act="rdflag"><span class="ck ${x.flag?"on":""}">${ic("check")}</span><span class="t">新出现的锐痛、越来越痛，或者肿了</span></button>`:""}
+    <div class="ctr" style="margin-top:6px"><div><div class="nm">昨晚睡了几小时</div></div><div class="step"><button data-act="rdsl" data-v="-0.5" aria-label="减">−</button><b>${x.sleep||"–"}</b><button data-act="rdsl" data-v="0.5" aria-label="加">+</button></div></div>
+    ${x.legs && x.pain!=null?`<div class="adv ${rdAdvice(x)[0]}">${rdAdvice(x)[1]}</div><button class="btn pri" style="width:100%;margin-top:10px;border-radius:999px" data-act="rdok">好了，开始练</button>`:""}
+  </div></div>`;
+}
+function rdSet(f){ const r = store.rd[selD] = store.rd[selD] || {}; f(r); r.at = Date.now(); rdEdit = selD; save(); renderToday(); }
 function coachTip(e, it){
   const tips = e.tips || [];
-  if (!e.cue && !tips.length && !it.note) return "";
+  if (!e.cue && !tips.length && !it.note && !e.ok) return "";
   return `<div class="tip">${ic("mega")}<div><div class="lb">教练提示</div>
     ${e.cue?`<div class="tx">${e.cue}</div>`:""}
     ${tips.length?`<ul class="tl">${tips.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+    ${e.ok?`<div class="tn"><b>算成功</b>${esc(e.ok)}</div>`:""}
     ${it.note?`<div class="tn"><b>今天</b>${esc(it.note)}</div>`:""}</div></div>`;
 }
 function exCard(it){
@@ -679,13 +745,13 @@ function exCard(it){
   const st = rows.map((_,j)=>rowSt(selD,it.k,j)), dn = st.filter(x=>x.d).length, all = dn===rows.length;
   const open = OPEN[key] ?? !all, vs = vlist(e);
   const lead = vs.length ? `<button class="play" data-act="vid" data-id="${it.id}" aria-label="看示范">${ic("play")}</button>` : `<span class="play ghost">${ic("dumbbell")}</span>`;
-  const head = kind==="shot" ? "进几个" : kind==="kg" ? "重量 kg" : "实际";
+  const head = kind==="shot" ? "进几个" : kind==="kg" ? "重量 kg" : kind==="rep" ? "成功几次" : "实际";
   const body = !open ? "" : `<div class="exb">
     ${coachTip(e, it)}
     <div class="sets"><div class="srow h"><span>组</span><span>目标</span><span>${head}</span><span style="text-align:center">完成</span></div>
     ${rows.map((r,j)=>{ const s=st[j], sec=secsOf(r.t);
       const inp = sec ? `<button class="vbtn" data-act="tm" data-s="${sec}" data-k="${key}:${j}" data-l="${esc(e.n)} · ${esc(r.t)}" style="justify-content:center">${ic("timer")}${sec} 秒</button>`
-        : `<input data-sv="${key}:${j}" value="${esc(s.v||"")}" inputmode="${kind==="shot"||kind==="kg"?"decimal":"text"}" placeholder="${kind==="shot"?"进":kind==="kg"?"kg":"–"}" aria-label="第 ${j+1} 组 ${head}">`;
+        : `<input data-sv="${key}:${j}" value="${esc(s.v||"")}" inputmode="${kind==="shot"||kind==="kg"||kind==="rep"?"decimal":"text"}" placeholder="${kind==="shot"?"进":kind==="kg"?"kg":kind==="rep"?"成功":"–"}" aria-label="第 ${j+1} 组 ${head}">`;
       return `<div class="srow ${s.d?"on":""}"><span class="no">${j+1}</span><span class="tg">${esc(r.t)}</span>${inp}<button class="ck ${s.d?"on":""}" data-act="set" data-k="${key}:${j}" aria-label="第 ${j+1} 组完成">${ic("check")}</button></div>`; }).join("")}
     </div>
     ${rows.length>1 && !all ? `<button class="allbtn" data-act="all" data-k="${key}" data-n="${rows.length}">全部完成</button>` : ""}
@@ -780,10 +846,16 @@ function renderGame(){
 
 /* ---------- log tab ---------- */
 const SH = [["rim","篮下","上篮、强攻"],["flo","抛投 / 急停","罚球线到篮下之间"],["mid","中投","肘区、长两分"],["three","三分",""],["ft","罚球",""]];
-const CT = [["ast","助攻",""],["to","失误",""],["miss","错过的窗口","该自己打却传了或停了"],["drive2","冲进两人硬出手","目标 ≤ 1"]];
+/* counters: [key, label, hint]; game.counters in the plan replaces the default list. A counter starts empty (null =
+   not counted), so "did not count" never reads as zero; − on an empty counter records a real 0. */
+const CT = (G.counters || []).length ? G.counters : [["ast","助攻",""],["to","失误",""],["miss","错过的窗口","该自己打却传了或停了"],["drive2","冲进两人硬出手","目标 ≤ 1"]];
+const TREES = G.trees || [];   /* game.trees: the plan's decision trees; the log asks which one went worst */
 const LTYPE = {league:"联赛",half:"Pickup 半场",full:"Pickup 全场",shoot:"投篮日"};
-function newDraft(){ return {date:todayIso, type:"half", sh:{rim:[0,0],flo:[0,0],mid:[0,0],three:[0,0],ft:[0,0]}, ast:0,to:0,miss:0,drive2:0, sleep:0, legs:0, note:""}; }
+function newDraft(){ return {date:todayIso, type:"half", sh:{rim:[0,0],flo:[0,0],mid:[0,0],three:[0,0],ft:[0,0]},
+  ...Object.fromEntries(CT.map(([k])=>[k,null])), worst:"", sleep:0, legs:0, note:""}; }
 const n0 = x => +x || 0;
+const cv = x => x == null ? "–" : x;
+const ctLine = x => CT.filter(([k])=>x[k]!=null).map(([k,t])=>`${esc(t)} ${x[k]}`).join(" · ");
 function statsOf(r){ const s=r.sh, fga=s.rim[1]+s.flo[1]+s.mid[1]+s.three[1], good=s.rim[1]+s.flo[1]+s.three[1];
   return {fga, good: fga?Math.round(100*good/fga):null, pts:2*(s.rim[0]+s.flo[0]+s.mid[0])+3*s.three[0]+s.ft[0]}; }
 let savedMsg = "";
@@ -809,9 +881,11 @@ function renderLog(){
    <div class="flab">出手（每投一次点一下）</div>
    ${SH.map(([k,t,ds])=>`<div class="shot"><div><div class="nm">${t}</div><div class="ct"><b>${r.sh[k][0]}</b> / ${r.sh[k][1]} 中${ds?" · "+ds:""}</div></div>
      <div class="sbtns"><button class="sb mk" data-act="sh" data-k="${k}" data-v="1">进</button><button class="sb" data-act="sh" data-k="${k}" data-v="0">没进</button><button class="sb un" data-act="sh" data-k="${k}" data-v="-1" aria-label="撤销">↶</button></div></div>`).join("")}
-   <div class="flab">其他</div>
+   <div class="flab">其他（– = 没数；没有就点 − 记成 0）</div>
    ${CT.map(([k,t,ds])=>`<div class="ctr"><div><div class="nm">${t}</div>${ds?`<div class="ds">${ds}</div>`:""}</div>
-     <div class="step"><button data-act="ct" data-k="${k}" data-v="-1" aria-label="减">−</button><b>${r[k]}</b><button data-act="ct" data-k="${k}" data-v="1" aria-label="加">+</button></div></div>`).join("")}
+     <div class="step"><button data-act="ct" data-k="${k}" data-v="-1" aria-label="减">−</button><b>${cv(r[k])}</b><button data-act="ct" data-k="${k}" data-v="1" aria-label="加">+</button></div></div>`).join("")}
+   ${TREES.length?`<div class="flab">今天哪张决策图做得最差</div>
+   <div class="opts">${[...TREES,"不清楚"].map(t=>`<button class="${r.worst===t?"on":""}" data-act="worst" data-v="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}
    <div class="flab">身体</div>
    <div class="ctr"><div><div class="nm">昨晚睡了几小时</div></div><div class="step"><button data-act="ct" data-k="sleep" data-v="-0.5" aria-label="减">−</button><b>${r.sleep||"–"}</b><button data-act="ct" data-k="sleep" data-v="0.5" aria-label="加">+</button></div></div>
    <div class="nm" style="font-size:14.5px;font-weight:600;margin-top:8px">腿累几分（1 = 很新鲜，10 = 抬不动）</div>
@@ -827,8 +901,8 @@ function renderLog(){
     if (h.kind==="g"){ const x=h.x, s=statsOf(x);
       return `<div class="hcard"><span class="okc g">${ic("target")}</span><div class="hm"><div class="t">${LTYPE[x.type]||esc(x.type)} · ${x.date.slice(5).replace("-","/")}</div>
        <div class="s">出手 ${s.fga} · 好出手 ${s.good===null?"–":s.good+"%"} · 得分 ${s.pts} · 罚球 ${x.sh.ft[0]}/${x.sh.ft[1]}</div>
-       <div class="s">助攻 ${x.ast} · 失误 ${x.to}${x.legs?" · 腿累 "+x.legs:""}${x.sleep?" · 睡 "+x.sleep+" 小时":""}</div>
-       ${x.miss||x.drive2?`<div class="f">错过窗口 ${x.miss} · 冲进两人 ${x.drive2}</div>`:""}${x.note?`<div class="s">${esc(x.note)}</div>`:""}</div>
+       ${ctLine(x)?`<div class="s">${ctLine(x)}</div>`:""}
+       ${x.worst||x.legs||x.sleep?`<div class="f">${[x.worst?"最差："+esc(x.worst):"", x.legs?"腿累 "+x.legs:"", x.sleep?"睡 "+x.sleep+" 小时":""].filter(Boolean).join(" · ")}</div>`:""}${x.note?`<div class="s">${esc(x.note)}</div>`:""}</div>
        <button class="del" data-act="del" data-i="${h.i}">删除</button></div>`; }
     const d = dayOf(h.date), s = d ? SESS[sessOf(d)] : null;
     return `<div class="hcard"><span class="okc">${ic("check")}</span><div class="hm"><div class="t">${s?s.title:"训练"}</div>
@@ -954,13 +1028,23 @@ document.addEventListener("click", e=>{
    case "golog": goLog(t.dataset.d, t.dataset.m); break;
    case "lt": dr.type=t.dataset.t; save(); renderLog(); break;
    case "sh": { const s=dr.sh[k], v=+t.dataset.v; if(v===1){s[0]++;s[1]++;} else if(v===0){s[1]++;} else if(s[1]>0){ if(s[0]>=s[1]) s[0]--; s[1]--; } savedMsg=""; save(); renderLog(); break; }
-   case "ct": dr[k]=(k==="sleep"&&!n0(dr[k])) ? 7 : Math.max(0, Math.round((n0(dr[k])+(+t.dataset.v))*2)/2); savedMsg=""; save(); renderLog(); break;
+   case "ct": { const v=+t.dataset.v;
+     dr[k] = k==="sleep" ? (!n0(dr[k]) ? 7 : Math.max(0, Math.round((n0(dr[k])+v)*2)/2))
+                         : dr[k]==null ? Math.max(0, v) : Math.max(0, dr[k]+v);
+     savedMsg=""; save(); renderLog(); break; }
+   case "rd": rdSet(r=>{ const f=t.dataset.f, v=+t.dataset.v; r[f]=v; if (f==="pain" && !v){ r.where=[]; r.flag=false; } }); break;
+   case "rdw": rdSet(r=>{ const a=r.where=r.where||[], x=a.indexOf(t.dataset.v); x<0?a.push(t.dataset.v):a.splice(x,1); }); break;
+   case "rdflag": rdSet(r=>{ r.flag=!r.flag; }); break;
+   case "rdsl": rdSet(r=>{ r.sleep = !n0(r.sleep) ? 7 : Math.max(0, Math.round((n0(r.sleep)+(+t.dataset.v))*2)/2); }); break;
+   case "rdok": rdEdit=null; renderToday(); break;
+   case "rdedit": rdEdit=selD; renderToday(); break;
+   case "worst": dr.worst = dr.worst===t.dataset.v ? "" : t.dataset.v; save(); renderLog(); break;
    case "legs": dr.legs = dr.legs===+t.dataset.v ? 0 : +t.dataset.v; save(); renderLog(); break;
    case "lgsave": { dr.note=document.getElementById("lgNote").value; dr.date=document.getElementById("lgDate").value||todayIso;
      store.log.push(JSON.parse(JSON.stringify(dr))); store.dr = newDraft(); store.dr.type = dr.type; save();
      savedMsg = `已保存 ✓ ${LTYPE[dr.type]} · ${dr.date.slice(5).replace("-","/")}，在下面的历史里`; render(); break; }
    case "del": if (confirm("删除这一条？")){ store.log.splice(+t.dataset.i,1); save(); render(); } break;
-   case "lgexp": { const txt = JSON.stringify({log:store.log, workouts:store.fin, tests:Object.fromEntries(Object.entries(store).filter(([x])=>/^t[a-z0-9]+[04]$/.test(x)))}, null, 1);
+   case "lgexp": { const txt = JSON.stringify({log:store.log, workouts:store.fin, ready:store.rd, tests:Object.fromEntries(Object.entries(store).filter(([x])=>/^t[a-z0-9]+[04]$/.test(x)))}, null, 1);
      navigator.clipboard.writeText(txt).then(()=>alert("已复制，粘贴给 Claude 即可"), ()=>prompt("复制下面的内容", txt)); break; }
   }
 });
@@ -994,9 +1078,13 @@ const players = [...document.querySelectorAll("audio.loop")], RATES = [0.8, 1, 1
 const apref = (() => { try { return {rate:1, loop:true, ...JSON.parse(localStorage.getItem(AKEY) || "{}")}; } catch (e) { return {rate:1, loop:true}; } })();
 let cur = players[0], played = false;
 /* sync=false only keeps it in this browser: it goes up with the next real save (no write on every screen wake) */
+const UA = navigator.userAgent;
+const DEV = (/Android/.test(UA) ? "Android" : /iPhone|iPad/.test(UA) ? "iOS" : /Windows/.test(UA) ? "Windows" : /Mac OS/.test(UA) ? "Mac" : "other") + " " +
+  (/MicroMessenger/.test(UA) ? "WeChat" : /; wv\)/.test(UA) ? "webview" : /Edg\//.test(UA) ? "Edge" : /CriOS|Chrome\//.test(UA) ? "Chrome" : /Safari\//.test(UA) ? "Safari" : "browser");
 function aLog(a, ev, sync = true){
   store.au = (store.au || []).slice(-39);
-  store.au.push({t:Date.now(), ev, src:a.getAttribute("src"), at:Math.round(a.currentTime), vis:document.visibilityState});
+  /* dev on every event: several devices share one log, so each event says which one played */
+  store.au.push({t:Date.now(), ev, src:a.getAttribute("src"), at:Math.round(a.currentTime), vis:document.visibilityState, dev:DEV});
   store.ua = navigator.userAgent;
   if (sync) save(); else persist();
 }
@@ -1052,7 +1140,7 @@ if (players.length){
     try { localStorage.setItem(AKEY, JSON.stringify(apref)); } catch (e) {}
     aApply();
   });
-  if (/MicroMessenger|; wv\)|FBAN|FBAV|Instagram|Line\//.test(navigator.userAgent)){
+  if (/MicroMessenger|; wv\)|FBAN|FBAV|Instagram|Line\//.test(UA)){
     const w = document.createElement("div");
     w.className = "card warnbox small";
     w.innerHTML = "<b>你在微信 / App 内置浏览器里，锁屏后声音会停。</b><br>点右上角 ⋯ →「在浏览器打开」，用 Chrome 或 Safari 播。";

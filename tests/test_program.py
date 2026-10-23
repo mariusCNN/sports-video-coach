@@ -65,6 +65,34 @@ def test_page_script_parses(tmp_path):
     assert r.returncode == 0, r.stderr
 
 
+def test_page_has_a_preview_mode_that_saves_nothing(tmp_path):
+    page = program.page(plan_folder(tmp_path))
+    assert "const PREVIEW" in page and "if (PREVIEW) return" in page
+
+
+def test_session_of_takes_special_dates_first():
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    assert program.session_of(plan, "2025-03-05") == "TS"  # a Wednesday, but a test day
+    assert program.session_of(plan, "2025-03-06") == "M"  # Thursday
+    assert program.session_of(plan, "2025-03-09") == "R"  # Sunday = weekday 0
+    assert program.session_of(plan, "nope") is None
+
+
+def test_summary_reads_checks_success_counts_and_game_counters():
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    data = {"rd": {"2025-03-06": {"legs": 3, "pain": 2, "where": ["knee"], "flag": True, "sleep": 6.5}},
+            # M on Thursday: item 2 is the "rep" drill; item 1 is timed, so it is not counted
+            "s": {"2025-03-06:2:0": {"v": "7"}, "2025-03-06:2:1": {"v": "8"}, "2025-03-06:2:2": {"v": ""},
+                  "2025-03-06:1:0": {"v": "45"}},
+            "log": [{"date": "2025-03-08", "type": "league", "worst": "On the catch", "ast": 3, "to": None,
+                     "quick": 0}, {"date": "2025-03-09", "type": "shoot"}]}
+    out = program.summary(plan, data)
+    assert "  ready 2025-03-06 legs 3/4 pain 2/10 (knee) RED FLAG sleep 6.5 h" in out
+    assert "  reps reads: 15 successes over 2 sets" in out
+    game = [line for line in out if line.startswith("  game")]
+    assert game == ["  game 2025-03-08 league worst On the catch · Assists 3 Caught and acted at once 0"]
+
+
 def test_build_exits_on_invalid_program(tmp_path):
     folder = plan_folder(tmp_path)
     plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
