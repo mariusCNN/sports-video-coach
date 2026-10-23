@@ -11,9 +11,10 @@
 
 **English** · [中文](https://github.com/mariusDing/sports-video-coach/blob/master/README.zh.md)
 
-[![The explained video from the demo: the clip pauses where the block stalls, a ring marks it, a subtitle says why](https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/demo-film.gif)](https://mariusding.github.io/sports-video-coach/film.en.mp4)
+<img alt="A real run on the author's shooting drill: the clip, the agent's film review pausing where the finish is held, then the coaching page" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
-<sub>The explained video from the built-in demo (a synthetic drill). <a href="https://mariusding.github.io/sports-video-coach/film.en.mp4">Watch it with sound</a>.</sub>
+<sub>A real run on the author's own shooting drill: your video → the agent's film review → your coaching page.
+No install needed to see a full example: <a href="https://mariusding.github.io/sports-video-coach/demo/">the demo page</a> (a synthetic drill).</sub>
 
 </div>
 

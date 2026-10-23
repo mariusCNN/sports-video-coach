@@ -88,6 +88,8 @@ All notable changes to this project are documented here. The format follows [Kee
   agent" prompt that asks before installing and sets `--sport` / `--lang`), sports it fits, how long a run took
   in our test, what you get and what it can't do yet, three steps for how it works; the local demo, install
   options, costs and data, and the developer pattern folded away.
+- README hero: a real run on the author's own shooting drill (the clip, the agent's film review, the coaching
+  page) instead of the synthetic demo's video.
 - The demo site's landing page says "Built from master (..., not released yet)" for a development build, rather
   than a version that is not on the releases page.
 - docs/plugins.md: a stage module skeleton, what the light install can import, and how a stage's numbers reach the

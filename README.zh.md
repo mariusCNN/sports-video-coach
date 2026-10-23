@@ -11,9 +11,10 @@
 
 [English](https://github.com/mariusDing/sports-video-coach/blob/master/README.md) · **中文**
 
-[![demo 生成的讲解视频：方块停住的地方画面暂停、圈出来，字幕说明原因](https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/demo-film.gif)](https://mariusding.github.io/sports-video-coach/film.zh.mp4)
+<img alt="作者自己投篮练习的真实运行：原片、agent 的看片复盘在手举着的地方暂停，然后是教练网页" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
-<sub>内置 demo 生成的讲解视频（程序画的折返跑）。<a href="https://mariusding.github.io/sports-video-coach/film.zh.mp4">带声音观看</a>。</sub>
+<sub>作者自己投篮练习的一次真实运行：你的视频 → agent 看片复盘 → 你的教练网页。
+不用安装就能看完整示例：<a href="https://mariusding.github.io/sports-video-coach/demo/">demo 网页</a>（程序画的练习）。</sub>
 
 </div>
 
@@ -54,12 +55,12 @@ sports-video-coach demo --lang zh en
 
 <img align="right" width="260" alt="手机上的教练网页：比分、讲解音频、复盘报告" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/mobile.png">
 
-- **一个手机教练网页：**改什么、一个练习、下次可以检查的目标、对应的片段，整份报告还能听。
-- **一段讲解视频：**出问题的地方画面暂停，圈出位置，字幕说明原因。
-- **背后的看片复盘：**带时间的关键时刻、发生了什么、为什么，存成 json，agent 可以接着用。
+- **一个手机教练网页**：改什么、一个练习、下次可以检查的目标、对应的片段，整份报告还能听。
+- **一段讲解视频**：出问题的地方画面暂停，圈出位置，字幕说明原因。
+- **背后的看片复盘**：带时间的关键时刻、发生了什么、为什么，存成 json，agent 可以接着用。
 - 支持中文、英文、日文、韩文、西班牙文、法文、德文、葡萄牙文（`--lang`）。
 
-**目前做不到的：**agent 看的是帧拼图（默认每半秒一帧），非常快的细节可能落在两帧之间；跟踪和数据要用篮球插件。
+**目前做不到的**：agent 看的是帧拼图（默认每半秒一帧），非常快的细节可能落在两帧之间；跟踪和数据要用篮球插件。
 每次运行会用掉一些你的 agent 订阅额度。
 
 <br clear="right">
@@ -67,9 +68,9 @@ sports-video-coach demo --lang zh en
 ## 怎么工作
 
 1. **工具把视频切成帧拼图**，能量的先量出来（篮球插件还会跟踪球员和球）。
-2. **你的 agent 是教练。**需要眼睛或文字时工具就停下（退出码 3），说清楚要写什么：先是看片复盘，再是报告。
+2. **你的 agent 是教练**。需要眼睛或文字时工具就停下（退出码 3），说清楚要写什么：先是看片复盘，再是报告。
    校验器会告诉 agent 答案还缺什么。
-3. **剩下的工具来做：**片段、讲解音频、网页、讲解视频。改了报告再跑一次，只重做受影响的部分。
+3. **剩下的工具来做**：片段、讲解音频、网页、讲解视频。改了报告再跑一次，只重做受影响的部分。
 
 agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md)；
 一次真实运行的每一步见 [docs/architecture.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/architecture.md)。
