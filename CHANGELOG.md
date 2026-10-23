@@ -64,6 +64,9 @@ All notable changes to this project are documented here. The format follows [Kee
   after editing a stage, and a single source video is referenced, not copied.
 - The landing page shows the install and demo commands, a "Write a plugin for your sport" link and the version.
   README: one star request and an alpha status line.
+- README (en, zh) rewritten: the explained video first, a "Tell your agent" prompt to paste into Claude Code or
+  Codex, what you get and what it can't do yet, three steps for how it works; install options, costs and data,
+  and the developer pattern folded away.
 - docs/plugins.md: a stage module skeleton, what the light install can import, and how a stage's numbers reach the
   agent (`fill_values`) and the page (`PageHooks`). README: the Git Bash PATH form for a `C:/` bin dir.
 - Narration guide lists every language's read rate; the review guide writes likely/unclear in the review's
