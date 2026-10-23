@@ -379,10 +379,21 @@ def qa_done(g: Unit) -> bool:
     return (g.folder / "qa.md").exists() and not qa_errors(g)
 
 
-QA_STAMP = (" No browser? `sports-video-coach page-check {pages}` checks links and media (not layout or playback);"
-            " say in qa.md which checks you ran and that the 390 px layout was not looked at."
-            " Then add the line `checked: {qa}` to qa.md (the stamp of the files you checked; an edit after QA "
-            "changes it and the run asks for QA again).")
+QA_STAMP = (" No browser? `sports-video-coach page-check --strict --write-qa {pages}` checks links, media and the "
+            "text of the page and scripts (not layout or playback) and writes a qa.md draft that says what was not "
+            "checked; read it, add what you checked yourself."
+            " Then make sure qa.md has the line `checked: {qa}` (the stamp of the files you checked; an edit after "
+            "QA changes it and the run asks for QA again). The run also waits on page-check's text warnings "
+            "(leftover English, mojibake, French straight quotes) until they are fixed or `--accept qa` keeps "
+            "them.")
+
+
+def qa_checks(g: Unit) -> list[str]:
+    """page-check's text warnings for each built report page (the page's report parts and the scripts next to
+    it), so a PASS in qa.md does not hide them; no ffprobe or link checks here (those are in qa.md's job)."""
+    from . import page_check
+    return [f"{d.relative_to(g.folder).as_posix() if d != g.folder else '.'}: {w}" for d in g.reports()
+            if (d / "index.html").exists() for w in page_check.warnings(d)]
 
 
 def published(g: Unit) -> bool:
@@ -469,7 +480,8 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              inputs=lambda g: [d / f"listen.{l}.md" for d in g.reports() for l in g.langs], artifact="narration"),
         Step("html", "cmd", html_done, lambda g: [["html", str(d)] for d in g.reports()], inputs=html_inputs,
              artifact="html"),
-        Step("qa", "agent", qa_done, how=qa_how + QA_STAMP, errors=qa_errors, artifact="qa", needs_all=True),
+        Step("qa", "agent", qa_done, how=qa_how + QA_STAMP, errors=qa_errors, artifact="qa", needs_all=True,
+             checks=qa_checks),
         Step("publish", "cmd", published, lambda g: [["publish", *map(str, g.reports()), "--deploy"]],
              artifact="publish"),
         Step("film-script", "agent", lambda g: all((g.folder / f"film.{l}.md").exists() for l in g.langs),

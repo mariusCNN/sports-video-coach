@@ -56,7 +56,7 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 - Write every deliverable in its own language, with no other language's words left in. review.json is written in
   the first language of `languages`; the report in that language may use its words, every other report translates
   them. `likely` / `unclear` become **可能** / **看不清（不确定）** in Chinese, **おそらく** / **見えない（不確か）**
-  in Japanese, and every other English phrase is translated unless it is a name (`page-check` flags the ones left).
+  in Japanese, and every other English phrase is translated unless it is a name (`page-check` flags the ones left, in the page and in the listen / film scripts).
 - The title's `<who>` is the focus person: `focus` in `analysis.json`, named in each report's own words (e.g.
   "the player in orange" -> 穿橙色的球员 in `README.md`). No `focus`: name who the review coached.
 - No date in the title: the page header under it already shows the sport and the date (`analysis.json` `date`).

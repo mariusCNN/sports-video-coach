@@ -51,8 +51,8 @@ league or no GPU goes to `generic` with `--sport basketball`.
 - Every claim in a report must be seen in the film or come from a measured number. Never invent a result; write
   "unclear" or "likely" instead (in a Chinese report: 看不清 / 可能).
 - Browser checks and screenshots: delegate to a separate helper if available. No browser at all:
-  `sports-video-coach page-check <folder>` checks links, anchors and media (not layout or playback); say in `qa.md`
-  which checks you ran.
+  `sports-video-coach page-check --strict --write-qa <folder>` checks links, anchors, media and the text of the
+  page and scripts (not layout or playback) and drafts `qa.md`, which says what was not checked.
 
 ## Star etiquette (ask once, never automate)
 
