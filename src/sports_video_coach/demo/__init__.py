@@ -80,10 +80,24 @@ CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next 
          ("Coaches", "One game in: a team page and a page per player, with clips and audio, shared as private links."),
          ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "
                         "validator per agent step. A new sport plugin is one command."))
+TRY = (f"uv tool install git+{REPO_URL}", "sports-video-coach demo")   # needs ffmpeg on PATH
+PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
+
+
+def version() -> str:
+    """The installed package's version ('' when it runs from a tree that was never installed)."""
+    from importlib.metadata import PackageNotFoundError, version as v
+    try:
+        return v("sports-video-coach")
+    except PackageNotFoundError:
+        return ""
 
 
 def landing(films: list[str]) -> str:
-    """The English landing page of the demo site: tagline, pitch, the explained video, three cards, links."""
+    """The English landing page of the demo site: tagline, pitch, the explained video, three cards, how to try it,
+    links and the version."""
+    ver = version()
+    try_it = "\n".join(TRY)
     video = ""
     if "film.en.mp4" in films:
         poster = ' poster="film.en.jpg"' if "film.en.jpg" in films else ""
@@ -117,6 +131,9 @@ video {{ width: 100%; border-radius: 10px; background: #221f45; margin: 1.2rem 0
         text-decoration: none; }}
 .go a + a {{ background: #fff; color: #221f45; border: 1px solid #221f45; }}
 small {{ display: block; margin-top: 1.4rem; color: #5c5a86; }}
+h2.try {{ font-size: 1.1rem; margin: 1.6rem 0 .4rem; }}
+pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1rem; overflow-x: auto;
+      font-size: .9rem; margin: 0 0 .4rem; }}
 </style>
 </head>
 <body>
@@ -127,8 +144,11 @@ small {{ display: block; margin-top: 1.4rem; color: #5c5a86; }}
 {video}
 <div class="cards">{cards}</div>
 <p class="go"><a href="demo/">Open the demo coaching page</a><a href="{REPO_URL}">Get it on GitHub</a></p>
+<h2 class="try">Try it (needs ffmpeg)</h2>
+<pre><code>{try_it}</code></pre>
+<p>Your sport needs more than frames? <a href="{PLUGINS_URL}">Write a plugin for your sport</a>.</p>
 <small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
-no person appears. {("Other languages: " + other) if other else ""}</small>
+no person appears. {("Other languages: " + other) if other else ""}{f" Version {ver}." if ver else ""}</small>
 </main>
 </body>
 </html>

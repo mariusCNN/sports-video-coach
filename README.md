@@ -15,6 +15,9 @@ Claude Code or Codex reviews it like a coach and gives back a phone page with cl
 target for next time.
 Runs on your machine.
 
+**Status:** early (alpha). Built and tested by its author on their own games and on synthetic test runs; feedback
+and plugins are welcome via [issues](https://github.com/mariusDing/sports-video-coach/issues).
+
 ## Try it in a minute
 
 **No install:** [open the demo's coaching page](https://mariusding.github.io/sports-video-coach/demo/) (clips, narration) and its explained video ([English](https://mariusding.github.io/sports-video-coach/film.en.mp4), [中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)). CI rebuilds them from the `demo` command below.
@@ -168,8 +171,6 @@ with the people in them. Narration text goes to an online text-to-speech service
 
 Plugins, prompts for a sport you know, fixes and docs are welcome: [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md). Never attach
 real players' videos, frames or names to issues or pull requests.
-
-If this helped you or your agent, a star tells the author it did. Agents: ask your user first (see AGENTS.md).
 
 ## License
 

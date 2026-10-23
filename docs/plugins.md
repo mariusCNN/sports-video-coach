@@ -19,11 +19,15 @@ sports-video-coach run serve.mp4 --plugin tennis
 `<workspace>` is `$SVC_WORKSPACE`, else `./workspace`; `--dir <folder>` writes elsewhere. In a clone, prefix each
 command with `uv run`. `new-plugin` also prints the command for the tests it wrote (see [Test it](#test-it)).
 
-The copy gets its own name everywhere: `summary` and `use_when` (rewrite them: agents pick a plugin by them), the
-stage names in its texts (`tennis:review-check`) and its agent steps, which say
-`sports-video-coach guide review --unit <folder>`: the unit's own plugin's guide (yours, not the generic one), from
-any folder, also when your plugin lives in a `plugins/` folder above the unit. `guide review --plugin tennis`
-prints the same file.
+The copy gets its own name everywhere: `summary` and `use_when`, the stage names in its texts
+(`tennis:review-check`) and its agent steps, which say `sports-video-coach guide review --unit <folder>` so the agent
+reads the unit's plugin's guides (yours, not the generic ones) from any folder, also when your plugin lives in a
+`plugins/` folder above the unit (`guide review --plugin tennis` prints the same file). Agents pick a plugin by `summary`
+and `use_when`: give them with `new-plugin tennis --summary "..." --use-when "..."`, or rewrite them in
+`__init__.py`; until then `plugins` marks the plugin "summary not written yet".
+
+A unit refers to its source video where it is (`analysis.json` `video` holds its absolute path; only several videos
+are joined into the unit's own `video.mp4`), so keep the video in place, or update `video` after moving it.
 
 The copy runs as it is. Make it yours in this order:
 
@@ -118,6 +122,9 @@ P.Step("pose", "cmd", lambda g: (g.run / "pose" / "pose.json").exists(),
 Try the stage alone with `sports-video-coach tennis:pose <video> --out <folder>`; the run log echoes it in that
 form (`[run] pose: sports-video-coach tennis:pose ...`), so a failed step can be pasted and run again.
 
+Provenance tracks a step's `inputs` and `params`, not its code: after editing `pose.py`, run
+`sports-video-coach run <unit> --redo pose` (it runs again; a later step that lists its output in `inputs` follows).
+
 `pose.py` is a module with `main(argv)`; the CLI calls it with the arguments after the stage name. The light
 install has the core's dependencies: OpenCV (`cv2`), NumPy, edge-tts and markdown-it-py. Anything else (a pose
 model, pandas) goes in `requires` and `install` so `plugins` says what is missing.
@@ -208,9 +215,11 @@ It checks three things, and is the pattern for your own tests:
 - The plugin loads with no error: it puts the plugin's parent folder on `SVC_PLUGIN_PATH`, drops
   `svc_plugin_<name>` from `sys.modules` and calls `plugin.plugins(refresh=True)`.
 - `sports-video-coach plugins --json` lists it with its stages.
-- Its step table (`PLUGIN.kinds[0].step_table()`) has the expected steps in order.
+- Its step table (`PLUGIN.kinds[0].step_table()`) runs frames before review before report and ends with film, so a
+  step you add before the review keeps it passing.
 
-When you add a step, update the expected list in the last test.
+A commented example at the end runs one of your stages on a 3-second ffmpeg test video in `tmp_path`: uncomment it
+and name your stage once you have one.
 
 More:
 

@@ -65,5 +65,7 @@ def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
     home = (site / "index.html").read_text(encoding="utf8")
     assert '<html lang="en">' in home and demo.TAGLINE in home and 'href="demo/"' in home
     assert all(f"<h2>{t}</h2>" in home for t, _ in demo.CARDS)
+    assert all(cmd in home for cmd in demo.TRY) and f'href="{demo.PLUGINS_URL}"' in home
+    assert demo.version() and f"Version {demo.version()}." in home
     assert "noindex" not in (site / "demo" / "index.html").read_text(encoding="utf8")   # meant to be found
     assert page_check.problems(site) == [] and page_check.problems(site / "demo") == []

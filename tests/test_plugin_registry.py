@@ -105,10 +105,36 @@ def test_missing_packages_are_listed_with_the_install_hint(monkeypatch, capsys):
     assert plugin.missing(p) == ["no_such_pkg_xyz"] and plugin.missing(plugin.get("generic")) == []
     monkeypatch.setattr(plugin, "plugins", lambda refresh=False: {"heavy": p})
     cli.list_plugins([])
-    assert "not usable in this install: needs no_such_pkg_xyz (clone and uv sync)" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert out == "heavy: not usable in this install (1 package missing, `plugins --json` lists them); needs clone " \
+                  "and uv sync\n"                                     # one line, not the summary, units and stages
     cli.list_plugins(["--json"])
     row = json.loads(capsys.readouterr().out)["plugins"][0]
-    assert row["missing"] == ["no_such_pkg_xyz"] and row["install"] == "clone and uv sync"
+    assert row["missing"] == ["no_such_pkg_xyz"] and row["install"] == "clone and uv sync" and row["summary"] == "s"
+
+
+def test_plugins_marks_a_summary_new_plugin_left_as_it_was(tmp_path, monkeypatch, capsys):
+    from sports_video_coach import scaffold
+    scaffold.scaffold("rowing", tmp_path / "plugins")
+    scaffold.scaffold("kayak", tmp_path / "plugins", summary='kayak "sprint" video: stroke rate -> report',
+                      use_when="a kayak race")
+    monkeypatch.setenv("SVC_PLUGIN_PATH", str(tmp_path / "plugins"))
+    for m in ("svc_plugin_rowing", "svc_plugin_kayak"):
+        monkeypatch.delitem(sys.modules, m, raising=False)
+    try:
+        found = plugin.plugins(refresh=True)
+        assert not plugin.summary_written(found["rowing"]) and plugin.summary_written(found["kayak"])
+        assert found["kayak"].summary == 'kayak "sprint" video: stroke rate -> report'
+        assert found["kayak"].use_when == "a kayak race"
+        cli.list_plugins([])
+        out = capsys.readouterr().out
+        assert "rowing: rowing video:" in out and out.count("[summary not written yet]") == 1
+        cli.list_plugins(["--json"])
+        rows = {r["name"]: r for r in json.loads(capsys.readouterr().out)["plugins"]}
+        assert rows["rowing"]["summary_written"] is False and rows["kayak"]["summary_written"] is True
+    finally:
+        monkeypatch.undo()
+        plugin.plugins(refresh=True)
 
 
 def test_a_stage_that_needs_a_missing_package_exits_with_a_hint(monkeypatch):
@@ -210,6 +236,31 @@ def test_a_unit_finds_its_plugin_in_a_plugins_folder_above_it_from_any_folder(tm
         p, k, _ = plugin.owner(unit)
         assert p.name == "rowing" and k.json == "analysis.json"
         assert str((ws / "plugins").resolve()) in pipeline.child_env()["SVC_PLUGIN_PATH"].split(os.pathsep)
+    finally:
+        monkeypatch.undo()
+        plugin.plugins(refresh=True)
+
+
+def test_the_commands_the_agent_steps_print_work_from_any_folder(tmp_path, monkeypatch, capsys):
+    from sports_video_coach import guide, scaffold
+    ws = tmp_path / "ws"
+    scaffold.scaffold("rowing", ws / "plugins")         # new-plugin's default place; the run's workspace is another
+    unit = ws / "analysis" / "rowing" / "2026-01-01"
+    (unit / "run" / "review").mkdir(parents=True)
+    (unit / "analysis.json").write_text(json.dumps({"plugin": "rowing", "video": "v.mp4"}), encoding="utf8")
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    monkeypatch.delitem(sys.modules, "svc_plugin_rowing", raising=False)
+    try:
+        assert "rowing" not in plugin.plugins(refresh=True)
+        assert guide.main(["review", "--unit", str(unit), "--path"]) == 0
+        assert capsys.readouterr().out.strip() == (ws / "plugins" / "rowing" / "prompts" / "review.md").resolve().as_posix()
+        plugin._EXTRA.clear()
+        plugin.plugins(refresh=True)
+        assert cli.resolve("rowing:review-check", None, [str(unit)])[1] == "rowing:review-check"
+        with pytest.raises(SystemExit):
+            guide.main(["review", "--unit", str(elsewhere)])     # no unit there
     finally:
         monkeypatch.undo()
         plugin.plugins(refresh=True)

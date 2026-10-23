@@ -17,7 +17,8 @@ PLUGIN = Plugin(
     summary="any sport or activity video, no detection (the agent reviews the frames): contact sheets -> film review -> report",
     use_when="no plugin for the sport, a phone clip, a first look; basketball with no league or GPU: --sport basketball",
     stages={
-        "new": (f"{__name__}.new", "start an analysis from one or more videos: analysis.json + joined video.mp4"),
+        "new": (f"{__name__}.new", "start an analysis from one or more videos: analysis.json naming the video where "
+                                  "it is (several: joined into the folder's video.mp4)"),
         "review-check": (f"{__name__}.unit", "check run/review/review.json against the review brief"),
     },
     kinds=[Kind("analysis", "analysis.json", f"{__name__}.unit:Analysis", f"{__name__}.unit:STEPS",

@@ -14,6 +14,8 @@
 Claude Code 或 Codex 像教练一样看片，交回一个手机网页：片段、讲解音频、练习方法，和下次要达到的目标。
 全部在你自己的电脑上跑。
 
+**状态：**早期（alpha）。由作者在自己的比赛和合成测试上开发、测试；欢迎通过 [issues](https://github.com/mariusDing/sports-video-coach/issues) 反馈或贡献插件。
+
 ## 一分钟试用
 
 **不想安装：**[打开 demo 生成的教练网页](https://mariusding.github.io/sports-video-coach/demo/)（片段、讲解音频），以及讲解视频（[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。它们由 CI 用下面的 `demo` 命令重新生成。
@@ -159,8 +161,6 @@ Write the coaching report README.en.md in ... from .../run/review/review.json, a
 ## 参与贡献
 
 欢迎插件、你熟悉的运动的提示词、修复和文档：[CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md)。不要在 issue 或 PR 里附上真实球员的视频、截帧或名字。
-
-如果它帮到了你或你的 agent，点个 star 让作者知道。agent 请先问你的用户（见 AGENTS.md）。
 
 ## 许可
 

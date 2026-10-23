@@ -74,15 +74,18 @@ def list_plugins(argv=None) -> None:
         print(json.dumps({"plugins": [dict(name=p.name, summary=p.summary, use_when=p.use_when,
                                            kinds=[dict(name=k.name, json=k.json) for k in p.kinds],
                                            stages=list(p.stages), prompts=str(p.prompts) if p.prompts else None,
-                                           missing=plugin.missing(p), install=p.install)
+                                           missing=plugin.missing(p), install=p.install,
+                                           summary_written=plugin.summary_written(p))
                                       for p in found.values()], "errors": errs}, indent=1))
         return
     for p in found.values():
-        print(f"{p.name}: {p.summary}")
+        if gone := plugin.missing(p):  # one line: the full list and the rest are in --json
+            print(f"{p.name}: not usable in this install ({len(gone)} package{'s' if len(gone) > 1 else ''} missing, "
+                  f"`plugins --json` lists them); needs {p.install or ', '.join(gone)}")
+            continue
+        print(f"{p.name}: {p.summary}" + ("" if plugin.summary_written(p) else "  [summary not written yet]"))
         if p.use_when:
             print(f"  use when: {p.use_when}")
-        if gone := plugin.missing(p):
-            print(f"  not usable in this install: needs {', '.join(gone)}" + (f" ({p.install})" if p.install else ""))
         print(f"  units: {', '.join(f'{k.name} ({k.json})' for k in p.kinds) or '-'}")
         print(f"  stages: {', '.join(p.stages) or '-'}")
     for where, e in errs.items():

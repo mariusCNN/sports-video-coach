@@ -66,6 +66,14 @@ class Plugin:
     install: str = ""                           # how to get them, shown when one is missing
 
 
+UNWRITTEN = "(scaffolded from generic; describe what it adds)"  # new-plugin's placeholder summary
+
+
+def summary_written(p: Plugin) -> bool:
+    """False while the summary is still new-plugin's placeholder (agents choose a plugin by it)."""
+    return UNWRITTEN not in p.summary
+
+
 def missing(p: Plugin) -> list[str]:
     """The packages in `p.requires` this Python cannot import (checked without importing them)."""
     return [m for m in p.requires if importlib.util.find_spec(m) is None]

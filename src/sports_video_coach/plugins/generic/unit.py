@@ -1,4 +1,6 @@
-"""The analysis unit: <folder>/analysis.json, video.mp4, run/frames, run/review/review.json, README.md per language.
+"""The analysis unit: <folder>/analysis.json, run/frames, run/review/review.json, README.md per language. The video is
+analysis.json `video`: one source video by its absolute path, left where it is (keep it there), or several joined
+into <folder>/video.mp4.
 
 Steps: frames (cmd) -> review (agent: review.json) -> report (agent: README per language) -> the core artifacts
 (clips, narration, html, qa, publish, film; analysis.json `artifacts` picks them).
