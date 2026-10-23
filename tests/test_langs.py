@@ -137,6 +137,27 @@ def test_page_in_japanese(tmp_path):
     assert render_html.sport_names("テニス", ("ja", "en")) == {"ja": "テニス", "en": "Tennis"}
 
 
+def test_common_sports_have_names_in_every_language_with_a_table():
+    both = ("fr", "es", "de", "pt", "ko", "en")
+    assert render_html.sport_names("volleyball", both) == {"fr": "Volley-ball", "es": "Voleibol", "de": "Volleyball",
+                                                           "pt": "Vôlei", "ko": "배구", "en": "Volleyball"}
+    assert render_html.sport_names("Natation", ("fr", "en")) == {"fr": "Natation", "en": "Swimming"}  # own name in
+    for code in ("zh", "ja", "ko", "es", "fr", "de", "pt"):
+        assert set(L.LANGS[code].sports) == set(L.SPORTS_EN) and all(L.LANGS[code].sports.values())
+    assert render_html.sport_names("shuttle run", ("fr", "en")) == {"fr": "Shuttle run", "en": "Shuttle run"}
+    assert render_html.sport_names({"fr": "Navette", "en": "shuttle run"}, ("fr", "en"))["fr"] == "Navette"
+    given = render_html.sport_names({"fr": "Volley", "en": "volleyball"}, ("fr", "de", "en"))  # --sport-name wins
+    assert given == {"fr": "Volley", "de": "Volleyball", "en": "Volleyball"}
+
+
+def test_report_guide_writes_dates_as_the_page_header_does():
+    from sports_video_coach.plugins.generic.unit import PROMPTS
+    guide = (PROMPTS / "report.md").read_text(encoding="utf8")
+    assert "<date>" not in guide.split("## Rules")[0]                     # the header shows it: no date in the title
+    for code in L.CODES:
+        assert f"`{L.date('2026-10-23', code)}`" in guide, code
+
+
 def test_every_language_has_its_own_page_labels_and_date():
     for code in L.CODES:
         assert set(L.ui(code)) == set(L.UI_EN), code

@@ -8,7 +8,7 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 ## Structure
 
 ```markdown
-# <Sport>: <who>, <date>
+# <Sport>: <who>
 
 **Bottom line:** one sentence, the single most important thing to change.
 
@@ -58,13 +58,18 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
   them. `likely` / `unclear` become **可能** / **看不清（不确定）** in Chinese, **おそらく** / **見えない（不確か）**
   in Japanese, and every other English phrase is translated unless it is a name (`page-check` flags the ones left).
 - The title's `<who>` is the focus person: `focus` in `analysis.json`, named in each report's own words (e.g.
-  "the player in orange" -> 穿橙色的球员 in `README.md`). No `focus`: name who the review coached. The `<date>`
-  is written the report language's way, as the page header shows it (23 oct 2026, 2026年10月23日, 23.10.2026).
+  "the player in orange" -> 穿橙色的球员 in `README.md`). No `focus`: name who the review coached.
+- No date in the title: the page header under it already shows the sport and the date (`analysis.json` `date`).
+  A date anywhere else in the text is written as the header prints it for that language: en `23 Oct 2026`,
+  fr `23 oct. 2026`, es `23 oct 2026`, de `23.10.2026`, pt `23/10/2026`, zh and ja `2026年10月23日`,
+  ko `2026년 10월 23일`.
 - Several players in one report: `focus` names them all (`--focus "A in red, B in yellow"`). The title names them
   all, then one `## ` part per player, in the order `focus` gives, each with its own numbered habits (`### 1. ...`
   with the same five parts) and its own clips; `## Keep doing` last, one bullet group per player. Keep one player's
   evidence in that player's part.
-- The page shows the sport under the title. A sport the page cannot name in Chinese (it knows tennis, basketball,
-  football and about 25 more) is left out of the zh header; to name it, start with `--sport-name zh=折返跑` (repeat it per
-  language: `--sport-name ja=シャトルラン`), or later set `"sport": {"zh": "折返跑", "ja": "シャトルラン", "en":
-  "shuttle run"}` in `analysis.json`. Other languages show the English name unless given theirs.
+- The page shows the sport under the title, named in each page language for tennis, basketball, football,
+  volleyball and about 25 more (zh, ja, ko, es, fr, de, pt). Another sport is left out of a zh, ja or ko header and
+  shows its English name in the others; to name it, start with `--sport-name zh=折返跑` (repeat it per language:
+  `--sport-name fr=navette`), or later set `"sport": {"zh": "折返跑", "fr": "Navette", "en": "shuttle run"}` in
+  `analysis.json`. A name given this way always wins over the built-in one.
+- French: quotation marks are « … » (with a space inside), not "…".

@@ -2,7 +2,8 @@
 
 A language is its code (the file suffix: README.ja.md, listen.ja.md, film.ja.md; `--lang ja`), its BCP 47 tag for
 the page, the edge-tts voice that reads it, how its text is counted and wrapped (CJK: no spaces between words), its
-read speed for length estimates, the subtitle font per platform, the page's labels and how it writes a date.
+read speed for length estimates, the subtitle font per platform, the page's labels, how it writes a date and the
+names of common sports.
 README.md is the Chinese report, README.<code>.md every other language. Every language has its own page labels; a
 code outside the table shows the English ones.
 
@@ -40,6 +41,7 @@ class Lang:
     numbers: dict = field(default_factory=dict)  # number words of `minutes` (kanji numbers are read without them)
     date: str = "{y}-{mm}-{dd}"  # a date as the reader writes it: {d} {m} day / month, {dd} {mm} zero-padded, {mon}
     months: tuple = ()     # {mon}: the short month names, January first
+    sports: dict = field(default_factory=dict)  # common sport names {English name: own name} (missing: English)
 
 
 # stated lengths: the number (digits, a number word, kanji), the minute word, a half before or after it, and an
@@ -115,13 +117,54 @@ UI_PT = dict(contents="Sumário", switch="Mudar idioma", reports="Relatórios",
              seek="Posição da reprodução", speed="Velocidade de reprodução",
              clip="Clipe", slow="Câmera lenta", missing="(clipe ainda não cortado: rode a etapa clips)")
 
+# Common sport names per language, keyed by the English name (SPORTS_EN), so a page header in that language does
+# not show "volleyball"; `--sport-name LANG=NAME` (analysis.json `"sport": {lang: name}`) names any other sport.
+SPORTS_EN = ("tennis", "basketball", "football", "soccer", "badminton", "table tennis", "volleyball", "swimming",
+             "running", "golf", "baseball", "boxing", "climbing", "cycling", "skiing", "skateboarding",
+             "martial arts", "gymnastics", "yoga", "weightlifting", "fitness", "dance", "pickleball", "squash",
+             "rugby", "hockey", "ice hockey", "cricket", "athletics")
+
+
+def _sports(*names: str) -> dict:
+    """{English name: own name}, the names in SPORTS_EN order."""
+    assert len(names) == len(SPORTS_EN), len(names)
+    return dict(zip(SPORTS_EN, names))
+
+
+SPORT_ZH = _sports("网球", "篮球", "足球", "足球", "羽毛球", "乒乓球", "排球", "游泳", "跑步", "高尔夫", "棒球", "拳击", "攀岩",
+                   "骑行", "滑雪", "滑板", "武术", "体操", "瑜伽", "举重", "健身", "舞蹈", "匹克球", "壁球", "橄榄球", "曲棍球",
+                   "冰球", "板球", "田径")
+SPORT_JA = _sports("テニス", "バスケットボール", "サッカー", "サッカー", "バドミントン", "卓球", "バレーボール", "水泳", "ランニング",
+                   "ゴルフ", "野球", "ボクシング", "クライミング", "自転車", "スキー", "スケートボード", "武道", "体操", "ヨガ",
+                   "ウエイトリフティング", "フィットネス", "ダンス", "ピックルボール", "スカッシュ", "ラグビー", "ホッケー",
+                   "アイスホッケー", "クリケット", "陸上競技")
+SPORT_KO = _sports("테니스", "농구", "축구", "축구", "배드민턴", "탁구", "배구", "수영", "달리기", "골프", "야구", "복싱", "클라이밍",
+                   "사이클", "스키", "스케이트보드", "무술", "체조", "요가", "역도", "피트니스", "댄스", "피클볼", "스쿼시", "럭비",
+                   "하키", "아이스하키", "크리켓", "육상")
+SPORT_ES = _sports("Tenis", "Baloncesto", "Fútbol", "Fútbol", "Bádminton", "Tenis de mesa", "Voleibol", "Natación",
+                   "Carrera a pie", "Golf", "Béisbol", "Boxeo", "Escalada", "Ciclismo", "Esquí", "Skateboarding",
+                   "Artes marciales", "Gimnasia", "Yoga", "Halterofilia", "Fitness", "Baile", "Pickleball", "Squash",
+                   "Rugby", "Hockey", "Hockey sobre hielo", "Críquet", "Atletismo")
+SPORT_FR = _sports("Tennis", "Basket-ball", "Football", "Football", "Badminton", "Tennis de table", "Volley-ball",
+                   "Natation", "Course à pied", "Golf", "Baseball", "Boxe", "Escalade", "Cyclisme", "Ski", "Skateboard",
+                   "Arts martiaux", "Gymnastique", "Yoga", "Haltérophilie", "Fitness", "Danse", "Pickleball", "Squash",
+                   "Rugby", "Hockey", "Hockey sur glace", "Cricket", "Athlétisme")
+SPORT_DE = _sports("Tennis", "Basketball", "Fußball", "Fußball", "Badminton", "Tischtennis", "Volleyball", "Schwimmen",
+                   "Laufen", "Golf", "Baseball", "Boxen", "Klettern", "Radfahren", "Skifahren", "Skateboarden",
+                   "Kampfkunst", "Turnen", "Yoga", "Gewichtheben", "Fitness", "Tanz", "Pickleball", "Squash", "Rugby",
+                   "Hockey", "Eishockey", "Cricket", "Leichtathletik")
+SPORT_PT = _sports("Tênis", "Basquete", "Futebol", "Futebol", "Badminton", "Tênis de mesa", "Vôlei", "Natação",
+                   "Corrida", "Golfe", "Beisebol", "Boxe", "Escalada", "Ciclismo", "Esqui", "Skate", "Artes marciais",
+                   "Ginástica", "Ioga", "Levantamento de peso", "Fitness", "Dança", "Pickleball", "Squash", "Rúgbi",
+                   "Hóquei", "Hóquei no gelo", "Críquete", "Atletismo")
+
 # per_min: zh and en measured on rendered report scripts (zh: Chinese characters without punctuation, en: characters
 # with spaces; English words a minute range 130-190 with word length). The others come from one ~25 s sample
 # paragraph per default voice (2026-10-23), not from full scripts: treat them as rough until measured (ja 285: an 84 s report script).
 LANGS: dict[str, Lang] = {l.code: l for l in (
     Lang("zh", "zh-CN", "Chinese", "中文", "zh-CN-YunjianNeural", "zh-CN-XiaoxiaoNeural", 235, cjk=True, sub_chars=30,
          fonts=CJK_SC_FONTS, ui=UI_ZH, film=dict(slow="慢放", freeze="定格"), date="{y}年{m}月{d}日",
-         minutes=MIN_ZH),
+         minutes=MIN_ZH, sports=SPORT_ZH),
     Lang("en", "en", "English", "EN", "en-US-AndrewNeural", "en-US-AvaNeural", 960,
          ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused"), date="{d} {mon} {y}",
          months=("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
@@ -130,26 +173,26 @@ LANGS: dict[str, Lang] = {l.code: l for l in (
          fonts={"win32": "Yu Gothic", "darwin": "Hiragino Sans", "other": "Noto Sans CJK JP"},
          page_font='"Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif',
          ui=UI_JA, film=dict(slow="スロー", freeze="一時停止"), date="{y}年{m}月{d}日",
-         minutes=MIN_JA),
+         minutes=MIN_JA, sports=SPORT_JA),
     Lang("ko", "ko", "Korean", "한국어", "ko-KR-InJoonNeural", "ko-KR-SunHiNeural", 270, cjk=True, sub_chars=34,
          fonts={"win32": "Malgun Gothic", "darwin": "Apple SD Gothic Neo", "other": "Noto Sans CJK KR"},
          page_font='"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif',
          ui=UI_KO, film=dict(slow="슬로모션", freeze="일시정지"), date="{y}년 {m}월 {d}일",
-         minutes=MIN_KO),
+         minutes=MIN_KO, sports=SPORT_KO),
     Lang("es", "es", "Spanish", "ES", "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 850,
          ui=UI_ES, film=dict(slow="Cámara lenta", freeze="Pausa"), date="{d} {mon} {y}",
          months=("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"),
-         minutes=MIN_ES, numbers=NUM_ES),
+         minutes=MIN_ES, numbers=NUM_ES, sports=SPORT_ES),
     Lang("fr", "fr", "French", "FR", "fr-FR-HenriNeural", "fr-FR-DeniseNeural", 950,
          ui=UI_FR, film=dict(slow="Ralenti", freeze="Pause"), date="{d} {mon} {y}",
          months=("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."),
-         minutes=MIN_FR, numbers=NUM_FR),
+         minutes=MIN_FR, numbers=NUM_FR, sports=SPORT_FR),
     Lang("de", "de", "German", "DE", "de-DE-ConradNeural", "de-DE-KatjaNeural", 950,
          ui=UI_DE, film=dict(slow="Zeitlupe", freeze="Standbild"), date="{dd}.{mm}.{y}",
-         minutes=MIN_DE, numbers=NUM_DE),
+         minutes=MIN_DE, numbers=NUM_DE, sports=SPORT_DE),
     Lang("pt", "pt-BR", "Portuguese", "PT", "pt-BR-AntonioNeural", "pt-BR-FranciscaNeural", 800,
          ui=UI_PT, film=dict(slow="Câmera lenta", freeze="Pausa"), date="{dd}/{mm}/{y}",
-         minutes=MIN_PT, numbers=NUM_PT),
+         minutes=MIN_PT, numbers=NUM_PT, sports=SPORT_PT),
 )}
 CODES = tuple(LANGS)
 

@@ -73,39 +73,31 @@ class PageHooks:
 DEFAULT = PageHooks()
 
 
-# Common sport names in Chinese, so a zh page does not show "tennis"; analysis.json `"sport": {"zh": .., "en": ..}`
-# names any other sport per language.
-SPORT_ZH = {"tennis": "网球", "basketball": "篮球", "football": "足球", "soccer": "足球", "badminton": "羽毛球",
-            "table tennis": "乒乓球", "volleyball": "排球", "swimming": "游泳", "running": "跑步", "golf": "高尔夫",
-            "baseball": "棒球", "boxing": "拳击", "climbing": "攀岩", "cycling": "骑行", "skiing": "滑雪",
-            "skateboarding": "滑板", "martial arts": "武术", "gymnastics": "体操", "yoga": "瑜伽",
-            "weightlifting": "举重", "fitness": "健身", "dance": "舞蹈", "pickleball": "匹克球", "squash": "壁球",
-            "rugby": "橄榄球", "hockey": "曲棍球", "ice hockey": "冰球", "cricket": "板球", "athletics": "田径"}
-SPORT_JA = {"tennis": "テニス", "basketball": "バスケットボール", "football": "サッカー", "soccer": "サッカー",
-            "badminton": "バドミントン", "table tennis": "卓球", "volleyball": "バレーボール", "swimming": "水泳",
-            "running": "ランニング", "golf": "ゴルフ", "baseball": "野球", "boxing": "ボクシング",
-            "climbing": "クライミング", "cycling": "自転車", "skiing": "スキー", "skateboarding": "スケートボード",
-            "martial arts": "武道", "gymnastics": "体操", "yoga": "ヨガ", "weightlifting": "ウエイトリフティング",
-            "fitness": "フィットネス", "dance": "ダンス", "pickleball": "ピックルボール", "squash": "スカッシュ",
-            "rugby": "ラグビー", "hockey": "ホッケー", "ice hockey": "アイスホッケー", "cricket": "クリケット",
-            "athletics": "陸上競技"}
-SPORTS = {"zh": SPORT_ZH, "ja": SPORT_JA}  # other languages show the English name
+# Common sport names per language (langs.py `sports`), so a zh or fr page does not show "tennis"; analysis.json
+# `"sport": {"zh": .., "en": ..}` (`--sport-name LANG=NAME`) names any other sport per language.
+SPORT_ZH, SPORT_JA = langs_.SPORT_ZH, langs_.SPORT_JA
+SPORTS = {c: l.sports for c, l in langs_.LANGS.items() if l.sports}  # a language without a table shows English
 
 
 def sport_names(sport, langs=("en",)) -> dict[str, str]:
-    """{lang: sport name} for the page languages: a per-language dict as given, else the SPORTS tables both ways.
-    With several languages, a name that is not in the page's script is left out ("" ) rather than shown
-    untranslated."""
-    if isinstance(sport, dict):
+    """{lang: sport name} for the page languages: a per-language dict as given, else the SPORTS tables both ways
+    (the English name or any language's own name finds the others). An unknown sport shows as given, except that
+    with several languages a CJK page leaves out ("") a name not in its script, and the others one in a CJK script."""
+    if isinstance(sport, dict):  # names given per language win; the others come from the English one's tables
         fallback = next((str(v) for v in sport.values() if v), "")
-        return {c: label(str(sport.get(c) or fallback)) for c in langs}
+        base = sport_names(str(sport["en"]), langs) if sport.get("en") else {}
+        return {c: label(str(sport.get(c) or base.get(c) or fallback)) for c in langs}
     raw = str(sport or "").strip()
+    low = raw.lower()
+    key = low if low in langs_.SPORTS_EN else next(
+        (k for t in SPORTS.values() for k, v in t.items() if v.lower() == low), None)
+    if key:
+        en = raw if low == key else key
+        return {c: label(SPORTS.get(c, {}).get(key) or en) for c in langs}
     native = bool(re.search(r"[぀-ヿ㐀-鿿가-힯]", raw))  # Chinese, kana or Hangul
-    key = raw.lower() if raw.lower() in SPORT_ZH else next(
-        (k for t in SPORTS.values() for k, v in t.items() if v == raw), None)
-    en = (key or ("" if len(langs) > 1 else raw)) if native else raw
-    own = {c: t[key] if key else (raw if native or len(langs) == 1 else "") for c, t in SPORTS.items()}
-    return {c: label(own.get(c, en)) for c in langs}
+    shown = raw if native or len(langs) == 1 else ""
+    en = ("" if len(langs) > 1 else raw) if native else raw
+    return {c: label(shown if langs_.cjk(c) else en) for c in langs}
 
 
 def label(name: str) -> str:

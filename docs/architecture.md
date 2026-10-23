@@ -60,8 +60,10 @@ scan for English left in and which page labels belong to which language.
 - Page labels: every language has its own (`ui`); a code outside the table would show the English ones.
 - Order: the unit json's `languages` order picks the page's default language (its `<html lang>` and the text shown
   first) and the film order; READMEs it does not list follow in table order (zh first).
-- Dates: shown the language's way (`date`, `months`: 23 oct 2026, 2026年10月23日, 23.10.2026); file and folder
+- Dates: shown the language's way (`date`, `months`: 23 Oct 2026, 23 oct. 2026, 2026年10月23日, 23.10.2026); file and folder
   names and json keep ISO dates.
+- Sport names: `sports` names about 30 common sports per language (`SPORTS_EN` keys) for the page header; a
+  language without one, or a sport not in it, shows the English name (`--sport-name LANG=NAME` overrides).
 - Subtitle fonts: zh, ja and ko have CJK faces; en, es, fr, de and pt share a Latin face per platform
   (`DEFAULT_FONTS`: Segoe UI, Helvetica Neue, DejaVu Sans).
 - Basketball units stay zh + en: its charts and stat tables know only those two.
@@ -70,7 +72,7 @@ Add a language: one `Lang(...)` in `LANGS` with its code (the file suffix), BCP 
 label, two edge-tts voices (`edge-tts --list-voices`), read rate (`per_min`: what `count()` counts in a minute;
 measure it on a rendered script), `cjk=True` for a language written without spaces (counts characters, wraps
 anywhere, gets the CJK heading style), its subtitle fonts per platform, an optional page font stack, page labels
-(`ui`, keys as in `UI_EN`), film tags, a date format, and how a script states its length (`minutes`: a regex with the groups
+(`ui`, keys as in `UI_EN`), film tags, a date format, sport names (`sports`), and how a script states its length (`minutes`: a regex with the groups
 `n`, `h1` / `h2` for a half and `under`, plus its number words in `numbers`; `narrate` warns when the stated
 length is off the read time). Then add the language's report labels to the guides in
 `plugins/generic/prompts/` and a test.
