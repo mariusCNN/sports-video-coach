@@ -111,9 +111,11 @@ class Unit:
         return [self.folder]
 
     def fill_values(self) -> dict:
-        """Placeholders for agent instructions ({folder}, {run}, {qa}, ...)."""
+        """Placeholders for agent instructions ({folder}, {run}, {qa}, ...); {readmes} names only the READMEs not
+        written yet when some are (a language added), else every one."""
+        todo = [l for l in self.langs if not (self.folder / readme(l)).exists()] or self.langs
         return dict(folder=self.folder, run=self.run, review=self.review, video=self.video,
-                    langs=", ".join(self.langs), readmes=" + ".join(readme(l) + (" (Chinese)" if l == "zh" else "") for l in self.langs), qa=qa_hash(self),
+                    langs=", ".join(self.langs), readmes=" + ".join(readme(l) + (" (Chinese)" if l == "zh" else "") for l in todo), qa=qa_hash(self),
                     pages=" ".join(d.as_posix() for d in self.reports()))
 
     def fill(self, how: str) -> str:
@@ -246,19 +248,25 @@ def language_drift(g: Unit, store: Store) -> list[str]:
     """One warning per README edited since the last run while another language's README stayed as it was: that
     language's README, listen and film scripts may no longer say the same (the guides: the same facts in every
     language). Records the READMEs' signatures in the store's notes (the caller saves), so each edit warns once.
-    A README written for the first time (a language added) is not an edit."""
+    A README written for the first time (a language added) is not an edit, nor is an edit to one a warning named
+    (bringing it in line must not warn back about the README that was edited first)."""
     if len(g.langs) < 2:
         return []
     old = store.notes.get("readmes") or {}
+    was_owed = set(store.notes.get("readmes_owed") or ())  # READMEs a warning asked to bring in line
+    owed = set(was_owed)
     now = {input_key(g, d / readme(l)): signature(d / readme(l))
            for d in g.reports() for l in g.langs if (d / readme(l)).exists()}
     out = []
     for d in g.reports():
         keys = {l: input_key(g, d / readme(l)) for l in g.langs}
-        edited = [l for l, k in keys.items() if k in old and k in now and old[k] != now[k]]
+        changed = [l for l, k in keys.items() if k in old and k in now and old[k] != now[k]]
+        owed -= {keys[l] for l in changed}
+        edited = [l for l in changed if keys[l] not in was_owed]
         kept = [l for l, k in keys.items() if k in old and old[k] == now.get(k)]
         if not edited or not kept:
             continue
+        owed |= {keys[l] for l in kept}
         others = [p for o in kept for p in (d / readme(o), d / f"listen.{o}.md", g.folder / f"film.{o}.md")
                   if p.exists()]
         names = ", ".join(dict.fromkeys(slash(p.as_posix()) for p in others))
@@ -267,6 +275,8 @@ def language_drift(g: Unit, store: Store) -> list[str]:
                    f"waits on this)")
     if now != old:
         store.notes["readmes"] = now
+    if owed != was_owed:
+        store.notes["readmes_owed"] = sorted(owed)
     return out
 
 

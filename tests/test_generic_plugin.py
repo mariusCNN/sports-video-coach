@@ -139,6 +139,9 @@ def test_report_step_names_only_the_missing_readme_after_a_language_is_added(ana
     (g.folder / "README.en.md").write_text("# r\n", encoding="utf8")
     report = next(s for s in U.STEPS if s.name == "report")
     assert report.errors(g) == [f"missing: {P.slash((g.folder / 'README.fr.md').as_posix())} (French)"]
+    assert g.fill(report.how).startswith("Write the coaching report README.fr.md in ")  # the headline too
+    (g.folder / "README.en.md").unlink()
+    assert g.fill(report.how).startswith("Write the coaching report README.en.md + README.fr.md in ")
 
 
 def test_editing_one_languages_readme_warns_once_about_the_others(analysis, video, capsys):
@@ -160,6 +163,28 @@ def test_editing_one_languages_readme_warns_once_about_the_others(analysis, vide
     (g.folder / "README.fr.md").write_text("# fr, again\n", encoding="utf8")
     (g.folder / "README.en.md").write_text("# en, again\n", encoding="utf8")
     assert P.language_drift(g, P.Store(g.folder)) == []      # every language edited together
+
+
+def test_bringing_the_other_language_in_line_does_not_warn_back(analysis):
+    g = U.Analysis(analysis.folder, analysis.game, ("ko", "en"))
+    for n in ("README.ko.md", "README.en.md"):
+        (g.folder / n).write_text(f"# {n}\n", encoding="utf8")
+
+    def drift():
+        store = P.Store(g.folder)
+        out = P.language_drift(g, store)
+        store.save()
+        return out
+
+    assert drift() == []
+    (g.folder / "README.ko.md").write_text("# ko, edited\n", encoding="utf8")
+    [warn] = drift()
+    assert warn.startswith("README.ko.md changed") and "README.en.md" in warn
+    (g.folder / "README.en.md").write_text("# en, in line\n", encoding="utf8")
+    assert drift() == []                                     # no ping-pong back to README.ko.md
+    (g.folder / "README.en.md").write_text("# en, a new edit\n", encoding="utf8")
+    [warn] = drift()                                         # a later edit of its own still warns
+    assert warn.startswith("README.en.md changed") and "README.ko.md" in warn
 
 
 def test_review_validator(analysis, video):

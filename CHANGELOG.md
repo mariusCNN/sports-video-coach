@@ -13,6 +13,9 @@ All notable changes to this project are documented here. The format follows [Kee
   아마 / 불분명 for likely / unclear, as they do for Chinese and Japanese.
 - The review guide and the review step say to cut a 0.2 s zoom sheet around fast objects (a shuttle, a ball, a
   swing), which can fall between two regular tiles.
+- The cross-language edit warning no longer ping-pongs: bringing the other language's README in line after a
+  warning does not warn back about the first one.
+- After a language is added, the report step's headline names only the README still missing.
 
 ### Changed
 
