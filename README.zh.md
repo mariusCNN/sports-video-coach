@@ -53,6 +53,7 @@ sports-video-coach demo --lang zh en                      # 约一分钟：网�
 |---|---|
 | **工具** | 一个编程 agent（Claude Code、Codex、Cursor 等）、[uv](https://docs.astral.sh/uv/)、PATH 上的 ffmpeg |
 | **费用** | 免费（MIT）+ 你的 agent 订阅 |
+| **语言** | 中文、英文、日文、韩文、西班牙文、法文、德文、葡萄牙文：`--lang zh en ja ko es fr de pt`（篮球插件：中英） |
 | **会离开你电脑的** | agent 读到的内容（截帧拼版、数据、报告）会发给它的模型服务商；朗读文本会发到在线语音合成服务 |
 | **只在你要求时** | Cloudflare 上的私密链接，加 `--publish` |
 

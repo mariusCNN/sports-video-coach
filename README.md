@@ -54,6 +54,7 @@ If the demo made you want this for your own game, a star helps other athletes fi
 |---|---|
 | **Tools** | a coding agent (Claude Code, Codex, Cursor ...), [uv](https://docs.astral.sh/uv/), ffmpeg on PATH |
 | **Cost** | free (MIT) + your agent plan |
+| **Languages** | Chinese, English, Japanese, Korean, Spanish, French, German, Portuguese: `--lang zh en ja ko es fr de pt` (basketball: zh and en) |
 | **Leaves your machine** | what your agent reads (frame sheets, stats, reports) goes to its model provider; narration text goes to an online text-to-speech service |
 | **Only if you ask** | private links on Cloudflare, with `--publish` |
 

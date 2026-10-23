@@ -4,7 +4,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Added
+
+- New languages: `--lang ja ko es fr de pt` beside zh and en, from one table (`src/sports_video_coach/langs.py`).
+  Japanese gets its own page labels, fonts, subtitle wrapping and length checks; the others use English page
+  labels. Basketball units stay zh/en.
+
 ### Changed
+
+- `narrate` no longer reads a script with another language's voice: an unknown code stops with the list of
+  supported codes.
+- `film` uses each language's subtitle font and line length and prints which voice and font it used (`--font`
+  still overrides).
+- The page, the publish hub and `page-check` follow each report's language (lang attribute, CJK headings).
 
 - Basketball without a league (pickup games, phone clips, no GPU) goes to `generic` with `--sport basketball`;
   the `basketball` plugin is for league games or tracking from a clone. README, AGENTS.md and `plugins` say so,
