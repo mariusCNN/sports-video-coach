@@ -33,6 +33,15 @@ All notable changes to this project are documented here. The format follows [Kee
   still works.
 - Japanese film subtitles break after a particle or at a kana-kanji step, not inside a word (同じ方向へ / 飛び出しました).
 - The `frames:` lines print forward-slash paths like every other line.
+- `new-plugin` writes to `<workspace>/plugins/<name>` (`--dir` still works) and prints a test command that works
+  after `uv tool install` (`uv run --isolated --no-project --with pytest --with sports-video-coach@git+... pytest
+  <folder>`); in a clone, `uv run pytest <folder>`.
+- `run <unit folder>` finds the unit's plugin from any folder. `unknown plugin` lists every folder searched and how
+  to add one (`SVC_PLUGIN_PATH`, `SVC_WORKSPACE`, or cd).
+- The run log echoes the command that really runs (`sports-video-coach rowing:strokes ...`).
+- `--until` prints "paused after X (--until): the steps after it run next time" instead of "stopped after".
+- docs/plugins.md: a stage module skeleton, what the light install can import, and how a stage's numbers reach the
+  agent (`fill_values`) and the page (`PageHooks`). README: the Git Bash PATH form for a `C:/` bin dir.
 - Narration guide lists every language's read rate; the review guide writes likely/unclear in the review's
   language.
 - Basketball without a league (pickup games, phone clips, no GPU) goes to `generic` with `--sport basketball`;
