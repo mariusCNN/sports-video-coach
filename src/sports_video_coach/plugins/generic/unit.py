@@ -141,6 +141,12 @@ def review_errors(g: Analysis) -> list[str]:
     return errs
 
 
+def review_ok(g: Analysis) -> str:
+    """The line once review.json passes: 'review-check: OK, 7 moments'."""
+    data = json.loads((g.review / "review.json").read_text(encoding="utf8"))
+    return f"review-check: OK, {len(data['moments'])} moments"
+
+
 def reports_written(g: Analysis) -> bool:
     return all((g.folder / P.readme(l)).exists() for l in g.langs)
 
@@ -150,7 +156,7 @@ STEPS = [
            lambda g: [["frames", str(g.video), "--out", str(g.run / "frames"),
                        "--every", str(g.game.get("every_s", 2))]],
            inputs=lambda g: [g.video], params=lambda g: {"every_s": g.game.get("every_s", 2)}),
-    P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors,
+    P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors, passed=review_ok,
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
                "{review}/review.json as the review guide says (`sports-video-coach guide review --unit {folder}` "
                "prints it; sport: {sport}; focus: {focus}). Delegate the sheets to helpers (subagents), if your "
@@ -190,7 +196,7 @@ def main(argv=None):
     errs = review_errors(g)
     for e in errs:
         print(e)
-    print("review.json: OK" if not errs else f"{len(errs)} problem(s)")
+    print(review_ok(g) if not errs else f"{len(errs)} problem(s)")
     sys.exit(1 if errs else 0)
 
 

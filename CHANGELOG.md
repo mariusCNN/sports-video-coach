@@ -12,6 +12,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - `--artifacts html` on a unit that already has narration and film: the closing list names only what was chosen,
   and lists the rest as "kept from an earlier run, not built this time: film.en.mp4, listen.en.mp3"; the help
   says an earlier mp3 stays on the page.
+- A run prints `review-check: OK, N moments` once the film review passes (so does `generic:review-check`).
+- The report guide gives a default title for one athlete alone (`# Squat: your set`, `# 深蹲：你这一组`).
+- README: the Git Bash hint covers any PATH entry (`C:/...` is written `/c/...`).
 - Korean narration: the length check reads spelled-out lengths (약 이 분, 일 분 반, 오 분 정도), and the Korean
   read rate is 245 Hangul a minute (was 270, about 10% short of the real audio).
 - The Korean page's slow-motion button reads 느리게 ½× (was 슬로).

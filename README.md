@@ -102,7 +102,7 @@ a real run, step by step, is in [docs/architecture.md](https://github.com/marius
 - **Fork, write a plugin, basketball tracking:** `git clone` and `uv sync` (Python 3.11, CUDA torch), then prefix
   commands with `uv run`.
 - No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`.
-- `command not found`: `uv tool update-shell` and a new terminal; in Git Bash put `/c/Users/<you>/.local/bin` on PATH.
+- `command not found`: `uv tool update-shell` and a new terminal; in Git Bash, write `C:/...` PATH entries as `/c/...` (e.g. `/c/Users/<you>/.local/bin`).
 
 </details>
 

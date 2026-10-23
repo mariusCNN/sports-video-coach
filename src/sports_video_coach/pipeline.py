@@ -194,6 +194,7 @@ class Step:
     derives: Callable[[Unit], list[tuple[Path, list[Path]]]] | None = None  # agent: (output, files it follows)
     checks: Callable[[Unit], list[str]] | None = None   # agent: what to fix in its outputs first (--accept keeps it)
     needs_all: bool = False                     # done only while every step before it is done (QA checks them)
+    passed: Callable[[Unit], str] | None = None  # agent: the line a run prints when its output passes the check
 
 
 def newer(out: Path, *inputs: Path, slack: float = 2.0) -> bool:
@@ -668,6 +669,8 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
         if own and not why and not stale and s.name != redo:
             if not dry and note_outputs(s, g, store):
                 store.save()
+            if s.passed and not dry:
+                print(f"[run] {s.passed(g)}")
             if s.name == until:
                 print(f"[run] paused after {until} (--until; it was already done)")
                 return 0

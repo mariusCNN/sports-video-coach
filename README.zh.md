@@ -95,7 +95,7 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
   PATH 上要有 ffmpeg），然后 `sports-video-coach plugins` 和 `sports-video-coach run <视频> --sport <运动>`。
 - **改代码、写插件、篮球跟踪：**`git clone` 后 `uv sync`（Python 3.11，CUDA torch），命令前加 `uv run`。
 - 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip` 安装。
-- 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里把 `/c/Users/<you>/.local/bin` 加进 PATH。
+- 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里 PATH 中的 `C:/...` 要写成 `/c/...`（例如 `/c/Users/<you>/.local/bin`）。
 
 </details>
 

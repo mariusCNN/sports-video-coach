@@ -59,7 +59,8 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
   them. `likely` / `unclear` become **可能** / **看不清（不确定）** in Chinese, **おそらく** / **見えない（不確か）**
   in Japanese, **아마** / **불분명** in Korean, and every other English phrase is translated unless it is a name (`page-check` flags the ones left, in the page and in the listen / film scripts).
 - The title's `<who>` is the focus person: `focus` in `analysis.json`, named in each report's own words (e.g.
-  "the player in orange" -> 穿橙色的球员 in `README.md`). No `focus`: name who the review coached.
+  "the player in orange" -> 穿橙色的球员 in `README.md`). No `focus`: name who the review coached; one athlete
+  alone in the video (a solo set, a drill) is simply "you": `# Squat: your set` (`# 深蹲：你这一组` in Chinese).
 - No date in the title: the page header under it already shows the sport and the date (`analysis.json` `date`).
   A date anywhere else in the text is written as the header prints it for that language: en `23 Oct 2026`,
   fr `23 oct. 2026`, es `23 oct 2026`, de `23.10.2026`, pt `23/10/2026`, zh and ja `2026年10月23日`,

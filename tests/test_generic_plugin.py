@@ -399,10 +399,14 @@ def test_review_parts_from_helpers_merge_into_review_json(analysis, video, capsy
     assert "merges them into it" in U.review_errors(analysis)[0]
     with pytest.raises(SystemExit) as e:
         U.main([str(analysis.folder)])
-    assert e.value.code == 0 and "merged 2 part(s)" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert e.value.code == 0 and "merged 2 part(s)" in out and "review-check: OK, 3 moments" in out
     data = json.loads((analysis.review / "review.json").read_text(encoding="utf8"))
     assert data["summary"] == "A. B." and [x["start"] for x in data["moments"]] == ["00:00", "00:01", "00:02"]
     assert U.merge_parts(analysis) is None  # an existing review.json is never overwritten
+    assert P.drive(analysis, U.STEPS, runner=lambda *a, **k: None) == P.WAITING  # on to the report
+    out = capsys.readouterr().out
+    assert "[run] review-check: OK, 3 moments\n[run] waiting for the agent: report" in out
 
 
 def test_sport_zh_names_the_sport_on_the_zh_page(tmp_path, video, capsys):
