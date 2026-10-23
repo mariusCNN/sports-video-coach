@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 0.3.0 - 2026-10-23
+
 ### Added
 
 - New languages: `--lang ja ko es fr de pt` beside zh and en, from one table (`src/sports_video_coach/langs.py`).

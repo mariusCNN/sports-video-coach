@@ -1339,7 +1339,7 @@ wheels = [
 
 [[package]]
 name = "sports-video-coach"
-version = "0.2.7.dev0"
+version = "0.3.0"
 source = { editable = "." }
 default-groups = ["basketball", "dev"]
 dependencies = [
