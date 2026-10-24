@@ -146,3 +146,11 @@ def test_docs_table_and_page_list_every_preset():
         assert f"--agent {key}</code> {p.name}" in html     # the page links the docs table, not outside sites
     assert R.DOCS_READ in doc
     assert re.search(r"not run by the maintainer", html)
+
+
+def test_page_readmes_and_docs_link_the_wanted_issue():
+    assert page.WANTED_URL.endswith("/issues/7")
+    assert f'<a href="{page.WANTED_URL}">issue #7</a>' in page.render([], [])
+    assert f'<a href="{page.WANTED_URL}">issue #7</a>' in page.render([], [], lang="zh")
+    for f in (DOC, DOC.parent.parent / "README.md", DOC.parent.parent / "README.zh.md"):
+        assert page.WANTED_URL in f.read_text(encoding="utf8"), f.name

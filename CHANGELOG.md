@@ -21,6 +21,8 @@ All notable changes to this project are documented here. The format follows [Kee
   seven more agent CLIs, each a headless command line built from that CLI's own docs (linked in
   `docs/benchmark.md` and on the benchmark page's "Run it yourself"). Not run by the maintainer, so untested
   against the real CLIs (tested with fake binaries); the result's `settings` says so. Code track only.
+- Issue #7 asks users of those seven CLIs for one real run of each preset (or the error if a flag is wrong); the
+  benchmark page's "Run it yourself", both READMEs and `docs/benchmark.md` link it.
 - Fresh seeds for `svc-bench-3` (`bench prepare --seed [N]`, `bench run --seed [N]`): the same scenes and traps
   drawn anew at run time, with new counts, outcomes, times and rates, which reduces the effect of memorising the
   fixed public suite's answers. The prepared folder never holds the truth; `bench score` and `bench validate`

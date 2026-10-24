@@ -31,6 +31,7 @@ REPO_URL = f"https://github.com/{OWNER}/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
+WANTED_URL = f"{REPO_URL}/issues/7"   # open issue: run an untested preset against the real CLI, send the row
 PAGE_URL = "https://mariusding.github.io/sports-video-coach/benchmark/"   # where the demo-site CI publishes it
 DEMO_URL = "https://mariusding.github.io/sports-video-coach/demo/"        # the coaching page the demo builds
 SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
@@ -892,13 +893,17 @@ def presets_step(lang: str = "en") -> str:
                 f"{pre}或者用其他 agent CLI 的预设。这些预设按各 CLI 的文档写成（{esc(bench_run.DOCS_READ)} 读过），"
                 "但维护者没有实际跑过，所以没在真实 CLI 上测过；只支持代码赛道（"
                 f'<a href="{DOC_URL}#add-your-agent-in-one-command">每个参数的文档链接</a>）。其他 CLI：'
-                f'<code>--agent cmd --cmd "... {{prompt}}"</code>。<ul class="plain">{lines}</ul></li>')
+                f'<code>--agent cmd --cmd "... {{prompt}}"</code>。<ul class="plain">{lines}</ul>'
+                f'用其中某个 agent？跑一次，告诉我们结果：<a href="{WANTED_URL}">issue #7</a>'
+                "（发一行结果，或者预设参数不对时的报错）。</li>")
     return ("<li>Or do it all in one command (prepare, run headless, score): Claude Code or Codex"
             f"{pre}"
             "or a preset for another agent CLI. The presets are built from each CLI's docs (read "
             f"{esc(bench_run.DOCS_READ)}) but not run by the maintainer, so untested against the real CLIs; code "
             f'track only (<a href="{DOC_URL}#add-your-agent-in-one-command">doc links per flag</a>). Any other '
-            f'CLI: <code>--agent cmd --cmd "... {{prompt}}"</code>.<ul class="plain">{lines}</ul></li>')
+            f'CLI: <code>--agent cmd --cmd "... {{prompt}}"</code>.<ul class="plain">{lines}</ul>'
+            f'Use one of these agents? Run it and tell us how it went: <a href="{WANTED_URL}">issue #7</a> '
+            "(a result row, or the error if the preset's flags are wrong).</li>")
 
 
 def prompt_block(lang: str = "en") -> str:
