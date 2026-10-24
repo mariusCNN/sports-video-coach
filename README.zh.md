@@ -24,7 +24,7 @@
 工具在你自己的电脑上跑；agent 看的帧会发给它的模型服务商，和你给它看的其他东西一样。免费，MIT 协议。
 
 **基准测试：**哪个编程 agent 看运动录像最准，按精确的真值打分：
-[排行榜](https://mariusding.github.io/sports-video-coach/benchmark/) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）。
+[排行榜](https://mariusding.github.io/sports-video-coach/benchmark/) · 一条命令跑分：`sports-video-coach bench run --agent claude` · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）。
 
 ## 试一下
 

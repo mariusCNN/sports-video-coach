@@ -9,6 +9,8 @@ camera, look-alike decoys and rule-defined events). The truth is exact (we drew 
                                 [--wall-seconds N] [--evidence URL] [--out FILE]
   sports-video-coach bench validate <result.json...>   re-score a result file; exit 1 if it was edited or broken
   sports-video-coach bench page ...                     the leaderboard page from benchmark/results/
+  sports-video-coach bench run --agent claude|codex|cmd [--model M] [--suite S] [--cmd "..."] [--dry-run]
+                                all of it in one command: prepare, run the agent headless, score, issue link
 """
 from __future__ import annotations
 
@@ -166,7 +168,10 @@ def main(argv=None) -> int:
     if argv[0] == "page":
         from .page import main as page_main
         return page_main(argv[1:])
+    if argv[0] == "run":
+        from .run import main as run_main
+        return run_main(argv[1:])
     if argv[0] not in cmds:
-        print(f"unknown bench command {argv[0]!r}; one of: prepare, score, validate, page", file=sys.stderr)
+        print(f"unknown bench command {argv[0]!r}; one of: prepare, score, validate, page, run", file=sys.stderr)
         return 2
     return cmds[argv[0]](argv[1:])

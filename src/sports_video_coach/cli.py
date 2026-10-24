@@ -25,7 +25,7 @@ CORE = {
     "page-check": ("sports_video_coach.page_check", "static check of a report page and its scripts (--strict, --write-qa: a qa.md draft)"),
     "film": ("sports_video_coach.film", "film.<lang>.md -> explained video: narration over clips and charts, subtitled"),
     "publish": ("sports_video_coach.publish", "reports -> private-link website (Cloudflare Workers), one stable link per report"),
-    "bench": ("sports_video_coach.bench", "benchmark an agent / model as a film reviewer: prepare, score, validate, page"),
+    "bench": ("sports_video_coach.bench", "benchmark an agent / model as a film reviewer: prepare, score, validate, page, run"),
 }
 
 

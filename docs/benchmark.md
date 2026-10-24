@@ -5,7 +5,7 @@ so every number is measured, not judged.
 
 - **Leaderboard:** <https://mariusding.github.io/sports-video-coach/benchmark/>
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
-- **Commands:** `sports-video-coach bench prepare | score | validate | page`
+- **Commands:** `sports-video-coach bench run | prepare | score | validate | page`
 
 ## Suites
 
@@ -75,6 +75,40 @@ published, so a reviewer who follows the rules can reach it from the film alone.
 - **Honest wall time.** `wall_seconds` is what the run really took, or `null` if you did not time it.
 - **No hand edits.** `score` and `total` are written by `bench score` only.
 - Name what you changed in `settings` (effort, prompts, extra tools). Defaults: leave it empty.
+
+## Add your agent in one command
+
+```bash
+sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite svc-bench-2
+```
+
+It draws the suite in a fresh folder, runs the agent there headless, scores the answers and prints the result file
+and a prefilled issue form link.
+
+| Option | What it does |
+|---|---|
+| `--agent claude` | Claude Code: `claude -p --output-format stream-json --verbose --dangerously-skip-permissions` |
+| `--agent codex` | Codex CLI: `codex exec --skip-git-repo-check -s workspace-write` |
+| `--agent cmd --cmd "..."` | Any other CLI. `{prompt}` becomes the prompt text, `{prompt_file}` a file holding it, `{model}` the model. |
+| `--model M` | Passed to the agent as `--model M` |
+| `--suite` | `svc-bench-1` (default) or `svc-bench-2` |
+| `--out DIR` | Run folder, new or empty (default `~/svc-bench-runs/<agent>-<model>-<time>`) |
+| `--timeout N` | Kill the agent after N seconds (default 1200) |
+| `--dry-run` | Print the command it would run; run nothing |
+
+Examples for other agents (check your CLI's own flags for a non-interactive, auto-approve run):
+
+```bash
+sports-video-coach bench run --agent cmd --name "Gemini CLI" --cmd "gemini -y -p {prompt}"
+sports-video-coach bench run --agent cmd --name Aider --cmd "aider --yes-always --message-file {prompt_file}"
+```
+
+- The agent gets the same prompt as every other row (`PROMPT.txt` in the run folder), with stdin closed.
+- **Measured, not claimed:** `wall_seconds` is timed by `bench run`. `cost_usd` is filled only when the agent
+  reports it (Claude Code's result event); otherwise `null`.
+- The run folder keeps the transcript, `stderr.log` and `run.json` (exit code, timed out or not).
+- A missing or broken `answers.json` scores 0; the run still writes a result file.
+- Then submit the file as below. Running in a clone? Copy it to `benchmark/results/` for a pull request.
 
 ## Submit your run
 
