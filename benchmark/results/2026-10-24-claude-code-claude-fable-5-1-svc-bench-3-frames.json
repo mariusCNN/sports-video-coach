@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-24",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-fable-5-1",
+    "settings": "frames track; claude -p --restricted --safe-mode --tools Read; default effort; killed at the 1700 s time limit before writing answers (read 548 stills)"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 47,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made"
+      ],
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.0,
+        3.0,
+        4.48,
+        5.28,
+        7.16,
+        9.48,
+        11.48,
+        12.16,
+        14.56,
+        15.84,
+        17.76,
+        19.32
+      ],
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 33.92,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    }
+  ],
+  "total": 0.0,
+  "wall_seconds": 1700.4,
+  "evidence": "",
+  "cost_usd": null
+}
