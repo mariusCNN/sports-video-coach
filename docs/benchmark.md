@@ -94,13 +94,14 @@ How the first rows were run (both with stdin closed and a timeout; the transcrip
 | Claude Code | `claude -p --restricted --safe-mode --strict-mcp-config --tools Read --permission-prompts none --output-format stream-json --verbose --model M`, run in the prepared folder | The `init` event lists `tools: ["Read"]`, no MCP servers; `--restricted` confines Read to the folder; every `tool_use` is a Read of a file in the folder. |
 | Codex CLI | `codex exec - -s read-only --json` with `--disable` for `shell_tool`, `unified_exec`, `code_mode_host`, `code_mode`, `view_image`, `browser_use`, `computer_use`, `apps`, `plugins`, `multi_agent`, `image_generation`; the prompt (with `TASKS.md`) on stdin and every contact sheet attached with `-i` | No `command_execution` item; the code-mode tool fails closed ("code-mode host is disabled"). Codex cannot open files this way, so it sees the sheets but not the full-size stills. |
 
-First rows (svc-bench-2, one run each, 2026-10-24):
+First rows (svc-bench-2, 2026-10-24; every run submitted, Sonnet ran twice with the same command):
 
 | Agent | Model | Total | Wall | Cost |
 |---|---|---|---|---|
 | Claude Code 2.1.310 | claude-opus-5-5 | 1.000 | 522 s | $3.04 |
 | Codex 0.159.3 | gpt-6-astra (xhigh) | 1.000 | 585 s | not reported |
 | Claude Code 2.1.310 | claude-sonnet-5-5 | 0.755 | 77 s | $0.24 |
+| Claude Code 2.1.310 | claude-sonnet-5-5 (second run) | 0.646 | 12 s | $0.05 |
 
 - **Strong models still saturate by eye.** Opus read 118 images (sheets and full-size stills); Codex saw all 102
   sheets. Both got every task exactly right.
@@ -108,7 +109,8 @@ First rows (svc-bench-2, one run each, 2026-10-24):
   squat sheets) and said it guessed the dribble count, the cadence and the shots without opening their sheets. The
   one task it looked at closely, the cones, is its one real eyesight miss: 4 of the 10 touches (0.40).
 - **Guessing scores high.** Sonnet's unread shots, "made, missed" alternating, scored 0.83; its guessed dribble
-  count 0.80. A second Sonnet run, not submitted, read three files and scored 0.646. Counts and rates get partial
+  count 0.80. Sonnet's second run (submitted, same command) read `TASKS.md` and two sheets, guessed the rest and
+  scored 0.646. Counts and rates get partial
   credit and the shot outcomes are mostly alternating, so read a frames total against a floor of about 0.65, not 0.
 
 ## Rules
