@@ -87,7 +87,8 @@ TRY = (INSTALL, "sports-video-coach demo")   # needs ffmpeg on PATH
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
 BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site
-SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/", BENCH_URL, f"{BENCH_URL}zh/")   # zh/: the Chinese leaderboard
+SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/", BENCH_URL, f"{BENCH_URL}zh/",   # zh/: the Chinese leaderboard
+              f"{BENCH_URL}findings/", f"{BENCH_URL}zh/findings/")       # the findings article, en and zh
 
 
 def canonical(url: str) -> str:

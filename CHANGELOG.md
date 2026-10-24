@@ -21,6 +21,11 @@ All notable changes to this project are documented here. The format follows [Kee
 - The game `periods` step cuts its stills with `sports-video-coach frames` instead of a raw ffmpeg command.
 
 ### Added
+- A findings article next to the leaderboard (`/benchmark/findings/`, Chinese at `/benchmark/zh/findings/`,
+  `bench/findings.py`, written by `bench page`): what effort changed, why raw scores mislead (the blind floor),
+  the code track vs the frames track, a 4B local model, cost per near-perfect run and the hardest task, each
+  with its numbers computed from `benchmark/results/`, links to the board rows and transcripts, and its bound;
+  with Article structured data, in the sitemap, and linked from the top of the leaderboard.
 - "What effort changed" on the benchmark page's fresh-seed frames board (English and Chinese), with a
   1200x675 chart for posts (`effort.png`, `effort-zh.png`, `bench/effort.py`): same model, only the effort
   setting changed, mean above chance per setting with n, range and time per run, a run with no answer shown as

@@ -9,6 +9,7 @@ so every number is measured, not judged.
 - **Install** (needs ffmpeg on PATH; the command pins one commit, so you install what you read):
   `uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f`,
   then [run your agent in one command](#add-your-agent-in-one-command).
+- **Findings in short:** <https://mariusding.github.io/sports-video-coach/benchmark/findings/> (what effort changed, the blind floor, local models, cost)
 
 ## Suites
 

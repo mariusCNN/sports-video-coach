@@ -1232,6 +1232,7 @@ def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = 
 <h1>{TITLE}</h1>
 <p class="lead">{esc(WHAT)}</p>
 <p class="lead">{esc(PART_OF)} <a href="{DEMO_URL}">See a demo coaching page</a>.</p>
+<p class="lead"><a href="findings/">The findings in short</a>: what effort changed, the blind floor, local models, cost.</p>
 <ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
 <li>Measured truth only</li>{latest(rows)}</ul>
 {jump(rows)}
@@ -1314,6 +1315,7 @@ def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool
 <h1>{title}</h1>
 <p class="lead">{esc(t(WHAT, lang))}</p>
 <p class="lead">{esc(t(PART_OF, lang))} <a href="{DEMO_URL}">看一个示例教练复盘页</a>。</p>
+<p class="lead"><a href="findings/">结论速读</a>：effort 改变了什么、盲猜基线、本地模型、费用。</p>
 <ul class="chips"><li>套件 {", ".join(n for n, _ in SUITES)}</li><li>{runs} 次运行</li>
 <li>只用测出来的真实值</li>{latest(rows, lang)}</ul>
 {jump(rows, lang)}
@@ -1386,10 +1388,12 @@ def main(argv: list[str]) -> int:
     (out / "index.html").write_text(render(rows, notes, *shown, count=count is not None, effort=effort), encoding="utf8")
     (out / "zh").mkdir(exist_ok=True)
     (out / "zh" / "index.html").write_text(render(rows, notes, *shown, "zh", count is not None, effort), encoding="utf8")
+    from . import findings   # imports this module, so not at the top
+    findings.write(rows, out, card is not None, effort)
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))
-    print(f"[bench page] {(out / 'index.html').as_posix()} and zh/index.html: {runs} run{'s' * (runs != 1)}, "
+    print(f"[bench page] {(out / 'index.html').as_posix()}, zh/index.html and findings/: {runs} run{'s' * (runs != 1)}, "
           f"{len(notes)} skipped")
     return 0
 
