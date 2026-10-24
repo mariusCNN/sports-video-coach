@@ -225,3 +225,66 @@ def test_card_numbers_are_the_summary_numbers(tmp_path):
     summary = page.summarize([r for r in rows if r["suite"] == "svc-bench-2" and r["track"] == "frames"],
                              page.floor_of([r for r in rows if r["suite"] == "svc-bench-2" and r["track"] == "frames"]))
     assert [round(s["above"], 3) for s in summary] == [b["above"] for b in frames]
+
+
+# "Where each contender fails": answers vs truth, derived at build time
+
+
+def test_fails_diff_count_and_rate():
+    assert page.diff_answer("count", 47, {"answer": 49}) == "2 too many"
+    assert page.diff_answer("count", 47, {"answer": 40}) == "7 too few"
+    assert page.diff_answer("count", 47, {"answer": 47}) == ""
+    assert page.diff_answer("rate", 40.0, {"answer": 44.0}) == "10.0% high"
+    assert page.diff_answer("rate", 40.0, {"answer": "fast"}) == "not a number"
+
+
+def test_fails_diff_timestamps_names_missed_and_extra_events():
+    truth = [1.0, 3.0, 5.0, 7.0]
+    assert page.diff_answer("timestamps", truth, {"answer": [1.1, 2.9, 5.2, 7.4]}) == "all within 0.5 s"
+    why = page.diff_answer("timestamps", truth, {"answer": [1.0, 5.1, 12.4]})
+    assert why == "missed 2 of 4 (at 3 s, 7 s); 1 extra (at 12.4 s)"
+    many = page.diff_answer("timestamps", [float(i) for i in range(10)], {"answer": []})
+    assert many == "missed 10 of 10 (at 0 s, 1 s, 2 s, 3 s +6 more)"
+
+
+def test_fails_diff_outcome_sequence():
+    truth = ["made", "missed", "made", "missed"]
+    assert page.diff_answer("outcomes", truth, {"answer": ["made", "made", "made", "missed"]}) == \
+        "1 of 4 wrong (#2 said made)"
+    assert page.diff_answer("outcomes", truth, {"answer": ["Made", "missed"]}) == \
+        "answered 2 of 4"
+    assert page.diff_answer("outcomes", truth, {"answer": truth + ["made"]}) == "1 extra"
+
+
+def test_fails_not_recorded_and_no_answer():
+    assert page.diff_answer("count", 13, {"id": "jump-count", "score": 0.5}) == page.NOT_RECORDED
+    assert page.diff_answer("count", 13, {"answer": None}) == "no answer given"
+    r = row("Agent A", "model-a", 0.5, [0.5, 0.5, 0.5])
+    r["tasks"] = [{"id": "jump-count", "kind": "count", "score": 0.4},             # answer key absent
+                  {"id": "stroke-rate", "kind": "rate", "answer": 42.0, "score": 0.0}]  # stored score is ignored
+    r["_file"] = "a.json"
+    tasks = {t["id"]: t for t in page.fails([r], "svc-bench-1")}
+    jump = tasks["jump-count"]["runs"][0]
+    assert jump["why"] == page.NOT_RECORDED and jump["score"] == 0.4 and jump["miss"]
+    rate = tasks["stroke-rate"]["runs"][0]
+    assert rate["score"] == 1.0 and not rate["miss"]            # recomputed from answer + suite truth
+    assert page.fails([r], "no-such-suite") == []
+
+
+def test_fails_section_on_the_page_is_folded_and_skips_the_baseline(tmp_path):
+    from sports_video_coach.bench.score import BASELINE_AGENT
+    results = tmp_path / "results"
+    results.mkdir()
+    a = row("Agent A", "model-a", 0.5, [1, 1, 1])
+    a["tasks"] = [{"id": "jump-count", "kind": "count", "answer": 11, "score": 0.846}]
+    base = row(BASELINE_AGENT, "", 0.1, [0.1, 0.1, 0.1])
+    base["tasks"] = [{"id": "jump-count", "kind": "count", "answer": 5, "score": 0.385}]
+    write(results, "a.json", a)
+    write(results, "base.json", base)
+    _, html = render(tmp_path, results)
+    sec = html[html.index('<details class="fails">'):]
+    sec = sec[:sec.index("</details>")]
+    assert "<details open" not in html
+    assert html.index("<h4>Summary</h4>") < html.index('<details class="fails">')
+    assert "Where each contender fails" in sec and "2 too few" in sec and "<strong>Truth:</strong> 13" in sec
+    assert "model-a" in sec and "base.json" not in sec

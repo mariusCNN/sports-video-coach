@@ -333,6 +333,11 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
   scores differ.
 - The leaderboard page is rebuilt from the folder by `bench page` on every push to master. A file that does not
   parse is listed on the page as skipped, never silently dropped.
+- Under each suite's table of runs, a folded "Where each contender fails" block lists, per task, the truth (from
+  the suite, not from the result file), each run's stored answer, its score recomputed from the two, and a short
+  line of what was missed: off by how much for counts and rates, which events were missed or extra (with their
+  times) for timestamps, which shots were called wrong for outcomes. The blind baseline is left out. A task row
+  without a stored answer says "answer not recorded" and keeps its stored score.
 - The same build draws `card.png`, the page's link preview image (`og:image`): per suite and track, the top
   contenders' mean above chance from the page's Summary tables (needs matplotlib; without it there is no card).
 
