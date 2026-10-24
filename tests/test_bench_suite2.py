@@ -50,6 +50,22 @@ def test_suite2_truth_is_not_what_a_naive_reading_gives():
     assert suite2.shot_outcome("fake+bank-in") == "made"
 
 
+
+def test_suite2_no_uncounted_event_at_the_video_edges():
+    """Nothing the rule counts happens in a video outside the truth: no extra floor touch, foot strike, lockout or
+    touch before the first or after the last counted event."""
+    fps, n = suite2.FPS, suite2.frames(suite2.DRIBBLE_S)
+    for bounces, heights, hold in ((suite2.BLUE_BOUNCES, suite2.BLUE_H, suite2.BLUE_HOLD),
+                                   (suite2.GREEN_BOUNCES, suite2.GREEN_H, None)):
+        segs = suite2.dribble_segments(bounces, heights, hold)
+        touches = [i for i in range(n) if suite2.height_at(segs, i / fps) <= 0.5]
+        assert touches == [f for f in bounces if f < n]
+    assert suite2.STRIKES[-1] < suite2.frames(suite2.CADENCE_S) <= suite2.STRIKES[-1] + min(suite2.STRIDE_B)
+    ys = [suite2.plate_y(i / fps) for i in range(suite2.frames(suite2.SQUAT_S))]
+    assert suite2.good_reps(ys) == TRUTH["squat-reps"]
+    assert suite2.RUN2[-1][0] == suite2.RUN2_S and suite2.RUN2[-1][1] == suite2.RUN2[-2][1]   # still at the end
+    assert suite2.SHOT_PATH.t <= suite2.SHOTS2_S
+
 def test_suite2_scoring():
     assert S.score_task("dribble-count", 56, "svc-bench-2")["score"] == 1.0
     assert S.score_task("dribble-count", 57, "svc-bench-2")["score"] == round(1 - 1 / 56, 3)

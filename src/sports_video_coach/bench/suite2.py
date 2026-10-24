@@ -164,8 +164,10 @@ GREEN_BOUNCES = bounce_frames(10, frames(DRIBBLE_S) + 20, GREEN_IV)
 
 
 def dribble_segments(bounces: list[int], heights: list[int], hold: tuple[int, int] | None) -> list[tuple]:
-    """(t0, t1, kind, height): 'arc' between two bounces, 'hold' for the carry (rise, hold, fall)."""
-    fs = [bounces[0] - 13] + bounces + [bounces[-1] + 13]
+    """(t0, t1, kind, height): 'arc' between two bounces, 'hold' for the carry (rise, hold, fall). The last arc lands
+    after the video ends, so the ball is in the air in the last frame and every floor touch in the video is a
+    counted bounce."""
+    fs = [bounces[0] - 13] + bounces + [max(bounces[-1], frames(DRIBBLE_S)) + 13]
     segs = []
     for k, (a, b) in enumerate(zip(fs, fs[1:])):
         kind = "hold" if hold and a <= hold[0] < b and b == hold[1] else "arc"
