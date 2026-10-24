@@ -4,7 +4,9 @@ Reads every `*.json` result file in `<results_dir>` (schema 1, written by `bench
 `<out_dir>/index.html`: a self-contained static page (inline CSS, light and dark, readable at 390 px) with the
 leaderboard ranked by total (above it, a summary per contender: runs, mean total, mean and range of above
 chance), with an "above chance" score next to it (the floor is the blind baseline's result
-file of that suite and track, `bench.baseline`, shown as a marked row under the ranked ones) (one table per suite, the hard suite first; runs on the frames-only track, which
+file of that suite and track, `bench.baseline`, shown as a marked row under the ranked ones; under it a folded
+"Where each contender fails" block: per task the suite's truth, each run's stored answer, the recomputed score and
+what was missed) (one table per suite, the hard suite first; runs on the frames-only track, which
 see still images and run no code, in their own tables below), the method, how to run it yourself, how to submit a
 run and honesty notes, and `card.png`, the share card link previews show (`bench.card`, needs matplotlib; the
 page's `og:image` points at it). With no
@@ -19,7 +21,7 @@ import json
 from pathlib import Path
 
 from . import card as share_card
-from .score import BASELINE_AGENT, above_chance
+from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task
 
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
@@ -118,6 +120,15 @@ pre { background: var(--code-bg); color: var(--code-ink); border-radius: 10px; p
 ul.plain { padding-left: 1.2rem; }
 ul.plain li { margin-bottom: .3rem; }
 footer { margin-top: 2.4rem; color: var(--muted); font-size: .85rem; }
+details.fails { margin: 1rem 0 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+                padding: .5rem .8rem; }
+details.fails summary { cursor: pointer; font-weight: 600; }
+details.fails h5 { font-size: .9rem; margin: 1rem 0 .2rem; }
+details.fails p.truth { margin: 0 0 .4rem; font-size: .88rem; overflow-wrap: anywhere; }
+td.why { white-space: normal; min-width: 11rem; overflow-wrap: anywhere; }
+tr.miss td.why { color: var(--warn-ink); background: var(--warn-bg); }
+.kind { font-size: .75rem; font-weight: 400; color: var(--muted); border: 1px solid var(--line);
+        border-radius: 999px; padding: 0 .45rem; margin-left: .3rem; }
 """
 
 
@@ -295,6 +306,163 @@ def floor_of(rows: list[dict]) -> dict | None:
     return max(base, key=lambda r: (str(r.get("date", "")), r["_file"])) if base else None
 
 
+NOT_RECORDED = "answer not recorded"
+FAILS = ("Every contender run, task by task: the truth (from the suite), each run's answer as its result file stores "
+         "it, the score recomputed from the two, and what was missed. The blind baseline is left out.")
+SHOW = 4                       # list diffs name at most this many times or positions, then "+N more"
+
+
+def secs(v: float) -> str:
+    return f"{float(v):g} s"
+
+
+def some(items: list[str]) -> str:
+    """At most SHOW items, then '+N more'."""
+    head = ", ".join(items[:SHOW])
+    return head + (f" +{len(items) - SHOW} more" if len(items) > SHOW else "")
+
+
+def match_events(truth: list[float], answer: list[float], tol: float = 0.5) -> tuple[list[float], list[float]]:
+    """(missed truth times, extra answer times): one-to-one pairs within `tol` seconds, closest pairs first."""
+    pairs = sorted((abs(t - a), i, j) for i, t in enumerate(truth) for j, a in enumerate(answer) if abs(t - a) <= tol)
+    ti, aj = set(), set()
+    for _, i, j in pairs:
+        if i not in ti and j not in aj:
+            ti.add(i)
+            aj.add(j)
+    return ([t for i, t in enumerate(truth) if i not in ti],
+            sorted(a for j, a in enumerate(answer) if j not in aj))
+
+
+def diff_answer(kind: str, truth, task: dict) -> str:
+    """What a run got wrong on one task, in a short line ('' when the answer equals the truth). `task` is the result
+    file's task row; its `answer` is compared with `truth` (from the suite)."""
+    if "answer" not in task:
+        return NOT_RECORDED
+    ans = task["answer"]
+    if ans is None:
+        return "no answer given"
+    if kind in ("count", "rate"):
+        if not is_num(ans):
+            return "not a number"
+        err = ans - truth
+        if err == 0:
+            return ""
+        if kind == "count":
+            return f"{abs(err):g} {'too many' if err > 0 else 'too few'}"
+        return f"{abs(err) / truth * 100:.1f}% {'high' if err > 0 else 'low'}"
+    if kind == "timestamps":
+        if not isinstance(ans, list) or not all(is_num(a) for a in ans):
+            return "not a list of seconds"
+        missed, extra = match_events([float(t) for t in truth], sorted(float(a) for a in ans))
+        bits = []
+        if missed:
+            bits.append(f"missed {len(missed)} of {len(truth)} (at {some([secs(t) for t in missed])})")
+        if extra:
+            bits.append(f"{len(extra)} extra (at {some([secs(a) for a in extra])})")
+        return "; ".join(bits) or "all within 0.5 s"
+    if kind == "outcomes":
+        if not isinstance(ans, list):
+            return "not a list"
+        norm = [str(x).strip().lower() if x is not None else None for x in ans]
+        wrong = [f"#{i + 1} said {x}" for i, (t, x) in enumerate(zip(truth, norm)) if t != x]
+        bits = [f"{len(wrong)} of {len(truth)} wrong ({some(wrong)})"] if wrong else []
+        if len(norm) < len(truth):
+            bits.append(f"answered {len(norm)} of {len(truth)}")
+        elif len(norm) > len(truth):
+            bits.append(f"{len(norm) - len(truth)} extra")
+        return "; ".join(bits)
+    return ""
+
+
+def show_value(kind: str, v) -> str:
+    """A truth or answer in a few characters: a number, 'N times', or 'N made, M missed'."""
+    if v is None:
+        return "-"
+    if kind == "timestamps" and isinstance(v, list):
+        return f"{len(v)} time{'s' * (len(v) != 1)}"
+    if kind == "outcomes" and isinstance(v, list):
+        made = sum(1 for x in v if str(x).strip().lower() == "made")
+        return f"{made} made, {len(v) - made} missed"
+    return f"{v:g}" if is_num(v) else str(v)
+
+
+def show_truth(kind: str, truth) -> str:
+    """The truth line of a task: the value, plus the list itself for timestamps and outcomes."""
+    if kind == "timestamps":
+        return f"{show_value(kind, truth)}: {', '.join(f'{t:g}' for t in truth)} s"
+    if kind == "outcomes":
+        return f"{show_value(kind, truth)}: {' '.join('M' if x == 'made' else 'x' for x in truth)} (M = made)"
+    return show_value(kind, truth)
+
+
+def run_labels(rows: list[dict]) -> list[str]:
+    """A short name per run: the model (or agent), with 'run k' when several runs share that name."""
+    names = [str(r["contender"].get("model") or r["contender"].get("agent") or "?") for r in rows]
+    seen: dict[str, int] = {}
+    out = []
+    for name in names:
+        seen[name] = seen.get(name, 0) + 1
+        out.append(f"{name} run {seen[name]}" if names.count(name) > 1 else name)
+    return out
+
+
+def fails(rows: list[dict], suite: str) -> list[dict]:
+    """Per task of `suite`: {id, kind, truth, runs: [{label, file, answer, score, why, miss}]}, derived from the
+    runs' stored answers and the suite's truth (never the truth copied into a result file). The score is recomputed
+    (`score_task`); a row without a stored answer keeps its stored score and says the answer was not recorded.
+    Empty for a suite this tool does not know."""
+    mod = TRUTH_SUITES.get(suite)
+    runs = sorted((r for r in rows if not is_baseline(r)), key=lambda r: r["_file"])
+    if mod is None or not runs:
+        return []
+    labels = run_labels(runs)
+    out = []
+    for t in mod.TASKS:
+        lines = []
+        for r, label in zip(runs, labels):
+            row = next((x for x in r["tasks"] if str(x["id"]) == t.id), None)
+            if row is None:
+                continue
+            if "answer" in row:
+                score = score_task(t.id, row["answer"], suite)["score"]
+            else:
+                score = row.get("score") if is_num(row.get("score")) else None
+            why = diff_answer(t.kind, t.truth, row)
+            lines.append({"label": label, "file": r["_file"], "answer": row.get("answer"), "score": score,
+                          "why": why, "miss": score is None or score < 1,
+                          "recorded": "answer" in row})
+        if lines:
+            out.append({"id": t.id, "kind": t.kind, "truth": t.truth, "runs": lines})
+    return out
+
+
+def fails_section(rows: list[dict], suite: str) -> str:
+    """The folded 'Where each contender fails' block of one suite and track ('' when nothing to show)."""
+    tasks = fails(rows, suite)
+    if not tasks:
+        return ""
+    parts = []
+    for t in tasks:
+        body = []
+        for x in t["runs"]:
+            ans = show_value(t["kind"], x["answer"]) if x["recorded"] else "-"
+            score = f'{x["score"]:.2f}' if x["score"] is not None else "-"
+            why = x["why"] or ("score below 1" if x["miss"] else "exact")
+            tr = '<tr class="miss">' if x["miss"] else "<tr>"
+            body.append(f'{tr}<td title="{esc(x["file"])}">'
+                        f'{esc(x["label"])}</td><td class="num">{esc(ans)}</td><td class="num">{score}</td>'
+                        f'<td class="why">{esc(why)}</td></tr>')
+        parts.append(f'<h5>{esc(t["id"])}<span class="kind">{esc(t["kind"])}</span></h5>'
+                     f'<p class="truth"><strong>Truth:</strong> {esc(show_truth(t["kind"], t["truth"]))}</p>'
+                     '<div class="scroll"><table class="fails"><thead><tr><th scope="col">Run</th>'
+                     '<th class="num" scope="col">Answer</th><th class="num" scope="col">Score</th>'
+                     '<th scope="col">What was missed</th></tr></thead>'
+                     f'<tbody>{"".join(body)}</tbody></table></div>')
+    return (f'<details class="fails"><summary>Where each contender fails</summary>'
+            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">{esc(FAILS)}</p>{"".join(parts)}</details>')
+
+
 def boards(rows: list[dict], prefix: str = "") -> str:
     """One leaderboard table per suite, in SUITES order (a suite with no runs says so); `prefix` keeps the anchors
     of a second track's tables apart."""
@@ -305,7 +473,7 @@ def boards(rows: list[dict], prefix: str = "") -> str:
     for n in names:
         mine = [r for r in rows if suite_of(r) == n and not is_baseline(r)]
         floor = floor_of([r for r in rows if suite_of(r) == n])
-        body = summary_table(mine, floor) + table(mine, floor) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
+        body = summary_table(mine, floor) + table(mine, floor) + fails_section(mine, n) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
         desc = f"<p>{esc(what[n])}</p>" if n in what else ""
         out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
     return "\n".join(out)

@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- The benchmark page shows where each contender fails: under every suite's table, a folded block per task with
+  the truth, each run's answer, its recomputed score and what was missed (e.g. "missed 2 of 12 (at 12.16 s,
+  15.84 s)", "3 of 12 wrong (#5 said made, ...)"). Derived from the stored answers and the suite's truth at build time.
 - A second Fable 5.1 run on `svc-bench-3` frames with a 3600 s limit: it answered in 1645 s and scored 0.989
   (0.988 above chance), juggle count off by 2, the other three tasks exact.
 - A share card for the benchmark page: `bench page` draws `card.png` (1200x630) from the Summary numbers, and
