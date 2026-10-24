@@ -581,6 +581,14 @@ and link them; the page labels such a link "transcript".
   scores differ.
 - The leaderboard page is rebuilt from the folder by `bench page` on every push to master. A file that does not
   parse is listed on the page as skipped, never silently dropped.
+- The same build writes `leaderboard.json` next to the page
+  (<https://mariusding.github.io/sports-video-coach/benchmark/leaderboard.json>, `bench/export.py`): one board per
+  track and suite with runs, in the page's order, each with its floor file, its contenders ranked as the page's
+  Summary ranks them (rank, runs, mean total, mean and range of above chance, mean time and cost) and every run
+  (file, date, agent, model, settings, submitter, seed, total, above chance, time, cost, evidence link). Every
+  number comes from the result files through the page's own functions; skipped files are listed under `skipped`.
+  It holds no build time, so it only changes when the results do; `latest_run` is the newest run's date. A fresh-seed
+  board has no floor file: each of its runs is measured against its own seed's blind floor, as on the page.
 - A result file with a `seed` is re-scored against the truth rebuilt from that seed; the published truth or another
   seed's does not pass.
 - Under each suite's table of runs, a folded "Where each contender fails" block lists, per task, the truth (from
