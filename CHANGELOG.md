@@ -27,6 +27,10 @@ All notable changes to this project are documented here. The format follows [Kee
   (1 - floor), clipped to 0..1, where the floor is a blind baseline that copies the example answers from the task
   text (`sports-video-coach bench baseline`, result files in `benchmark/results/`, shown as a marked
   floor row). Computed from the existing result files; no schema change.
+- A third suite for the frames track, `bench prepare --suite svc-bench-3`, after strong models scored 1.0 on
+  `svc-bench-2` by eye: small balls and blades, double touches, a banner over a far rim, passes behind a defender
+  and pass fakes, a rate change next to a decoy boat. First frames-track rows: Opus 5.5 1.000, Codex 0.862,
+  Sonnet 5.5 0.612.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
 

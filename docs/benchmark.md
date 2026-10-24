@@ -175,6 +175,57 @@ Above-chance totals of the rows on 2026-10-24:
 
 Sonnet's alternating shot list (0.833) equals the floor on that task, so it adds 0 above chance.
 
+## Suite svc-bench-3 (eyes)
+
+Built after the strong models scored 1.0 on `svc-bench-2` by eye. It is meant for the frames track: the events are
+small, short or hidden, so they have to be found still by still, and a lazy reading lands near a plausible decoy.
+
+```bash
+sports-video-coach bench prepare --out bench-eyes --suite svc-bench-3 --track frames
+```
+
+- **Small things.** A 5 px ball on a 640 px frame, a 3 px ball at a far rim, a small yellow oar blade.
+- **Short events.** The two contacts of a double touch are 0.24 s (3 stills) apart; a one-touch pass has no hold.
+- **Hidden moments.** A banner crosses the rim on 3 of the 12 shots; a red defender is in front of the passer at 4
+  of the 12 releases. The rule says to judge those by where the ball goes.
+- **Decoys with nearly the same answer.** A second juggler (44 touches against 47), a grey pair passing an
+  identical ball, a far boat rowing about 31.8 a minute against 33.92.
+- The camera is hand-held on every video. Drawn like `svc-bench-2`: the truth comes from the numbers that drive the
+  drawing, with fixed seeds, and is never written to the run folder.
+
+| Task | Kind | The rule (exact text in `TASKS.md`) | What a quick look gets wrong |
+|---|---|---|---|
+| `juggle-touches` | count | The left (red) player's foot touches, 29.76 s. A double touch is two; a floor bounce is none. | 9 double touches look like one; 6 floor bounces look like touches; the right player has 44. |
+| `far-hoop-shots` | outcomes | 12 shots at a far hoop, 52.84 s. Rim-outs, a short ball and a ball that dips in and pops out are misses; rim rolls that drop are makes; one pump fake is not a shot. | Any ball near the 16 px rim looks like a make; 3 shots reach the rim behind a passing banner. |
+| `pass-releases` | timestamps | Release times of 12 passes between three blue players, 21 s. Four pass fakes are not passes; two one-touch passes are released on arrival. | Fakes counted as passes; releases behind the defender missed; the grey pair's passes counted. |
+| `stroke-rate` | rate | The near boat's catches from 15.0 s, 32 s. The rower changes rate at 15 s. | The whole-video rate is 31.37 and the far boat's 31.83, both more than 5 % off. |
+
+**Read-back from the stills.** A scripted reader that opens only `frames/<task>/t*.jpg` of a frames-track folder
+(the full-size stills an agent gets, every 0.08 s) recovers every answer: the 47 touches exactly, all 12 shot
+outcomes, the 12 releases within 0.01 s, and the stroke rate at 33.920. Scored like an agent, it gets 1.0 on every
+task. For the far hoop it places the rim from the pole and the floor, because the noisy 16 px rim is not found as a
+red blob on its own. The reader was written knowing how the videos are drawn; it shows the answers are in the
+stills, not that a model will find them. It was not run on the contact sheets alone, which is all Codex sees (see
+the frames-track table above).
+
+First rows (frames track, 2026-10-24, one run each, every run submitted; run as in the table above):
+
+| Agent | Model | Total | Juggle | Shots | Passes | Rate | Wall | Cost |
+|---|---|---|---|---|---|---|---|---|
+| Claude Code 2.1.310 | claude-opus-5-5 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 489 s | $3.91 |
+| Codex 0.159.3 | gpt-6-astra (xhigh) | 0.862 | 1.000 | 1.000 | 0.923 | 0.525 | 766 s | not reported |
+| Claude Code 2.1.310 | claude-sonnet-5-5 | 0.612 | 0.723 | 0.750 | 0.833 | 0.142 | 65 s | $0.23 |
+
+- **Opus still gets 1.0, at a price.** 252 Reads (55 of the 69 sheets, 195 full-size stills), 489 s, $3.91. Its
+  stroke rate, 33.9, is within the 2 % full-credit band, but by its own account it checked only the catches up to
+  20.3 s and the ones near 25.6 and 30.9 s, and assumed a steady rate in between.
+- **The spread is wider than on `svc-bench-2`.** The stroke rate separates the other two: Codex answered 37.5
+  (10.6 % off) from the sheets.
+- **Codex** counted the juggling and the shots exactly; it added one release (at 7.76 s, between two real ones) and
+  was within 0.5 s on all 12 real ones.
+- **Sonnet** opened 17 of 69 sheets: all 11 pass sheets, 4 rowing sheets, 1 juggling and 1 shot sheet. It said it
+  estimated the juggling count from one sheet and guessed the shot outcomes; the guess scored 0.75.
+
 ## Rules
 
 - **No peeking.** The agent must not read the truth files or the package source (`src/sports_video_coach/bench/`).
