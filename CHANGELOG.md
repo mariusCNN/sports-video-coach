@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `bench run --track frames` runs the frames track in one command, as the leaderboard's frames rows were run:
+  Claude Code with Read as its only tool and the same prompt; the json block that ends the reply becomes
+  `answers.json`. Before, the frames rows could not be reproduced from the docs (found by a cold outsider run).
 - The benchmark leaderboard has a summary table above each suite's runs: one line per agent, model and settings
   with the number of runs, mean total, mean above chance and its range, ranked by mean above chance.
 - Four more `svc-bench-3` frames-only runs on the leaderboard: second runs of Opus 5.5 and Sonnet 5.5, Haiku 5.5,
@@ -48,6 +51,10 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- `bench score` prints the prefilled issue form link too, not only `bench run`.
+- `docs/benchmark.md` names `svc-bench-3` wherever it listed the suites, says how to install, and lists the
+  `--by`, `--settings` and `--evidence` options of `bench run`; `bench --help` and the issue form name
+  `svc-bench-3` too.
 - `sports-video-coach demo` (which builds the demo site) stopped with exit 3 once the humanize check landed: its
   canned narration and film lines opened with slide labels. They are now spoken sentences with the same facts, and
   a test runs the humanize check on the demo's files.

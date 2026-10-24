@@ -1,7 +1,8 @@
 """`sports-video-coach bench`: a reproducible benchmark of agents and models as sports film reviewers.
 
-Suites: `svc-bench-1` (four short drawn videos) and `svc-bench-2` ("hard": five drawn videos with a hand-held
-camera, look-alike decoys and rule-defined events). The truth is exact (we drew them). Run one with any agent:
+Suites: `svc-bench-1` (four short drawn videos), `svc-bench-2` ("hard": five drawn videos with a hand-held
+camera, look-alike decoys and rule-defined events) and `svc-bench-3` ("eyes": small, short and hidden events, for
+the frames track). The truth is exact (we drew them). Run one with any agent:
 
   sports-video-coach bench prepare --out <dir> [--suite svc-bench-2]   videos, TASKS.md and an answers.json to fill
                                 [--track frames]       still images instead of videos, for an agent that runs no code
@@ -10,7 +11,8 @@ camera, look-alike decoys and rule-defined events). The truth is exact (we drew 
                                 [--wall-seconds N] [--evidence URL] [--out FILE]
   sports-video-coach bench validate <result.json...>   re-score a result file; exit 1 if it was edited or broken
   sports-video-coach bench page ...                     the leaderboard page from benchmark/results/
-  sports-video-coach bench run --agent claude|codex|cmd [--model M] [--suite S] [--cmd "..."] [--dry-run]
+  sports-video-coach bench run --agent claude|codex|cmd [--model M] [--suite S] [--track frames] [--cmd "..."]
+                                [--dry-run]
                                 all of it in one command: prepare, run the agent headless, score, issue link
 """
 from __future__ import annotations
@@ -208,6 +210,9 @@ def cmd_score(argv) -> int:
     media.write_json_atomic(out, res)
     print(S.table(res))
     print(f"\nwrote {out}")
+    from .run import issue_url
+    print("submit it: add it to benchmark/results/ in a pull request, or open the prefilled issue form:")
+    print(issue_url(res))
     return 0
 
 
