@@ -44,6 +44,9 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- `sports-video-coach demo` (which builds the demo site) stopped with exit 3 once the humanize check landed: its
+  canned narration and film lines opened with slide labels. They are now spoken sentences with the same facts, and
+  a test runs the humanize check on the demo's files.
 - A plugin's page re-renders when a file its page hooks read changes (declare them in `PageHooks.inputs`); before,
   `run` ended with exit 0 and the page still showed the old number (found by a cold plugin-author test).
 - Fewer needless agent stops: a whitespace-only edit (a space, a blank line) to a README no longer makes the
