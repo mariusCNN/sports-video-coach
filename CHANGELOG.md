@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `bench run --agent gemini | qwen | aider | opencode | cursor | copilot | goose`: one-command benchmark runs for
+  seven more agent CLIs, each a headless command line built from that CLI's own docs (linked in
+  `docs/benchmark.md` and on the benchmark page's "Run it yourself"). Not run by the maintainer, so untested
+  against the real CLIs (tested with fake binaries); the result's `settings` says so. Code track only.
 - `bench transcript` redacts a transcript or log for publishing (images, home folders, user and host names,
   emails, env dumps, hook output, key-like strings), and `bench run` writes the redacted copy next to the raw one.
   All 20 maintainer runs now link their redacted transcript in `benchmark/transcripts/` (about 2 MB); the page

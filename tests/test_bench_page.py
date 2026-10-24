@@ -35,7 +35,7 @@ def test_empty_results_show_be_the_first(tmp_path):
     assert "No runs yet" in html and "be the first" in html
     assert "<table" not in html
     assert "bench prepare --out bench-run" in html and "bench score bench-run" in html
-    frames = html[html.index('<h2 id="frames">'):]
+    frames = html[html.index('<h2 id="frames">'):html.index('<h2 id="method">')]
     one = frames.index("bench run --agent claude --model &lt;model&gt; --suite svc-bench-3 --track frames")
     assert one < frames.index("bench prepare --out bench-frames --suite svc-bench-3 --track frames")  # one command first
     assert "bench score bench-frames" in frames

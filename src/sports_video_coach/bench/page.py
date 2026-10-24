@@ -661,6 +661,19 @@ def facts_block(rows: list[dict]) -> str:
             f'asks first</summary><ul>{"".join(f"<li>{x}</li>" for x in items)}</ul></details>')
 
 
+def presets_step() -> str:
+    """The one-command step of "Run it yourself": Claude Code, Codex and one line per preset in bench_run.PRESETS."""
+    one = "sports-video-coach bench run --agent {} --suite svc-bench-3"
+    lines = "".join(f"<li><code>--agent {esc(k)}</code> {esc(p.name)}: <code>{esc(bench_run.shown(k))}</code>"
+                    "</li>" for k, p in bench_run.PRESETS.items())
+    return ("<li>Or do it all in one command (prepare, run headless, score): Claude Code or Codex"
+            f"<pre><code>{esc(one.format('claude'))}\n{esc(one.format('codex'))}</code></pre>"
+            "or a preset for another agent CLI. The presets are built from each CLI's docs (read "
+            f"{esc(bench_run.DOCS_READ)}) but not run by the maintainer, so untested against the real CLIs; code "
+            f'track only (<a href="{DOC_URL}#add-your-agent-in-one-command">doc links per flag</a>). Any other '
+            f'CLI: <code>--agent cmd --cmd "... {{prompt}}"</code>.<ul class="plain">{lines}</ul></li>')
+
+
 def prompt_block() -> str:
     """The exact prompts `bench run` sends (shown for svc-bench-3; other suites change only the name and count)."""
     code = bench_run.prompt("svc-bench-3", "code")
@@ -712,7 +725,8 @@ def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = 
                    f"skipped</strong> (not shown in the table):<ul>{items}</ul></div>")
     kinds = "".join(f'<section><h3>{k}</h3><p>{esc(what)}</p><p class="rule">{esc(rule)}</p></section>'
                     for k, what, rule in KINDS)
-    steps = "".join(f"<li>{esc(label)}<pre><code>{esc(cmd)}</code></pre></li>" for label, cmd in COMMANDS)
+    steps = "".join(f"<li>{esc(label)}<pre><code>{esc(cmd)}</code></pre></li>"
+                    for label, cmd in COMMANDS) + presets_step()
     return f"""<!doctype html>
 <html lang="en">
 <head>

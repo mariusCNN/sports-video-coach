@@ -18,6 +18,7 @@ import signal
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlencode, quote
 
@@ -28,6 +29,78 @@ from .suite import SUITE
 ISSUE_FORM = "https://github.com/mariusDing/sports-video-coach/issues/new"
 MAX_URL = 7500           # GitHub rejects much longer prefilled URLs; past this the result is pasted by hand
 AGENTS = {"claude": "Claude Code", "codex": "Codex"}
+
+
+@dataclass(frozen=True)
+class Preset:
+    """A headless command line for one more agent CLI, built only from its own docs. In `argv`, PROMPT_ARG and
+    PROMPT_FILE_ARG become the prompt text / the file holding it, MODEL_ARG becomes `model_flag <model>` or nothing."""
+    name: str
+    argv: tuple[str, ...]
+    model_flag: str
+    version: tuple[str, ...]      # prints the CLI's version
+    docs: str                     # where the flags are documented (read on DOCS_READ)
+    config: str = "runner's own config"   # how much of the runner's own agent config it loads
+    note: str = ""
+
+
+PROMPT_ARG, PROMPT_FILE_ARG, MODEL_ARG = "{prompt}", "{prompt_file}", "{model}"
+DOCS_READ = "2026-10-25"
+UNTESTED = "preset, not run by the maintainer"
+# Every flag below is from the linked docs, read on DOCS_READ. None of these CLIs was installed or run here (the
+# tests use fake binaries), so the presets are untested against the real CLIs. None of them documents a way to be
+# limited to reading files the way Claude Code's --tools Read is, so no preset runs the frames track.
+PRESETS = {
+    # https://geminicli.com/docs/cli/cli-reference/ : -p/--prompt forces non-interactive mode, --approval-mode yolo
+    # auto-approves every action (-y/--yolo is deprecated for it), -m/--model, -v/--version. Plan mode
+    # (https://geminicli.com/docs/cli/plan-mode) is not file-read only: it searches the web, and in a headless run
+    # it switches to YOLO once the plan is approved.
+    "gemini": Preset("Gemini CLI", ("gemini", "--approval-mode", "yolo", MODEL_ARG, "-p", PROMPT_ARG), "--model",
+                     ("gemini", "--version"), "https://geminicli.com/docs/cli/cli-reference/",
+                     note="Google moved individual users to Antigravity CLI on 2026-06-18; API-key and Code Assist "
+                          "users keep Gemini CLI"),
+    # https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/ : -p headless, --approval-mode yolo,
+    # -m/--model, --safe-mode drops context files, hooks, extensions, skills, MCP servers and custom subagents
+    # (the approval mode still applies).
+    "qwen": Preset("Qwen Code", ("qwen", "--safe-mode", "--approval-mode", "yolo", MODEL_ARG, "-p", PROMPT_ARG),
+                   "--model", ("qwen", "--version"),
+                   "https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/",
+                   config="--safe-mode: no context files, hooks, extensions, skills, MCP servers or subagents"),
+    # https://aider.chat/docs/config/options.html : --message-file sends one message and exits, --yes-always says
+    # yes to every confirmation, --no-git (the run folder is no repo), --no-check-update, --no-pretty,
+    # --no-stream, --read adds a read-only file, file arguments are the files it may edit, --model, --version.
+    # Scripting: https://aider.chat/docs/scripting.html
+    "aider": Preset("Aider", ("aider", "--yes-always", "--no-git", "--no-check-update", "--no-pretty", "--no-stream",
+                              MODEL_ARG, "--read", "TASKS.md", "--message-file", PROMPT_FILE_ARG, "answers.json"),
+                    "--model", ("aider", "--version"), "https://aider.chat/docs/config/options.html",
+                    note="it edits answers.json; whether --yes-always also runs the shell commands it suggests is "
+                         "not stated in the docs"),
+    # https://opencode.ai/docs/cli/ : `opencode run [message]` is the non-interactive mode, --auto auto-approves
+    # permissions that are not explicitly denied, -m/--model provider/model, -v/--version.
+    "opencode": Preset("OpenCode", ("opencode", "run", "--auto", MODEL_ARG, PROMPT_ARG), "--model",
+                       ("opencode", "--version"), "https://opencode.ai/docs/cli/",
+                       note="--model takes provider/model"),
+    # https://cursor.com/docs/cli/reference/parameters : the CLI is `agent`; -p/--print for scripts, --force (alias
+    # --yolo) applies changes and allows commands not explicitly denied, --trust trusts the folder (headless only),
+    # --output-format text, --model, -v/--version. Headless use: https://cursor.com/docs/cli/headless
+    "cursor": Preset("Cursor CLI", ("agent", "-p", "--force", "--trust", "--output-format", "text", MODEL_ARG,
+                                    PROMPT_ARG), "--model", ("agent", "--version"),
+                     "https://cursor.com/docs/cli/reference/parameters"),
+    # https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically :
+    # -p/--prompt, --allow-all-tools (in its examples), --no-ask-user (no clarifying questions), -s (silent: no
+    # session metadata), --model. `copilot version` is in the command reference
+    # (https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference).
+    "copilot": Preset("GitHub Copilot CLI", ("copilot", "-p", PROMPT_ARG, "--allow-all-tools", "--no-ask-user",
+                                             "-s", MODEL_ARG), "--model", ("copilot", "version"),
+                      "https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/"
+                      "run-cli-programmatically"),
+    # https://goose-docs.ai/docs/guides/goose-cli-commands : `goose run -t TEXT` runs one prompt and exits,
+    # --no-session stores no session file, --model, --version. Tool approval: Autonomous mode is the default
+    # (https://goose-docs.ai/docs/guides/goose-permissions); the preset sets nothing, so your own GOOSE_MODE applies.
+    "goose": Preset("Goose", ("goose", "run", "--no-session", MODEL_ARG, "-t", PROMPT_ARG), "--model",
+                    ("goose", "--version"), "https://goose-docs.ai/docs/guides/goose-cli-commands",
+                    note="tool approval follows your GOOSE_MODE (Autonomous by default)"),
+}
 
 # One line, no double quotes or percent signs: it is passed as one argument, also through Windows .cmd shims.
 PROMPT = (
@@ -106,6 +179,19 @@ def command(agent: str, text: str, prompt_file: Path, model: str = "", template:
     if agent == "codex" and track != F.TRACK:
         raise SystemExit("bench run --track frames runs Claude Code or --agent cmd; for Codex see the frames track "
                          "in docs/benchmark.md")
+    if agent in PRESETS:
+        p = PRESETS[agent]
+        if track != F.TRACK:
+            raise SystemExit(f"--agent {agent}: {p.name} documents no way to be limited to reading files, so its "
+                             "preset does not run the frames track. Use --agent cmd --cmd \"...\" with a read-only "
+                             "command line you trust, or bench prepare and bench score by hand")
+        out = []
+        for tok in p.argv:
+            if tok == MODEL_ARG:
+                out += [p.model_flag, model] if model else []
+            else:
+                out.append(text if tok == PROMPT_ARG else str(prompt_file) if tok == PROMPT_FILE_ARG else tok)
+        return out
     if agent == "codex":
         argv = ["codex", "exec", "-c", "check_for_update_on_startup=false", "--skip-git-repo-check",
                 "-s", "workspace-write"]
@@ -251,9 +337,16 @@ def codex_stats(log: Path) -> dict:
     return out
 
 
-def agent_version(argv0: str) -> str:
+def shown(agent: str) -> str:
+    """A preset's command line for people: the prompt as <prompt>, the model flag in brackets."""
+    p = PRESETS[agent]
+    return " ".join(f"[{p.model_flag} M]" if t == MODEL_ARG else "<prompt>" if t == PROMPT_ARG else
+                    "<prompt file>" if t == PROMPT_FILE_ARG else t for t in p.argv)
+
+
+def agent_version(argv0: str, args: tuple[str, ...] = ("--version",)) -> str:
     try:
-        p = subprocess.run([argv0, "--version"], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+        p = subprocess.run([argv0, *args], stdin=subprocess.DEVNULL, capture_output=True, text=True,
                            timeout=60)
     except (OSError, subprocess.SubprocessError):
         return ""
@@ -282,6 +375,8 @@ def settings_text(agent: str, track: str, my_config: bool, given: str = "", stat
     frames = agent == "claude" and track != F.TRACK
     if agent == "cmd":
         iso = ""            # a custom command runs as given: isolating it from the runner's config is the runner's job
+    elif agent in PRESETS:
+        iso = f"{UNTESTED} (--agent {agent}); {PRESETS[agent].config}"
     elif agent == "codex":
         iso = CODEX_OWN     # never isolated: that would mean copying its login
     elif my_config:
@@ -308,8 +403,11 @@ def main(argv=None) -> int:
     ap.add_argument("--track", default=F.TRACK, choices=F.TRACKS,
                     help="code (default): videos, any tool; frames: still images only, no code (Claude Code runs "
                          "with Read as its only tool)")
-    ap.add_argument("--agent", required=True, choices=["claude", "codex", "cmd"],
-                    help="claude (Claude Code), codex (Codex CLI) or cmd (any other CLI, with --cmd)")
+    ap.add_argument("--agent", required=True, choices=["claude", "codex", *PRESETS, "cmd"],
+                    help="claude (Claude Code), codex (Codex CLI), a preset for another CLI (" +
+                         ", ".join(f"{k}: {p.name}" for k, p in PRESETS.items()) + "; built from each CLI's docs "
+                         "and NOT run by the maintainer, so untested against the real CLI; code track only), or "
+                         "cmd (any other CLI, with --cmd)")
     ap.add_argument("--model", default="", help="passed to the agent CLI as --model (and {model} in --cmd)")
     ap.add_argument("--cmd", default="",
                     help='for --agent cmd: the command line, with {prompt} (the prompt text) or {prompt_file} '
@@ -340,6 +438,10 @@ def main(argv=None) -> int:
     argv_ = command(a.agent, text, prompt_file, a.model, a.cmd, a.track, a.use_my_config)
     if a.agent == "cmd":
         room = "custom command: it runs as given, so keeping your own agent config out is up to you"
+    elif a.agent in PRESETS:
+        p = PRESETS[a.agent]
+        room = (f"{p.name} {UNTESTED}, untested against the real CLI (flags from {p.docs}); {p.config}"
+                + (f"; {p.note}" if p.note else ""))
     elif a.agent == "codex":
         room = "Codex runs with your own config (~/.codex): not isolated, so credentials stay where they are"
     elif a.use_my_config:
@@ -354,7 +456,8 @@ def main(argv=None) -> int:
     if out.exists() and any(out.iterdir()):
         raise SystemExit(f"{out} is not empty; pick a new --out")
     exe = resolve(argv_)
-    name = a.name or AGENTS.get(a.agent) or Path(argv_[0]).stem
+    name = a.name or AGENTS.get(a.agent) or (PRESETS[a.agent].name if a.agent in PRESETS else
+                                             Path(argv_[0]).stem)
 
     what = "videos" if a.track == F.TRACK else "videos as stills"
     print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} {what} into {out}")
@@ -378,7 +481,9 @@ def main(argv=None) -> int:
     settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats)
     if a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track):
         print("answers.json: saved from the json block at the end of the agent's reply")
-    version = stats.get("version") or (agent_version(exe[0]) if a.agent != "cmd" else "")
+    version = stats.get("version") or ("" if a.agent == "cmd" else
+                                       agent_version(exe[0], PRESETS[a.agent].version[1:]) if a.agent in PRESETS
+                                       else agent_version(exe[0]))
     try:
         answers = S.read_answers(out)
     except (OSError, ValueError, SystemExit) as e:   # a missing or broken answers.json scores 0, like an empty one
