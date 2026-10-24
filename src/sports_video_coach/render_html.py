@@ -100,18 +100,25 @@ def _blocks_rule(state, start, end, silent):
         return False
     if silent:
         return True
-    line, depth = start, 1
-    while True:  # find the matching close, counting nested opens
+    line, depth, code, closed = start, 1, None, False
+    while True:  # find the matching close, counting nested opens; `:::` inside a code fence does not count
         line += 1
         if line >= end:
             break
         s = state.src[state.bMarks[line] + state.tShift[line]:state.eMarks[line]]
-        if state.sCount[line] < state.blkIndent:
+        if s and state.sCount[line] < state.blkIndent:  # outdented text ends it; blank lines do not
             break
+        if code:
+            code = None if s.startswith(code) else code
+            continue
+        if s.startswith(("```", "~~~")):
+            code = s[:3]
+            continue
         f = _FENCE.match(s)
         if f and state.sCount[line] - state.blkIndent < 4:
             depth += 1 if f.group(1) else -1
             if depth == 0:
+                closed = True
                 break
     kind, title = m.group(1), m.group(2)
     old_parent, old_max = state.parentType, state.lineMax
@@ -122,7 +129,7 @@ def _blocks_rule(state, start, end, silent):
     tok = state.push("svc_block_close", "div", -1)
     tok.info, tok.block = kind, True
     state.parentType, state.lineMax = old_parent, old_max
-    state.line = min(line + 1, end)
+    state.line = line + 1 if closed else line  # an unclosed block ends before the line that stopped it
     return True
 
 
@@ -367,7 +374,7 @@ def render(md_text: str, lang: str, share: bool = False, folder: Path | None = N
 
     def h2(m):
         heads.append(re.sub(r"<[^>]+>", "", m.group(1)))
-        no = re.match(r"(\d+)\.\s*(.*)", m.group(1), re.S)  # "3. What went wrong": the number set apart
+        no = re.match(r"(\d+)\.\s+(.*)", m.group(1), re.S)  # "3. What went wrong": the number set apart
         text = f'<span class="sec-no">{no.group(1)}</span><span>{no.group(2)}</span>' if no else m.group(1)
         return f'<h2 id="{lang}-s{len(heads)}">{text}</h2>'
     body = re.sub(r"<h2>(.*?)</h2>", h2, body)
@@ -457,7 +464,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
             more, more_heads, more_assets = hooks.sections(folder, code, embed, len(heads) + 1)
             body, heads, assets = body + more, heads + more_heads, assets or more_assets
         if hooks.intro:  # plugin panel (e.g. the Four Factors) after the verdict and key numbers, before section 1
-            pre = hooks.intro(folder, sb, [(code, attr, _, fname)])
+            pre = hooks.intro(folder, sb or {}, [(code, attr, _, fname)])
             cut = body.find("<h2 id=")
             body = body[:cut] + pre + body[cut:] if cut >= 0 else pre + body
         arts.append(f'<article class="report" data-lang="{code}" lang="{attr}"{hide(code)}>{inline_images(body, folder)}</article>')
@@ -500,7 +507,9 @@ TEMPLATE = """<!doctype html>
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Noto+Serif+SC:wght@600;700&display=swap">
+<!-- fonts load without blocking the first paint: a blocked or slow font host leaves the system fonts -->
+<script>(function () {{ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Noto+Serif+SC:wght@600;700&display=swap"; document.head.appendChild(l); }})();</script>
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Noto+Serif+SC:wght@600;700&display=swap"></noscript>
 <link rel="icon" href="data:,">
 <title>{page_title}</title>
 <style>

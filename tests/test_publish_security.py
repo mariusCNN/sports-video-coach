@@ -70,10 +70,11 @@ def test_published_page_pins_its_inline_script(tmp_path, monkeypatch):
     publish.build_report(folder, dest)
     page = (dest / "index.html").read_text(encoding="utf8")
     scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
-    assert len(scripts) == 1
-    digest = base64.b64encode(hashlib.sha256(scripts[0].encode("utf8")).digest()).decode()
+    assert len(scripts) == 2  # the font loader and the page script
     meta = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', page)
-    assert meta and f"'sha256-{digest}'" in meta.group(1)
+    for s in scripts:
+        digest = base64.b64encode(hashlib.sha256(s.encode("utf8")).digest()).decode()
+        assert meta and f"'sha256-{digest}'" in meta.group(1)
     assert page.index("Content-Security-Policy") < page.index("<script>")
 
 

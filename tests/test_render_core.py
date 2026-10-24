@@ -172,3 +172,32 @@ def test_page_loads_fonts_without_sending_the_page_address():
     page = render_html.page(FIXTURE)
     assert '<meta name="referrer" content="no-referrer">' in page  # private links stay out of the font host's logs
     assert "fonts.googleapis.com/css2?family=Barlow+Condensed" in page and "display=swap" in page
+
+
+def test_blocks_survive_lists_blank_lines_and_code():
+    r = render_html.MD.render
+    unclosed = r("- item\n  ::: do\n  a\n- next\n")
+    assert '<div class="block do">' in unclosed and "next" in unclosed      # the line that ended it stays
+    blank = r("- item\n\n  ::: do\n  a\n\n  b\n  :::\n")
+    assert blank.index("<p>b</p>") < blank.index("</div>") and ":::" not in blank
+    code = r("::: more Why\n```\n:::\n```\nafter\n:::\n")
+    assert code.index("<p>after</p>") < code.index("</details>")
+
+
+def test_section_number_needs_a_space_after_the_dot():
+    page = render_html.render("# T\n\n## 3.5 points per trip\n\n## 4. Plan\n", "en", False, FIXTURE, None,
+                              render_html.UI, "")[0]
+    assert 'class="sec-no">3<' not in page and '<span class="sec-no">4</span>' in page
+
+
+def test_intro_gets_a_dict_without_a_board_hook(tmp_path, monkeypatch):
+    folder = _generic(tmp_path / "f", None)
+    hooks = render_html.PageHooks(intro=lambda f, sb, langs: f"<!--{sb.get('x', 'none')}-->")
+    monkeypatch.setattr(render_html, "hooks_of", lambda f: (hooks, "demo", {}))
+    assert "<!--none-->" in render_html.page(folder)
+
+
+def test_fonts_do_not_block_the_first_paint():
+    page = render_html.page(FIXTURE)
+    head = page[:page.index("</head>")]
+    assert '<link rel="stylesheet" href="https://fonts.googleapis.com' not in head.replace("<noscript><link", "")
