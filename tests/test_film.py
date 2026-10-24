@@ -311,6 +311,7 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     assert [ln.split()[1] for ln in out.splitlines()[:3]] == ["title", "card", "clip"]
     assert "1 freeze(s)" in out and "3 scenes" in out
     assert "freeze 0:03: 1 mark(s) 0.5,0.8  label 'here'" in out  # what --dry read from the freeze line
+    assert "note: film.en.md: about" in out  # names the script: several languages print one after another
     assert "under the 40-80 s the film guide aims for with a 20 s video; add a moment" in out  # a short plan
     assert " min" not in out  # a film under 2 min is told in seconds
     (folder / "film.en.md").write_text("Hello.\n\n![the cut](clip:0:02-0:06)\nWatch.\n"
@@ -328,7 +329,7 @@ def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys
     film.main([str(folder), "--video", str(video), "--dry"])
     out = capsys.readouterr().out
     assert "warning: scene 2: freeze 0:03: `0.92,0.72` comes after the label; put the label last" in out
-    assert "on a still picture; split the text" in out  # the card talks ~18 s over one picture
+    assert "note: film.en.md scene 3: " in out and "on a still picture; split the text" in out  # ~18 s, one picture
     assert film.title_text(folder, {}, 720) == "2025-03-12"  # the folder name; no date line repeating it
     assert film.title_text(folder, {"title": "Sprint"}, 720).endswith("2025-03-12")
     assert film.title_text(folder, {"title": "Sprint, 2025-03-12"}, 720).count("2025-03-12") == 1

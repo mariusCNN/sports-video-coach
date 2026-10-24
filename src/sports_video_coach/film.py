@@ -824,13 +824,14 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
                 print(f"      freeze {t}: {len(marks)} mark(s) {' '.join(map(fd.mark_text, marks)) or '-'}"
                       f"  label {label!r}")
             if sc.kind != "clip" and length > STILL_MAX_S:
-                print(f"      note: {length:.0f} s on a still picture; split the text or move part of it to a clip")
-        print(f"{len(scenes)} scenes, about {length_text(total)}")
+                print(f"      note: {script.name} scene {i}: {length:.0f} s on a still picture; split the text or move "
+                      f"part of it to a clip")
+        print(f"{script.name}: {len(scenes)} scenes, about {length_text(total)}")
         lo, hi = target_s(video_s)
         if not lo <= round(total) <= hi:  # a warning, not an error; compared as printed
             span = f"{lo // 60}-{hi // 60} min" if lo >= 120 else f"{lo}-{hi} s"
             source = f" with a {video_s:.0f} s video" if video_s is not None and video_s < 60 else ""
-            print(f"note: about {length_text(total)}, {'under' if total < lo else 'over'} the {span} the film "
+            print(f"note: {script.name}: about {length_text(total)}, {'under' if total < lo else 'over'} the {span} the film "
                   f"guide aims for{source}; " + (
                       "add a moment the report covers or a slow replay of one; fine for a short report, never pad"
                       if total < lo else "cut scenes unless that is on purpose"))

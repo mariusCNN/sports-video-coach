@@ -20,6 +20,13 @@ All notable changes to this project are documented here. The format follows [Kee
   `frames --every 0.2`); `new-plugin` prints the sport it set and how to change it.
 - A one-language page no longer shows an empty language switch outline; `review-check --help` prints its usage
   instead of treating `--help` as a folder; `frames --help` says `--end` is exclusive (found by a cold Codex run).
+- A long step that passes prints its last result lines (a measured number, "wrote X") under the run output, so
+  nobody has to open its log for them.
+- A long step prints its log file's absolute path (the logs folder moves with `$SVC_WORKSPACE`), and `run --help`
+  says where logs go.
+- `film --dry` notes name the script (`film.en.md scene 4: 18 s on a still picture`), so a multi-language dry run
+  says which language's script to fix.
+- README.zh says the exit-3 prompts and guides are English for the agent, and the deliverables follow `--lang`.
 
 - Bold next to CJK punctuation renders on the page: `**一句话：**第 4 次` showed its asterisks (CommonMark's
   flanking rule); the renderer now treats a CJK character beside `**` the way markdown-it-cjk-friendly does.

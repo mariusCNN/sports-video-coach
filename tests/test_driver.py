@@ -209,6 +209,22 @@ def test_failed_long_step_exits_1_with_its_log_tail(unit, capsys):
     assert "a failed (exit 2)" in out and "last lines of" in out
 
 
+def test_passed_long_step_shows_its_result_lines_and_absolute_log(unit, capsys, monkeypatch):
+    def runner(cmd, stdout=None, **kw):
+        stdout.write("progress 10%\rprogress 100%\nmeasured 42 reps\n\nwrote run/a.out\n\n")
+        (unit / "run" / "a.out").write_text("x", encoding="utf8")
+        return subprocess.CompletedProcess(cmd, 0)
+    monkeypatch.chdir(unit)
+    monkeypatch.setenv("HOOP_WORKSPACE", ".")  # a relative workspace: the printed log path is still absolute
+    s = [P.Step("a", "cmd", made("a"), lambda g: [["a"]], long=True)]
+    assert P.drive(Unit.load(unit), s, runner=runner) == 0
+    out = capsys.readouterr().out
+    assert "[run]   a: measured 42 reps\n[run]   a: wrote run/a.out\n" in out and "progress" not in out
+    log = next(ln for ln in out.splitlines() if "log: " in ln).split("log: ", 1)[1]
+    assert Path(log).is_absolute() and Path(log).is_file()
+    assert P.result_lines(unit / "missing.log") == []
+
+
 def test_failed_step_writes_no_record(unit):
     s = steps()[:1]
     assert P.drive(Unit.load(unit), s, runner=Runner(unit, rc=1)) == 1

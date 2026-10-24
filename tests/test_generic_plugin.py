@@ -54,7 +54,7 @@ def test_run_help_lists_the_start_and_driver_options(capsys):
         run.main(["--help"])
     out = capsys.readouterr().out
     assert e.value.code == 0
-    assert all(f in out for f in ("--lang", "--every", "--focus", "--artifacts", "--status", "--redo STEP", "Exit codes"))
+    assert all(f in out for f in ("--lang", "--every", "--focus", "--artifacts", "--status", "--redo STEP", "Exit codes", "$SVC_WORKSPACE"))
 
 
 def test_frames_label_tenths_under_a_second(tmp_path, video):

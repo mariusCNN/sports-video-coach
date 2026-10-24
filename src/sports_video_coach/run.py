@@ -121,6 +121,9 @@ the time in it); two camera angles of the same set are better run as two units f
 Exit codes: 0 done (the deliverables are listed), 3 an agent step is waiting (the output says what to write and
 with which guide; do it, run again), 1 a command failed (read the log it names, fix, run again), 2 a usage
 error (wrong option): read the message.
+Logs: a long step writes its output to a log file and prints the file's absolute path (`[run]   log: ...`) and its
+last result lines. The folder is <workspace>/logs, the workspace being $SVC_WORKSPACE (or $HOOP_WORKSPACE, else
+./workspace); a unit folder outside the workspace keeps its logs in its own run/logs.
 """
 
 

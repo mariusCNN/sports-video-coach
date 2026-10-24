@@ -2,7 +2,7 @@
 
 A driver is a list of Steps. A "cmd" step runs a stage (core or the unit's plugin); an "agent" step stops the run (exit 3)
 and prints what the agent has to do. `drive` walks the list: done steps are skipped, the next command steps run
-(long ones log to <workspace>/logs/), a failed command stops the run with exit 1 and its log tail, and exit 0
+(long ones log to <workspace>/logs/, the absolute path printed, and show their last result lines), a failed command stops the run with exit 1 and its log tail, and exit 0
 means everything is done. `--until` stops after a step (done or not), `--redo` runs a done step again, and
 publish runs only with `--publish`.
 
@@ -643,6 +643,14 @@ def tail(path: Path, n: int = 15) -> str:
     return "\n".join(lines[-n:])
 
 
+def result_lines(path: Path, n: int = 2) -> list[str]:
+    """The last `n` non-empty lines a long step printed (its result: a measured number, "wrote X"), shown after it
+    passes so nobody has to open the log; a progress bar's carriage-return frames count as their last frame."""
+    text = path.read_text(encoding="utf8", errors="replace") if path.is_file() else ""
+    lines = [ln.rsplit("\r", 1)[-1].strip() for ln in text.split("\n")]
+    return [ln for ln in lines if ln][-n:]
+
+
 def slash(text) -> str:
     """Paths in run output with forward slashes on Windows too, so every line pastes into Git Bash as it is."""
     return str(text).replace("\\", "/") if os.sep == "\\" else str(text)
@@ -665,12 +673,13 @@ def shown(argv: list[str], plugin: str | None = None) -> str:
 
 
 def run_cmd(step: Step, g: Unit, runner=subprocess.run, argvs: list[list[str]] | None = None) -> bool:
-    """Run a command step; long ones log to a file and only the tail is printed on failure."""
+    """Run a command step; long ones log to a file (its absolute path printed: the folder moves with SVC_WORKSPACE)
+    and print only their last result lines when they pass, the log tail when they fail."""
     env = child_env()
     for i, argv in enumerate(step.args(g) if argvs is None else argvs):
         print(f"[run] {step.name}: {shown(argv, g.PLUGIN)}", flush=True)
         if step.long:
-            log = logs_dir(g) / f"{g.folder.parent.name}-{g.folder.name}-{step.name}{i or ''}.log"
+            log = (logs_dir(g) / f"{g.folder.parent.name}-{g.folder.name}-{step.name}{i or ''}.log").resolve()
             print(f"[run]   log: {slash(log)}", flush=True)
             with open(log, "w", encoding="utf8") as fh:
                 rc = runner(stage_cmd(argv, g.PLUGIN), stdout=fh, stderr=subprocess.STDOUT, env=env).returncode
@@ -680,6 +689,9 @@ def run_cmd(step: Step, g: Unit, runner=subprocess.run, argvs: list[list[str]] |
             print(f"[run] {step.name} failed (exit {rc})" + (f"; last lines of {slash(log)}:\n{tail(log)}" if log else
                   ": the error is in the lines above (this step prints to the console, it keeps no log)"))
             return False
+        if log:
+            for line in result_lines(log):
+                print(f"[run]   {step.name}: {line}", flush=True)
     return True
 
 
