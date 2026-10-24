@@ -4,6 +4,13 @@ from pathlib import Path
 from sports_video_coach import guide, humanize, plugin
 
 
+def test_demo_canned_texts_pass_the_humanize_check():
+    """The demo's pre-written report and scripts pass the check the demo run waits on (the demo-site CI runs it)."""
+    paths = sorted((Path(humanize.__file__).parent / "demo" / "files").glob("*.md"))
+    assert {p.name for p in paths} >= {"listen.en.md", "listen.zh.md", "film.en.md", "film.zh.md"}
+    assert humanize.checks(paths, ["zh", "en"]) == []
+
+
 def test_flags_chinese_stock_phrasing_and_keeps_plain_coach_talk():
     found = humanize.findings("问题不在他，在于没人接应。值得注意的是，第三节只回防一人。为什么？因为他在看球。", "zh")
     assert any("不在" in f for f in found)
