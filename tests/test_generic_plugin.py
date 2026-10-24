@@ -310,6 +310,20 @@ def test_a_hyphenated_plugin_with_a_relative_import_passes_its_own_tests(tmp_pat
     assert "3 passed" in r.stdout
 
 
+def test_the_pytest_hook_takes_only_hyphenated_plugin_folders(tmp_path, request, monkeypatch):
+    from sports_video_coach.pytest_plugin import pytest_collect_directory as hook
+    for name in ("swim-rate", "swim_rate", "no-init"):
+        (tmp_path / name).mkdir()
+        if name != "no-init":
+            (tmp_path / name / "__init__.py").write_text("", encoding="utf8")
+    col = hook(path=tmp_path / "swim-rate", parent=request.session)
+    assert type(col) is pytest.Dir and col.path == tmp_path / "swim-rate"
+    assert hook(path=tmp_path / "swim_rate", parent=request.session) is None
+    assert hook(path=tmp_path / "no-init", parent=request.session) is None
+    monkeypatch.delattr(pytest, "Dir")  # pytest < 8: keeps pytest's own behaviour
+    assert hook(path=tmp_path / "swim-rate", parent=request.session) is None
+
+
 def test_a_command_stage_added_as_docs_plugins_md_says_runs_qualified(tmp_path):
     out = scaffold.scaffold("swimming", tmp_path / "plugins")
     (out / "pose.py").write_text("from pathlib import Path\n\n\ndef main(argv=None):\n"
