@@ -143,6 +143,8 @@ def main(argv=None):
     print(f"test:   {test_command(out)}")
     print(f"next:   edit {(out / 'prompts').as_posix()}/review.md and report.md for {a.sport or a.name}"
           + ("" if a.summary and a.use_when else f", and summary / use_when in {(out / '__init__.py').as_posix()}"))
+    print("example: a finished plugin with one measuring stage: "
+          "https://github.com/mariusDing/sports-video-coach/tree/master/examples/plugins/swim-stroke-rate")
 
 
 if __name__ == "__main__":

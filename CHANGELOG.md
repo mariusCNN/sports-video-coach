@@ -26,6 +26,10 @@ All notable changes to this project are documented here. The format follows [Kee
   the code track vs the frames track, a 4B local model, cost per near-perfect run and the hardest task, each
   with its numbers computed from `benchmark/results/`, links to the board rows and transcripts, and its bound;
   with Article structured data, in the sitemap, and linked from the top of the leaderboard.
+- A worked example plugin, `examples/plugins/swim-stroke-rate/`: `new-plugin` plus one OpenCV/NumPy stage that
+  measures swimming stroke rate (45.0 cycles/min on a synthetic clip whose truth is 45), its number on the page, a
+  `synth` stage that draws a test swimmer at a known rate, and a README mapping each file to the plugin contract.
+  Load it with `SVC_PLUGIN_PATH=examples/plugins`; `new-plugin` now points at it. See `docs/plugins.md`.
 - "What effort changed" on the benchmark page's fresh-seed frames board (English and Chinese), with a
   1200x675 chart for posts (`effort.png`, `effort-zh.png`, `bench/effort.py`): same model, only the effort
   setting changed, mean above chance per setting with n, range and time per run, a run with no answer shown as
@@ -150,6 +154,11 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- A plugin from `new-plugin` with a hyphen in its name (`swim-rate`) and a relative import in its
+  `__init__.py` failed collection of its own scaffolded tests: pytest imported the folder's `__init__.py` as a lone
+  module. The core now ships a pytest plugin (entry point `pytest11`) that collects such a folder as a plain folder,
+  so its tests pass with no conftest; the worked example dropped its `examples/plugins/conftest.py`. It needs
+  pytest 8+; on older pytest the hook is optional and does nothing.
 - The seven `bench run --agent` presets were checked against each real CLI's `--help` (Gemini CLI 0.65.0, Qwen
   Code 0.26.1, Aider 0.86.2, OpenCode 1.19.4, Cursor CLI 2026.10.22, GitHub Copilot CLI 1.0.103, Goose 1.56.0);
   `--agent qwen` now passes the prompt as a positional argument, since Qwen Code deprecated `-p`. No preset has

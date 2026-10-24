@@ -62,6 +62,13 @@ To ship one as a package, declare an entry point:
 tennis = "svc_tennis.plugin:PLUGIN"
 ```
 
+## Worked example
+
+[`examples/plugins/swim-stroke-rate/`](../examples/plugins/swim-stroke-rate/) is this template filled in for one
+sport: a `stroke` stage measures swimming stroke rate with plain OpenCV and NumPy (no GPU), the review step quotes
+it, the page shows it, and a `synth` stage draws a test swimmer at a known rate for the tests. Its README says which
+file does what and how to turn it into your sport. Try it in a clone with `SVC_PLUGIN_PATH=examples/plugins`.
+
 ## The contract
 
 A plugin is a `sports_video_coach.plugin.Plugin` object named `PLUGIN`:
@@ -231,6 +238,10 @@ It checks three things, and is the pattern for your own tests:
 - `sports-video-coach plugins --json` lists it with its stages.
 - Its step table (`PLUGIN.kinds[0].step_table()`) runs frames before review before report and ends with film, so a
   step you add before the review keeps it passing.
+
+A hyphen in the name (`swim-rate`) is fine, also with relative imports in `__init__.py` (`from .page import ...`):
+pytest would import such a folder's `__init__.py` as a lone module, so sports-video-coach installs a small pytest
+plugin that collects it as a plain folder. Nothing to add to your plugin for it.
 
 A commented example at the end runs one of your stages on a 3-second ffmpeg test video in `tmp_path`: uncomment it
 and name your stage once you have one.
