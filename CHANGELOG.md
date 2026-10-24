@@ -129,6 +129,10 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- The seven `bench run --agent` presets were checked against each real CLI's `--help` (Gemini CLI 0.65.0, Qwen
+  Code 0.26.1, Aider 0.86.2, OpenCode 1.19.4, Cursor CLI 2026.10.22, GitHub Copilot CLI 1.0.103, Goose 1.56.0);
+  `--agent qwen` now passes the prompt as a positional argument, since Qwen Code deprecated `-p`. No preset has
+  been run on a task yet (`docs/benchmark.md` has the table; the benchmark page names the version per preset).
 - `bench score` prints the prefilled issue form link too, not only `bench run`.
 - `docs/benchmark.md` names `svc-bench-3` wherever it listed the suites, says how to install, and lists the
   `--by`, `--settings` and `--evidence` options of `bench run`; `bench --help` and the issue form name

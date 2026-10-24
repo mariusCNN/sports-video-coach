@@ -42,64 +42,80 @@ class Preset:
     docs: str                     # where the flags are documented (read on DOCS_READ)
     config: str = "runner's own config"   # how much of the runner's own agent config it loads
     note: str = ""
+    checked: str = ""             # the CLI version whose own --help confirmed every flag (on HELP_CHECKED)
 
 
 PROMPT_ARG, PROMPT_FILE_ARG, MODEL_ARG = "{prompt}", "{prompt_file}", "{model}"
 DOCS_READ = "2026-10-25"
+HELP_CHECKED = "2026-10-25"
 UNTESTED = "preset, not run by the maintainer"
-# Every flag below is from the linked docs, read on DOCS_READ. None of these CLIs was installed or run here (the
-# tests use fake binaries), so the presets are untested against the real CLIs. None of them documents a way to be
-# limited to reading files the way Claude Code's --tools Read is, so no preset runs the frames track.
+# Every flag below is from the linked docs, read on DOCS_READ, and was then checked against the real CLI's --help
+# (and its version command) on HELP_CHECKED, version in `checked`. Only --help and the version command were run:
+# no preset was run on a task (that needs an account), so the tests still use fake binaries. None of them
+# documents a way to be limited to reading files the way Claude Code's --tools Read is, so no preset runs the
+# frames track.
 PRESETS = {
     # https://geminicli.com/docs/cli/cli-reference/ : -p/--prompt forces non-interactive mode, --approval-mode yolo
     # auto-approves every action (-y/--yolo is deprecated for it), -m/--model, -v/--version. Plan mode
     # (https://geminicli.com/docs/cli/plan-mode) is not file-read only: it searches the web, and in a headless run
-    # it switches to YOLO once the plan is approved.
+    # it switches to YOLO once the plan is approved. Checked against gemini 0.65.0 --help on 2026-10-25: -p/--prompt,
+    # --approval-mode (choices default, auto_edit, yolo, plan), -m/--model, -v/--version all listed.
     "gemini": Preset("Gemini CLI", ("gemini", "--approval-mode", "yolo", MODEL_ARG, "-p", PROMPT_ARG), "--model",
                      ("gemini", "--version"), "https://geminicli.com/docs/cli/cli-reference/",
                      note="Google moved individual users to Antigravity CLI on 2026-06-18; API-key and Code Assist "
-                          "users keep Gemini CLI"),
+                          "users keep Gemini CLI", checked="0.65.0"),
     # https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/ : -p headless, --approval-mode yolo,
     # -m/--model, --safe-mode drops context files, hooks, extensions, skills, MCP servers and custom subagents
-    # (the approval mode still applies).
-    "qwen": Preset("Qwen Code", ("qwen", "--safe-mode", "--approval-mode", "yolo", MODEL_ARG, "-p", PROMPT_ARG),
+    # (the approval mode still applies). Checked against qwen 0.26.1 --help on 2026-10-25: -p/--prompt is
+    # "deprecated: Use the positional prompt instead" and the positional prompt "Defaults to one-shot", so the
+    # prompt goes last as a positional; --safe-mode "Disable all customizations (context files, hooks, extensions,
+    # skills, MCP servers)", --approval-mode yolo, -m/--model, -v/--version listed.
+    "qwen": Preset("Qwen Code", ("qwen", "--safe-mode", "--approval-mode", "yolo", MODEL_ARG, PROMPT_ARG),
                    "--model", ("qwen", "--version"),
                    "https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/",
-                   config="--safe-mode: no context files, hooks, extensions, skills, MCP servers or subagents"),
+                   config="--safe-mode: no context files, hooks, extensions, skills or MCP servers", checked="0.26.1"),
     # https://aider.chat/docs/config/options.html : --message-file sends one message and exits, --yes-always says
     # yes to every confirmation, --no-git (the run folder is no repo), --no-check-update, --no-pretty,
     # --no-stream, --read adds a read-only file, file arguments are the files it may edit, --model, --version.
-    # Scripting: https://aider.chat/docs/scripting.html
+    # Scripting: https://aider.chat/docs/scripting.html. Checked against aider 0.86.2 --help on 2026-10-25: every
+    # flag above and the [FILE ...] positional listed.
     "aider": Preset("Aider", ("aider", "--yes-always", "--no-git", "--no-check-update", "--no-pretty", "--no-stream",
                               MODEL_ARG, "--read", "TASKS.md", "--message-file", PROMPT_FILE_ARG, "answers.json"),
                     "--model", ("aider", "--version"), "https://aider.chat/docs/config/options.html",
                     note="it edits answers.json; whether --yes-always also runs the shell commands it suggests is "
-                         "not stated in the docs"),
+                         "not stated in the docs", checked="0.86.2"),
     # https://opencode.ai/docs/cli/ : `opencode run [message]` is the non-interactive mode, --auto auto-approves
-    # permissions that are not explicitly denied, -m/--model provider/model, -v/--version.
+    # permissions that are not explicitly denied, -m/--model provider/model, -v/--version. Checked against opencode
+    # 1.19.4 `run --help` on 2026-10-25: [message..] positional, --auto, -m/--model, -v/--version listed.
     "opencode": Preset("OpenCode", ("opencode", "run", "--auto", MODEL_ARG, PROMPT_ARG), "--model",
                        ("opencode", "--version"), "https://opencode.ai/docs/cli/",
-                       note="--model takes provider/model"),
+                       note="--model takes provider/model", checked="1.19.4"),
     # https://cursor.com/docs/cli/reference/parameters : the CLI is `agent`; -p/--print for scripts, --force (alias
     # --yolo) applies changes and allows commands not explicitly denied, --trust trusts the folder (headless only),
-    # --output-format text, --model, -v/--version. Headless use: https://cursor.com/docs/cli/headless
+    # --output-format text, --model, -v/--version. Headless use: https://cursor.com/docs/cli/headless. Checked
+    # against agent 2026.10.22-27dcf5f --help on 2026-10-25 ("Usage: agent [options] [command] [prompt...]"):
+    # -p/--print, -f/--force (--yolo alias), --trust, --output-format, --model, -v/--version listed.
     "cursor": Preset("Cursor CLI", ("agent", "-p", "--force", "--trust", "--output-format", "text", MODEL_ARG,
                                     PROMPT_ARG), "--model", ("agent", "--version"),
-                     "https://cursor.com/docs/cli/reference/parameters"),
+                     "https://cursor.com/docs/cli/reference/parameters", checked="2026.10.22-27dcf5f"),
     # https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically :
     # -p/--prompt, --allow-all-tools (in its examples), --no-ask-user (no clarifying questions), -s (silent: no
     # session metadata), --model. `copilot version` is in the command reference
-    # (https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference).
+    # (https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference). Checked against
+    # copilot 1.0.103 --help on 2026-10-25: -p/--prompt, --allow-all-tools, --no-ask-user, -s/--silent, --model
+    # listed; `copilot version` prints "GitHub Copilot CLI 1.0.103".
     "copilot": Preset("GitHub Copilot CLI", ("copilot", "-p", PROMPT_ARG, "--allow-all-tools", "--no-ask-user",
                                              "-s", MODEL_ARG), "--model", ("copilot", "version"),
                       "https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/"
-                      "run-cli-programmatically"),
+                      "run-cli-programmatically", checked="1.0.103"),
     # https://goose-docs.ai/docs/guides/goose-cli-commands : `goose run -t TEXT` runs one prompt and exits,
     # --no-session stores no session file, --model, --version. Tool approval: Autonomous mode is the default
     # (https://goose-docs.ai/docs/guides/goose-permissions); the preset sets nothing, so your own GOOSE_MODE applies.
+    # Checked against goose 1.56.0 `run --help` on 2026-10-25: -t/--text, --no-session, --model listed; --version
+    # prints the version.
     "goose": Preset("Goose", ("goose", "run", "--no-session", MODEL_ARG, "-t", PROMPT_ARG), "--model",
                     ("goose", "--version"), "https://goose-docs.ai/docs/guides/goose-cli-commands",
-                    note="tool approval follows your GOOSE_MODE (Autonomous by default)"),
+                    note="tool approval follows your GOOSE_MODE (Autonomous by default)", checked="1.56.0"),
 }
 
 # One line, no double quotes or percent signs: it is passed as one argument, also through Windows .cmd shims.
@@ -496,8 +512,9 @@ def main(argv=None) -> int:
     add_seed(ap)
     ap.add_argument("--agent", required=True, choices=["claude", "codex", *PRESETS, "cmd", "openai"],
                     help="claude (Claude Code), codex (Codex CLI), a preset for another CLI (" +
-                         ", ".join(f"{k}: {p.name}" for k, p in PRESETS.items()) + "; built from each CLI's docs "
-                         "and NOT run by the maintainer, so untested against the real CLI; code track only), "
+                         ", ".join(f"{k}: {p.name}" for k, p in PRESETS.items()) + "; built from each CLI's docs, "
+                         "flags checked against its --help, but NOT run by the maintainer on a task; code track "
+                         "only), "
                          "cmd (any other CLI, with --cmd), or openai (any vision model behind an OpenAI-compatible "
                          "chat-completions endpoint, with --base-url and --model; frames track only)")
     ap.add_argument("--model", default="", help="passed to the agent CLI as --model (and {model} in --cmd)")
@@ -571,7 +588,8 @@ def main(argv=None) -> int:
         room = "custom command: it runs as given, so keeping your own agent config out is up to you"
     elif a.agent in PRESETS:
         p = PRESETS[a.agent]
-        room = (f"{p.name} {UNTESTED}, untested against the real CLI (flags from {p.docs}); {p.config}"
+        room = (f"{p.name} {UNTESTED} on a task (flags from {p.docs}, checked against the --help of version "
+                f"{p.checked} on {HELP_CHECKED}); {p.config}"
                 + (f"; {p.note}" if p.note else ""))
     elif a.agent == "codex":
         room = "Codex runs with your own config (~/.codex): not isolated, so credentials stay where they are"

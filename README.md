@@ -43,7 +43,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
 
 - Any vision model behind an OpenAI-compatible API (Ollama, LM Studio, vLLM, OpenRouter), free on your own GPU: the same command with
   `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
-- Gemini CLI, Qwen Code, Aider, OpenCode, Cursor CLI, Copilot CLI, Goose: presets untested.
+- Gemini CLI, Qwen Code, Aider, OpenCode, Cursor CLI, Copilot CLI, Goose: presets, flags checked against each CLI's `--help`, not yet run on a task.
   [Run one and send the row (issue #7)](https://github.com/mariusDing/sports-video-coach/issues/7).
 
 </details>
