@@ -133,6 +133,10 @@ FRAMES_PROMPT = FRAMES_COMMON + (
 CLAUDE_FRAMES = ["claude", "-p", "--restricted", "--safe-mode", "--strict-mcp-config", "--tools", "Read",
                  "--permission-prompts", "none", "--output-format", "stream-json", "--verbose"]
 CLAUDE_FRAMES_SETTINGS = "frames track; claude -p --restricted --safe-mode --tools Read; default effort"
+# --effort LEVEL: Claude Code's own flag (`claude --help`: "--effort <level> Effort level for the current session
+# (low, medium, high, xhigh, max)"); for Codex it becomes `-c model_reasoning_effort=LEVEL` (config-reference), and
+# the header it prints then states the effort the run used (codex_stats).
+CLAUDE_EFFORTS = ("low", "medium", "high", "xhigh", "max")
 
 # The frames track for Codex, as the leaderboard's Codex frames rows were run. Codex has no tool that opens an image
 # file once its shell is off, so every contact sheet is attached to the prompt with -i (`codex exec --help`: "-i,
@@ -218,18 +222,20 @@ def split_template(template: str) -> list[str]:
 
 
 def command(agent: str, text: str, prompt_file: Path, model: str = "", template: str = "",
-            track: str = F.TRACK, my_config: bool = False) -> list[str]:
+            track: str = F.TRACK, my_config: bool = False, effort: str = "") -> list[str]:
     """The argv that runs `agent` headless on the prompt `text` (also saved in `prompt_file`). Claude Code runs
-    clean-room unless `my_config`. Codex always runs with the runner's own config, so `my_config` changes nothing."""
+    clean-room unless `my_config`. Codex always runs with the runner's own config, so `my_config` changes nothing.
+    `effort` (Claude Code and Codex only) sets the reasoning effort; empty keeps the CLI's default."""
     if agent == "claude":
         if track != F.TRACK:   # --restricted already ignores every settings file; --safe-mode drops the rest
             argv = [a for a in CLAUDE_FRAMES if not (my_config and a == "--safe-mode")]
         else:
             argv = (["claude", "-p"] + ([] if my_config else CLAUDE_CLEAN) +
                     ["--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"])
-        return argv + (["--model", model] if model else []) + [text]
+        return argv + (["--model", model] if model else []) + (["--effort", effort] if effort else []) + [text]
+    codex_effort = ["-c", f"model_reasoning_effort={effort}"] if effort else []
     if agent == "codex" and track != F.TRACK:   # the prompt goes on stdin; the sheets are added once drawn
-        return CODEX_FRAMES + (["--model", model] if model else []) + [IMAGES_ARG]
+        return CODEX_FRAMES + (["--model", model] if model else []) + codex_effort + [IMAGES_ARG]
     if agent in PRESETS:
         p = PRESETS[agent]
         if track != F.TRACK:
@@ -246,7 +252,7 @@ def command(agent: str, text: str, prompt_file: Path, model: str = "", template:
     if agent == "codex":
         argv = ["codex", "exec", "-c", "check_for_update_on_startup=false", "--skip-git-repo-check",
                 "-s", "workspace-write"]
-        return argv + (["--model", model] if model else []) + [text]
+        return argv + (["--model", model] if model else []) + codex_effort + [text]
     if not template.strip():
         raise SystemExit("--agent cmd needs --cmd \"<command line with {prompt} or {prompt_file}>\"")
     if "{prompt}" not in template and "{prompt_file}" not in template:
@@ -439,9 +445,11 @@ def issue_url(res: dict) -> str:
     return full if len(full) <= MAX_URL else url
 
 
-def settings_text(agent: str, track: str, my_config: bool, given: str = "", stats: dict | None = None) -> str:
+def settings_text(agent: str, track: str, my_config: bool, given: str = "", stats: dict | None = None,
+                  effort: str = "") -> str:
     """The result's `settings`: how the runner's own config was handled, then what was changed from defaults
-    (`given`, else what the run itself states: the Codex reasoning effort, the frames track command)."""
+    (`given`, else what the run itself states: the Codex reasoning effort, the frames track command), and the
+    `effort` of --effort (in place of "default effort" in the frames track command)."""
     stats = stats or {}
     frames = agent == "claude" and track != F.TRACK
     if agent == "cmd":
@@ -458,7 +466,13 @@ def settings_text(agent: str, track: str, my_config: bool, given: str = "", stat
             CLAUDE_FRAMES_SETTINGS.replace(" --safe-mode", "" if my_config else " --safe-mode") if frames else "")
     if agent == "codex" and track != F.TRACK and not given.strip():
         auto = "; ".join(x for x in (CODEX_FRAMES_SETTINGS, auto) if x)
-    return "; ".join(x for x in (iso, given.strip() or auto) if x)
+    what = given.strip() or auto
+    if effort:
+        if what.endswith("; default effort"):
+            what = what[:-len("default effort")] + f"effort {effort}"
+        elif f"effort {effort}" not in what:   # Codex: its header already states it as "reasoning effort LEVEL"
+            what = "; ".join(x for x in (what, f"effort {effort}") if x)
+    return "; ".join(x for x in (iso, what) if x)
 
 
 def default_out(agent: str, model: str) -> Path:
@@ -495,6 +509,10 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, default=None,
                     help="run folder, must be new or empty (default ~/svc-bench-runs/<agent>-<model>-<time>)")
     ap.add_argument("--timeout", type=float, default=1200, help="kill the agent after this many seconds (1200)")
+    ap.add_argument("--effort", default="", metavar="LEVEL",
+                    help="reasoning effort, for --agent claude (" + ", ".join(CLAUDE_EFFORTS) + "; passed as "
+                         "--effort) and --agent codex (passed as -c model_reasoning_effort=LEVEL); recorded in the "
+                         "result's settings. Default: the CLI's own default")
     ap.add_argument("--settings", default="", help='what you changed from defaults, e.g. "effort high"')
     ap.add_argument("--by", default="", help="your GitHub handle")
     ap.add_argument("--evidence", default="", help="URL of the transcript, if you publish it (publish the redacted "
@@ -520,6 +538,10 @@ def main(argv=None) -> int:
         ap.error("--timeout must be positive")
     if a.agent != "cmd" and a.cmd:
         ap.error("--cmd is only for --agent cmd")
+    if a.effort and a.agent not in ("claude", "codex"):
+        ap.error("--effort is only for --agent claude and --agent codex (for another CLI, name it in --settings)")
+    if a.effort and a.agent == "claude" and a.effort not in CLAUDE_EFFORTS:
+        ap.error(f"--effort: Claude Code takes {', '.join(CLAUDE_EFFORTS)}")
     key = ""
     if a.agent == "openai":
         if a.track == F.TRACK:
@@ -541,7 +563,7 @@ def main(argv=None) -> int:
     text = prompt(a.suite, a.track, a.agent)
     prompt_file = out / "PROMPT.txt"
     argv_ = [] if a.agent == "openai" else command(a.agent, text, prompt_file, a.model, a.cmd, a.track,
-                                                    a.use_my_config)
+                                                    a.use_my_config, a.effort)
     if a.agent == "openai":
         room = ("no agent CLI: this tool sends one request per task (the task's contact sheets and its section of "
                 "TASKS.md) and reads the answer from the reply; the model has no tools")
@@ -620,7 +642,7 @@ def main(argv=None) -> int:
     stats = (claude_stats(transcript) if a.agent == "claude"
              else codex_stats(transcript if on_stdin else out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
-    settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats)
+    settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats, a.effort)
     if a.agent == "openai":       # how the model was asked is always recorded; --settings adds to it
         settings = "; ".join(x for x in (A.settings(info, server, a.temperature, a.max_tokens, a.image_max_side),
                                          a.settings.strip()) if x)

@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "seed": 280902796,
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-25",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-sonnet-5-5",
+    "settings": "frames track; claude -p --restricted --safe-mode --tools Read; effort max"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 49,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "made",
+        "made",
+        "missed",
+        "made"
+      ],
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.0,
+        3.08,
+        5.92,
+        7.12,
+        9.24,
+        11.4,
+        12.8,
+        13.88,
+        14.96,
+        16.76,
+        19.16
+      ],
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 34.884,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    }
+  ],
+  "total": 0.0,
+  "wall_seconds": 1200.5,
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-25-claude-code-claude-sonnet-5-5-svc-bench-3-frames-seed280902796.jsonl.gz",
+  "cost_usd": null
+}

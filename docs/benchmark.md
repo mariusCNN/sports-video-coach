@@ -302,9 +302,10 @@ sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-
   2026, 4242 and 205159368, scores 1.000 on every task of every seed (`bench score` as an agent would). Like on the
   published suite, it shows the answers are in the stills, not that a model will find them.
 
-Fresh-seed rows (frames track, 2026-10-25; Claude Code in the clean room at default effort, Codex with the
-runner's own config at reasoning effort xhigh; each run drew its own random seed with `bench run --seed`; two runs
-each for Opus and Sonnet, one each for Haiku and Codex, each run on its own seed):
+Fresh-seed rows (frames track, 2026-10-25; Claude Code in the clean room at default effort unless the row names an
+effort set with `bench run --effort`, Codex with the runner's own config at reasoning effort xhigh; each run drew
+its own random seed with `bench run --seed`; two runs each for Opus and Sonnet at default effort, one each for
+Haiku, Codex and every `--effort` setting, each run on its own seed):
 
 | Agent | Model | Total | Above chance | Juggle | Shots | Passes | Rate | Wall | Cost |
 |---|---|---|---|---|---|---|---|---|---|
@@ -314,6 +315,9 @@ each for Opus and Sonnet, one each for Haiku and Codex, each run on its own seed
 | Claude Code 2.1.310 | claude-sonnet-5-5 (seed 406013493) | 0.583 | 0.426 | 0.933 | 0.583 | 0.816 | 0.000 | 16 s | $0.06 |
 | Claude Code 2.1.310 | claude-haiku-5-5 (seed 166697672) | 0.440 | 0.198 | 0.500 | 0.455 | 0.250 | 0.556 | 96 s | $0.06 |
 | Codex 0.159.3 | gpt-6-astra, xhigh (seed 911623366) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 514 s | not reported |
+| Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 208632171) | 0.995 | 0.994 | 0.980 | 1.000 | 1.000 | 1.000 | 256 s | $0.94 |
+| Claude Code 2.1.310 | claude-sonnet-5-5, effort max (seed 280902796) | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 1200 s (killed at the timeout) | not reported |
+| Claude Code 2.1.310 | claude-opus-5-5, effort low (seed 959964891) | 0.879 | 0.778 | 0.976 | 0.538 | 1.000 | 1.000 | 70 s | $0.45 |
 
 - **Opus nearly holds its published score on a seed drawn at run time.** It counted 44 touches against 45 (it
   said itself the count "could be off by one or two"), called all 11 shots, found the 11 releases within 0.05 s
@@ -340,13 +344,30 @@ each for Opus and Sonnet, one each for Haiku and Codex, each run on its own seed
   Sonnet's 0.413 and 0.426 (0.013), so the gap between them (about 0.58) is far wider than either model's spread
   over two seeds. That is two runs per model, each on its own seed: it is not a variance estimate, and on the
   fixed suite two Sonnet runs differed by 0.224.
-- **What these rows say.** They show the fixed-suite order (Opus well ahead of Sonnet and Haiku) on five seeds
-  no run had drawn before; they say nothing about what was in any model's training data. The truth is kept out
+- **What these rows say.** The default-effort rows show the fixed-suite order (Opus well ahead of Sonnet and
+  Haiku) on five seeds no run had drawn before; they say nothing about what was in any model's training data. The truth is kept out
   of the prepared folder; it shows in each result file and on the page. Blind floors (juggle / shots / passes /
   rate): seed 205159368 0.111 / 0.455 / 0.142 / 0.667, seed 613104018 0.122 / 0.364 / 0.146 / 0.375, seed
   956466926 0.119 / 0.462 / 0.182 / 0.212, seed 406013493 0.111 / 0.583 / 0.165 / 0.212, seed 166697672
   0.125 / 0.273 / 0.153 / 0.639, seed 911623366 0.106 / 0.308 / 0.153 / 0.112 (published: 0.106 / 0.500 /
   0.167 / 0.551).
+
+**What effort changed** (`bench run --effort`; one run per setting, each on its own seed, so this is not a variance
+estimate):
+
+- **Sonnet at effort high looked and scored like Opus.** It opened 54 of 72 sheets and 32 full-size frames in 87
+  Reads and scored 0.995 (0.994 above chance) in 256 s for $0.94, against 0.413 and 0.426 above chance, 4 sheets,
+  16-19 s and $0.06-0.07 at its default effort.
+- **Sonnet at effort max ran out of time.** It traced the juggling frame by frame (56 of 72 sheets, 570 full-size
+  frames, 628 Reads), was on the third task when the 1200 s timeout killed it, and never wrote its answer block,
+  so every task scores 0.000. Its last status message listed the 13 shot outcomes as they are in the truth, but an
+  answer the run did not give does not count.
+- **Opus at effort low opened fewer sheets and lost the shots.** 19 of 72 sheets in 21 Reads, no full-size frame:
+  the juggling off by 1, all 12 releases and the stroke rate right, but 7 of 13 shots (0.538, that seed's blind
+  floor is 0.462), so 0.879 (0.778 above chance) in 70 s for $0.45, against 0.994 and 1.000 above chance,
+  317-378 s and $2.32-2.77 at its default.
+- Blind floors of these seeds (juggle / shots / passes / rate): seed 208632171 0.102 / 0.538 / 0.182 / 0.695,
+  seed 280902796 0.102 / 0.615 / 0.141 / 0.413, seed 959964891 0.122 / 0.462 / 0.167 / 0.738.
 
 ## Rules
 
@@ -381,6 +402,7 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 | `--agent openai --base-url URL --model M` | Any vision model behind an OpenAI-compatible chat-completions endpoint (Ollama, LM Studio, vLLM, llama.cpp server, OpenRouter, ...); frames track only, see [below](#any-vision-model-behind-an-openai-compatible-api) |
 | `--use-my-config` | Run Claude Code with your own agent config instead of the clean room (see below); `settings` then says so. Codex always runs with yours. |
 | `--model M` | Passed to the agent as `--model M` |
+| `--effort LEVEL` | Reasoning effort: Claude Code gets `--effort LEVEL` (`low`, `medium`, `high`, `xhigh`, `max`), Codex `-c model_reasoning_effort=LEVEL`; `settings` then names it (in place of "default effort" on the frames track). Default: the CLI's own |
 | `--suite` | `svc-bench-1` (default), `svc-bench-2` or `svc-bench-3` |
 | `--seed [N]` | `svc-bench-3` only: draw it from fresh seed N (0 to 2^63 - 1), or a random seed without N; see [Fresh seeds](#fresh-seeds---seed) |
 | `--track frames` | Stills instead of videos, no code. Claude Code runs with Read as its only tool (the command in the [frames table](#frames-only-track-eyes)); the json block that ends the agent's reply becomes `answers.json`. Codex runs read-only with its tool features off and the sheets attached; beyond that, tool restriction is by prompt only (see [frames track](#frames-only-track-eyes)). |
@@ -572,8 +594,8 @@ and link them; the page labels such a link "transcript".
   where the Settings column says so. No outside runs yet; the page counts this from the files.
 - `svc-bench-2` and `svc-bench-3` were each built after models scored 1.0 on the suite before, so the author knew
   which models already saturated it.
-- Settings are not equalized across agents (Codex ran at reasoning effort xhigh, Claude Code at its default);
-  each row names its own.
+- Settings are not equalized across agents (Codex ran at reasoning effort xhigh, Claude Code at its default except
+  the `--effort` rows); each row names its own.
 - The no-peeking rule is honour-based: CI re-scores the answers but does not read the transcripts. Every
   maintainer run links its redacted transcript (`benchmark/transcripts/`), so anyone can check which tools
   existed, which files the agent opened and what it replied. Redaction drops images, home folders, the runner's

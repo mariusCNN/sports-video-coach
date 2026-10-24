@@ -146,6 +146,31 @@ def test_settings_say_how_the_runner_config_was_handled():
     assert R.settings_text("cmd", "code", False) == "" and R.settings_text("cmd", "code", False, "x") == "x"
 
 
+def test_effort_is_passed_to_the_cli_and_recorded_in_settings(tmp_path, capsys):
+    pf = tmp_path / "PROMPT.txt"
+    c = R.command("claude", "P", pf, "claude-sonnet-5-5", track="frames", effort="high")
+    assert c[-5:] == ["--model", "claude-sonnet-5-5", "--effort", "high", "P"]
+    assert "--effort" not in R.command("claude", "P", pf, "claude-sonnet-5-5", track="frames")   # default unchanged
+    assert R.command("claude", "P", pf, effort="low")[-3:] == ["--effort", "low", "P"]
+    x = R.command("codex", "P", pf, effort="high")
+    assert x[-3:] == ["-c", "model_reasoning_effort=high", "P"]
+    xf = R.command("codex", "P", pf, track="frames", effort="low")
+    assert xf[-3:] == ["-c", "model_reasoning_effort=low", R.IMAGES_ARG]
+    assert R.settings_text("claude", "frames", False, effort="max") == \
+        "frames track; claude -p --restricted --safe-mode --tools Read; effort max"
+    assert R.settings_text("claude", "frames", False) == R.CLAUDE_FRAMES_SETTINGS
+    assert R.settings_text("claude", "code", False, effort="high") == "clean-room: no user config; effort high"
+    assert R.settings_text("codex", "code", False, stats={"effort": "low"}, effort="low").endswith(
+        "; reasoning effort low")                                     # stated once, as the header says it
+    out = tmp_path / "dry"
+    assert bench.main(["run", "--agent", "claude", "--model", "claude-opus-5-5", "--effort", "low", "--track",
+                       "frames", "--out", str(out), "--dry-run"]) == 0
+    assert "--model claude-opus-5-5 --effort low" in capsys.readouterr().out and not out.exists()
+    for bad in (["--agent", "claude", "--effort", "huge"], ["--agent", "gemini", "--effort", "high"]):
+        with pytest.raises(SystemExit):
+            bench.main(["run", *bad, "--out", str(out), "--dry-run"])
+
+
 def test_agent_env_drops_the_calling_session_identity(tmp_path):
     base = {"PATH": "p", "HOME": "h", "ANTHROPIC_API_KEY": "k", "CLAUDE_CONFIG_DIR": "c", "ORCA_AGENT_PANE": "1",
             "orca_pane_key": "2", "CLAUDECODE": "1", "CLAUDE_PID": "9", "CLAUDE_CODE_SESSION_ID": "s",
