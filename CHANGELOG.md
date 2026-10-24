@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - `bench run --effort LEVEL` for `--agent claude` (`--effort`) and `--agent codex` (`-c model_reasoning_effort`),
   recorded in the result's `settings`; fresh-seed frames rows for Sonnet 5.5 at effort high (0.995) and max
   (0.000, killed at the 1200 s timeout before it answered) and Opus 5.5 at effort low (0.879), with transcripts.
+  A second Sonnet 5.5 max run on a new seed with `--timeout 2400` was also killed before it answered (0.000).
 - `bench report <result.json...>`: a result file's score as Markdown (validates or why not; suite, track,
   contender, total, above chance, time, cost, rank on its table, and per task answer vs truth, score and what was
   missed), computed by the leaderboard page's code. A pull request that adds or changes a file in
