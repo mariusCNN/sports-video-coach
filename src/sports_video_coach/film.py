@@ -77,6 +77,7 @@ MAX_CHARS = {c: l.sub_chars for c, l in L.LANGS.items()}  # one subtitle at most
 FREEZE_S = 2.0                   # a freeze without narration
 MIN_ZOOM_HOLD = 1.5              # a shorter freeze is not zoomed (in and out would be all it does)
 BANNER_S = 6.0                  # a clip's caption shows this long, at its start
+MIN_ARROW = 0.1                  # --dry warns about a spot-to-spot arrow shorter than this (frame fractions)
 COUNT_S, COUNT_STEPS = 0.6, 12   # a stat card's number counts up in this long, in so many steps
 KICKER_RE = re.compile(r"^([^：:]{1,12})[：:]\s*(.+)$")  # "第一件事：有压力" -> kicker "第一件事", title "有压力"
 SLOW_TAG = {c: L.film_tag(c, "slow") for c in L.CODES}
@@ -317,6 +318,12 @@ def freeze_warnings(scenes: list[Scene], tracks) -> list[str]:
             if m and fz.line[m.end():].strip():
                 out.append(f"scene {i}: freeze {t}: `{fz.line[m.end():].strip()}` comes after the label; put the "
                            "label last: > mm:ss.s x,y x,y \"label\"")
+            for mk in marks:  # the rings take a bite out of each end: a short arrow is left as a stub
+                if mk[0] == "arrow" and all(p[0] == "point" for p in mk[1:]):
+                    if math.hypot(mk[1][1] - mk[2][1], mk[1][2] - mk[2][2]) < MIN_ARROW:
+                        out.append(f"scene {i}: freeze {t}: the arrow {fd.mark_text(mk[1])}->{fd.mark_text(mk[2])} "
+                                   f"is too short to read; aim it further (at least {MIN_ARROW:g} of the frame) or "
+                                   "ring the players instead")
             if tracks is None or not TIME_RE.match(t):
                 continue
             for m in dict.fromkeys(m for mk in marks for m in points(mk)):

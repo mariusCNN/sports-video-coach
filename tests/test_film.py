@@ -198,6 +198,10 @@ def test_freeze_events_circle_tracked_players_and_dim_the_rest():
     assert fd.freeze_events(far, "", 4.5, None, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)[0][3].count(" m ") == 2
     assert film.freeze_warnings(film.parse_script("![x](clip:03:08-03:20)\n> 03:10 我#9\n", FILM), tracks) == [
         "scene 1: freeze 03:10: us#9 is not in the tracks near that moment; mark them with x,y instead"]
+    stub = film.parse_script("![x](clip:03:08-03:20)\n> 03:10 我0.66,0.6->0.71,0.55 0.2,0.5->0.4,0.5\n", FILM)
+    assert film.freeze_warnings(stub, None) == [
+        "scene 1: freeze 03:10: the arrow us:0.66,0.6->0.71,0.55 is too short to read; aim it further "
+        "(at least 0.1 of the frame) or ring the players instead"]
 
 
 def test_court_diagram_states_and_frames(tmp_path):

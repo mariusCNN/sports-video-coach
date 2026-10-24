@@ -52,7 +52,7 @@ The chart shows where the game turned.
   - The rest of the frame is dimmed around a soft spotlight. Each marked player gets a ring on the floor (blue for us, red for them, white for a bare spot); arrows draw on, then the label comes up in a dark pill next to the first player, one beat at a time.
   - Marks: `我#7` / `对#11` (or `us#7` / `them#11`) are looked up in the CV tracks (`run/tracks.pkl`; `--run` if it is not next to the report or the video).
   - `0.42,0.61` is a spot on the frame, as fractions of width and height: where a player's feet are. Use it when the tracks do not know the player (`--dry` warns), e.g. a jersey number the CV pass never read. Put the team in front when you know it, `对0.42,0.61` / `我0.42,0.61` (or `them:` / `us:`), so the ring is red / blue instead of white.
-  - `A->B` draws an arrow, e.g. `我#30->我#21` for a pass, or `我#3->0.30,0.55` for where help should come from.
+  - `A->B` draws an arrow, e.g. `我#30->我#21` for a pass, or `我#3->0.30,0.55` for where help should come from. The rings take a bite out of both ends, so keep an arrow at least a tenth of the frame long (`--dry` warns); for two players standing close, ring both instead. Ring the arrow's ends too (`我#30 我#21 我#30->我#21`), or they stay in the dimmed part of the frame.
   - A `>` line on its own resumes the clip at once; the paragraphs after it are read over the running play. Use it for "watch what happens next", so the words do not run over a frame that is still frozen.
   - Several freezes per clip are fine, in time order. A freeze without a paragraph holds two seconds.
 - **Court diagrams** (`plays/<name>.json`, format in `src/hoop_tape_miner/film_court.py`).
