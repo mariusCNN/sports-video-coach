@@ -49,6 +49,22 @@ uv run --no-sync pytest -q
 - `templates/` `game.json` and report skeletons. `skills/` the Agent Skill. `.claude-plugin/` the Claude Code marketplace.
 - `tests/` fast tests with small synthetic fixtures. No GPU, no real video.
 
+## The demo site
+
+`.github/workflows/demo-site.yml` builds <https://mariusding.github.io/sports-video-coach/> on every push to `master`
+that touches the code: `sports-video-coach demo --site _site` (landing page, `demo/`, `sitemap.xml` and the IndexNow
+key file) plus `bench page` (`benchmark/`). Google finds it through the sitemap in Search Console (owner only).
+For Bing, Yandex, Seznam, Naver and the other [IndexNow](https://www.indexnow.org/documentation) engines, run this by
+hand after a deploy that changed the pages (not on every push; resubmitting unchanged URLs wastes crawl quota):
+
+```bash
+sports-video-coach demo indexnow --dry-run   # the JSON body, nothing sent
+sports-video-coach demo indexnow             # POST to api.indexnow.org; 200 or 202 is success
+```
+
+`202` means received and the key is still being checked (usual the first time); `403` means the key file
+(`<SITE_URL><key>.txt`) is not live yet. The key is public by design: it only proves the site is ours.
+
 ## Adding a sport
 
 1. `uv run sports-video-coach new-plugin <sport>` and follow [docs/plugins.md](docs/plugins.md).

@@ -7,6 +7,7 @@ the agent writes those files; here they come with the package so the run needs n
 network for edge-tts, unless --offline).
 
 usage: sports-video-coach demo [--out <folder>] [--lang en zh] [--no-film] [--offline] [--site <folder>]
+       sports-video-coach demo indexnow [--dry-run]   (tell IndexNow search engines the public site changed)
 """
 from __future__ import annotations
 
@@ -16,6 +17,8 @@ import re
 import shutil
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 from .. import media, page_check, pipeline as P, workspace
@@ -121,6 +124,56 @@ def sitemap_xml() -> str:
     urls = "".join(f"  <url><loc>{u}</loc></url>\n" for u in SITE_PAGES)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
+
+
+# IndexNow (https://www.indexnow.org/documentation): a site proves it owns its URLs by hosting <key>.txt holding the
+# key, then POSTs changed URLs once; Bing, Yandex, Seznam, Naver and the others share the submission. The key is a
+# public ownership proof by design (anyone can read the file on the site), not a secret, so it lives in the code.
+# A project Pages site cannot write the domain root (mariusding.github.io/), so the key file sits at SITE_URL and is
+# named as keyLocation; a key file there covers only URLs under SITE_URL, which is every page we submit.
+INDEXNOW_KEY = "bfa6c325a9ce2c6c52580f1b61b58b23"
+INDEXNOW_KEY_FILE = f"{INDEXNOW_KEY}.txt"
+INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
+INDEXNOW_STATUS = {
+    200: "OK: submitted",
+    202: "accepted: received, the key is still being validated (usual on a first submission)",
+    400: "bad request: invalid format",
+    403: f"forbidden: key not valid (is {SITE_URL}{INDEXNOW_KEY_FILE} live and holding the key?)",
+    422: "unprocessable: a URL is not on the host, or the key does not match the protocol",
+    429: "too many requests: submitting too often; wait and send only changed URLs",
+}
+
+
+def indexnow_body() -> dict:
+    """The IndexNow POST body: every page in the sitemap, the host, the key and where the key file is."""
+    return {"host": SITE_URL.split("/")[2], "key": INDEXNOW_KEY, "keyLocation": f"{SITE_URL}{INDEXNOW_KEY_FILE}",
+            "urlList": re.findall(r"<loc>([^<]+)</loc>", sitemap_xml())}
+
+
+def indexnow(argv=None) -> int:
+    """`demo indexnow`: notify IndexNow search engines of the public site's pages. Run by hand after a deploy that
+    changed them, not on every push: resubmitting unchanged URLs wastes crawl quota and can get a 429."""
+    ap = argparse.ArgumentParser(prog="sports-video-coach demo indexnow",
+                                 description=f"POST the demo site's pages ({SITE_URL}) to {INDEXNOW_ENDPOINT}.")
+    ap.add_argument("--dry-run", action="store_true", help="print the JSON body only, send nothing")
+    a = ap.parse_args(argv)
+    body = indexnow_body()
+    text = json.dumps(body, indent=1)
+    if a.dry_run:
+        print(text)
+        return 0
+    req = urllib.request.Request(INDEXNOW_ENDPOINT, data=text.encode("utf8"), method="POST",
+                                 headers={"Content-Type": "application/json; charset=utf-8"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            status = r.status
+    except urllib.error.HTTPError as e:
+        status = e.code
+    except urllib.error.URLError as e:
+        print(f"[indexnow] could not reach {INDEXNOW_ENDPOINT}: {e.reason}")
+        return 1
+    print(f"[indexnow] HTTP {status} {INDEXNOW_STATUS.get(status, 'unexpected status')} ({len(body['urlList'])} URLs)")
+    return 0 if status in (200, 202) else 1
 
 
 def version() -> str:
@@ -237,11 +290,17 @@ def build_site(folder: Path, site: Path) -> list[str]:
     (site / "index.html").write_text(landing([f.name for f in films]), encoding="utf8")
     (site / "robots.txt").write_text(robots_txt(), encoding="utf8")
     (site / "sitemap.xml").write_text(sitemap_xml(), encoding="utf8")
+    (site / INDEXNOW_KEY_FILE).write_text(INDEXNOW_KEY, encoding="utf8")  # IndexNow ownership proof, public
     return warnings
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="sports-video-coach demo", description=__doc__.split("\n\n")[0])
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv and argv[0] == "indexnow":
+        return indexnow(argv[1:])
+    ap = argparse.ArgumentParser(prog="sports-video-coach demo", description=__doc__.split("\n\n")[0],
+                                 epilog="sports-video-coach demo indexnow [--dry-run]: tell IndexNow search engines "
+                                        "(Bing, Yandex, ...) the public site's pages; run by hand after a deploy")
     ap.add_argument("--out", help="the demo folder (default: <workspace>/analysis/demo/<today>)")
     ap.add_argument("--lang", nargs="+", choices=["en", "zh"], default=["en"], help="languages (default: en)")
     ap.add_argument("--no-film", action="store_true", help="stop after the page (skips the explained video)")

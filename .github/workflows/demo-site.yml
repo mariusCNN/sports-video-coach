@@ -4,6 +4,8 @@ name: demo site
 # an English landing page, the report page with clips and narration (demo/), and the explained videos.
 # Everything in it is synthetic (a drawn video, a pre-written review); no person appears. Doubles as an end-to-end
 # check of the light install.
+# Search engines: the site carries sitemap.xml and the IndexNow key file; after a deploy that changed the pages,
+# run `sports-video-coach demo indexnow` by hand (deliberately not automated here; see CONTRIBUTING.md).
 
 on:
   push:

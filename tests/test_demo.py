@@ -78,6 +78,7 @@ def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
     assert f'<link rel="canonical" href="{demo.SITE_URL}demo/">' in page and '<link rel="canonical"' in home
     assert (site / "robots.txt").read_text(encoding="utf8") == demo.robots_txt()
     assert (site / "sitemap.xml").read_text(encoding="utf8") == demo.sitemap_xml()
+    assert (site / demo.INDEXNOW_KEY_FILE).read_text(encoding="utf8") == demo.INDEXNOW_KEY
     assert page_check.problems(site) == [] and page_check.problems(site / "demo") == []
 
 
@@ -101,3 +102,60 @@ def test_search_engine_files_and_structured_data():
     assert not {"aggregateRating", "review", "offers", "interactionStatistic"} & data.keys()   # no invented numbers
     title = re.search(r"<title>(.*?)</title>", home).group(1)
     assert all(p in title for p in ("sports video analysis", "basketball film review", "Claude Code", "Codex"))
+
+
+def test_indexnow_key_and_body():
+    import re
+    assert re.fullmatch(r"[A-Za-z0-9-]{8,128}", demo.INDEXNOW_KEY)   # the protocol's key format
+    body = demo.indexnow_body()
+    assert body["host"] == "mariusding.github.io" and body["key"] == demo.INDEXNOW_KEY
+    # the key file sits under the project path, which scopes it to URLs under SITE_URL: every URL must be there
+    assert body["keyLocation"] == f"{demo.SITE_URL}{demo.INDEXNOW_KEY}.txt"
+    assert body["urlList"] == list(demo.SITE_PAGES) and all(u.startswith(demo.SITE_URL) for u in body["urlList"])
+
+
+def test_indexnow_dry_run_sends_nothing(capsys, monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("network used on --dry-run")
+    monkeypatch.setattr(demo.urllib.request, "urlopen", boom)
+    assert demo.main(["indexnow", "--dry-run"]) == 0
+    assert json.loads(capsys.readouterr().out) == demo.indexnow_body()
+
+
+@pytest.mark.parametrize("status,code", [(200, 0), (202, 0), (403, 1), (422, 1), (429, 1)])
+def test_indexnow_posts_the_sitemap_and_reports_the_status(capsys, monkeypatch, status, code):
+    import io
+    import urllib.error
+    sent = {}
+
+    class Resp:
+        def __init__(self, s):
+            self.status = s
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def fake(req, timeout=None):
+        sent.update(url=req.full_url, method=req.get_method(), body=json.loads(req.data),
+                    ctype=req.get_header("Content-type"))
+        if status >= 400:
+            raise urllib.error.HTTPError(req.full_url, status, "x", {}, io.BytesIO(b""))
+        return Resp(status)
+    monkeypatch.setattr(demo.urllib.request, "urlopen", fake)
+    assert demo.main(["indexnow"]) == code
+    assert sent["url"] == "https://api.indexnow.org/indexnow" and sent["method"] == "POST"
+    assert sent["ctype"] == "application/json; charset=utf-8" and sent["body"] == demo.indexnow_body()
+    out = capsys.readouterr().out
+    assert f"HTTP {status} " in out and demo.INDEXNOW_STATUS[status] in out
+
+
+def test_indexnow_unreachable(capsys, monkeypatch):
+    import urllib.error
+
+    def fake(req, timeout=None):
+        raise urllib.error.URLError("no network")
+    monkeypatch.setattr(demo.urllib.request, "urlopen", fake)
+    assert demo.main(["indexnow"]) == 1 and "could not reach" in capsys.readouterr().out

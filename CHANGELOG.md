@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `sports-video-coach demo indexnow [--dry-run]`: tells IndexNow search engines (Bing, Yandex, Seznam, Naver, ...)
+  about the demo site's pages, run by hand after a deploy; the demo site now hosts the IndexNow key file. No
+  automatic ping in CI. See CONTRIBUTING.md, "The demo site".
 - `bench run --agent gemini | qwen | aider | opencode | cursor | copilot | goose`: one-command benchmark runs for
   seven more agent CLIs, each a headless command line built from that CLI's own docs (linked in
   `docs/benchmark.md` and on the benchmark page's "Run it yourself"). Not run by the maintainer, so untested
