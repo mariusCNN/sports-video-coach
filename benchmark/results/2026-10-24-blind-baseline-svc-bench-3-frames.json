@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-24",
+  "contender": {
+    "agent": "blind baseline",
+    "agent_version": "",
+    "model": "",
+    "settings": "answers copied from the TASKS.md examples; no video or still seen"
+  },
+  "submitted_by": "",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 47,
+      "answer": 5,
+      "score": 0.106,
+      "note": "off by 42"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made"
+      ],
+      "answer": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "score": 0.5,
+      "note": "6 of 12 right, 12 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.0,
+        3.0,
+        4.48,
+        5.28,
+        7.16,
+        9.48,
+        11.48,
+        12.16,
+        14.56,
+        15.84,
+        17.76,
+        19.32
+      ],
+      "answer": [
+        1.5,
+        4.25
+      ],
+      "score": 0.167,
+      "note": "2 of 12 within 0.5 s, 2 answered"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 33.92,
+      "answer": 30.5,
+      "score": 0.551,
+      "note": "10.1% off"
+    }
+  ],
+  "total": 0.331,
+  "wall_seconds": null,
+  "evidence": ""
+}

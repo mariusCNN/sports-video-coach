@@ -24,8 +24,13 @@ RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
 SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
 SUITES = (                     # (name, what it is), shown in this order; unknown suites follow by name
+    ("svc-bench-3", "Eyes: four drawn videos whose events are small, short or hidden: a 6 px ball and a far 16 px "
+                    "rim, double touches 0.24 s apart, a banner and a defender in front of the moment, pass fakes, "
+                    "and decoys with nearly the same answer (a second juggler, a second pair passing, a far boat "
+                    "at a close rate)."),
     ("svc-bench-2", "Hard: five drawn videos with a hand-held camera, look-alike decoys (a second ball, two "
-                    "identical feet, a rebounder), rule-defined events and noise."),
+                    "identical feet, a rebounder), rule-defined events and noise. On the frames track the top "
+                    "models (Opus 5.5, Codex) scored 1.0 by eye."),
     ("svc-bench-1", "Four short drawn videos on a still camera. Saturated: every agent tried scored 1.0."),
 )
 TRACK = "code"                 # a result file without a track field is on the code track
@@ -254,7 +259,7 @@ def frames_board(rows: list[dict]) -> str:
     mine = [r for r in rows if track_of(r) == "frames"]
     body = boards(mine, "frames-") if any(not is_baseline(r) for r in mine) else \
         '<p class="sub" style="color:var(--muted)">No frames-only runs yet.</p>'
-    cmd = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-2 --track frames"
+    cmd = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-3 --track frames"
     return (f'<h2 id="frames">Frames-only track (eyes)</h2><p>{esc(FRAMES)}</p>'
             f"<pre><code>{esc(cmd)}</code></pre>{body}")
 

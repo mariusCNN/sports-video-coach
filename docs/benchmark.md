@@ -120,7 +120,8 @@ First rows (svc-bench-2, 2026-10-24; every run submitted, Sonnet ran twice with 
 
 ## Floor and above-chance score
 
-A guess scores more than 0: counts and rates earn partial credit, and both shot lists are close to alternating. So
+A guess scores more than 0: counts and rates earn partial credit, and an alternating shot list gets many shots
+right. So
 the leaderboard shows, next to each raw total, how far the run got above a blind guess.
 
 **The floor: a blind baseline.** A deterministic guesser that sees no video and no still:
@@ -143,6 +144,10 @@ Measured (2026-10-24; code and frames tracks give the same answers and scores):
 |---|---|---|
 | `svc-bench-1` | jump-count 0.385, stroke-rate 0.000, cone-touches 0.110, shot-outcomes 0.800 | 0.324 |
 | `svc-bench-2` | dribble-count 0.089, squat-reps 0.625, cadence-change 0.145, cone-touches-pan 0.090, shot-outcomes-hard 0.833 | 0.356 |
+| `svc-bench-3` | juggle-touches 0.106, far-hoop-shots 0.500, pass-releases 0.167, stroke-rate 0.551 | 0.331 |
+
+On `svc-bench-3` the example rate in the task text, `30.5`, lands close to the true stroke rate, so the blind guess
+earns 0.551 there and any answer scoring at or below that counts 0 above chance.
 
 **The formula.** Per task, with `floor` = the blind baseline's score on that task:
 
@@ -164,6 +169,9 @@ Above-chance totals of the rows on 2026-10-24:
 
 | Suite, track | Agent / model | Raw | Above chance |
 |---|---|---|---|
+| svc-bench-3, frames | Claude Code / claude-opus-5-5 | 1.000 | 1.000 |
+| svc-bench-3, frames | Codex / gpt-6-astra | 0.862 | 0.727 |
+| svc-bench-3, frames | Claude Code / claude-sonnet-5-5 | 0.612 | 0.497 |
 | svc-bench-2, frames | Claude Code / claude-opus-5-5 | 1.000 | 1.000 |
 | svc-bench-2, frames | Codex / gpt-6-astra | 1.000 | 1.000 |
 | svc-bench-2, frames | Claude Code / claude-sonnet-5-5 | 0.755 | 0.564 |
@@ -173,7 +181,9 @@ Above-chance totals of the rows on 2026-10-24:
 | svc-bench-2, code | Claude Code / claude-opus-5-5 | 0.960 | 0.956 |
 | svc-bench-1, code | Claude Code / claude-opus-5-5, Claude Code / claude-sonnet-5-5, Codex | 1.000 | 1.000 |
 
-Sonnet's alternating shot list (0.833) equals the floor on that task, so it adds 0 above chance.
+On `svc-bench-2`, Sonnet's alternating shot list (0.833) equals the floor on that task, so it adds 0 above chance.
+On `svc-bench-3`, Codex's stroke rate (0.525) and Sonnet's (0.142) are both below the 0.551 floor, so that task adds
+0 for both.
 
 ## Suite svc-bench-3 (eyes)
 
