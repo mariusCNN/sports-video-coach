@@ -17,6 +17,12 @@ All notable changes to this project are documented here. The format follows [Kee
 - Outside runs can be submitted as a pull request (CI runs `bench validate` on every result file) or through the
   new benchmark result issue form.
 - `sports-video-coach bench run --agent claude|codex|cmd` puts an agent on the benchmark in one command: prepare, run it headless with a timeout, score, and print a prefilled issue form link.
+  It records the agent's own version and model (Claude Code's init event, the `codex exec` header).
+- A frames-only benchmark track, `bench prepare --track frames`: the agent gets still frames and contact sheets
+  (time under each still) instead of videos and may run no code, so the score measures the model's eyes. The
+  leaderboard shows it in its own tables; result files say `"track": "frames"`.
+- First leaderboard rows on `svc-bench-2` (code track: Claude Code with Opus 5.5 and Sonnet 5.5, Codex) and on the
+  frames-only track (Opus 5.5, Codex, two Sonnet 5.5 runs), each one real run.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
 
