@@ -100,3 +100,27 @@ def test_cli_writes_next_to_the_source(tmp_path, capsys):
     assert bench.main(["transcript", str(src)]) == 0
     assert (tmp_path / "transcript.redacted.jsonl").exists() and "wrote" in capsys.readouterr().out
     assert T.default_dst(tmp_path / "transcript.txt").name == "transcript.redacted.txt"
+
+
+def test_a_plain_codex_exec_log_keeps_header_commands_and_reply(tmp_path):
+    """`bench run --agent codex --track frames` records codex exec's plain output with stderr merged in."""
+    from sports_video_coach.bench import run as R
+    log = tmp_path / "transcript.txt"
+    log.write_text("Reading additional input from stdin...\nOpenAI Codex v0.159.3\n--------\n"
+                   "workdir: C:/Users/jdoe/svc-bench-runs/r1\nmodel: gpt-x\nprovider: openai\napproval: never\n"
+                   "sandbox: read-only\nreasoning effort: xhigh\nsession id: 01a1\n--------\nuser\nthe prompt\n"
+                   "hook: SessionStart\nhook: SessionStart Completed\n"
+                   "2026-10-25T00:00:00Z ERROR codex_core::tools::router: error=code-mode host is disabled\n"
+                   "exec\n\"ls\" in C:/Users/jdoe/svc-bench-runs/r1\n succeeded in 5ms:\n"
+                   "OPENAI_API_KEY=sk-abcdefghijklmnopqrstuv\ncodex\nmail jdoe@example.com\n"
+                   "```json\n{\"a\": 1}\n```\ntokens used\n1,234\n",
+                   encoding="utf8")
+    out = T.redact(log, tmp_path / "t.redacted.txt.gz", user="jdoe", host="box")
+    text = gzip.decompress(out.read_bytes()).decode("utf8")
+    assert "jdoe" not in text and "sk-abc" not in text and "example.com" not in text
+    assert "workdir: <home>/svc-bench-runs/r1" in text and "hook: SessionStart Completed" in text
+    assert "```json\n{\"a\":1}\n```" in text
+    plain = tmp_path / "t.redacted.txt"
+    plain.write_text(text, encoding="utf8")
+    assert R.codex_stats(plain) == {"model": "gpt-x", "effort": "xhigh"}
+    assert R.codex_commands(plain) == {"commands_run": 1, "tool_calls_refused": 1}

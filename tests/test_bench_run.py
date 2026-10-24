@@ -330,8 +330,7 @@ def test_frames_track_runs_claude_with_read_only_and_the_published_prompt(tmp_pa
         assert "\n" not in text and not set(text) & set('"%^!&|<>')
     c = R.command("claude", p, tmp_path / "PROMPT.txt", "claude-sonnet-5-5", track="frames")
     assert c[c.index("--tools") + 1] == "Read" and "--restricted" in c and "--dangerously-skip-permissions" not in c
-    with pytest.raises(SystemExit, match="frames"):
-        R.command("codex", p, tmp_path / "PROMPT.txt", track="frames")
+    assert R.command("codex", p, tmp_path / "PROMPT.txt", track="frames")[-1] == R.IMAGES_ARG
     assert bench.main(["run", "--track", "frames", "--suite", "svc-bench-3", "--agent", "claude",
                        "--out", str(tmp_path / "dry"), "--dry-run"]) == 0
     assert "--tools Read" in capsys.readouterr().out

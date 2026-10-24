@@ -118,19 +118,44 @@ PROMPT = (
 FENCE = "`" * 3
 # The frames track: no code, so the agent may have no tool that writes files and ends its reply with answers.json.
 # Same one-line rules as PROMPT; with Claude Code it is the prompt the leaderboard's frames rows were run with.
-FRAMES_PROMPT = (
+FRAMES_COMMON = (
     "You are a contender in a sports film review benchmark (suite {suite}, frames track). "
     "This track measures how well you review film by eye: you get still images of {n} short videos and no way to "
     "run code. Judge by looking only. Do not try to read anything outside the given images and task text, and do "
     "not start helpers or sub-agents. Work alone, do not ask questions. "
     "End your reply with the whole answers.json (keys suite, track, answers; replace each null with your answer "
-    "in the stated format) in one " + FENCE + "json block, after one line per task: your answer and how you got it. "
-    "The current folder holds TASKS.md, answers.json and the images (contact sheets in sheets/, full-size stills in "
+    "in the stated format) in one " + FENCE + "json block, after one line per task: your answer and how you got it."
+)
+FRAMES_PROMPT = FRAMES_COMMON + (
+    " The current folder holds TASKS.md, answers.json and the images (contact sheets in sheets/, full-size stills in "
     "frames/). {read} TASKS.md first, then the images it lists."
 )
 CLAUDE_FRAMES = ["claude", "-p", "--restricted", "--safe-mode", "--strict-mcp-config", "--tools", "Read",
                  "--permission-prompts", "none", "--output-format", "stream-json", "--verbose"]
 CLAUDE_FRAMES_SETTINGS = "frames track; claude -p --restricted --safe-mode --tools Read; default effort"
+
+# The frames track for Codex, as the leaderboard's Codex frames rows were run. Codex has no tool that opens an image
+# file once its shell is off, so every contact sheet is attached to the prompt with -i (`codex exec --help`: "-i,
+# --image <FILE>... Optional image(s) to attach to the initial prompt"), and the prompt (with TASKS.md and the blank
+# answers.json) goes on stdin (`-`). Flags from `codex exec --help` and `codex features list` (codex-cli 0.159.3) and
+# https://developers.openai.com/codex/config-reference (read on DOCS_READ): -s read-only (sandbox_mode), `--disable
+# <FEATURE>` (= `-c features.<name>=false`), features.shell_tool "Enable command execution tools",
+# features.unified_exec, features.multi_agent, features.apps, and web_search "disabled" to remove the tool (given
+# unquoted: "If it fails to parse as TOML, the raw string is used as a literal", so no quotes cross a .cmd shim).
+# Codex documents no switch that removes every tool: with these flags its code-mode `exec` tool is still offered and
+# fails closed ("code-mode host is disabled"), and a probe run still listed its collaboration tools (spawn_agent ...).
+# So beyond these flags tool restriction is by prompt only; the transcript (stderr merged in) shows every command it
+# ran or tried. No --json: the plain output keeps the header with the model and reasoning effort (codex_stats).
+CODEX_FRAMES_FEATURES = ("shell_tool", "unified_exec", "code_mode_host", "code_mode", "browser_use",
+                         "browser_use_external", "computer_use", "apps", "plugins", "multi_agent", "image_generation",
+                         "view_image", "goals", "sleep_tool")
+CODEX_FRAMES = (["codex", "exec", "-", "-c", "check_for_update_on_startup=false", "--skip-git-repo-check",
+                 "-s", "read-only", "-c", "web_search=disabled"] +
+                [x for f in CODEX_FRAMES_FEATURES for x in ("--disable", f)])
+IMAGES_ARG = "{images}"      # becomes `-i <sheet>` for every contact sheet, once the suite is drawn
+CODEX_FRAMES_SETTINGS = ("frames track; codex exec -s read-only, shell/exec/code-mode and other tool features "
+                         "disabled, web search off, sheets attached with -i; beyond that tool restriction is by "
+                         "prompt only (the transcript shows every command it ran)")
 
 # Clean room (the default for Claude Code): the contender runs without the runner's own agent config, so rows from
 # different machines compare like for like. --safe-mode drops CLAUDE.md, skills, plugins, hooks, MCP servers,
@@ -156,6 +181,33 @@ def prompt(suite: str, track: str = F.TRACK, agent: str = "") -> str:
     return FRAMES_PROMPT.format(suite=suite, n=n, read=read)
 
 
+def codex_frames_prompt(out: Path, suite: str, seed: int | None = None) -> str:
+    """The Codex frames-track prompt for a drawn folder: the common rules, which attached image belongs to which
+    task, the blank answers.json and TASKS.md (Codex cannot open files, so all of it is in the prompt)."""
+    tasks = S.suite_tasks(suite, seed).TASKS
+    counts = [len(F.sheets(out, t.id)) for t in tasks]
+    order = "; ".join(f"images {sum(counts[:i]) + 1}-{sum(counts[:i + 1])}: task {t.id}"
+                      for i, t in enumerate(tasks))
+    return (FRAMES_COMMON.format(suite=suite, n=len(tasks)) + "\n\nThe attached images are every contact sheet of "
+            f"every task, in time order per task ({order}); each file name is listed under its task in TASKS.md "
+            "below. You have no tool to open files: the full-size stills are not available to you, the sheets are. "
+            "The blank answers.json is:\n\n" + (out / "answers.json").read_text(encoding="utf8")
+            + "\n\nTASKS.md:\n\n" + (out / "TASKS.md").read_text(encoding="utf8"))
+
+
+def with_images(argv: list[str], out: Path | None, suite: str, seed: int | None = None) -> list[str]:
+    """argv with IMAGES_ARG replaced by `-i <sheet>` for every contact sheet in `out`, task by task in time order
+    (by a placeholder when `out` is None, for --dry-run)."""
+    if IMAGES_ARG not in argv:
+        return argv
+    i = argv.index(IMAGES_ARG)
+    if out is None:
+        imgs = ["-i", "<every contact sheet>"]
+    else:
+        imgs = [x for t in S.suite_tasks(suite, seed).TASKS for p in F.sheets(out, t.id) for x in ("-i", p)]
+    return argv[:i] + imgs + argv[i + 1:]
+
+
 def split_template(template: str) -> list[str]:
     """Split a --cmd template like a shell would, keeping Windows backslashes in paths."""
     lex = shlex.shlex(template, posix=True)
@@ -176,9 +228,8 @@ def command(agent: str, text: str, prompt_file: Path, model: str = "", template:
             argv = (["claude", "-p"] + ([] if my_config else CLAUDE_CLEAN) +
                     ["--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"])
         return argv + (["--model", model] if model else []) + [text]
-    if agent == "codex" and track != F.TRACK:
-        raise SystemExit("bench run --track frames runs Claude Code or --agent cmd; for Codex see the frames track "
-                         "in docs/benchmark.md")
+    if agent == "codex" and track != F.TRACK:   # the prompt goes on stdin; the sheets are added once drawn
+        return CODEX_FRAMES + (["--model", model] if model else []) + [IMAGES_ARG]
     if agent in PRESETS:
         p = PRESETS[agent]
         if track != F.TRACK:
@@ -240,13 +291,16 @@ def agent_env(base: dict | None = None) -> dict:
     return env
 
 
-def execute(argv: list[str], cwd: Path, transcript: Path, stderr: Path, timeout: float,
-            env: dict | None = None) -> tuple[int | None, float]:
-    """Run argv in cwd with stdin closed; (exit code, or None if killed at the timeout; wall seconds)."""
+def execute(argv: list[str], cwd: Path, transcript: Path, stderr: Path | None, timeout: float,
+            env: dict | None = None, stdin: Path | None = None) -> tuple[int | None, float]:
+    """Run argv in cwd with stdin closed, or reading the file `stdin` up to its end; stderr to its own file, or into
+    the transcript when `stderr` is None. (exit code, or None if killed at the timeout; wall seconds)."""
     kw = {"start_new_session": True} if os.name != "nt" else {}
     t0 = time.monotonic()
-    with open(transcript, "wb") as out, open(stderr, "wb") as err:
-        proc = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
+    with open(transcript, "wb") as out, open(stderr or os.devnull, "wb") as err, \
+            open(stdin or os.devnull, "rb") as inp:
+        proc = subprocess.Popen(argv, cwd=cwd, stdin=inp if stdin else subprocess.DEVNULL, stdout=out,
+                                stderr=err if stderr else subprocess.STDOUT,
                                 env=agent_env() if env is None else env, **kw)
         try:
             code = proc.wait(timeout=timeout)
@@ -321,6 +375,17 @@ def answers_from_reply(out: Path, text: str, suite: str, track: str, seed: int |
     return True
 
 
+def codex_commands(log: Path) -> dict:
+    """What a plain `codex exec` log (stderr merged in) shows of the shell: `exec` blocks are commands it ran,
+    tool-router errors are calls that were refused (e.g. "code-mode host is disabled")."""
+    try:
+        lines = log.read_text(encoding="utf8", errors="replace").splitlines()
+    except OSError:
+        return {}
+    return {"commands_run": sum(1 for line in lines if line.strip() == "exec"),
+            "tool_calls_refused": sum(1 for line in lines if "ERROR codex_core::tools::router" in line)}
+
+
 def codex_stats(log: Path) -> dict:
     """Model and reasoning effort from the header `codex exec` prints to stderr (only what the header states)."""
     out = {}
@@ -386,6 +451,8 @@ def settings_text(agent: str, track: str, my_config: bool, given: str = "", stat
         iso = "" if frames else CLEAN_ROOM   # the frames command line already says --restricted --safe-mode
     auto = (f"reasoning effort {stats['effort']}" if "effort" in stats else
             CLAUDE_FRAMES_SETTINGS.replace(" --safe-mode", "" if my_config else " --safe-mode") if frames else "")
+    if agent == "codex" and track != F.TRACK and not given.strip():
+        auto = "; ".join(x for x in (CODEX_FRAMES_SETTINGS, auto) if x)
     return "; ".join(x for x in (iso, given.strip() or auto) if x)
 
 
@@ -403,7 +470,9 @@ def main(argv=None) -> int:
     ap.add_argument("--suite", default=SUITE, choices=sorted(S.SUITES), help=f"default {SUITE}")
     ap.add_argument("--track", default=F.TRACK, choices=F.TRACKS,
                     help="code (default): videos, any tool; frames: still images only, no code (Claude Code runs "
-                         "with Read as its only tool)")
+                         "with Read as its only tool; Codex runs read-only with its shell and other tool features "
+                         "off and every contact sheet attached, and beyond that tool restriction is by prompt "
+                         "only: the transcript shows every command it ran)")
     from . import add_seed, pick_seed
     add_seed(ap)
     ap.add_argument("--agent", required=True, choices=["claude", "codex", *PRESETS, "cmd"],
@@ -449,15 +518,22 @@ def main(argv=None) -> int:
                 + (f"; {p.note}" if p.note else ""))
     elif a.agent == "codex":
         room = "Codex runs with your own config (~/.codex): not isolated, so credentials stay where they are"
+        if a.track != F.TRACK:
+            room += ("; frames track: read-only sandbox, shell and other tool features off, sheets attached with "
+                     "-i; beyond that tool restriction is by prompt only, the transcript shows every command it ran")
     elif a.use_my_config:
         room = "your own agent config is loaded (--use-my-config)"
     else:
         room = "clean room: no user agent config"
     transcript = out / ("transcript.jsonl" if a.agent == "claude" else "transcript.txt")
     if a.dry_run:
-        print(f"suite {a.suite}{fresh}, track {a.track}, folder {out}, timeout {a.timeout:g} s, stdin closed; "
+        print(f"suite {a.suite}{fresh}, track {a.track}, folder {out}, timeout {a.timeout:g} s, "
+              f"{'prompt on stdin, then closed' if IMAGES_ARG in argv_ else 'stdin closed'}; "
               f"{room}")
-        print(subprocess.list2cmdline(argv_) if os.name == "nt" else shlex.join(argv_))
+        shown_argv = with_images(argv_, None, a.suite, seed)
+        print(subprocess.list2cmdline(shown_argv) if os.name == "nt" else shlex.join(shown_argv))
+        if IMAGES_ARG in argv_:
+            print("(the prompt, with TASKS.md and the blank answers.json, goes on stdin)")
         return 0
     if out.exists() and any(out.iterdir()):
         raise SystemExit(f"{out} is not empty; pick a new --out")
@@ -469,9 +545,16 @@ def main(argv=None) -> int:
     print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} {what}{fresh} into {out}")
     from . import prepare
     prepare(out, suite=a.suite, track=a.track, seed=seed)
+    on_stdin = IMAGES_ARG in exe     # Codex frames: prompt on stdin, sheets attached, stderr in the transcript
+    if on_stdin:
+        text = codex_frames_prompt(out, a.suite, seed)
+        exe = with_images(exe, out, a.suite, seed)
     media.write_text_atomic(prompt_file, text + "\n")
     print(f"running {name} (timeout {a.timeout:g} s; {room}) ...", flush=True)
-    code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env())
+    if on_stdin:
+        code, wall = execute(exe, out, transcript, None, a.timeout, agent_env(), stdin=prompt_file)
+    else:
+        code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env())
     status = f"killed at the {a.timeout:g} s timeout" if code is None else f"exit code {code}"
     print(f"agent finished in {wall:g} s, {status}; transcript {transcript}")
     if transcript.exists():
@@ -482,7 +565,7 @@ def main(argv=None) -> int:
             print(f"could not write the redacted copy ({e}); `sports-video-coach bench transcript` makes one")
 
     stats = (claude_stats(transcript) if a.agent == "claude"
-             else codex_stats(out / "stderr.log") if a.agent == "codex" else {})
+             else codex_stats(transcript if on_stdin else out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
     settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats)
     if a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track, seed):
@@ -499,13 +582,17 @@ def main(argv=None) -> int:
                    int(wall) if wall == int(wall) else wall, a.evidence.strip(), suite=a.suite, track=a.track,
                    seed=seed)
     res["cost_usd"] = stats.get("cost_usd")
-    run_info = {"exit_code": code, "timed_out": code is None, "timeout_seconds": a.timeout}
+    run_info = {"exit_code": code, "timed_out": code is None, "timeout_seconds": a.timeout,
+                **(codex_commands(transcript) if on_stdin else {})}
     media.write_json_atomic(out / "run.json", run_info)
     dest = out / S.default_path(res).name
     media.write_json_atomic(dest, res)
     print(S.table(res))
     if res["cost_usd"] is not None:
         print(f"cost: {res['cost_usd']} USD (from the agent's result event)")
+    if on_stdin:
+        print(f"shell: {run_info.get('commands_run', 0)} commands run, "
+              f"{run_info.get('tool_calls_refused', 0)} tool calls refused (from the transcript)")
     print(f"\nresult file: {dest}")
     print("submit it: copy it to benchmark/results/ in a pull request, or open the prefilled issue form:")
     print(issue_url(res))
