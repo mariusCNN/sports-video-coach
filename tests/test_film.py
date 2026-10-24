@@ -1,5 +1,6 @@
 """No-network tests for the explained-video stage (`hoop-tape-miner film`); the render test fakes the TTS."""
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -89,12 +90,13 @@ def test_ass_doc_and_scene_events():
     sc = film.parse_script("![cap {x}](clip:0:01-0:03)\nA.")[0]
     ev = film.scene_events(sc, 8.0, 3.0, 2.0, [(0.0, 1.0, "A"), (1.2, 2.0, "B")], "zh", "T", 720)
     styles = [e[2] for e in ev]
-    assert styles == ["Banner", "Tag", "Sub", "Sub"]
-    assert ev[0][3] == "cap (x)" and ev[1][3] == "慢放"
-    assert ev[2][1] == pytest.approx(film.LEAD + 1.2)  # short gap closed: no flicker
+    assert styles == ["Banner", "Draw", "Draw", "Tag", "Sub", "Sub"]  # the caption, the slow-motion badge, subtitles
+    assert ev[0][3].endswith("cap (x)") and ev[0][1] == film.BANNER_S and ev[3][3].endswith("慢放")
+    assert ev[3][:2] == (2.0, 5.0)  # the badge shows while the replay is slowed
+    assert ev[4][1] == pytest.approx(film.LEAD + 1.2)  # short gap closed: no flicker
     doc = film.ass_doc(1280, 720, "Font X", "#6250d6", ev)
     assert "PlayResY: 720" in doc and "Style: Sub,Font X," in doc
-    assert "Dialogue: 2,0:00:00.00,0:00:08.00,Banner,,0,0,0,,cap (x)" in doc  # text above drawings (layer 0, 1)
+    assert "Dialogue: 2,0:00:00.00,0:00:06.00,Banner,,0,0,0,,{\\fad(250,300)}cap (x)" in doc  # above drawings
     assert film.ass_time(3725.456) == "1:02:05.46" and film.ass_colour("#6250d6", 0x30) == "&H30D65062"
 
 
@@ -184,12 +186,14 @@ def test_freeze_events_circle_tracked_players_and_dim_the_rest():
     marks = fd.parse_freeze_line('> 03:10 我#7 对#11 我#7->对#11 "alone"', fc.parse_ref)[1]
     ev = fd.freeze_events(marks, "alone", 190.0, tracks, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)
     styles = [e[2] for e in ev]
-    assert styles.count("Draw") == 4 and styles[-1] == "Mark"  # dim layer, two rings, one arrow; the label
-    assert ev[0][3].count(" m ") == 2 and "\\1a&H9C&" in ev[0][3]  # two holes cut in the dim layer
-    assert "\\3c&H00D4FF&" in ev[1][3] and all(e[:2] == (2.0, 6.0) for e in ev)
+    # the dim layer, two rings (dark disc + coloured rim each), one arrow, the label (leader, pill, strip, text)
+    assert styles == ["Draw"] * 6 + ["Draw"] * 3 + ["Mark"]
+    assert ev[0][3].count(" m ") == 1 and "\\blur" in ev[0][3]  # the two players overlap: one soft hole, merged
+    assert fd.bgr(fd.US_HEX) in ev[2][3] and fd.bgr(fd.THEM_HEX) in ev[4][3]  # ours blue, theirs red
+    assert all(e[:2] == (2.0, 6.0) for e in ev) and not any("\\fad" in e[3] for e in ev)  # a still: all at once
     short = fd.parse_freeze_line('> 00:04.5 0.87,0.72->0.92,0.72 "short"', fc.parse_ref)[1]
     ev = fd.freeze_events(short, "short", 4.5, None, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)
-    assert ev[0][3].count(" m ") == 1 and [e[2] for e in ev].count("Draw") == 3  # one hole, one ring, the arrow
+    assert ev[0][3].count(" m ") == 1 and [e[2] for e in ev].count("Draw") == 7  # one hole, one ring, the arrow
     far = fd.parse_freeze_line('> 00:04.5 0.2,0.72->0.8,0.72', fc.parse_ref)[1]
     assert fd.freeze_events(far, "", 4.5, None, 1280, 720, (0, 0, 1280, 720), 2.0, 6.0)[0][3].count(" m ") == 2
     assert film.freeze_warnings(film.parse_script("![x](clip:03:08-03:20)\n> 03:10 我#9\n", FILM), tracks) == [
@@ -289,10 +293,73 @@ def test_spoken_cuts_trailing_silence_from_cached_speech(tmp_path):
     assert wav.suffix == ".wav" and dur == pytest.approx(1.0, abs=0.15) and cues == [(0.0, dur, "Hi.")]
 
 
-def test_card_title_lines_split_at_dots_and_sit_above_the_bar():
+def test_card_lines_come_in_one_after_another_left_aligned_under_the_accent_bar():
     sc = film.Scene("card", "Pressure comes, find a teammate · Two come, pass")
-    (ev,) = film.scene_events(sc, 5, 0, 0, [], "en", "", 720)
-    assert ev[2] == "Title" and ev[3] == r"{\an2\pos(640,400)}Pressure comes, find a teammate\NTwo come, pass"
+    bar, one, two = film.scene_events(sc, 5, 0, 0, [], "en", "", 720)
+    assert bar[2] == "Kicker" and "\\p1" in bar[3]  # the accent bar, drawn in the accent colour
+    assert one[2] == two[2] == "Title" and one[0] < two[0]  # a sign-off: line by line
+    assert one[3] == r"{\an7\move(106,290,128,290,0,350)\fad(300,250)}Pressure comes, find a teammate"
+    assert two[3].endswith("}Two come, pass") and "\\move(106,360,128,360" in two[3]
+
+
+def test_a_chapter_card_shows_its_kicker_apart_from_the_title():
+    sc = film.parse_script("## 第一件事：有压力，第二个人来接\n")[0]
+    ev = film.scene_events(sc, 5, 0, 0, [], "zh", "", 720)
+    assert [e[2] for e in ev] == ["Kicker", "Kicker", "Title"]
+    assert ev[1][3].endswith("}第一件事") and ev[2][3].endswith("}有压力，第二个人来接")
+
+
+def test_a_stat_counts_up_and_a_goal_says_at_most_in_words():
+    sc = film.parse_script("![fast breaks](stat:22–4)\n")[0]
+    ev = film.scene_events(sc, 5, 0, 0, [], "en", "", 720)
+    nums = [e for e in ev if e[2] == "Big"]
+    assert len(nums) == film.COUNT_STEPS + 1 and nums[0][3].endswith("}0–0") and nums[-1][3].endswith("}22–4")
+    assert nums[-1][1] == 5 and all(x[1] == pytest.approx(y[0]) for x, y in zip(nums[1:], nums[2:]))  # no gap
+    assert ev[-1][2] == "Caption" and ev[-1][3].endswith("fast breaks")
+    goal = film.scene_events(film.parse_script("![下场目标](stat:≤4)\n")[0], 5, 0, 0, [], "zh", "", 720)
+    assert goal[0][2] == "Kicker" and goal[0][3].endswith("最多")
+    assert not any("≤" in e[3] for e in goal) and goal[-2][3].endswith("}4") and goal[-2][2] == "Kicker"
+    at_least = film.scene_events(film.parse_script("![x](stat:≥8)\n")[0], 5, 0, 0, [], "en", "", 720)
+    assert at_least[0][3].endswith("At least")
+
+
+def test_an_animated_freeze_zooms_in_builds_the_marks_and_clears_before_the_play():
+    marks = fd.parse_freeze_line('> 00:04 0.4,0.6 0.5,0.62 0.4,0.6->0.5,0.62 "two"')[1]
+    zoom = fd.freeze_zoom(marks, 4.0, None, 1280, 720, (0, 0, 1280, 720))
+    z, x, y = zoom
+    assert 1.1 <= z <= fd.ZOOM_MAX and 0 <= x <= 1280 - 1280 / z and 0 <= y <= 720 - 720 / z
+    ev = fd.freeze_events(marks, "two", 4.0, None, 1280, 720, (0, 0, 1280, 720), 2.0, 10.0, zoom=zoom, animate=True)
+    starts = sorted({e[0] for e in ev})
+    assert starts[0] >= 2.0 + fd.ZOOM_S and len(starts) >= 4  # after the zoom settles, one beat at a time
+    assert all(e[1] == pytest.approx(10.0 - fd.OUT_S - 0.1) for e in ev)  # gone before the zoom goes back
+    assert all("\\fad(" in e[3] for e in ev) and any("\\t(0,350,\\clip(" in e[3] for e in ev)  # the arrow draws on
+    still = fd.freeze_events(marks, "two", 4.0, None, 1280, 720, (0, 0, 1280, 720), 2.0, 10.0)
+    ring = lambda evs: next(e[3] for e in evs if "\\an5\\pos(" in e[3] and "\\3c" in e[3])
+    rx = lambda t: float(re.search(r"\\pos\(([\d.]+),", t)[1])
+    assert rx(ring(ev)) == pytest.approx((0.4 * 1280 - x) * z, abs=1)  # the marks follow the zoomed frame
+    assert rx(ring(still)) == pytest.approx(0.4 * 1280, abs=1)
+    far = fd.parse_freeze_line("> 00:04 0.05,0.9 0.95,0.3")[1]
+    assert fd.freeze_zoom(far, 4.0, None, 1280, 720, (0, 0, 1280, 720)) is None  # too far apart to zoom
+
+
+def test_a_zoomed_hold_eases_in_and_out_in_the_scene_command(tmp_path):
+    sc = film.parse_script("![x](clip:0:01-0:05)\n> 0:02 0.4,0.6\nA.\n")[0]
+    segs = [("play", 1.0, 2.0), ("hold", 2.0, 4.0), ("play", 2.0, 5.0)]
+    cmd = lambda zooms: film.scene_cmd(sc, 9.0, 0, 1280, 720, tmp_path, tmp_path / "v.mp4", False, [], "s.ass",
+                                       "#5b4bd1", "o.mp4", segs=segs, zooms=zooms)
+    args = cmd([(1.3, 100.0, 50.0)])
+    graph = args[args.index("-filter_complex") + 1]
+    assert graph.count("zoompan=") == 1 and "scale=2560:1440,zoompan=" in graph and ":s=1280x720:" in graph
+    assert f"/{fd.ZOOM_S}" in graph and f"(4.000-(in/{film.FPS}))/{fd.OUT_S}" in graph
+    plain = cmd([None])
+    assert "zoompan" not in plain[plain.index("-filter_complex") + 1]
+
+
+def test_badge_says_paused_with_an_icon():
+    ev = fd.badge("定格", 1.0, 3.0, 1280, 720)
+    assert [e[2] for e in ev] == ["Draw", "Draw", "Tag"] and ev[2][3].endswith("定格")
+    assert ev[1][3].count(" m ") == 1  # two bars
+    assert all(e[:2] == (1.0, 3.0) for e in ev)
 
 
 def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys):
@@ -405,10 +472,10 @@ def test_a_tts_failure_names_the_paragraph(tmp_path, monkeypatch):
 def test_an_upright_video_makes_an_upright_film_with_the_same_text_size():
     assert film.film_size(720, (1280, 720)) == (1280, 720) and film.film_size(720, (720, 1280)) == (720, 1280)
     sc = film.parse_script("## Card\nOne line.\n")[0]
-    (ev,) = film.scene_events(sc, 5, 0, 0, [], "en", "", 720, frame=(720, 1280))
-    assert ev[3].startswith(r"{\an2\pos(360,680)}")  # mid-frame, as in a landscape film
-    (wide,) = film.scene_events(sc, 5, 0, 0, [], "en", "", 720)
-    assert wide[3].startswith(r"{\an2\pos(640,400)}")
+    tall = film.scene_events(sc, 5, 0, 0, [], "en", "", 720, frame=(720, 1280))[-1][3]
+    wide = film.scene_events(sc, 5, 0, 0, [], "en", "", 720)[-1][3]
+    ty, wy = (int(re.search(r"\\move\(\d+,(\d+),", t)[1]) for t in (tall, wide))
+    assert ty - 640 == wy - 360  # mid-frame, as in a landscape film
     styles = lambda doc: [ln for ln in doc.splitlines() if ln.startswith("Style:")]
     tall, land = styles(film.ass_doc(720, 1280, "F", "#6250d6", [])), styles(film.ass_doc(1280, 720, "F", "#6250d6", []))
     assert [s for s in tall if s.startswith("Style: Sub")] == [s for s in land if s.startswith("Style: Sub")]
