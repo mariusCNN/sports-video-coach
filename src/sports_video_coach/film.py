@@ -496,6 +496,12 @@ def ass_colour(hex_: str, alpha: int = 0) -> str:
     return f"&H{alpha:02X}{b:02X}{g:02X}{r:02X}"
 
 
+def lighten(hex_: str, k: float = 0.45) -> str:
+    """hex_ mixed k of the way to white: a team colour as text on a dark card stays readable (a deep purple is
+    about 2.7:1 on near-black)."""
+    return "#" + "".join(f"{round(c + (255 - c) * k):02x}" for c in units.hex_to_rgb(hex_))
+
+
 def ass_escape(t: str) -> str:
     return t.replace("\\", "/").replace("{", "(").replace("}", ")").replace("\n", " ")
 
@@ -514,12 +520,12 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
         "Banner": (round(u * 0.034), white, ass_colour(fd.INK_HEX, 0x40), ass_colour(fd.INK_HEX, 0x40), 3,
                    round(u * 0.014), 0, 8, side, m, 1),
         "Title": (round(u * 0.075), white, ink, shade, 1, 0, max(1, round(u * 0.004)), 5, m, 0, 1),
-        "Kicker": (round(u * 0.036), ass_colour(accent), ink, shade, 1, 0, max(1, round(u * 0.003)), 1, m, 0, 1),
+        "Kicker": (round(u * 0.036), ass_colour(lighten(accent)), ink, shade, 1, 0, max(1, round(u * 0.003)), 1, m, 0, 1),
         "Tag": (round(u * 0.032), white, ink, ink, 1, 0, 0, 4, m, m, 1),  # the badge text (film_draw.badge)
         "Draw": (20, white, ink, ink, 1, 0, 0, 7, 0, 0, 0),  # telestration shapes (ASS drawings)
         "Mark": (round(u * 0.04), white, ink, ink, 1, 0, 0, 5, m, 0, 1),  # a freeze label, in its pill
         "Big": (round(u * 0.2), white, ink, shade, 1, 0, max(2, round(u * 0.006)), 2, m, 0, 1),
-        "Caption": (round(u * 0.045), "&H00C8BCB8", ink, shade, 1, 0, max(1, round(u * 0.003)), 8, m, 0, 0),
+        "Caption": (round(u * 0.045), "&H00E2DBD8", ink, shade, 1, 0, max(1, round(u * 0.003)), 8, m, 0, 0),
     }
     layer = {"Draw": 0, "Mark": 1}
     lines = ["[Script Info]", "ScriptType: v4.00+", f"PlayResX: {w}", f"PlayResY: {h}", "WrapStyle: 0",
@@ -537,9 +543,10 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
 
 
 def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lang: str, title: str, h: int,
-                 extra=(), frame: tuple[int, int] | None = None):
+                 extra=(), frame: tuple[int, int] | None = None, banner_to: float | None = None):
     """Subtitle events for one scene; cue times count from the start of the voice (LEAD). extra: more events.
-    h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h."""
+    h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h; banner_to: the clip's
+    first freeze, where its banner goes so the label is the only text on the frozen frame."""
     fw, fh = frame or (round(h * 16 / 9), h)
     m, side = round(h * 0.04), round(fw * 0.08)  # the margins and font sizes ass_doc gives Sub, Banner, Title
     sub_fs, small, big = round(h * 0.057), round(h * 0.036), round(h * 0.075)
@@ -554,7 +561,7 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
     elif sc.kind == "stat":
         ev += stat_events(sc.src, sc.text, length, lang, h, fw, fh)
     elif sc.text:  # what the clip is about, while it starts; then the picture is the players'
-        ev.append((0, min(length, BANNER_S), "Banner", "{\\fad(250,300)}" + wrap(sc.text, (fw - 2.5 * side) / small)))
+        ev.append((0, min(length, BANNER_S, banner_to or BANNER_S), "Banner", "{\\fad(250,300)}" + wrap(sc.text, (fw - 2.5 * side) / small)))
     if slow:
         ev += fd.badge(SLOW_TAG.get(lang, SLOW_TAG["en"]), clip_s, clip_s + slow, fw, fh, icon="play")
     subs = sorted((LEAD + s, LEAD + e, t) for s, e, t in cues)
@@ -569,7 +576,7 @@ def card_events(text: str, length: float, lang: str, h: int, fw: int, fh: int) -
     """A chapter card, left-aligned as in a broadcast: an accent bar, the kicker (what comes before the first "："
     / ":", e.g. "第一件事") in the accent colour, then the title; " · " splits it into lines that come in one after
     another (a sign-off). Each slides in a little and fades."""
-    big, x0 = round(h * 0.075), round(fw * 0.1)
+    big, x0 = round(h * 0.088), round(fw * 0.1)
     parts = [x.strip() for x in text.split(" · ") if x.strip()]
     kicker = ""
     km = KICKER_RE.match(parts[0]) if len(parts) == 1 else None
@@ -580,14 +587,14 @@ def card_events(text: str, length: float, lang: str, h: int, fw: int, fh: int) -
     top = fh / 2 - sum(len(r) for r in rows) * lh / 2 + (h * 0.03 if kicker else 0)
     slide = round(h * 0.03)
 
-    def move(y: float) -> str:
-        return f"{{\\an7\\move({x0 - slide},{round(y)},{x0},{round(y)},0,350)\\fad(300,250)}}"
+    def move(y: float, fs: int = big) -> str:
+        return f"{{\\an7\\move({x0 - slide},{round(y)},{x0},{round(y)},0,350)\\fad(300,250)\\fs{fs}}}"
 
     bar_y = top - h * (0.105 if kicker else 0.045)
     ev = [(0.0, length, "Kicker", f"{{\\an7\\pos({x0},{round(bar_y)})\\p1\\fad(250,250)\\shad0}}"
            f"m 0 0 l {round(h * 0.07)} 0 l {round(h * 0.07)} {max(3, round(h * 0.007))} l 0 {max(3, round(h * 0.007))}")]
     if kicker:
-        ev.append((0.1, length, "Kicker", move(top - h * 0.075) + ass_escape(kicker)))
+        ev.append((0.1, length, "Kicker", move(top - h * 0.075, round(h * 0.044)) + ass_escape(kicker)))
     y = top
     for i, r in enumerate(rows):
         ev.append((0.25 + i * 0.5, length, "Title", move(y) + "\\N".join(ass_escape(x) for x in r)))
@@ -631,7 +638,7 @@ def stat_events(src: str, text: str, length: float, lang: str, h: int, fw: int, 
 def title_lines(head: str, sub: str, h: int) -> str:
     """ASS title card text: the head, then `sub` (date, score) on a second line after a thin gap."""
     gap = f"\\N{{\\fs{round(h * 0.02)}}} "  # a thin blank line between the title and the date
-    return ass_escape(head) + (f"{gap}\\N{{\\fs{round(h * 0.05)}\\b0\\c&HE0E0E0&}}{ass_escape(sub)}" if sub else "")
+    return ass_escape(head) + (f"{gap}\\N{{\\fs{round(h * 0.066)}\\b0\\c&HF0F0F0&}}{ass_escape(sub)}" if sub else "")
 
 
 def folder_date(folder: Path) -> str:
@@ -956,6 +963,7 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
             voiced = [(v, st) for v, st in zip(tracks_, starts) if v[0] and st is not None]
             cues = [(a + st - LEAD, b + st - LEAD, txt) for v, st in voiced for a, b, txt in v[2]]
             extra, zooms = [], []
+            first_hold = min((sp[0] for sp in spans if sp), default=None)
             for fz, span in zip(sc.freezes, spans):
                 if span is None:
                     continue
@@ -968,7 +976,7 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
                 extra += fd.badge(FREEZE_TAG.get(lang, FREEZE_TAG["en"]), fs, fe, w, h, icon="pause")
             ass_name = f"s{i:03d}.ass"
             (tmp / ass_name).write_text(ass_doc(w, h, font, accent, scene_events(sc, length, slow, sc.clip_s(), cues,
-                                                                                 lang, title, height, extra, (w, h))),
+                                                                                 lang, title, height, extra, (w, h), first_hold)),
                                         encoding="utf8")
             frames = None
             if i in objs:

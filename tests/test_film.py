@@ -298,7 +298,7 @@ def test_card_lines_come_in_one_after_another_left_aligned_under_the_accent_bar(
     bar, one, two = film.scene_events(sc, 5, 0, 0, [], "en", "", 720)
     assert bar[2] == "Kicker" and "\\p1" in bar[3]  # the accent bar, drawn in the accent colour
     assert one[2] == two[2] == "Title" and one[0] < two[0]  # a sign-off: line by line
-    assert one[3] == r"{\an7\move(106,290,128,290,0,350)\fad(300,250)}Pressure comes, find a teammate"
+    assert one[3] == r"{\an7\move(106,278,128,278,0,350)\fad(300,250)\fs63}Pressure comes, find a teammate"
     assert two[3].endswith("}Two come, pass") and "\\move(106,360,128,360" in two[3]
 
 
@@ -360,6 +360,31 @@ def test_badge_says_paused_with_an_icon():
     assert [e[2] for e in ev] == ["Draw", "Draw", "Tag"] and ev[2][3].endswith("定格")
     assert ev[1][3].count(" m ") == 1  # two bars
     assert all(e[:2] == (1.0, 3.0) for e in ev)
+
+
+def test_a_spot_can_say_its_team_so_its_ring_and_label_take_the_team_colour():
+    assert fd.parse_mark("对0.77,0.53") == ("point", 0.77, 0.53, "them")
+    assert fd.parse_mark("us:0.4,0.6") == ("point", 0.4, 0.6, "us") and fd.parse_mark("0.4,0.6") == ("point", 0.4, 0.6)
+    assert fd.mark_text(fd.parse_mark("对0.77,0.53")) == "them:0.77,0.53"
+    assert fd.parse_mark("我0.6,0.5->对0.7,0.5")[2] == ("point", 0.7, 0.5, "them")
+    assert fd.mark_hex(("point", 0.7, 0.5, "them")) == fd.THEM_HEX and fd.mark_hex(("point", 0.7, 0.5)) == fd.POINT_HEX
+    marks = fd.parse_freeze_line('> 00:04 对0.4,0.6 "two"')[1]
+    ev = fd.freeze_events(marks, "two", 4.0, None, 1280, 720, (0, 0, 1280, 720), 2.0, 10.0, animate=True)
+    red = fd.bgr(fd.THEM_HEX)
+    assert sum(red in e[3] for e in ev) == 2  # the rim and the label's strip
+    pill, text = next(e for e in ev if "\\p1" in e[3] and "\\1a&H22&" in e[3]), ev[-1]
+    assert text[2] == "Mark" and text[0] > pill[0]  # the label's text comes in after its pill
+
+
+def test_a_clip_banner_goes_at_the_first_freeze():
+    sc = film.parse_script("![cap](clip:0:01-0:09)\nA.\n")[0]
+    banner = lambda **kw: next(e for e in film.scene_events(sc, 20, 0, 0, [], "en", "", 720, **kw) if e[2] == "Banner")
+    assert banner()[1] == film.BANNER_S and banner(banner_to=3.2)[1] == 3.2
+
+
+def test_a_dark_team_colour_is_lightened_for_card_text():
+    assert film.lighten("#5b4bd1") == "#a59ce6" and film.lighten("#ffffff") == "#ffffff"
+    assert "&H00E69CA5" in film.ass_doc(1280, 720, "Arial", "#5b4bd1", [])  # the Kicker style
 
 
 def test_generic_folder_film_plan_without_a_plugin(tmp_path, monkeypatch, capsys):

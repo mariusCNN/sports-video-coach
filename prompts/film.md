@@ -51,7 +51,7 @@ The chart shows where the game turned.
   - A hold of 1.5 s or more punches in on the marked players (up to 1.4x) and eases back out before the play runs on.
   - The rest of the frame is dimmed around a soft spotlight. Each marked player gets a ring on the floor (blue for us, red for them, white for a bare spot); arrows draw on, then the label comes up in a dark pill next to the first player, one beat at a time.
   - Marks: `我#7` / `对#11` (or `us#7` / `them#11`) are looked up in the CV tracks (`run/tracks.pkl`; `--run` if it is not next to the report or the video).
-  - `0.42,0.61` is a spot on the frame, as fractions of width and height: where a player's feet are. Use it when the tracks do not know the player (`--dry` warns), e.g. a jersey number the CV pass never read.
+  - `0.42,0.61` is a spot on the frame, as fractions of width and height: where a player's feet are. Use it when the tracks do not know the player (`--dry` warns), e.g. a jersey number the CV pass never read. Put the team in front when you know it, `对0.42,0.61` / `我0.42,0.61` (or `them:` / `us:`), so the ring is red / blue instead of white.
   - `A->B` draws an arrow, e.g. `我#30->我#21` for a pass, or `我#3->0.30,0.55` for where help should come from.
   - A `>` line on its own resumes the clip at once; the paragraphs after it are read over the running play. Use it for "watch what happens next", so the words do not run over a frame that is still frozen.
   - Several freezes per clip are fine, in time order. A freeze without a paragraph holds two seconds.

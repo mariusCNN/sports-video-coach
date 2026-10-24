@@ -28,21 +28,23 @@ ZOOM_S = 0.5         # the zoom in (and out, OUT_S) takes this long; the marks s
 OUT_S = 0.35
 STEP_S = 0.45        # one mark after another
 SHORT_ARROW = 0.12   # arrow ends closer than this (frame fractions) get one ring, at the start
-POINT_RE = re.compile(r"^(\d*\.?\d+),(\d*\.?\d+)$")
+POINT_RE = re.compile(r"^(?:(us|them|我|对):?)?(\d*\.?\d+),(\d*\.?\d+)$")  # a spot, maybe with its team
+SIDES = {"我": "us", "对": "them"}
 ARROW_RE = re.compile(r"^(.+?)(?:->|→)(.+)$")
 LABEL_RE = re.compile(r'"([^"]*)"|“([^”]*)”')
 
 
 def parse_mark(tok: str, ref: Callable[[str], tuple | None] | None = None):
-    """'0.4,0.6' -> ('point', 0.4, 0.6); 'A->B' -> ('arrow', a, b); a plugin mark via ref(tok) (basketball:
+    """'0.4,0.6' -> ('point', 0.4, 0.6); a spot with its team, '对0.4,0.6' / 'them:0.4,0.6' (or 我 / us) ->
+    ('point', 0.4, 0.6, 'them'); 'A->B' -> ('arrow', a, b); a plugin mark via ref(tok) (basketball:
     '我#7' -> ('player', 'us', '7')); else None."""
     m = ARROW_RE.match(tok)
     if m and not POINT_RE.match(tok):
         a, b = parse_mark(m[1], ref), parse_mark(m[2], ref)
         return ("arrow", a, b) if a and b and a[0] != "arrow" and b[0] != "arrow" else None
     m = POINT_RE.match(tok)
-    if m and 0 <= float(m[1]) <= 1 and 0 <= float(m[2]) <= 1:
-        return ("point", float(m[1]), float(m[2]))
+    if m and 0 <= float(m[2]) <= 1 and 0 <= float(m[3]) <= 1:
+        return ("point", float(m[2]), float(m[3])) + ((SIDES.get(m[1], m[1]),) if m[1] else ())
     return ref(tok) if ref else None
 
 
@@ -66,7 +68,7 @@ def parse_freeze_line(line: str, ref: Callable[[str], tuple | None] | None = Non
 def mark_text(mark) -> str:
     """A parsed mark back as script text: ('point', 0.4, 0.6) -> '0.4,0.6'; an arrow 'A->B'; a plugin mark 'us#7'."""
     if mark[0] == "point":
-        return f"{mark[1]:g},{mark[2]:g}"
+        return (f"{mark[3]}:" if len(mark) > 3 else "") + f"{mark[1]:g},{mark[2]:g}"
     if mark[0] == "arrow":
         return f"{mark_text(mark[1])}->{mark_text(mark[2])}"
     return "#".join(map(str, mark[1:]))
@@ -137,9 +139,10 @@ def bgr(hex_: str) -> str:
 
 
 def mark_hex(mark) -> str:
-    """Ring colour of a mark: a plugin's player on our side blue, on the other side red, anything else white."""
-    if mark and len(mark) > 1 and mark[0] not in ("point", "arrow") and mark[1] in ("us", "them"):
-        return US_HEX if mark[1] == "us" else THEM_HEX
+    """Ring colour of a mark: a player or spot on our side blue, on the other side red, anything else white."""
+    side = (mark[3] if len(mark) > 3 else None) if mark and mark[0] == "point" else         mark[1] if mark and len(mark) > 1 and mark[0] != "arrow" else None
+    if side in ("us", "them"):
+        return US_HEX if side == "us" else THEM_HEX
     return POINT_HEX
 
 
@@ -290,7 +293,7 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
         tops = [feet[m][3] for m in ring_marks if m in feet]
         # over the first ring, above every ringed player's head so the pill never covers one
         x, top = (feet[first][0], min(tops)) if first else (w / 2, h * 0.3)
-        fs = u * 0.04
+        fs = u * 0.046
         pw, ph = text_w(label, fs) + fs * 1.4, fs * 1.6
         x = min(max(x, pw / 2 + u * 0.03), w - pw / 2 - u * 0.03)
         y = max(top - u * 0.05 - ph / 2, h * 0.1 + ph / 2)  # the pill's centre
@@ -310,7 +313,8 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
                    f"\\1a&H22&}}" + rounded(0, 0, pw, ph, ph * 0.28)))
         ev.append((s, stop, "Draw", f"{{\\an5{place(x - pw / 2 + fs * 0.35, y)}\\p1{fad()}\\bord0\\shad0\\1c{colour}}}"
                    + rounded(0, 0, fs * 0.16, ph * 0.56, fs * 0.08)))  # a small strip in the ring's colour
-        ev.append((s, stop, "Mark", f"{{\\an5{place(x + fs * 0.1, y)}{fad()}}}" + label))
+        ev.append((s + (0.1 if animate else 0.0), stop, "Mark",  # the text after its pill, never ahead of it
+                   f"{{\\an5{place(x + fs * 0.1, y)}{fad()}\\fs{round(fs)}}}" + label))
     return ev
 
 
