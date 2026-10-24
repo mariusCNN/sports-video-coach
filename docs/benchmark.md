@@ -290,18 +290,32 @@ sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-
   2026, 4242 and 205159368, scores 1.000 on every task of every seed (`bench score` as an agent would). Like on the
   published suite, it shows the answers are in the stills, not that a model will find them.
 
-First fresh-seed row (frames track, 2026-10-25, seed 205159368 drawn at random by `bench run --seed`, one run):
+Fresh-seed rows (frames track, 2026-10-25, clean room, default effort; each run drew its own random seed with
+`bench run --seed`, one run per model per seed):
 
 | Agent | Model | Total | Above chance | Juggle | Shots | Passes | Rate | Wall | Cost |
 |---|---|---|---|---|---|---|---|---|---|
-| Claude Code 2.1.310 | claude-opus-5-5 | 0.994 | 0.994 | 0.978 | 1.000 | 1.000 | 1.000 | 317 s | $2.32 |
+| Claude Code 2.1.310 | claude-opus-5-5 (seed 205159368) | 0.994 | 0.994 | 0.978 | 1.000 | 1.000 | 1.000 | 317 s | $2.32 |
+| Claude Code 2.1.310 | claude-sonnet-5-5 (seed 956466926) | 0.504 | 0.413 | 0.905 | 0.308 | 0.804 | 0.000 | 19 s | $0.07 |
+| Claude Code 2.1.310 | claude-haiku-5-5 (seed 166697672) | 0.440 | 0.198 | 0.500 | 0.455 | 0.250 | 0.556 | 96 s | $0.06 |
 
 - **Opus nearly holds its published score on a seed drawn at run time.** It counted 44 touches against 45 (it
   said itself the count "could be off by one or two"), called all 11 shots, found the 11 releases within 0.05 s
   and gave a stroke rate of 33.1 against 33.149, in 121 Reads.
-- **One run, one seed.** It proves nothing about what was in any model's training data, and it does not say how
-  often Opus scores 1.0 on a fresh seed. The blind floor on this seed is 0.111 / 0.455 / 0.142 / 0.667 (published:
-  0.106 / 0.500 / 0.167 / 0.551).
+- **Sonnet looked at 4 of 71 sheets and estimated the rest.** It opened one sheet per video and said so:
+  38 touches from a rate scaled over the clip (truth 42), a guessed list of 13 shot outcomes (4 right, below the
+  blind floor of 0.462), the first release at 0.8 s and then an assumed steady 1.8 s spacing (4 of 11 within 0.5 s)
+  and a stroke rate of 28 against 36.388 (23 % off). On the published svc-bench-3 it opened 17 of 69.
+- **Haiku opened 60 of 67 sheets but did not resolve them.** It said the stills were too small to track: 60
+  touches from a rate (truth 40), 11 shot outcomes of which it read one (5 right), 3 pass releases of 12 (the
+  scorer found 4 of the 12 within 0.5 s of them) and a "typical sculling rate" of 30 against 33.333, below that
+  seed's blind floor of 0.639.
+- **One run per model per seed.** These rows show the fixed-suite order (Opus well ahead of Sonnet and Haiku) on
+  three seeds no run had drawn before; they say nothing about what was in any model's training data, and nothing
+  about how much each model's score varies from run to run. The truth is kept out of the prepared folder; it
+  shows in each result file and on the page. Blind floors (juggle / shots / passes / rate): seed 205159368
+  0.111 / 0.455 / 0.142 / 0.667, seed 956466926 0.119 / 0.462 / 0.182 / 0.212, seed 166697672
+  0.125 / 0.273 / 0.153 / 0.639 (published: 0.106 / 0.500 / 0.167 / 0.551).
 
 ## Rules
 

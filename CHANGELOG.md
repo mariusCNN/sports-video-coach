@@ -18,6 +18,8 @@ All notable changes to this project are documented here. The format follows [Kee
   rebuild it from the `seed`. A scored result file and the page do show it, so a published seed is spent. Seeded
   runs get their own board (`svc-bench-3-fresh`) and their own blind floor on the page. A pixel read-back scores
   1.000 on six seeds. Without `--seed` the published suite is unchanged.
+- Benchmark: fresh-seed frames runs for Sonnet 5.5 (seed 956466926: 0.504, 0.413 above chance) and Haiku 5.5
+  (seed 166697672: 0.440, 0.198), one run each, next to Opus 5.5 (0.994) on `svc-bench-3-fresh`.
 - `bench transcript` redacts a transcript or log for publishing (images, home folders, user and host names,
   emails, env dumps, hook output, key-like strings), and `bench run` writes the redacted copy next to the raw one.
   All 20 maintainer runs now link their redacted transcript in `benchmark/transcripts/` (about 2 MB); the page
