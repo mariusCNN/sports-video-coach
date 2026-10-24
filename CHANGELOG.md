@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `bench run --agent openai --track frames --base-url URL --model M [--api-key-env VAR]`: any vision model
+  behind an OpenAI-compatible chat-completions endpoint (Ollama, LM Studio, vLLM, llama.cpp server, OpenRouter)
+  on the frames track, with no agent CLI: one request per task with that task's contact sheets, the answer read
+  from the reply's json block, a transcript without image bytes, the key only from an environment variable. The
+  code track is refused. See `docs/benchmark.md`, "Any vision model behind an OpenAI-compatible API".
 - The benchmark page in Simplified Chinese at `/benchmark/zh/` (`bench page` writes `zh/index.html` next to
   `index.html`): the same rows and numbers from the same result files, a language switch and hreflang links both
   ways, and the zh URL in the demo site's sitemap. README.zh.md links it.

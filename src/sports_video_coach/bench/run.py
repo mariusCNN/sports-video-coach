@@ -352,6 +352,15 @@ def final_text(transcript: Path, agent: str) -> str:
     return final
 
 
+def last_json_block(text: str):
+    """The parsed last ```json block of a reply (None when there is none or it does not parse)."""
+    blocks = re.findall(FENCE + r"json[ \t]*\r?\n(.*?)" + FENCE, text, re.S)
+    try:
+        return json.loads(blocks[-1]) if blocks else None
+    except ValueError:
+        return None
+
+
 def answers_from_reply(out: Path, text: str, suite: str, track: str, seed: int | None = None) -> bool:
     """Save the last json block of the agent's reply as <out>/answers.json when the agent left that file empty
     (an agent with no file-writing tool ends with it, as TASKS.md asks). True if it was saved."""
@@ -360,11 +369,7 @@ def answers_from_reply(out: Path, text: str, suite: str, track: str, seed: int |
             return False
     except (OSError, ValueError, SystemExit):
         pass
-    blocks = re.findall(FENCE + r"json[ \t]*\r?\n(.*?)" + FENCE, text, re.S)
-    try:
-        data = json.loads(blocks[-1]) if blocks else None
-    except ValueError:
-        return False
+    data = last_json_block(text)
     answers = data.get("answers", data) if isinstance(data, dict) else None
     if not isinstance(answers, dict):
         return False
@@ -475,11 +480,12 @@ def main(argv=None) -> int:
                          "only: the transcript shows every command it ran)")
     from . import add_seed, pick_seed
     add_seed(ap)
-    ap.add_argument("--agent", required=True, choices=["claude", "codex", *PRESETS, "cmd"],
+    ap.add_argument("--agent", required=True, choices=["claude", "codex", *PRESETS, "cmd", "openai"],
                     help="claude (Claude Code), codex (Codex CLI), a preset for another CLI (" +
                          ", ".join(f"{k}: {p.name}" for k, p in PRESETS.items()) + "; built from each CLI's docs "
-                         "and NOT run by the maintainer, so untested against the real CLI; code track only), or "
-                         "cmd (any other CLI, with --cmd)")
+                         "and NOT run by the maintainer, so untested against the real CLI; code track only), "
+                         "cmd (any other CLI, with --cmd), or openai (any vision model behind an OpenAI-compatible "
+                         "chat-completions endpoint, with --base-url and --model; frames track only)")
     ap.add_argument("--model", default="", help="passed to the agent CLI as --model (and {model} in --cmd)")
     ap.add_argument("--cmd", default="",
                     help='for --agent cmd: the command line, with {prompt} (the prompt text) or {prompt_file} '
@@ -497,20 +503,49 @@ def main(argv=None) -> int:
                     help="run Claude Code with your own agent config (CLAUDE.md, skills, plugins, hooks, MCP "
                          "servers, user settings). Default: clean room, none of it; the result's settings say which. "
                          "Codex always runs with your own config (~/.codex), so this changes nothing for it")
+    api = ap.add_argument_group("--agent openai (any vision model behind an OpenAI-compatible endpoint)")
+    api.add_argument("--base-url", default="",
+                     help="the API base, e.g. http://localhost:11434/v1 (Ollama); requests go to <base>/chat/completions")
+    api.add_argument("--api-key-env", default="", metavar="VAR",
+                     help="the environment variable holding the API key (none for a local server); the key is "
+                          "never written to any file")
+    api.add_argument("--temperature", type=float, default=0.0, help="sampling temperature (0)")
+    api.add_argument("--max-tokens", type=int, default=4096, help="max_tokens per reply (4096)")
+    api.add_argument("--image-max-side", type=int, default=0, metavar="PX",
+                     help="scale each contact sheet down to at most PX on its longer side (default: as drawn, "
+                          "1280 x 820), for a model with a small context")
     ap.add_argument("--dry-run", action="store_true", help="print the command it would run; run nothing")
     a = ap.parse_args(argv)
     if a.timeout <= 0:
         ap.error("--timeout must be positive")
     if a.agent != "cmd" and a.cmd:
         ap.error("--cmd is only for --agent cmd")
+    key = ""
+    if a.agent == "openai":
+        if a.track == F.TRACK:
+            ap.error("--agent openai runs the frames track only: a model behind an API has no tools, so it cannot "
+                     "run code or watch a video. Add --track frames")
+        if not a.base_url.strip() or not a.model.strip():
+            ap.error("--agent openai needs --base-url and --model (e.g. --base-url http://localhost:11434/v1 "
+                     "--model qwen3-vl:4b)")
+        if a.api_key_env:
+            key = os.environ.get(a.api_key_env, "")
+            if not key:
+                ap.error(f"--api-key-env: the environment variable {a.api_key_env} is not set")
+    elif a.base_url or a.api_key_env:
+        ap.error("--base-url and --api-key-env are only for --agent openai")
     seed = pick_seed(ap, a)
     fresh = "" if seed is None else f" from fresh seed {seed}"
 
     out = (a.out or default_out(a.name or a.agent, a.model)).resolve()
     text = prompt(a.suite, a.track, a.agent)
     prompt_file = out / "PROMPT.txt"
-    argv_ = command(a.agent, text, prompt_file, a.model, a.cmd, a.track, a.use_my_config)
-    if a.agent == "cmd":
+    argv_ = [] if a.agent == "openai" else command(a.agent, text, prompt_file, a.model, a.cmd, a.track,
+                                                    a.use_my_config)
+    if a.agent == "openai":
+        room = ("no agent CLI: this tool sends one request per task (the task's contact sheets and its section of "
+                "TASKS.md) and reads the answer from the reply; the model has no tools")
+    elif a.agent == "cmd":
         room = "custom command: it runs as given, so keeping your own agent config out is up to you"
     elif a.agent in PRESETS:
         p = PRESETS[a.agent]
@@ -525,7 +560,14 @@ def main(argv=None) -> int:
         room = "your own agent config is loaded (--use-my-config)"
     else:
         room = "clean room: no user agent config"
-    transcript = out / ("transcript.jsonl" if a.agent == "claude" else "transcript.txt")
+    transcript = out / ("transcript.jsonl" if a.agent in ("claude", "openai") else "transcript.txt")
+    if a.dry_run and a.agent == "openai":
+        print(f"suite {a.suite}{fresh}, track {a.track}, folder {out}, timeout {a.timeout:g} s; {room}")
+        print(f"POST {a.base_url.rstrip('/')}/chat/completions  model {a.model}, temperature {a.temperature:g}, "
+              f"max_tokens {a.max_tokens}, one request per task with its contact sheets"
+              + (f" (at most {a.image_max_side} px)" if a.image_max_side else "")
+              + (f", key from ${a.api_key_env}" if a.api_key_env else ", no key"))
+        return 0
     if a.dry_run:
         print(f"suite {a.suite}{fresh}, track {a.track}, folder {out}, timeout {a.timeout:g} s, "
               f"{'prompt on stdin, then closed' if IMAGES_ARG in argv_ else 'stdin closed'}; "
@@ -537,8 +579,11 @@ def main(argv=None) -> int:
         return 0
     if out.exists() and any(out.iterdir()):
         raise SystemExit(f"{out} is not empty; pick a new --out")
-    exe = resolve(argv_)
+    from . import api as A
+    server = A.server_info(a.base_url, a.model) if a.agent == "openai" else {}
+    exe = resolve(argv_) if argv_ else []
     name = a.name or AGENTS.get(a.agent) or (PRESETS[a.agent].name if a.agent in PRESETS else
+                                             server.get("server", A.NAME) if a.agent == "openai" else
                                              Path(argv_[0]).stem)
 
     what = "videos" if a.track == F.TRACK else "videos as stills"
@@ -549,9 +594,17 @@ def main(argv=None) -> int:
     if on_stdin:
         text = codex_frames_prompt(out, a.suite, seed)
         exe = with_images(exe, out, a.suite, seed)
-    media.write_text_atomic(prompt_file, text + "\n")
+    if a.agent != "openai":      # its per-task prompts are in the transcript, as sent
+        media.write_text_atomic(prompt_file, text + "\n")
     print(f"running {name} (timeout {a.timeout:g} s; {room}) ...", flush=True)
-    if on_stdin:
+    if a.agent == "openai":
+        t0 = time.monotonic()
+        info = A.run(out, a.suite, seed, a.base_url, a.model, key, a.timeout, a.temperature, a.max_tokens,
+                     a.image_max_side, transcript)
+        wall = round(time.monotonic() - t0, 1)
+        code = None if info["timed_out"] else 0
+        print(f"{info['requests']} requests, {info['failed_requests']} failed")
+    elif on_stdin:
         code, wall = execute(exe, out, transcript, None, a.timeout, agent_env(), stdin=prompt_file)
     else:
         code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env())
@@ -568,9 +621,12 @@ def main(argv=None) -> int:
              else codex_stats(transcript if on_stdin else out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
     settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats)
-    if a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track, seed):
+    if a.agent == "openai":       # how the model was asked is always recorded; --settings adds to it
+        settings = "; ".join(x for x in (A.settings(info, server, a.temperature, a.max_tokens, a.image_max_side),
+                                         a.settings.strip()) if x)
+    elif a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track, seed):
         print("answers.json: saved from the json block at the end of the agent's reply")
-    version = stats.get("version") or ("" if a.agent == "cmd" else
+    version = stats.get("version") or server.get("version") or ("" if a.agent in ("cmd", "openai") else
                                        agent_version(exe[0], PRESETS[a.agent].version[1:]) if a.agent in PRESETS
                                        else agent_version(exe[0]))
     try:
@@ -584,6 +640,10 @@ def main(argv=None) -> int:
     res["cost_usd"] = stats.get("cost_usd")
     run_info = {"exit_code": code, "timed_out": code is None, "timeout_seconds": a.timeout,
                 **(codex_commands(transcript) if on_stdin else {})}
+    if a.agent == "openai":
+        run_info = {"timed_out": info["timed_out"], "timeout_seconds": a.timeout, "endpoint": info["endpoint"],
+                    "requests": info["requests"], "failed_requests": info["failed_requests"],
+                    "images_per_request": info["images"], **({"server": server} if server else {})}
     media.write_json_atomic(out / "run.json", run_info)
     dest = out / S.default_path(res).name
     media.write_json_atomic(dest, res)

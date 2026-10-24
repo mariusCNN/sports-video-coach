@@ -378,6 +378,7 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 | `--agent codex` | Codex CLI: `codex exec --skip-git-repo-check -s workspace-write`, with your own Codex config (not isolated, see below) |
 | `--agent <preset>` (`gemini`, `qwen`, `aider`, `opencode`, `cursor`, `copilot`, `goose`) | A preset for another agent CLI, built from its docs but **not run by the maintainer** (table below); code track only |
 | `--agent cmd --cmd "..."` | Any other CLI. `{prompt}` becomes the prompt text, `{prompt_file}` a file holding it, `{model}` the model. It runs as given: keeping your own agent config out is up to you. |
+| `--agent openai --base-url URL --model M` | Any vision model behind an OpenAI-compatible chat-completions endpoint (Ollama, LM Studio, vLLM, llama.cpp server, OpenRouter, ...); frames track only, see [below](#any-vision-model-behind-an-openai-compatible-api) |
 | `--use-my-config` | Run Claude Code with your own agent config instead of the clean room (see below); `settings` then says so. Codex always runs with yours. |
 | `--model M` | Passed to the agent as `--model M` |
 | `--suite` | `svc-bench-1` (default), `svc-bench-2` or `svc-bench-3` |
@@ -463,6 +464,45 @@ sports-video-coach bench run --agent cmd --name "My agent" --cmd "my-agent --yes
 - A missing or broken `answers.json` scores 0; the run still writes a result file.
 - Then submit the file as below. Running in a clone? Copy it to `benchmark/results/` for a pull request.
 - Ran the steps by hand (`bench prepare`, your agent, `bench score`)? `bench score` prints the same issue form link.
+
+## Any vision model behind an OpenAI-compatible API
+
+A plain vision model has no tools, so it can only run the frames track. `--agent openai` makes `bench run` itself
+the runner: it sends the model the stills and reads the answers from its reply. It works with anything that serves
+`POST <base>/chat/completions` with image inputs: Ollama, LM Studio, vLLM, llama.cpp server, OpenRouter and the
+like. A local model costs nothing to run.
+
+With [Ollama](https://ollama.com) (no account needed):
+
+```bash
+ollama pull qwen3-vl:4b-instruct-q4_K_M
+sports-video-coach bench run --agent openai --track frames --suite svc-bench-3 \
+  --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M
+```
+
+A hosted API takes its key from an environment variable you name, e.g. `--base-url https://openrouter.ai/api/v1
+--api-key-env OPENROUTER_API_KEY`. The key goes only into the `Authorization` header and is never written to any
+file.
+
+- **One request per task.** Each request holds the frames-track rules, that task's section of `TASKS.md` and that
+  task's contact sheets (11 to 27 on `svc-bench-3`) as base64 JPEGs. Small local models have small contexts, so the
+  tasks are not sent together. The full-size stills and the truth are never sent; the truth is not in the prepared
+  folder at all.
+- **The answer** is the last ```` ```json ```` block of each reply (`{"<task id>": answer}`). A reply without one,
+  or a failed request, leaves that task `null` (it scores 0); `run.json` counts requests and failures.
+- **Options:** `--temperature` (0), `--max-tokens` (4096), `--image-max-side PX` (scale the sheets down first;
+  default as drawn, 1280 x 820), `--timeout` (for the whole run; a task not sent by then stays `null`).
+- **Context.** Ollama scales every image itself (a sheet costs about 1,070 prompt tokens with qwen3-vl) and loads a
+  model with a 4096-token context by default, too small for 27 sheets. Start the server with a bigger one, e.g.
+  `OLLAMA_CONTEXT_LENGTH=32768 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KV_CACHE_TYPE=q8_0 ollama serve`, and say so with
+  `--settings`.
+- **What the result records.** `settings` always says how the model was asked: the endpoint kind, the number of
+  requests and images per request, the image size, temperature and max_tokens; anything in `--settings` is added
+  after it. An Ollama server also names itself: the agent is `Ollama` with its version, and the weights'
+  quantization and size (from `/api/show`) go into `settings`. Any other server shows as `OpenAI-compatible API`;
+  use `--name` for a better label.
+- **Transcript.** `transcript.jsonl` holds every request without its image bytes (file name, byte size and pixel
+  size of each image instead) and every reply text; `transcript.redacted.jsonl` is the copy to publish.
 
 ## Submit your run
 
