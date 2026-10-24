@@ -23,17 +23,17 @@ Us = {us_colour} {us_team} (home/away). Them = {them_colour} {them_team}. Times 
 <One or two short sentences: the cause, then what worked.>
 :::
 
+::: do This week
+1. <The first rule from section 4, as an order.>
+2. <The second.>
+3. <The third.>
+:::
+
 ::: keys
 - **9–21** first half
 - **22–4** their run, 07:30–21:12
 - **10–2** free throws made
 - **8** fast breaks against us (17 of their 38)
-:::
-
-::: do This week
-1. <The first rule from section 4, as an order.>
-2. <The second.>
-3. <The third.>
 :::
 
 ![momentum](momentum.en.png)        (README.md: momentum.png, rendered with --lang zh)
@@ -49,8 +49,9 @@ The page turns these blocks into the first screen: `verdict` is the headline sen
 (the bold number first, a short label after it; 3-6 tiles, each a number the report proves later), `do` is the
 yellow "what to do" box, `note` is small print. Two more blocks work anywhere: `::: more <summary line>` folds
 long evidence (a full scoring table, the play-by-play of a run) behind one line, and `> **Rule:** …` (a
-blockquote) marks the one rule of a section. Keep the first screen to verdict, keys, the three orders and the
-chart; everything else is below section 1.
+blockquote) marks the one rule of a section. Keep the order verdict, orders, keys: the score board already fills
+half a phone screen, so the verdict and the three orders must fit under it (verdict two short sentences, each
+order one line). Everything else is below section 1.
 
 ```
 

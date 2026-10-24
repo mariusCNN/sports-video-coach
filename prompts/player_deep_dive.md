@@ -20,16 +20,16 @@ For #N only. Times are video times (mm:ss); "likely" means the jersey was unclea
 <Where you were during the decisive run and the comeback, with the on-court score.>
 :::
 
-::: keys
-- **8** points (official)
-- **+10** with you on
-- **2** turnovers
-:::
-
 ::: do Next game
 1. <Call one, 2-6 words> <when to use it>
 2. <Call two>
 3. <Call three>
+:::
+
+::: keys
+- **8** points (official)
+- **+10** with you on
+- **2** turnovers
 :::
 
 ::: more The full line
@@ -71,7 +71,8 @@ Data note: <what the official sheet does and does not record; which official eve
 ```
 
 The blocks (`verdict`, `keys`, `do`, `more`, `note`) are described in `prompts/coach_report.md`; the first screen is
-the verdict, three or four stat tiles and the three calls.
+the verdict and the three calls, with three or four stat tiles under them. Keep the verdict to two short
+sentences and each call to one line, so both fit under the score board on a phone.
 
 ## Writing rules
 

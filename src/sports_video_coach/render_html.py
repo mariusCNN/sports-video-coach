@@ -544,13 +544,13 @@ html[lang|="zh"] .bar h1 {{ font: 500 .92rem/1.4 var(--body); letter-spacing: 0;
   /* the centre circle and the half-court line, drawn faintly behind the score */
   background-image: radial-gradient(circle at 50% 100%, transparent 0 7.5rem, rgba(255,255,255,.07) 7.5rem calc(7.5rem + 2px), transparent calc(7.5rem + 2px)),
     linear-gradient(to top, rgba(255,255,255,.07) 0 2px, transparent 2px); }}
-.board-inner {{ max-width: 72rem; margin: 0 auto; padding: .5rem var(--gap) 2.25rem; }}
+.board-inner {{ max-width: 72rem; margin: 0 auto; padding: .5rem var(--gap) 1.5rem; }}
 .lang {{ display: inline-flex; border: 1px solid #4a4d6b; border-radius: 999px; padding: 2px; flex: none; }}
 .lang button {{ font: 600 .95rem/1 var(--display); letter-spacing: .03em; color: var(--band-text); background: none; border: 0;
   border-radius: 999px; padding: .45rem .9rem; cursor: pointer; }}
 .lang button[aria-pressed="true"] {{ background: #fff; color: var(--ink); }}
 button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible {{ outline: 3px solid var(--marker); outline-offset: 2px; }}
-.score {{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 1rem; margin-top: 1.75rem; }}
+.score {{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 1rem; margin-top: 1.1rem; }}
 .team {{ display: flex; flex-direction: column; gap: .2rem; min-width: 0; }}
 .team.them {{ text-align: right; }}
 .team .name {{ font: 700 clamp(1.15rem, 2.8vw, 1.75rem)/1.05 var(--display); letter-spacing: .01em; overflow-wrap: anywhere; }}
@@ -559,10 +559,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .team.them .name {{ color: var(--them-light); }}
 .score[data-result="plain"] {{ grid-template-columns: 1fr; }}
 .score[data-result="plain"] .name {{ color: #fff; font-size: clamp(1.6rem, 5vw, 2.6rem); }}
-.pts {{ font: 700 clamp(4.2rem, 15vw, 9rem)/.82 var(--display); font-variant-numeric: tabular-nums; display: flex; gap: .3em; letter-spacing: -.01em; }}
+.pts {{ font: 700 clamp(4rem, 14vw, 7.5rem)/.82 var(--display); font-variant-numeric: tabular-nums; display: flex; gap: .3em; letter-spacing: -.01em; }}
 .pts .dash {{ color: #4a4d6b; font-weight: 500; }}
 .pts .lose {{ color: #7f8299; }}
-.halves {{ display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }}
+.halves {{ display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }}
 .halves span {{ font: 500 .85rem/1 var(--display); letter-spacing: .04em; color: var(--band-text); border: 1px solid #383b58; border-radius: 4px; padding: .45rem .7rem; }}
 .halves b {{ font: 700 1.1rem/1 var(--display); color: #fff; margin-left: .45rem; font-variant-numeric: tabular-nums; }}
 
@@ -577,7 +577,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .play.big.playing {{ background: #fff; }}
 .play.mini {{ width: 2.1rem; height: 2.1rem; background: var(--marker); color: var(--ink); }}
 .play.mini svg {{ width: 1.1rem; height: 1.1rem; }}
-.listen {{ display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; max-width: 36rem; margin: 1.75rem auto 0; padding: .9rem 1.1rem;
+.listen {{ display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; max-width: 36rem; margin: 1.1rem auto 0; padding: .75rem 1rem;
   border: 1px solid #383b58; border-radius: 6px; background: rgba(255,255,255,.04); }}
 .listen-body {{ flex: 1; min-width: 0; }}
 .listen-label b {{ display: block; font: 700 1.2rem/1.2 var(--display); letter-spacing: .02em; }}
@@ -632,13 +632,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .block > :last-child {{ margin-bottom: 0; }}
 .block-title {{ font: 700 1rem/1.3 var(--display); letter-spacing: .04em; color: var(--muted); margin: 0 0 .5rem; }}
 [lang|="zh"] .block-title {{ font: 700 .9rem/1.4 var(--body); letter-spacing: .02em; }}
-.block.verdict {{ margin: 1.25rem 0 1.75rem; }}
+.block.verdict {{ margin: 1rem 0 1.25rem; }}
 .block.verdict p {{ font: 600 clamp(1.2rem, 2.8vw, 1.5rem)/1.5 var(--head-cjk); max-width: 40rem; }}
 .block.verdict p + p {{ font: 400 1rem/1.75 var(--body); color: var(--ink-soft); }}
 .block.keys ul {{ list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 1px;
   background: var(--rule); border: 1px solid var(--rule); }}
-.block.keys li {{ margin: 0; padding: .8rem .9rem .9rem; background: var(--sheet); font-size: .88rem; line-height: 1.45; color: var(--ink-soft); max-width: none; }}
-.block.keys li strong:first-child {{ display: block; font: 700 2.1rem/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; margin-bottom: .35rem; }}
+.block.keys li {{ margin: 0; padding: .6rem .75rem .7rem; background: var(--sheet); font-size: .86rem; line-height: 1.45; color: var(--ink-soft); max-width: none; }}
+.block.keys li strong:first-child {{ display: block; font: 700 1.8rem/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; margin-bottom: .35rem; }}
 .block.do, .report blockquote {{ margin: 1.5rem 0; padding: 1rem 1.15rem; background: var(--marker-wash); border-left: 6px solid var(--marker); border-radius: 0 4px 4px 0; }}
 .block.do .block-title {{ color: var(--ink); }}
 .block.do ol, .block.do ul {{ margin: .25rem 0; }}
@@ -688,10 +688,14 @@ td:first-child {{ white-space: nowrap; font-weight: 600; }}
   body {{ font-size: 16px; }}
   html[lang|="zh"] body {{ font-size: 15px; }}
   .figure img {{ width: 760px; max-width: none; }}  /* chart text stays readable; swipe sideways */
-  .listen {{ gap: .8rem; padding: .8rem; }}
+  .listen {{ gap: .8rem; padding: .7rem; margin-top: .9rem; }}
+  .board-inner {{ padding-bottom: 1.1rem; }}
+  .score {{ margin-top: .75rem; }}
+  .halves {{ margin-top: .6rem; }}
   .play.big {{ width: 3.6rem; height: 3.6rem; }}
-  .block.keys ul {{ grid-template-columns: 1fr 1fr; }}
-  .block.keys li strong:first-child {{ font-size: 1.75rem; }}
+  .block.keys ul {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }}
+  .block.keys li {{ padding: .5rem .55rem .6rem; font-size: .78rem; line-height: 1.35; }}
+  .block.keys li strong:first-child {{ font-size: 1.45rem; margin-bottom: .25rem; }}
   .report h2 {{ margin-top: 3rem; }}
   .clip-bar {{ flex-wrap: wrap; }}
 }}
