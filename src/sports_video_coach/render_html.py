@@ -169,7 +169,7 @@ class PageHooks:
     ui: dict[str, dict[str, str]] = field(default_factory=dict)  # labels per language, merged over UI
     board: Callable[[Path], dict] | None = None   # folder -> band data; its "colours" {"us"|"them": (main, light)}
     band: Callable[[dict, Callable[[str], str]], str] | None = None  # (band data, lab) -> top band HTML
-    before: Callable[[Path, dict, list], str] | None = None  # (folder, band data, langs) -> HTML above the report
+    before: Callable[[Path, dict, list], str] | None = None  # (folder, band data, [one lang]) -> HTML in that report, before its first section
     # (folder, lang, embed, number of its first h2) -> (HTML, h2 titles, page assets added once) after the report
     sections: Callable[[Path, str, bool, int], tuple[str, list[str], str]] | None = None
     # report folder -> files the hooks above read (a plugin stage's json): the run's html step re-renders the page

@@ -15,27 +15,50 @@ Keep the headings and order. The HTML page uses the H1 as page title and turns e
 ```
 # Coach's review: {us_team} {us_score}–{them_score} {them_team} ({date})
 
-Us = {us_colour} {us_team} (home/away). Them = {them_colour} {them_team}. All times are **video time** (full video mm:ss), not the game clock.
+Us = {us_colour} {us_team} (home/away). Them = {them_colour} {them_team}. Times are video time (mm:ss).
 
-**In one sentence: <where the game was won or lost, the biggest cause in numbers, and what worked>.**
+::: verdict
+<Where the game was won or lost, in one sentence with its number.>
 
-| Score (us–them) | First half a–b · Second half c–d · Final **x–y** |
-|---|---|
-| Free-throw points | ... |
-| Fouls | ... |
-| Threes made | ... |
+<One or two short sentences: the cause, then what worked.>
+:::
+
+::: keys
+- **9–21** first half
+- **22–4** their run, 07:30–21:12
+- **10–2** free throws made
+- **8** fast breaks against us (17 of their 38)
+:::
+
+::: do This week
+1. <The first rule from section 4, as an order.>
+2. <The second.>
+3. <The third.>
+:::
 
 ![momentum](momentum.en.png)        (README.md: momentum.png, rendered with --lang zh)
 
-**Four Factors** (the page shows the full table above the report; quote the line, do not rebuild the table): one sentence from `summary.json` `all.four_factors.decided.text` with its numbers (eFG%, TOV% live/dead, ORB%, FT rate = FTM/FGA, from `all.four_factors.us|them`), plus the points per trip that explain it from `all.ppp` (transition / half_court / second_chance / after_live_turnover). When `decided.status` is "unclear", say the deciding factor is unclear and why; never pick one yourself.
+<One sentence on the Four Factors from `summary.json` `all.four_factors.decided.text`, with its numbers (eFG%, TOV% live/dead, ORB%, FT rate = FTM/FGA, from `all.four_factors.us|them`) and the points per trip that explain it from `all.ppp`. When `decided.status` is "unclear", say so and why; never pick one yourself. The page draws the Four Factors bars right after this, before section 1.>
 
-Sources: **official** = <league feed, what it records>; **film** = review of N possessions and M trips. <What is estimated; jersey-reading accuracy; what "likely" means.>
+::: note
+Sources: official = <league feed, what it records>; film = review of N possessions and M trips. <What is estimated; jersey-reading accuracy; what "likely" means.>
+:::
+```
+
+The page turns these blocks into the first screen: `verdict` is the headline sentence, `keys` become stat tiles
+(the bold number first, a short label after it; 3-6 tiles, each a number the report proves later), `do` is the
+yellow "what to do" box, `note` is small print. Two more blocks work anywhere: `::: more <summary line>` folds
+long evidence (a full scoring table, the play-by-play of a run) behind one line, and `> **Rule:** …` (a
+blockquote) marks the one rule of a section. Keep the first screen to verdict, keys, the three orders and the
+chart; everything else is below section 1.
+
+```
 
 ---
 
 ## 1. Game flow and momentum
 - Table of 3-5 stretches: label, video time, score in the stretch, what happened.
-- The decisive run, point by point: table of every opposing score in it (official time, score, how we gave it up, type), then totals by type.
+- The decisive run, point by point: totals by type first (one line each), then the table of every opposing score in it (official time, score, how we gave it up, type) inside `::: more`.
 - Our offence in the same stretch, in counts (possessions, points, ball screens, ball stops, isolations, transition trips and points; `<stretch>.four_factors` and `<stretch>.ppp` give the stretch's Four Factors and points per trip from the film alone).
 - Check the team's own theory (e.g. "it was the substitutions") against the film and say plainly whether it holds.
 - Comparison table: the bad stretch vs the good stretch, 3-5 rows.
@@ -103,7 +126,22 @@ Skip plays the film does not show clearly (camera off the ball, players hidden),
 9. Tables at most 4-5 columns so they fit a phone. Images by relative file name next to the README. Clip markers go on their own line below a table, never inside a cell.
 10. No local paths and no links into the repo or the workspace.
 11. **Both languages, each a complete file**: `README.md` in Chinese and `README.en.md` in English (the HTML page currently reads exactly these two). Same facts, numbers, times and section order; write each naturally in its language rather than translating word for word. Headings carry the same section numbers in every language.
-12. Length: roughly 2,500-3,500 words per language. Cut prose before cutting evidence.
+12. Length: roughly 2,000-3,000 words per language. Cut prose before cutting evidence; fold long tables with `::: more`.
+
+## Voice: an analyst writing for the head coach
+
+Write it the way a team's video coordinator hands the head coach a post-game report: label, number, order.
+Short lines a coach can read between two possessions.
+
+- Number first, then what it means, then the order: "Fast breaks against us: 8, for 17 of their 38. Sprint back
+  before you look at the ball." / "快攻被打 8 次，丢 17 分（全场 38）。投完先跑回来，再看球。"
+- A number needs its baseline or sample: "4 of 11", "in 39 trips", "vs 21–17 after the break".
+- Imperatives for fixes, one action each. No "we should consider", no "it is important to".
+- Name the play the way players say it: help foul, leak-out, outlet, box-out, 回防、协防、卡位、出球.
+- No not-X-but-Y lines, no "notably", "it's worth noting", "overall", no self-asked questions, no closing
+  morals, no hype words, no triads for rhythm, few dashes. `sports-video-coach humanize <folder>` flags these;
+  the run waits on it. `sports-video-coach guide humanize` has the before/after tables.
+- Chinese: 中文与数字之间留空格（"投 5 中 2"），全角标点，不用斜体；短句，一句一个动作。
 
 ## Before you finish
 

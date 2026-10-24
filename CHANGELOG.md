@@ -31,6 +31,9 @@ All notable changes to this project are documented here. The format follows [Kee
   frames-only track (Opus 5.5, Codex, two Sonnet 5.5 runs), each one real run.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
+- Report blocks for the page: `::: verdict`, `::: keys` (stat tiles), `::: do` (what to do), `::: note` and
+  `::: more <summary>` (a fold), each closed by `:::`. The report guides use them for the first screen: the
+  verdict, three to six key numbers and this week's orders.
 
 ### Fixed
 - A plugin's page re-renders when a file its page hooks read changes (declare them in `PageHooks.inputs`); before,
@@ -85,6 +88,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The report page has a new look, closer to a pro team's post-game film-room report: a navy score band with
+  condensed numerals, a reading column with numbered sections, play cards for the clips, tables with rules
+  instead of boxes and a yellow marker for what to do. Headings use Barlow Condensed (Latin) and Noto Serif SC
+  (Chinese) from Google Fonts with `no-referrer`, so a private page's address is not sent along.
+- Basketball: the Four Factors sit inside each report, after the opening lines and before section 1, as us/them
+  bars; possessions and points per trip moved into a fold. A plugin's `before` hook is now called once per
+  language and its HTML goes inside that report.
+- The report guides ask for an analyst's voice: number first, its baseline, then the order; no stock AI phrasing
+  (checked by `sports-video-coach humanize`).
 - The page's language switch names every language in its own words (English, Español, Français, Deutsch,
   Português, beside 中文, 日本語, 한국어), not a mix of names and codes (EN).
 
