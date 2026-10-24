@@ -24,6 +24,7 @@ from pathlib import Path
 from . import card as share_card
 from . import clip as share_clip
 from . import count as count_it
+from . import effort as effort_chart
 from . import run as bench_run
 from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task, suite_tasks
 
@@ -208,6 +209,24 @@ ZH = {
         "我数了 {n} 次。真实值：{truth}。模型（只看静帧）：{models}。你也来数：{url}",
     "I counted {n} touches. Truth: {truth}. Models: {models}. Count it yourself: {url}":
         "我数了 {n} 次。真实值：{truth}。模型：{models}。你也来数：{url}",
+    # what effort changed (bench.effort: the section and its chart)
+    "What effort changed": "effort 改变了什么", ": ": "：",
+    effort_chart.TITLE: "同一模型、不同 effort：没见过的种子上的得分",
+    effort_chart.SUB: "{} 新种子 · 静帧赛道（只看静帧，不跑代码）· {}",
+    effort_chart.FLOOR: "平均超出盲猜：0 = 同一种子上的盲猜（没看视频），1 = 满分。n = 每根柱子的运行次数。",
+    effort_chart.LEAD: "同一个模型，同一类题（每次运行都用新种子重新生成 svc-bench-3，只看静帧用眼睛判断）；只改了 effort "
+                       "设置。平均超出盲猜：",
+    effort_chart.BOUND: "除非标了 n，每个设置只跑了一次，各用自己的种子：这是测出来的差别，不是方差估计。默认 = 没加 effort "
+                        "参数（用 CLI 自己的默认值）。每次运行都在下面的榜上有一行。",
+    effort_chart.ALT: "柱状图：各 effort 设置的平均超出盲猜分。{}",
+    "No contender ran at two effort settings yet.": "还没有参赛者在两种 effort 设置下都跑过。",
+    "default effort": "默认 effort", "effort {}": "effort {}",
+    "1 run": "1 次运行", "{} runs": "{} 次运行", "; {} gave no answer": "；{} 次没有回答", "{} no answer": "{} 次没回答",
+    "{}: no answer, killed at the {} s time limit, scored 0 ({})": "{}：没有回答，到 {} s 时限被终止，记 0 分（{}）",
+    "{}: no answer, scored 0 ({})": "{}：没有回答，记 0 分（{}）",
+    "{}: {} ({}, {} s)": "{}：{}（{}，{} s）",
+    "{}: {} mean, range {}–{} ({}, {} s per run{})": "{}：平均 {}，范围 {}–{}（{}，每次 {} s{}）",
+    "no answer, timed out at {} s": "没有回答，{} s 超时", "no answer": "没有回答", "{} s/run": "每次 {} s",
 }
 
 
@@ -750,9 +769,9 @@ def fails_section(rows: list[dict], suite: str, lang: str = "en") -> str:
             f'{"".join(parts)}</details>')
 
 
-def boards(rows: list[dict], prefix: str = "", lang: str = "en") -> str:
+def boards(rows: list[dict], prefix: str = "", lang: str = "en", after: dict[str, str] | None = None) -> str:
     """One leaderboard table per suite, in SUITES order (a suite with no runs says so); `prefix` keeps the anchors
-    of a second track's tables apart."""
+    of a second track's tables apart; `after` maps a suite name to HTML shown under its description."""
     known = [n for n, _ in SUITES]
     names = known + sorted({suite_of(r) for r in rows if not is_baseline(r)} - set(known))
     ran = {suite_of(r) for r in rows if not is_baseline(r)}
@@ -768,7 +787,8 @@ def boards(rows: list[dict], prefix: str = "", lang: str = "en") -> str:
         sat = (t(" Saturated on this track: all {} runs scored 1.0, so it ranks nobody.", lang).format(len(mine))
                if len(mine) > 1 and all(float(r["total"]) == 1 for r in mine) else "")
         desc = f"<p>{esc((t(what[n], lang) if n in what else '') + sat)}</p>" if n in what or sat else ""
-        out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
+        extra = (after or {}).get(n, "")
+        out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{extra}{body}')
     return "\n".join(out)
 
 
@@ -778,10 +798,37 @@ def empty(lang: str = "en") -> str:
             "</p></div>")
 
 
-def frames_board(rows: list[dict], lang: str = "en") -> str:
-    """The frames-only track's section: its own tables, or a line saying it has no runs yet."""
+def effort_block(rows: list[dict], drawn=(), lang: str = "en") -> str:
+    """"What effort changed" (`bench.effort`), shown on the fresh-seed frames board: the chart (when drawn: the
+    page's language, else English), a line per contender from the same data and the bounds of what it measured
+    ('' when no contender ran at two effort settings)."""
+    data = effort_chart.effort_data(rows)
+    if not data["groups"]:
+        return ""
+    said = effort_chart.lines(data, lang)
+    img = ""
+    shown = lang if lang in drawn else "en" if "en" in drawn else ""
+    if shown:
+        up = "" if lang == "en" else "../"
+        alt = t(effort_chart.ALT, lang).format(" ".join(said))
+        w, h = effort_chart.SIZE
+        img = (f'<figure style="margin:.6rem 0"><a href="{up}{effort_chart.NAMES[shown]}"><img '
+               f'src="{up}{effort_chart.NAMES[shown]}" alt="{esc(alt)}" width="{w}" height="{h}" loading="lazy" '
+               f'style="display:block;width:100%;max-width:{w}px;height:auto;border-radius:10px"></a></figure>')
+    items = "".join(f'<li><strong>{esc(g["label"])} · {esc(g["agent"])}</strong><ul>'
+                    + "".join(f"<li>{esc(effort_chart.phrase(b, lang))}</li>" for b in g["bars"]) + "</ul></li>"
+                    for g in data["groups"])
+    return (f'<h4 id="{effort_chart.ANCHOR}">{t("What effort changed", lang)}</h4>{img}'
+            f'<p>{esc(t(effort_chart.LEAD, lang))}</p><ul class="plain">{items}</ul>'
+            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">{esc(t(effort_chart.BOUND, lang))}</p>')
+
+
+def frames_board(rows: list[dict], lang: str = "en", effort=()) -> str:
+    """The frames-only track's section: its own tables (the fresh-seed board with "What effort changed", the chart
+    shown for the languages in `effort`), or a line saying it has no runs yet."""
     mine = [r for r in rows if track_of(r) == "frames"]
-    body = boards(mine, "frames-", lang) if any(not is_baseline(r) for r in mine) else \
+    after = {effort_chart.SUITE + FRESH: effort_block(rows, effort, lang)}
+    body = boards(mine, "frames-", lang, after) if any(not is_baseline(r) for r in mine) else \
         f'<p class="sub" style="color:var(--muted)">{t("No frames-only runs yet.", lang)}</p>'
     run = "sports-video-coach bench run --agent claude --model <model> --suite svc-bench-3 --track frames"
     prep = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-3 --track frames"
@@ -924,6 +971,8 @@ def jump(rows: list[dict], lang: str = "en") -> str:
     shown = {suite_of(r) for r in rows if not is_baseline(r) and track_of(r) == "frames"}
     links = [(f"#frames-{n}", t("Frames-only board ({})", lang).format(n))
              for n in ("svc-bench-3", "svc-bench-3" + FRESH) if n in shown]
+    if effort_chart.effort_data(rows)["groups"]:
+        links.append((f"#{effort_chart.ANCHOR}", t("What effort changed", lang)))
     if any(not is_baseline(r) and track_of(r) == TRACK for r in rows):
         links.append(("#leaderboard", t("Code-track board", lang)))
     links += [("#rerun", t("Rerun it in one command", lang)), (REPO_URL, t("Code on GitHub", lang))]
@@ -1145,10 +1194,11 @@ def top_blocks(rows: list[dict], clip: bool, count: bool, lang: str = "en") -> s
 
 
 def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, lang: str = "en",
-           count: bool = False) -> str:
-    """The page in `lang` ("en": index.html, "zh": zh/index.html); both show the same rows and numbers."""
+           count: bool = False, effort=()) -> str:
+    """The page in `lang` ("en": index.html, "zh": zh/index.html); both show the same rows and numbers. `effort`:
+    the languages whose effort chart was drawn."""
     if lang == "zh":
-        return render_zh(rows, notes, card, clip, count)
+        return render_zh(rows, notes, card, clip, count, effort)
     code = [r for r in rows if track_of(r) == TRACK]
     board = boards(code) if any(not is_baseline(r) for r in code) else empty()
     runs = sum(1 for r in rows if not is_baseline(r))
@@ -1189,7 +1239,7 @@ def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = 
 is <a href="#frames">further down</a>.</p>
 {skipped}{board}
 
-{frames_board(rows)}
+{frames_board(rows, effort=effort)}
 
 <h2 id="method">Method</h2>
 <p>The tasks are synthetic videos drawn by the tool, so the truth is exact: no human labels, no judge model.
@@ -1226,7 +1276,8 @@ can differ (see the sample size note at the top).</li>
 """
 
 
-def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, count: bool = False) -> str:
+def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, count: bool = False,
+              effort=()) -> str:
     """The Chinese page (zh/index.html): the English page's sections, rows and numbers, in Chinese."""
     lang = "zh"
     code = [r for r in rows if track_of(r) == TRACK]
@@ -1270,7 +1321,7 @@ def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool
 设置栏照搬结果文件里的英文原文。</p>
 {skipped}{board}
 
-{frames_board(rows, lang)}
+{frames_board(rows, lang, effort)}
 
 <h2 id="method">方法</h2>
 <p>题目是工具画出来的合成视频，所以真实值是精确的：没有人工标注，也没有评审模型。
@@ -1319,12 +1370,18 @@ def main(argv: list[str]) -> int:
         print("[bench page] no share card: matplotlib is not installed (the page has no og:image)")
     clip = share_clip.write(rows, out)
     count = count_it.write(rows, out)
+    effort = tuple(effort_chart.write(rows, out))
+    if not effort and effort_chart.effort_data(rows)["groups"]:
+        print("[bench page] no effort chart: matplotlib is not installed (the section is text only)")
+    elif effort and "zh" not in effort:
+        print("[bench page] effort chart in English only: no CJK font found (" + ", ".join(effort_chart.CJK_FONTS)
+              + ")")
     if count is None:
         print("[bench page] no count-it-yourself block: needs ffmpeg and a run of the task")
     shown = (card is not None, clip is not None)
-    (out / "index.html").write_text(render(rows, notes, *shown, count=count is not None), encoding="utf8")
+    (out / "index.html").write_text(render(rows, notes, *shown, count=count is not None, effort=effort), encoding="utf8")
     (out / "zh").mkdir(exist_ok=True)
-    (out / "zh" / "index.html").write_text(render(rows, notes, *shown, "zh", count is not None), encoding="utf8")
+    (out / "zh" / "index.html").write_text(render(rows, notes, *shown, "zh", count is not None, effort), encoding="utf8")
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))

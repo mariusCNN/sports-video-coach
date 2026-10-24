@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- "What effort changed" on the benchmark page's fresh-seed frames board (English and Chinese), with a
+  1200x675 chart for posts (`effort.png`, `effort-zh.png`, `bench/effort.py`): same model, only the effort
+  setting changed, mean above chance per setting with n, range and time per run, a run with no answer shown as
+  such; drawn from `benchmark/results/` at build time, so a new run joins its bar on the next build.
 - `bench run --effort LEVEL` for `--agent claude` (`--effort`) and `--agent codex` (`-c model_reasoning_effort`),
   recorded in the result's `settings`; fresh-seed frames rows for Sonnet 5.5 at effort high (0.995) and max
   (0.000, killed at the 1200 s timeout before it answered) and Opus 5.5 at effort low (0.879), with transcripts.

@@ -46,12 +46,13 @@ jobs:
         run: uv tool install .
       - name: Demo, English and Chinese, and the static site (English landing page, coaching page in demo/)
         run: sports-video-coach demo --out demo --lang en zh --site _site
-      - name: Benchmark leaderboard (benchmark/results, an empty folder gives a "no runs yet" page) and its share card
+      - name: Benchmark leaderboard (benchmark/results, an empty folder gives a "no runs yet" page) its share card and effort chart
         # matplotlib (not in the light install) draws card.png, the page's og:image, and (with Pillow) the clip
         run: |
           uv tool run --from . --with matplotlib sports-video-coach bench page benchmark/results _site/benchmark
           test -s _site/benchmark/card.png && test -s _site/benchmark/clip.mp4 && test -s _site/benchmark/clip.gif
           test -s _site/benchmark/count.mp4 && test -s _site/benchmark/count.jpg
+          test -s _site/benchmark/effort.png && test -s _site/benchmark/effort-zh.png
       - name: Page check
         run: sports-video-coach page-check _site _site/demo _site/benchmark _site/benchmark/zh
       - uses: actions/upload-pages-artifact@v4
