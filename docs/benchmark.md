@@ -63,8 +63,10 @@ one event per blob), while a careful reviewer who reads the rule and checks the 
 | `cone-touches-pan` | timestamps | The time the runner arrives at a cone where he stops or turns back. A pass-by, a pace change at a cone and a stop between cones are not touches. | Measures the runner in screen pixels, which the follow camera keeps near the centre; reports every cone arrival. |
 | `shot-outcomes-hard` | outcomes | Made only if the ball goes down through the ring and out of the net before anyone else touches it. A pump fake is not a shot; dip-in-pop-out and a rebounder's tip-in are misses. | Counts a pump fake as a shot; calls any ball near the ring a make. |
 
-The truth of every task was also read back from the drawn pixels by a careful scripted reader before the suite was
-published, so a reviewer who follows the rules can reach it from the film alone.
+A scripted pixel reader reads every task back from the drawn videos: dribble count, squat reps and shot outcomes
+exactly, the 10 cone touches within 0.05 s, and the late cadence 0.2 % off (182.186 per minute is the truth, it reads
+181.818); scored like an agent's answers, it gets 1.0 on every task. The reader was written knowing how the videos are
+drawn, so it shows the truth is in the film, not that a blind reviewer will find it.
 
 ## Frames-only track (eyes)
 
