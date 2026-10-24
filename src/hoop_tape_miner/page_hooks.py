@@ -158,7 +158,7 @@ FF_UI = {
                     "回合数 = 复盘的进攻次数减去抢到前场篮板后的二次进攻；每回合得分用录像里的得分。",
                factors=dict(efg="投篮（eFG%）", tov="失误（TOV%）", orb="进攻篮板（ORB%）", ft="罚球（罚球率）"),
                decided="决定比赛的因素：{f}，我们 {a} 对 对手 {b}，{who}领先 {gap} 个百分点（加权 {w}）。",
-               us_word="我们", them_word="对手",
+               us_word="我们", them_word="对手", lower="越低越好", more="回合数、每回合得分与数据来源",
                unclear="决定比赛的因素：无法判断（样本太小或差距太小）。"),
     "en": dict(title="Four Factors", side="", efg="Effective FG% (eFG%)", tov="Turnover rate (TOV%)", live="live",
                dead="dead", orb="Offensive rebounding (ORB%)", ft="Free-throw rate (FTM/FGA)", poss="Possessions",
@@ -172,7 +172,8 @@ FF_UI = {
                             ft="free throws (FT rate)"),
                decided="The factor that decided the game: {f}, us {a} vs them {b}, {gap} percentage points in favour of {who} "
                        "(weighted {w}).",
-               us_word="us", them_word="them",
+               us_word="us", them_word="them", lower="lower is better",
+               more="Possessions, points per trip and sources",
                unclear="The factor that decided the game: unclear (sample or gap too small)."),
 }
 _FF_KEYS = {"efg": "efg_pct", "tov": "tov_pct", "orb": "orb_pct", "ft": "ft_rate_pct"}
@@ -240,12 +241,18 @@ def four_factors_panel(folder: Path, names: dict | None = None, langs: list[tupl
             g = (pp.get(side) or {}).get(k) or {}
             n = g.get("trips", 0)
             return f'{num(g.get("ppp"))} <small>({n} {t["trip"] if n == 1 else t["trips"]})</small>' if n else "–"
-        rows = [(t["efg"], _ff_pct(us.get("efg_pct")), _ff_pct(them.get("efg_pct"))),
-                (t["tov"], tov(us), tov(them)),
-                (t["orb"], orb(us), orb(them)),
-                (t["ft"], _ff_pct(us.get("ft_rate_pct")), _ff_pct(them.get("ft_rate_pct"))),
-                (t["poss"], poss(us), poss(them)),
-                (t["ppp"], num(us.get("ppp")), num(them.get("ppp")))]
+        def bar(k, cell, side):
+            a, b = us.get(k), them.get(k)
+            top = max(a or 0, b or 0) or 1
+            v = us.get(k) if side == "us" else them.get(k)
+            w = 0 if v is None else round(100 * v / top)
+            return (f'<span class="ff-val {side}"><span class="ff-bar" style="width:{w}%"></span>'
+                    f'<span class="ff-num">{cell}</span></span>')
+        bars = [(t["efg"], "efg_pct", _ff_pct(us.get("efg_pct")), _ff_pct(them.get("efg_pct")), ""),
+                (t["tov"], "tov_pct", tov(us), tov(them), t["lower"]),
+                (t["orb"], "orb_pct", orb(us), orb(them), ""),
+                (t["ft"], "ft_rate_pct", _ff_pct(us.get("ft_rate_pct")), _ff_pct(them.get("ft_rate_pct")), "")]
+        rows = [(t["poss"], poss(us), poss(them)), (t["ppp"], num(us.get("ppp")), num(them.get("ppp")))]
         rows += [(t[k], ppp_cell("us", k), ppp_cell("them", k))
                  for k in ("transition", "half_court", "second_chance", "after_live_turnover") if pp]
         d = ff.get("decided") or {}
@@ -257,19 +264,39 @@ def four_factors_panel(folder: Path, names: dict | None = None, langs: list[tupl
                                        who=t["us_word"] if d["favours"] == "us" else t["them_word"])
         else:
             line = t["unclear"]
-        head = (f'<tr><th></th><th>{html.escape(names.get("us") or UI[c]["us"])}</th>'
-                f'<th>{html.escape(names.get("them") or UI[c]["them"])}</th></tr>')
+        us_name, them_name = (html.escape(names.get(k) or UI[c][k]) for k in ("us", "them"))
+        legend = (f'<p class="ff-legend"><span class="ff-key us">{us_name}</span>'
+                  f'<span class="ff-key them">{them_name}</span></p>')
+        grid = "".join(f'<div class="ff-row"><span class="ff-label">{lab}'
+                       + (f' <small>{hint}</small>' if hint else "") + '</span>'
+                       + bar(k, a, "us") + bar(k, b, "them") + '</div>'
+                       for lab, k, a, b, hint in bars)
+        head = f'<tr><th></th><th>{us_name}</th><th>{them_name}</th></tr>'
         body = "".join(f"<tr><td>{a}</td><td>{b}</td><td>{e}</td></tr>" for a, b, e in rows)
         blocks.append(f'<section class="factors" data-lang="{c}" lang="{attr}"{hide(c)}>'
-                      f'<h2 class="factors-title">{t["title"]}</h2><p class="decided">{html.escape(line)}</p>'
+                      f'<h3 class="factors-title">{t["title"]}</h3><p class="decided">{html.escape(line)}</p>'
+                      f'{legend}<div class="ff-bars">{grid}</div>'
+                      f'<details class="more"><summary>{t["more"]}</summary>'
                       f'<div class="table-wrap"><table>{head}{body}</table></div>'
-                      f'<p class="factors-note">{t["note"]}</p></section>')
-    style = ("<style>.factors{margin-top:2rem}.factors .factors-title{font:700 1.3rem/1.2 var(--display);margin:0 0 .5rem;"
-             "border:0;padding:0}.factors .decided{font-weight:700;border-left:4px solid var(--us);padding-left:.8rem}"
+                      f'<p class="factors-note">{t["note"]}</p></details></section>')
+    style = ("<style>.factors{margin:2rem 0 2.5rem}.factors .decided{font-weight:700;max-width:var(--measure)}"
+             ".ff-legend{display:flex;gap:1.25rem;margin:.75rem 0 .5rem;font-size:.85rem;color:var(--ink-soft)}"
+             ".ff-key::before{content:'';display:inline-block;width:.8rem;height:.8rem;margin-right:.4rem;"
+             "vertical-align:-.05rem;border-radius:2px;background:var(--us)}.ff-key.them::before{background:var(--them)}"
+             ".ff-bars{border-top:2px solid var(--ink);background:var(--sheet)}"
+             ".ff-row{display:grid;grid-template-columns:minmax(8rem,1.1fr) 1fr 1fr;gap:.25rem .75rem;align-items:center;"
+             "padding:.6rem .7rem;border-bottom:1px solid var(--rule)}"
+             ".ff-label{font-size:.88rem;line-height:1.35}.ff-label small{display:block;color:var(--muted);font-size:.78rem}"
+             ".ff-val{position:relative;display:block;min-height:1.9rem;background:var(--paper);border-radius:2px;overflow:hidden}"
+             ".ff-bar{position:absolute;inset:0 auto 0 0;background:var(--us);opacity:.3}.ff-val.them .ff-bar{background:var(--them)}"
+             ".ff-num{position:relative;display:block;padding:0 .5rem;font:700 1.05rem/1.9rem var(--display);"
+             "font-variant-numeric:tabular-nums;color:var(--ink)}"
+             ".ff-num small{font:500 .78rem var(--display);color:var(--ink-soft)}"
              ".factors td,.factors th{white-space:nowrap;font-variant-numeric:tabular-nums}"
-             ".factors td:first-child{white-space:normal}.factors small{color:var(--muted)}"
+             ".factors td:first-child{white-space:normal}.factors small{color:inherit}"
              ".factors-note{color:var(--muted);font-size:.8rem}"
-             "@media (max-width:560px){.factors table{font-size:.8rem}.factors td,.factors th{padding:.4rem .45rem}}"
+             "@media (max-width:560px){.ff-row{grid-template-columns:1fr 1fr}.ff-label{grid-column:1/-1}"
+             ".factors table{font-size:.8rem}.factors td,.factors th{padding:.4rem .45rem}}"
              "</style>")
     return style + "".join(blocks)
 

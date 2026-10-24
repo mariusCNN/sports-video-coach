@@ -80,15 +80,77 @@ def _parse_inline(src, md, env, tokens):  # ParserInline.parse with the CJK-awar
 
 
 MD.inline.parse = _parse_inline
+
+# Report blocks: a line `::: name [title]` opens one, a line `:::` closes it (as markdown-it-container). The page
+# styles each kind (BLOCKS); `more` folds its content behind its title. Any other name renders as a plain div.
+BLOCKS = {
+    "verdict": "the bottom line, set large under the band",
+    "keys": "a list of key numbers as stat tiles: `- **9–21** first half` (the bold part is the number)",
+    "do": "what to do: rules, calls, the plan (a highlighted card)",
+    "note": "a side note: sources, caveats (small, muted)",
+    "more": "a fold: `::: more <summary>`, closed until tapped (evidence, details)",
+}
+_FENCE = re.compile(r"^:::\s*([a-z][a-z-]*)?\s*(.*?)\s*$")
+
+
+def _blocks_rule(state, start, end, silent):
+    pos, mx = state.bMarks[start] + state.tShift[start], state.eMarks[start]
+    m = _FENCE.match(state.src[pos:mx])
+    if not m or not m.group(1) or state.sCount[start] - state.blkIndent >= 4:
+        return False
+    if silent:
+        return True
+    line, depth = start, 1
+    while True:  # find the matching close, counting nested opens
+        line += 1
+        if line >= end:
+            break
+        s = state.src[state.bMarks[line] + state.tShift[line]:state.eMarks[line]]
+        if state.sCount[line] < state.blkIndent:
+            break
+        f = _FENCE.match(s)
+        if f and state.sCount[line] - state.blkIndent < 4:
+            depth += 1 if f.group(1) else -1
+            if depth == 0:
+                break
+    kind, title = m.group(1), m.group(2)
+    old_parent, old_max = state.parentType, state.lineMax
+    state.parentType, state.lineMax = "container", line
+    tok = state.push("svc_block_open", "div", 1)
+    tok.info, tok.meta, tok.block, tok.map = kind, {"title": title}, True, [start, line]
+    state.md.block.tokenize(state, start + 1, line)
+    tok = state.push("svc_block_close", "div", -1)
+    tok.info, tok.block = kind, True
+    state.parentType, state.lineMax = old_parent, old_max
+    state.line = min(line + 1, end)
+    return True
+
+
+def _block_open(self, tokens, idx, options, env):
+    t = tokens[idx]
+    if t.info == "more":
+        return f'<details class="more"><summary>{MD.renderInline(t.meta["title"] or "…")}</summary>\n'
+    title = f'<p class="block-title">{MD.renderInline(t.meta["title"])}</p>\n' if t.meta["title"] else ""
+    return f'<div class="block {t.info}">\n{title}'
+
+
+def _block_close(self, tokens, idx, options, env):
+    return "</details>\n" if tokens[idx].info == "more" else "</div>\n"
+
+
+MD.block.ruler.before("fence", "svc_block", _blocks_rule, {"alt": ["paragraph", "reference", "blockquote", "list"]})
+MD.add_render_rule("svc_block_open", _block_open)
+MD.add_render_rule("svc_block_close", _block_close)
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
 # (code, html lang, switch label, README) per registry language, zh first (langs.py)
 LANGS = [(c, l.tag, l.button, langs_.readme(c)) for c, l in langs_.LANGS.items()]
 UI = {c: langs_.ui(c) for c in langs_.CODES}  # labels per language (langs.py)
-# CJK headings use the body face; Japanese and Korean text gets its own fonts (not the Chinese glyph forms)
+# CJK headings use the CJK heading face (the condensed display face has no CJK glyphs); Japanese and Korean text
+# gets its own fonts (not the Chinese glyph forms)
 LANG_CSS = "\n".join(
     [", ".join(f'.report[lang="{l.tag}"] h2' for l in langs_.LANGS.values() if l.cjk) +
-     " { font-family: var(--body); font-weight: 700; font-size: clamp(1.3rem, 2.8vw, 1.65rem); }"] +
-    [f'[lang="{l.tag}"] {{ --body: {l.page_font}; font-family: var(--body); }}'
+     " { font-family: var(--head-cjk); font-weight: 700; font-size: clamp(1.35rem, 3vw, 1.8rem); letter-spacing: .02em; }"] +
+    [f'[lang="{l.tag}"] {{ --body: {l.page_font}; --head-cjk: {l.page_font}; font-family: var(--body); }}'
      for l in langs_.LANGS.values() if l.page_font])
 PLAY_ICON = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5.5v13l10.5-6.5z"/>'
              '<path class="i-pause" d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg>')
@@ -303,7 +365,9 @@ def render(md_text: str, lang: str, share: bool = False, folder: Path | None = N
 
     def h2(m):
         heads.append(re.sub(r"<[^>]+>", "", m.group(1)))
-        return f'<h2 id="{lang}-s{len(heads)}">{m.group(1)}</h2>'
+        no = re.match(r"(\d+)\.\s*(.*)", m.group(1), re.S)  # "3. What went wrong": the number set apart
+        text = f'<span class="sec-no">{no.group(1)}</span><span>{no.group(2)}</span>' if no else m.group(1)
+        return f'<h2 id="{lang}-s{len(heads)}">{text}</h2>'
     body = re.sub(r"<h2>(.*?)</h2>", h2, body)
     body = re.sub(r"<table>", '<div class="table-wrap"><table>', body).replace("</table>", "</table></div>")
     body = re.sub(r"<p>(<img [^>]+>)</p>", r'<div class="figure">\1</div>', body)
@@ -390,6 +454,10 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
         if hooks.sections:  # plugin sections after the report (e.g. charts, tables from the plugin's data)
             more, more_heads, more_assets = hooks.sections(folder, code, embed, len(heads) + 1)
             body, heads, assets = body + more, heads + more_heads, assets or more_assets
+        if hooks.before:  # plugin panel (e.g. the Four Factors) after the verdict and key numbers, before section 1
+            pre = hooks.before(folder, sb, [(code, attr, _, fname)])
+            cut = body.find("<h2 id=")
+            body = body[:cut] + pre + body[cut:] if cut >= 0 else pre + body
         arts.append(f'<article class="report" data-lang="{code}" lang="{attr}"{hide(code)}>{inline_images(body, folder)}</article>')
         links = "".join(f'<li><a href="#{code}-s{i}">{html.escape(h)}</a></li>' for i, h in enumerate(heads, 1))
         tocs.append(f'<nav class="toc" data-lang="{code}" lang="{attr}" aria-label="{ui[code]["contents"]}"{hide(code)}>'
@@ -417,7 +485,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
         us_hex=us_hex, them_hex=them_hex, us_light=us_light, them_light=them_light,
         us_light_rgb=", ".join(map(str, units.hex_to_rgb(us_light))),
         listen=listen, mini=mini, tocs="".join(tocs), lang_css=LANG_CSS,
-        articles=(hooks.before(folder, sb, langs) if hooks.before else "") + "".join(arts) + assets,
+        articles="".join(arts) + assets,
     )
 
 
@@ -427,150 +495,214 @@ TEMPLATE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Noto+Serif+SC:wght@600;700&display=swap">
 <link rel="icon" href="data:,">
 <title>{page_title}</title>
 <style>
+/* Film-room style system. Tokens first; every component below uses them, plugin panels reuse them. */
 :root {{
-  --ink: #221f45;        /* page ink + score band */
-  --ink-soft: #4a4868;
-  --muted: #6c6b84;
-  --paper: #f5f5f8;
-  --sheet: #ffffff;
-  --rule: #dcdce6;
+  --ink: #15172b;        /* text, rules, the score band */
+  --ink-soft: #3b3e57;
+  --muted: #676a7f;
+  --paper: #eceef2;      /* page */
+  --sheet: #ffffff;      /* cards, tables */
+  --chart: #fcfcfb;      /* chart surface (hoop_tape_miner.plots SURFACE) */
+  --rule: #d4d7df;
+  --band-text: #b7b9d0;
+  --marker: #f2bf3a;     /* telestrator yellow: what to do */
+  --marker-wash: #fff6d6;
   --us: {us_hex};         /* game.json us.hex */
   --them: {them_hex};       /* game.json them.hex */
-  --us-light: {us_light};   /* lighter twins on the dark score band */
+  --us-light: {us_light};   /* lighter twins on the dark band */
   --them-light: {them_light};
   --us-light-rgb: {us_light_rgb};
-  --whistle: #c9343f;    /* points we gave away */
-  --display: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif-condensed, sans-serif;
-  --body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --whistle: #c8372d;    /* points we gave away */
+  --display: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --serif: "Source Serif 4", "Source Serif Pro", Georgia, "Noto Serif SC", serif;
+  --body: var(--serif);
+  --head-cjk: var(--body);
+  --measure: 44rem;
+  --gap: clamp(1rem, 4vw, 1.5rem);
 }}
+[lang|="zh"] {{ --body: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --head-cjk: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif; }}
 * {{ box-sizing: border-box; }}
-html {{ scroll-padding-top: 4.5rem; }}
-body {{ margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.75 var(--body); }}
+html {{ scroll-padding-top: 4.5rem; -webkit-text-size-adjust: 100%; }}
+body {{ margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.65 var(--body); }}
+html[lang|="zh"] body {{ font-size: 16px; line-height: 1.8; }}
 [hidden] {{ display: none !important; }}
 
-/* sticky title bar with the language switch, then the scoreboard band */
-.topbar {{ position: sticky; top: 0; z-index: 10; background: var(--ink); border-bottom: 1px solid #34315c; }}
-.bar {{ max-width: 72rem; margin: 0 auto; padding: .6rem 1.25rem; display: flex; align-items: center; gap: .75rem; }}
-.bar h1 {{ margin: 0 auto 0 0; font: 500 .95rem/1.4 var(--body); color: #c9c7e6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }}
-.board {{ background: var(--ink); color: #fff; }}
-.board-inner {{ max-width: 72rem; margin: 0 auto; padding: .5rem 1.25rem 1.75rem; }}
-.lang {{ display: inline-flex; border: 1px solid #5c5a86; border-radius: 999px; padding: 2px; flex: none; }}
-.lang button {{ font: 600 0.95rem/1 var(--display); letter-spacing: .02em; color: #c9c7e6; background: none; border: 0;
+/* sticky title bar with the language switch, then the score band */
+.topbar {{ position: sticky; top: 0; z-index: 10; background: var(--ink); border-bottom: 1px solid #2c2f4a; }}
+.bar {{ max-width: 72rem; margin: 0 auto; padding: .55rem var(--gap); display: flex; align-items: center; gap: .75rem; }}
+.bar h1 {{ margin: 0 auto 0 0; font: 600 1rem/1.4 var(--display); letter-spacing: .02em; color: var(--band-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }}
+html[lang|="zh"] .bar h1 {{ font: 500 .92rem/1.4 var(--body); letter-spacing: 0; }}
+.board {{ color: #fff; background-color: var(--ink);
+  /* the centre circle and the half-court line, drawn faintly behind the score */
+  background-image: radial-gradient(circle at 50% 100%, transparent 0 7.5rem, rgba(255,255,255,.07) 7.5rem calc(7.5rem + 2px), transparent calc(7.5rem + 2px)),
+    linear-gradient(to top, rgba(255,255,255,.07) 0 2px, transparent 2px); }}
+.board-inner {{ max-width: 72rem; margin: 0 auto; padding: .5rem var(--gap) 2.25rem; }}
+.lang {{ display: inline-flex; border: 1px solid #4a4d6b; border-radius: 999px; padding: 2px; flex: none; }}
+.lang button {{ font: 600 .95rem/1 var(--display); letter-spacing: .03em; color: var(--band-text); background: none; border: 0;
   border-radius: 999px; padding: .45rem .9rem; cursor: pointer; }}
 .lang button[aria-pressed="true"] {{ background: #fff; color: var(--ink); }}
-button:focus-visible, a:focus-visible, input:focus-visible {{ outline: 3px solid #f2c94c; outline-offset: 2px; }}
-.score {{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 1rem; margin-top: 1.5rem; }}
-.team {{ display: flex; flex-direction: column; gap: .15rem; }}
+button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible {{ outline: 3px solid var(--marker); outline-offset: 2px; }}
+.score {{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 1rem; margin-top: 1.75rem; }}
+.team {{ display: flex; flex-direction: column; gap: .2rem; min-width: 0; }}
 .team.them {{ text-align: right; }}
-.team .name {{ font: 600 clamp(1.1rem, 2.6vw, 1.6rem)/1.1 var(--display); }}
-.team .side {{ font-size: .8rem; color: #a9a7cc; }}
+.team .name {{ font: 700 clamp(1.15rem, 2.8vw, 1.75rem)/1.05 var(--display); letter-spacing: .01em; overflow-wrap: anywhere; }}
+.team .side {{ font: 500 .85rem/1.3 var(--display); letter-spacing: .04em; color: var(--band-text); }}
 .team.us .name {{ color: var(--us-light); }}
 .team.them .name {{ color: var(--them-light); }}
-.pts {{ font: 700 clamp(4rem, 13vw, 8.5rem)/.85 var(--display); font-variant-numeric: tabular-nums; display: flex; gap: .35em; }}
-.pts .dash {{ color: #5c5a86; font-weight: 500; }}
-.pts .lose {{ color: #8f8db3; }}
-.halves {{ display: flex; justify-content: center; gap: 1.75rem; margin-top: .9rem; font-size: .85rem; color: #a9a7cc; }}
-.halves b {{ font: 600 1.15rem var(--display); color: #fff; margin-left: .35rem; font-variant-numeric: tabular-nums; }}
+.score[data-result="plain"] {{ grid-template-columns: 1fr; }}
+.score[data-result="plain"] .name {{ color: #fff; font-size: clamp(1.6rem, 5vw, 2.6rem); }}
+.pts {{ font: 700 clamp(4.2rem, 15vw, 9rem)/.82 var(--display); font-variant-numeric: tabular-nums; display: flex; gap: .3em; letter-spacing: -.01em; }}
+.pts .dash {{ color: #4a4d6b; font-weight: 500; }}
+.pts .lose {{ color: #7f8299; }}
+.halves {{ display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }}
+.halves span {{ font: 500 .85rem/1 var(--display); letter-spacing: .04em; color: var(--band-text); border: 1px solid #383b58; border-radius: 4px; padding: .45rem .7rem; }}
+.halves b {{ font: 700 1.1rem/1 var(--display); color: #fff; margin-left: .45rem; font-variant-numeric: tabular-nums; }}
 
 /* narration: one big button under the score, a small twin in the sticky bar */
 .play {{ flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; padding: 0; }}
 .play svg {{ fill: currentColor; }}
 .play .i-pause, .play.playing .i-play {{ display: none; }}
 .play.playing .i-pause {{ display: inline; }}
-.play.big {{ width: 5.5rem; height: 5.5rem; background: #fff; color: var(--us); box-shadow: 0 0 0 6px rgba(var(--us-light-rgb), .25); }}
-.play.big svg {{ width: 2.6rem; height: 2.6rem; }}
-.play.big:hover {{ box-shadow: 0 0 0 9px rgba(var(--us-light-rgb), .35); }}
-.play.big.playing {{ background: var(--us-light); color: var(--ink); }}
-.play.mini {{ width: 2.1rem; height: 2.1rem; background: #fff; color: var(--us); }}
+.play.big {{ width: 4.25rem; height: 4.25rem; background: var(--marker); color: var(--ink); }}
+.play.big svg {{ width: 2rem; height: 2rem; }}
+.play.big:hover {{ box-shadow: 0 0 0 6px rgba(242, 191, 58, .25); }}
+.play.big.playing {{ background: #fff; }}
+.play.mini {{ width: 2.1rem; height: 2.1rem; background: var(--marker); color: var(--ink); }}
 .play.mini svg {{ width: 1.1rem; height: 1.1rem; }}
-.listen {{ display: flex; align-items: center; gap: 1.25rem; max-width: 38rem; margin: 1.75rem auto 0; padding: 1rem 1.25rem;
-  border: 1px solid #3d3a6b; border-radius: 1.25rem; background: #2b2856; }}
+.listen {{ display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; max-width: 36rem; margin: 1.75rem auto 0; padding: .9rem 1.1rem;
+  border: 1px solid #383b58; border-radius: 6px; background: rgba(255,255,255,.04); }}
 .listen-body {{ flex: 1; min-width: 0; }}
-.listen-label b {{ display: block; font-size: 1.15rem; }}
-.listen-label small {{ color: #a9a7cc; font-size: .85rem; }}
-.listen-track {{ display: flex; align-items: center; gap: .75rem; margin-top: .5rem; }}
-.listen {{ flex-wrap: wrap; }}
+.listen-label b {{ display: block; font: 700 1.2rem/1.2 var(--display); letter-spacing: .02em; }}
+.listen-label [lang|="zh"] b, html[lang|="zh"] .listen-label b {{ font: 700 1.05rem/1.3 var(--body); letter-spacing: 0; }}
+.listen-label small {{ color: var(--band-text); font-size: .85rem; }}
+.listen-track {{ display: flex; align-items: center; gap: .75rem; margin-top: .45rem; }}
 .listen audio[controls] {{ flex-basis: 100%; width: 100%; }}
 .no-js .play, .no-js .listen-track {{ display: none; }}
-.seek {{ flex: 1; min-width: 0; accent-color: var(--us-light); }}
-.clock {{ font: 600 1rem var(--display); font-variant-numeric: tabular-nums; color: #c9c7e6; min-width: 3.2rem; text-align: right; }}
-.speed {{ font: 600 .95rem/1 var(--display); color: #c9c7e6; background: none; border: 1px solid #5c5a86; border-radius: 999px;
+.seek {{ flex: 1; min-width: 0; accent-color: var(--marker); }}
+.clock {{ font: 600 1rem var(--display); font-variant-numeric: tabular-nums; color: var(--band-text); min-width: 3.2rem; text-align: right; }}
+.speed {{ font: 600 .95rem/1 var(--display); color: var(--band-text); background: none; border: 1px solid #4a4d6b; border-radius: 999px;
   padding: .35rem .6rem; cursor: pointer; min-width: 3.2rem; }}
 
-/* body */
-.layout {{ max-width: 72rem; margin: 0 auto; padding: 0 1.25rem 4rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }}
-@media (min-width: 1080px) {{ .layout {{ grid-template-columns: 14rem minmax(0, 46rem); justify-content: center; }} }}
+/* page grid: contents rail + one reading column */
+.layout {{ max-width: 72rem; margin: 0 auto; padding: 0 var(--gap) 5rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }}
+@media (min-width: 1080px) {{ .layout {{ grid-template-columns: 13rem minmax(0, var(--measure)); justify-content: center; }} }}
 .toc {{ display: none; }}
 @media (min-width: 1080px) {{
-  .toc {{ display: block; position: sticky; top: 4.5rem; align-self: start; margin-top: 2.5rem; font-size: .88rem; }}
+  .toc {{ display: block; position: sticky; top: 4.5rem; align-self: start; margin-top: 2.75rem; font: 500 .95rem/1.35 var(--display); letter-spacing: .02em; }}
   .toc[hidden] {{ display: none; }}
+  .toc[lang|="zh"] {{ font: 400 .86rem/1.5 var(--body); letter-spacing: 0; }}
 }}
-.toc-title {{ color: var(--muted); margin: 0 0 .5rem; }}
+.toc-title {{ color: var(--muted); margin: 0 0 .6rem; }}
 .toc ol {{ list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--rule); }}
-.toc a {{ display: block; padding: .3rem 0 .3rem .9rem; color: var(--ink-soft); text-decoration: none; margin-left: -2px; border-left: 2px solid transparent; }}
-.toc a:hover {{ color: var(--us); border-left-color: var(--us); }}
-
+.toc a {{ display: block; padding: .35rem 0 .35rem .9rem; color: var(--ink-soft); text-decoration: none; margin-left: -2px; border-left: 2px solid transparent; }}
+.toc a:hover {{ color: var(--ink); border-left-color: var(--marker); }}
 .layout > main {{ min-width: 0; }}
-.report {{ padding-top: 2rem; min-width: 0; }}
-.report > p:first-child {{ color: var(--muted); font-size: .92rem; }}
-.report > p:nth-child(2) {{ font-size: 1.12rem; line-height: 1.8; border-left: 4px solid var(--whistle); padding: .2rem 0 .2rem 1.1rem; margin: 1.5rem 0; }}
-.report h2 {{ font: 700 clamp(1.5rem, 3.2vw, 2rem)/1.2 var(--display); letter-spacing: .01em; margin: 3.25rem 0 1rem;
-  padding-top: 1.25rem; border-top: 3px solid var(--ink); }}
+
+/* the report column */
+.report {{ padding-top: 2.25rem; min-width: 0; }}
+.report > p:first-child {{ color: var(--muted); font-size: .9rem; line-height: 1.6; margin-top: 0; }}
+.report h2 {{ display: flex; align-items: baseline; gap: .6rem; font: 700 clamp(1.6rem, 3.6vw, 2.25rem)/1.12 var(--display); letter-spacing: .005em;
+  margin: 3.75rem 0 1.1rem; padding-top: .9rem; border-top: 4px solid var(--ink); }}
+.report h2 .sec-no {{ flex: none; color: var(--us); font-family: var(--display); font-variant-numeric: tabular-nums; }}
 {lang_css}
-.report h3 {{ font-size: 1.08rem; margin: 2rem 0 .6rem; color: var(--ink); }}
-.report p, .report li {{ max-width: 42rem; }}
+.report h3 {{ font: 700 1.12rem/1.4 var(--body); margin: 2.25rem 0 .6rem; padding-left: .7rem; border-left: 4px solid var(--ink); }}
+.report p, .report li {{ max-width: var(--measure); }}
 .report ul, .report ol {{ padding-left: 1.3rem; }}
-.report li {{ margin: .3rem 0; }}
-.report li::marker {{ color: var(--us); font-weight: 700; }}
+.report li {{ margin: .35rem 0; }}
+.report li::marker {{ color: var(--muted); font-weight: 700; }}
 .report strong {{ color: var(--ink); font-weight: 700; }}
-.report a {{ color: var(--us); text-underline-offset: 3px; }}
-.report code {{ font-size: .85em; background: #ebebf2; padding: .1em .35em; border-radius: 4px; word-break: break-all; }}
+.report a {{ color: var(--ink); text-decoration-color: var(--marker); text-decoration-thickness: 2px; text-underline-offset: 3px; }}
+.report a[href^="#"] {{ font: 600 .9em/1 var(--display); letter-spacing: .02em; text-decoration: none; background: var(--marker-wash);
+  border: 1px solid var(--marker); border-radius: 3px; padding: .1em .4em; white-space: nowrap; }}
+.report code {{ font-size: .85em; background: #e3e5eb; padding: .1em .35em; border-radius: 3px; word-break: break-all; }}
 .report hr {{ display: none; }}
-.figure {{ margin: 1.5rem 0; overflow-x: auto; background: #fff; border: 1px solid var(--rule); border-radius: 6px; }}
+.report em {{ font-style: normal; color: var(--muted); }}
+
+/* report blocks (::: name in the README) */
+.block {{ margin: 1.5rem 0; }}
+.block > :first-child {{ margin-top: 0; }}
+.block > :last-child {{ margin-bottom: 0; }}
+.block-title {{ font: 700 1rem/1.3 var(--display); letter-spacing: .04em; color: var(--muted); margin: 0 0 .5rem; }}
+[lang|="zh"] .block-title {{ font: 700 .9rem/1.4 var(--body); letter-spacing: .02em; }}
+.block.verdict {{ margin: 1.25rem 0 1.75rem; }}
+.block.verdict p {{ font: 600 clamp(1.2rem, 2.8vw, 1.5rem)/1.5 var(--head-cjk); max-width: 40rem; }}
+.block.verdict p + p {{ font: 400 1rem/1.75 var(--body); color: var(--ink-soft); }}
+.block.keys ul {{ list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule); }}
+.block.keys li {{ margin: 0; padding: .8rem .9rem .9rem; background: var(--sheet); font-size: .88rem; line-height: 1.45; color: var(--ink-soft); max-width: none; }}
+.block.keys li strong:first-child {{ display: block; font: 700 2.1rem/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; margin-bottom: .35rem; }}
+.block.do, .report blockquote {{ margin: 1.5rem 0; padding: 1rem 1.15rem; background: var(--marker-wash); border-left: 6px solid var(--marker); border-radius: 0 4px 4px 0; }}
+.block.do .block-title {{ color: var(--ink); }}
+.block.do ol, .block.do ul {{ margin: .25rem 0; }}
+.block.do li {{ margin: .45rem 0; }}
+.report blockquote p {{ margin: .4rem 0; font-weight: 600; }}
+.block.note {{ font-size: .86rem; line-height: 1.6; color: var(--muted); border-top: 1px solid var(--rule); padding-top: .75rem; }}
+.block.note strong {{ color: var(--ink-soft); }}
+details.more {{ margin: 1.25rem 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }}
+details.more > summary {{ cursor: pointer; list-style: none; padding: .8rem 2rem .8rem 0; position: relative; font-weight: 700; color: var(--ink-soft); }}
+details.more > summary::-webkit-details-marker {{ display: none; }}
+details.more > summary::after {{ content: "+"; position: absolute; right: .25rem; top: .55rem; font: 700 1.5rem/1 var(--display); color: var(--muted); }}
+details.more[open] > summary::after {{ content: "−"; }}
+details.more[open] > summary {{ color: var(--ink); }}
+details.more > :last-child {{ margin-bottom: 1.1rem; }}
+
+/* charts */
+.figure {{ margin: 1.75rem 0; overflow-x: auto; background: var(--chart); border-top: 4px solid var(--ink); }}
 .figure img {{ display: block; width: 100%; height: auto; }}
 
-/* film clips next to the analysis */
-.clip {{ margin: 1.25rem 0 1.75rem; background: #000; border-radius: 6px; overflow: hidden; max-width: 42rem; }}
+/* play cards: the film clip next to the claim */
+.clip {{ margin: 1.25rem 0 2rem; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; max-width: var(--measure); }}
 .clip video {{ display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }}
 .clip.tall {{ max-width: 24rem; }}
 .clip.tall video {{ width: auto; max-width: 100%; height: min(70vh, 40rem); margin: 0 auto; }}
-.clip-bar {{ display: flex; align-items: flex-start; gap: .75rem; padding: .6rem .8rem; background: var(--ink); color: #e6e5f5; }}
-.clip figcaption {{ flex: 1; min-width: 0; font-size: .9rem; line-height: 1.55; }}
-.clip-no {{ display: block; font: 600 .95rem/1.3 var(--display); letter-spacing: .03em; color: var(--us-light); font-variant-numeric: tabular-nums; }}
-.slow {{ flex: none; font: 600 .85rem/1 var(--body); color: #c9c7e6; background: none; border: 1px solid #5c5a86; border-radius: 999px;
-  padding: .4rem .7rem; cursor: pointer; }}
-.slow[aria-pressed="true"] {{ background: var(--us-light); color: var(--ink); border-color: var(--us-light); }}
+.clip-bar {{ display: flex; align-items: flex-start; gap: .75rem; padding: .7rem .85rem .8rem; border-top: 3px solid var(--us); }}
+.clip figcaption {{ flex: 1; min-width: 0; font-size: .92rem; line-height: 1.55; color: var(--ink); }}
+.clip-no {{ display: block; font: 700 .95rem/1.3 var(--display); letter-spacing: .04em; color: var(--muted); font-variant-numeric: tabular-nums; margin-bottom: .15rem; }}
+.slow {{ flex: none; font: 600 .9rem/1 var(--display); letter-spacing: .03em; color: var(--ink); background: none; border: 1px solid var(--ink); border-radius: 999px;
+  padding: .45rem .75rem; cursor: pointer; }}
+.slow[aria-pressed="true"] {{ background: var(--marker); border-color: var(--marker); }}
 .no-js .slow {{ display: none; }}
 .clip.missing {{ background: #fff4f4; border: 1px dashed var(--whistle); padding: .6rem .8rem; }}
 .clip.missing .clip-no {{ color: var(--whistle); }}
 .clip.missing p {{ margin: .3rem 0 0; color: var(--whistle); font-size: .85rem; }}
 td .clip {{ min-width: 16rem; margin: .25rem 0; }}
 
-.table-wrap {{ overflow-x: auto; margin: 1.25rem 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }}
-table {{ border-collapse: collapse; width: 100%; font-size: .9rem; line-height: 1.55; }}
-th, td {{ text-align: left; vertical-align: top; padding: .55rem .75rem; border-bottom: 1px solid var(--rule); }}
-th {{ font-weight: 700; color: var(--ink-soft); background: #f0f0f5; white-space: nowrap; }}
+/* tables: rules, not boxes */
+.table-wrap {{ overflow-x: auto; margin: 1.25rem 0 1.5rem; background: var(--sheet); border-top: 2px solid var(--ink); }}
+table {{ border-collapse: collapse; width: 100%; font-size: .9rem; line-height: 1.5; font-variant-numeric: tabular-nums; }}
+th, td {{ text-align: left; vertical-align: top; padding: .55rem .7rem; border-bottom: 1px solid var(--rule); }}
+th {{ font: 600 .85rem/1.3 var(--display); letter-spacing: .04em; color: var(--muted); white-space: nowrap; border-bottom: 1px solid var(--ink); }}
+[lang|="zh"] th {{ font: 600 .8rem/1.4 var(--body); letter-spacing: 0; }}
 tr:last-child td {{ border-bottom: 0; }}
-td:first-child {{ white-space: nowrap; font-variant-numeric: tabular-nums; }}
-td strong {{ color: var(--whistle); }}
+td:first-child {{ white-space: nowrap; font-weight: 600; }}
 
 @media (max-width: 560px) {{
-  body {{ font-size: 15px; }}
-  .halves {{ gap: 1rem; flex-wrap: wrap; }}
+  body {{ font-size: 16px; }}
+  html[lang|="zh"] body {{ font-size: 15px; }}
   .figure img {{ width: 760px; max-width: none; }}  /* chart text stays readable; swipe sideways */
-  .listen {{ gap: .9rem; padding: .85rem; }}
-  .play.big {{ width: 4.5rem; height: 4.5rem; }}
+  .listen {{ gap: .8rem; padding: .8rem; }}
+  .play.big {{ width: 3.6rem; height: 3.6rem; }}
+  .block.keys ul {{ grid-template-columns: 1fr 1fr; }}
+  .block.keys li strong:first-child {{ font-size: 1.75rem; }}
+  .report h2 {{ margin-top: 3rem; }}
+  .clip-bar {{ flex-wrap: wrap; }}
 }}
 @media (prefers-reduced-motion: no-preference) {{
   .play.big {{ transition: box-shadow .2s, background-color .2s; }}
 }}
 @media print {{
-  .lang, .toc, .listen, .play, .slow {{ display: none !important; }}
+  body {{ background: #fff; }}
+  .lang, .toc, .listen, .play, .slow, .topbar {{ display: none !important; }}
   .board {{ background: none; color: var(--ink); }}
-  .team.us .name, .team.them .name, .halves b {{ color: var(--ink); }}
+  .team.us .name, .team.them .name, .halves b, .pts {{ color: var(--ink); }}
 }}
 </style>
 </head>
