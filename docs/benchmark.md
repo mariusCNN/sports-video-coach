@@ -38,6 +38,8 @@ Every task scores from 0 to 1.
 | `outcomes` | Made or missed, in order | fraction correct by position |
 
 - **Total** = the mean of the task scores, rounded to 3 decimals.
+- **Above chance** = the same, measured from a blind guess instead of from 0 (see
+  [below](#floor-and-above-chance-score)).
 - Dividing timestamps by the longer list means extra, invented events cost as much as missed ones.
 - A missing answer scores 0.
 
@@ -113,7 +115,65 @@ First rows (svc-bench-2, 2026-10-24; every run submitted, Sonnet ran twice with 
 - **Guessing scores high.** Sonnet's unread shots, "made, missed" alternating, scored 0.83; its guessed dribble
   count 0.80. Sonnet's second run (submitted, same command) read `TASKS.md` and two sheets, guessed the rest and
   scored 0.646. Counts and rates get partial
-  credit and the shot outcomes are mostly alternating, so read a frames total against a floor of about 0.65, not 0.
+  credit and the shot outcomes are mostly alternating, so a raw total overstates what was seen. The leaderboard
+  therefore shows an [above-chance score](#floor-and-above-chance-score) next to the raw total.
+
+## Floor and above-chance score
+
+A guess scores more than 0: counts and rates earn partial credit, and both shot lists are close to alternating. So
+the leaderboard shows, next to each raw total, how far the run got above a blind guess.
+
+**The floor: a blind baseline.** A deterministic guesser that sees no video and no still:
+
+```bash
+python -m sports_video_coach.bench.baseline --suite svc-bench-2 [--track frames] [--date D] [--out FILE]
+```
+
+- It reads only the task text a contender gets (`TASKS.md` of that suite and track) and answers each task with
+  the example in its "Answer:" line: `5` for a count, `30.5` or `150.5` for a rate, `[1.5, 4.25]` for timestamps.
+- For outcomes it repeats the example's pattern (`"made", "missed"`) to the number of shots the task states.
+- It holds no prior of its own and reads no truth (a test changes every truth and checks the answers stay the
+  same). Same suite, same answers; the frames track asks the same questions, so it answers the same.
+- It writes a normal result file with agent `blind baseline`, scored by the normal scorer; `bench validate`
+  checks it like any other. The files are in `benchmark/results/` (`2026-10-24-blind-baseline*.json`).
+
+Measured (2026-10-24; code and frames tracks give the same answers and scores):
+
+| Suite | Task scores of the blind baseline | Total |
+|---|---|---|
+| `svc-bench-1` | jump-count 0.385, stroke-rate 0.000, cone-touches 0.110, shot-outcomes 0.800 | 0.324 |
+| `svc-bench-2` | dribble-count 0.089, squat-reps 0.625, cadence-change 0.145, cone-touches-pan 0.090, shot-outcomes-hard 0.833 | 0.356 |
+
+**The formula.** Per task, with `floor` = the blind baseline's score on that task:
+
+```text
+above = clip((score - floor) / (1 - floor), 0, 1)
+above-chance total = mean of `above` over the tasks
+```
+
+- 0 means no better than the blind guess on that task, 1 means right. A score below the floor counts as 0.
+- A task whose floor is 1 would tell nothing; it is left out of the mean (no task has such a floor today).
+- It is computed when the page is built, from the `score` of each task row already in the result files. No result
+  file changes and none needs a new field.
+- The raw total stays on the page and still ranks the rows. The baseline row is shown under each table, marked
+  "Floor".
+- This guesser knows no sport. A guesser that does (say, a typical running cadence of 180 per minute) scores more,
+  so the floor is a lower bound on what guessing gets and the above-chance score an upper bound on what was seen.
+
+Above-chance totals of the rows on 2026-10-24:
+
+| Suite, track | Agent / model | Raw | Above chance |
+|---|---|---|---|
+| svc-bench-2, frames | Claude Code / claude-opus-5-5 | 1.000 | 1.000 |
+| svc-bench-2, frames | Codex / gpt-6-astra | 1.000 | 1.000 |
+| svc-bench-2, frames | Claude Code / claude-sonnet-5-5 | 0.755 | 0.564 |
+| svc-bench-2, frames | Claude Code / claude-sonnet-5-5 (second run) | 0.646 | 0.460 |
+| svc-bench-2, code | Claude Code / claude-sonnet-5-5 | 1.000 | 1.000 |
+| svc-bench-2, code | Codex / gpt-6-astra | 1.000 | 1.000 |
+| svc-bench-2, code | Claude Code / claude-opus-5-5 | 0.960 | 0.956 |
+| svc-bench-1, code | Claude Code / claude-opus-5-5, Claude Code / claude-sonnet-5-5, Codex | 1.000 | 1.000 |
+
+Sonnet's alternating shot list (0.833) equals the floor on that task, so it adds 0 above chance.
 
 ## Rules
 

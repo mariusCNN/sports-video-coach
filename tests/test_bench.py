@@ -149,3 +149,43 @@ def test_drawn_runner_touches_cones_at_the_truth(tmp_path):
     arrivals = [round(i / suite.FPS, 2) for i in range(1, len(moves))
                 if moves[i - 1] and (moves[i] == 0 or (moves[i] > 0) != (moves[i - 1] > 0))]
     assert arrivals == TRUTH["cone-touches"]
+
+
+@pytest.mark.parametrize("raw,floor,want", [(1.0, 0.5, 1.0), (0.75, 0.5, 0.5), (0.5, 0.5, 0.0), (0.2, 0.5, 0.0),
+                                            (0.6, 0.0, 0.6), (0.9, 1.0, None), (None, 0.5, None), (0.5, None, None)])
+def test_above_chance_task(raw, floor, want):
+    got = S.above_chance_task(raw, floor)
+    assert got == (None if want is None else pytest.approx(want))
+
+
+def test_above_chance_total_is_mean_over_tasks_with_a_floor():
+    rows = [{"id": "a", "score": 1.0}, {"id": "b", "score": 0.75}, {"id": "c", "score": 0.1}, {"id": "d", "score": 1}]
+    floors = {"a": 0.5, "b": 0.5, "c": 0.3, "d": 1.0}          # d's floor is 1: it tells nothing, left out
+    assert S.above_chance(rows, floors) == round((1.0 + 0.5 + 0.0) / 3, 3)
+    assert S.above_chance(rows, {}) is None
+
+
+def test_blind_baseline_is_deterministic_and_never_reads_the_truth(monkeypatch):
+    import dataclasses
+
+    from sports_video_coach.bench import baseline as B, suite2
+    for name in ("svc-bench-1", "svc-bench-2"):
+        first = B.answers(name)
+        assert first == B.answers(name) == B.answers(name, "frames")      # same task text on both tracks
+        assert all(v is not None for v in first.values())
+    before = B.answers("svc-bench-2")
+    assert before == {"dribble-count": 5, "squat-reps": 5, "cadence-change": 150.5,
+                      "cone-touches-pan": [1.5, 4.25], "shot-outcomes-hard": ["made", "missed"] * 6}
+    moved = [dataclasses.replace(t, truth=[99.0] if isinstance(t.truth, list) else 999) for t in suite2.TASKS]
+    monkeypatch.setattr(suite2, "TASKS", moved)                            # every truth changed: answers stay
+    assert B.answers("svc-bench-2") == before
+
+
+def test_blind_baseline_result_file_validates(tmp_path):
+    from sports_video_coach.bench import baseline as B
+    out = tmp_path / "b.json"
+    assert B.main(["--suite", "svc-bench-2", "--track", "frames", "--date", "2026-10-24", "--out", str(out)]) == 0
+    res = json.loads(out.read_text(encoding="utf8"))
+    assert res["contender"]["agent"] == S.BASELINE_AGENT and res["track"] == "frames"
+    assert S.validate_file(out) == []
+    assert S.default_path(res).name == "2026-10-24-blind-baseline-svc-bench-2-frames.json"

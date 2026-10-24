@@ -2,7 +2,8 @@
 
 Reads every `*.json` result file in `<results_dir>` (schema 1, written by `bench score`) and writes
 `<out_dir>/index.html`: a self-contained static page (inline CSS, light and dark, readable at 390 px) with the
-leaderboard ranked by total (one table per suite, the hard suite first; runs on the frames-only track, which
+leaderboard ranked by total, with an "above chance" score next to it (the floor is the blind baseline's result
+file of that suite and track, `bench.baseline`, shown as a marked row under the ranked ones) (one table per suite, the hard suite first; runs on the frames-only track, which
 see still images and run no code, in their own tables below), the method, how to run it yourself, how to submit a
 run and honesty notes. With no
 results it shows a "no runs yet" state; a file that does not parse is skipped and named in a visible note. The page
@@ -14,6 +15,8 @@ import argparse
 import html
 import json
 from pathlib import Path
+
+from .score import BASELINE_AGENT, above_chance
 
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
@@ -29,6 +32,9 @@ TRACK = "code"                 # a result file without a track field is on the c
 FRAMES = ("Frames-only track: the agent sees still images of each video (contact sheets with the time under every "
           "still) and has no tool that runs code, so it must review by eye. Same videos, same truth, same scoring "
           "as the code track; the scores measure the model's eyes, not its tracker.")
+ABOVE = ("Above chance: per task, (score - floor) / (1 - floor), clipped to 0..1, where the floor is the score of "
+         "the blind baseline (it copies the example answers from the task text and sees no video); 0 = no better "
+         "than that guess, 1 = perfect.")
 TITLE = "Sports film review benchmark"
 WHAT = ("Which coding agent and vision model reviews sports film best? Each run is scored against ground truth "
         "drawn into synthetic videos, so every number is measured, not judged.")
@@ -81,6 +87,8 @@ th { font-size: .8rem; color: var(--muted); font-weight: 600; }
 tr:last-child td { border-bottom: 0; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.total { font-weight: 700; color: var(--good); }
+td.above { font-weight: 700; }
+tr.floor td { background: var(--warn-bg); color: var(--warn-ink); }
 td.sub { color: var(--muted); font-size: .85rem; }
 .empty { background: var(--card); border: 1px dashed var(--line); border-radius: 10px; padding: 1.2rem 1rem; }
 .empty p { margin: .2rem 0; }
@@ -165,28 +173,50 @@ def evidence(url) -> str:
     return f'<td><a href="{esc(url)}" rel="nofollow noopener">link</a></td>'
 
 
-def table(rows: list[dict]) -> str:
-    ids = task_ids(rows)
+def is_baseline(r: dict) -> bool:
+    """A blind-baseline result file: the floor, not a contender."""
+    return r["contender"].get("agent") == BASELINE_AGENT
+
+
+def above_cell(r: dict, floor: dict | None) -> str:
+    v = above_chance([{"id": str(t["id"]), "score": t.get("score")} for t in r["tasks"]], floor) if floor else None
+    if v is None:
+        return '<td class="num sub">-</td>'
+    return f'<td class="num above">{v:.3f}</td>'
+
+
+def table(rows: list[dict], floor_row: dict | None = None) -> str:
+    """The ranked rows of one suite and track, then the blind baseline's row (`floor_row`) marked as the floor.
+    Without a floor row the above-chance column shows '-'."""
+    shown = rows + ([floor_row] if floor_row else [])
+    ids = task_ids(shown)
+    floor = {str(t["id"]): t.get("score") for t in floor_row["tasks"]} if floor_row else None
     head = "".join(f'<th class="num" scope="col">{esc(i)}</th>' for i in ids)
     body = []
-    for rank, r in enumerate(rows, 1):
+    for rank, r in enumerate(shown, 1):
         c = r["contender"]
+        base = r is floor_row
         agent = esc(c.get("agent", "")) + (f' <span class="sub">{esc(c["agent_version"])}</span>'
                                            if c.get("agent_version") else "")
+        if base:
+            agent = f"<strong>Floor:</strong> {agent} (no video seen)"
         scores = {str(t["id"]): t.get("score") for t in r["tasks"]}
         who = esc(r.get("submitted_by") or "-")
+        tr = '<tr class="floor">' if base else "<tr>"
         body.append(
-            f'<tr><td class="num">{rank}</td><td>{agent}</td><td>{esc(c.get("model") or "-")}</td>'
-            f'<td class="sub">{esc(c.get("settings") or "-")}</td>'
+            f'{tr}<td class="num">{"floor" if base else rank}</td><td>{agent}</td>'
+            f'<td>{esc(c.get("model") or "-")}</td><td class="sub">{esc(c.get("settings") or "-")}</td>'
             + "".join(score_cell(scores.get(i)) for i in ids)
-            + f'<td class="num total">{float(r["total"]):.3f}</td><td>{esc(r.get("date", ""))}</td>'
-            f"<td>{who}</td>{evidence(r.get('evidence'))}</tr>")
+            + f'<td class="num total">{float(r["total"]):.3f}</td>{above_cell(r, floor)}'
+            f'<td>{esc(r.get("date", ""))}</td><td>{who}</td>{evidence(r.get("evidence"))}</tr>')
     return (f'<div class="scroll"><table><thead><tr><th class="num" scope="col">#</th><th scope="col">Agent</th>'
             f'<th scope="col">Model</th><th scope="col">Settings</th>{head}<th class="num" scope="col">Total</th>'
+            f'<th class="num" scope="col">Above chance</th>'
             f'<th scope="col">Date</th><th scope="col">Submitter</th><th scope="col">Evidence</th></tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
             f'<p class="sub" style="font-size:.85rem;color:var(--muted)">Scores 0 to 1 per task; total = mean. '
-            f'Ranked by total, then earlier date. Raw files: <a href="{RESULTS_URL}">benchmark/results</a>.</p>')
+            f'Ranked by total, then earlier date. {esc(ABOVE)} '
+            f'Raw files: <a href="{RESULTS_URL}">benchmark/results</a>.</p>')
 
 
 def suite_of(r: dict) -> str:
@@ -201,12 +231,14 @@ def boards(rows: list[dict], prefix: str = "") -> str:
     """One leaderboard table per suite, in SUITES order (a suite with no runs says so); `prefix` keeps the anchors
     of a second track's tables apart."""
     known = [n for n, _ in SUITES]
-    names = known + sorted({suite_of(r) for r in rows} - set(known))
+    names = known + sorted({suite_of(r) for r in rows if not is_baseline(r)} - set(known))
     what = dict(SUITES)
     out = []
     for n in names:
-        mine = [r for r in rows if suite_of(r) == n]
-        body = table(mine) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
+        mine = [r for r in rows if suite_of(r) == n and not is_baseline(r)]
+        base = [r for r in rows if suite_of(r) == n and is_baseline(r)]
+        floor = max(base, key=lambda r: (str(r.get("date", "")), r["_file"])) if base else None   # latest wins
+        body = table(mine, floor) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
         desc = f"<p>{esc(what[n])}</p>" if n in what else ""
         out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
     return "\n".join(out)
@@ -220,7 +252,7 @@ def empty() -> str:
 def frames_board(rows: list[dict]) -> str:
     """The frames-only track's section: its own tables, or a line saying it has no runs yet."""
     mine = [r for r in rows if track_of(r) == "frames"]
-    body = boards(mine, "frames-") if mine else \
+    body = boards(mine, "frames-") if any(not is_baseline(r) for r in mine) else \
         '<p class="sub" style="color:var(--muted)">No frames-only runs yet.</p>'
     cmd = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-2 --track frames"
     return (f'<h2 id="frames">Frames-only track (eyes)</h2><p>{esc(FRAMES)}</p>'
@@ -229,7 +261,8 @@ def frames_board(rows: list[dict]) -> str:
 
 def render(rows: list[dict], notes: list[str]) -> str:
     code = [r for r in rows if track_of(r) == TRACK]
-    board = boards(code) if code else empty()
+    board = boards(code) if any(not is_baseline(r) for r in code) else empty()
+    runs = sum(1 for r in rows if not is_baseline(r))
     skipped = ""
     if notes:
         items = "".join(f"<li>{esc(n)}</li>" for n in notes)
@@ -252,7 +285,7 @@ def render(rows: list[dict], notes: list[str]) -> str:
 <p class="name"><a href="../">sports-video-coach</a></p>
 <h1>{TITLE}</h1>
 <p class="lead">{esc(WHAT)}</p>
-<ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{len(rows)} run{"s" * (len(rows) != 1)}</li>
+<ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
 <li>Measured truth only</li></ul>
 
 <h2 id="leaderboard">Leaderboard</h2>
@@ -264,7 +297,7 @@ def render(rows: list[dict], notes: list[str]) -> str:
 <p>The tasks are synthetic videos drawn by the tool, so the truth is exact: no human labels, no judge model.
 The agent sees only the videos and writes its answers; <code>bench score</code> compares them with the truth.</p>
 <div class="cards">{kinds}</div>
-<p>Total = the mean of the task scores. Full rules: <a href="{DOC_URL}">docs/benchmark.md</a>.</p>
+<p>Total = the mean of the task scores. {esc(ABOVE)} Full rules: <a href="{DOC_URL}">docs/benchmark.md</a>.</p>
 
 <h2 id="run">Run it yourself</h2>
 <ol class="steps">{steps}</ol>
@@ -303,7 +336,8 @@ def main(argv: list[str]) -> int:
     (out / "index.html").write_text(render(rows, notes), encoding="utf8")
     for n in notes:
         print(f"[bench page] skipped {n}")
-    print(f"[bench page] {(out / 'index.html').as_posix()}: {len(rows)} run{'s' * (len(rows) != 1)}, "
+    runs = sum(1 for r in rows if not is_baseline(r))
+    print(f"[bench page] {(out / 'index.html').as_posix()}: {runs} run{'s' * (runs != 1)}, "
           f"{len(notes)} skipped")
     return 0
 

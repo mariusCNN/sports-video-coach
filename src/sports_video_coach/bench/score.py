@@ -9,6 +9,8 @@ Per-task score, 0..1, rounded to 3 decimals:
   events.
 - outcomes: the fraction of positions where the answer equals the truth, over max(len(truth), len(answer)).
 A missing (null) or malformed answer scores 0. total = mean task score, rounded to 3 decimals.
+Above chance (computed when the leaderboard is built, never stored): per task (score - floor) / (1 - floor), clipped
+to 0..1, where the floor is the blind baseline's score on that task (`baseline`); the mean over tasks.
 Both suites use the same kinds and rules; a result file names its suite and is re-scored against that suite.
 Tracks (see `frames`): a result on the `frames` track (still images, no code) says `"track": "frames"`; a file
 without a track is on the `code` track. Both are scored the same way against the same truth.
@@ -92,6 +94,24 @@ def score_task(task_id: str, answer, suite: str = SUITE) -> dict:
 
 def total(rows: list[dict]) -> float:
     return round(sum(r["score"] for r in rows) / len(rows), 3) if rows else 0.0
+
+
+BASELINE_AGENT = "blind baseline"   # the agent name of the floor's result files (see `baseline`)
+
+
+def above_chance_task(raw, floor) -> float | None:
+    """How far a task score is above the blind baseline's score on that task: (raw - floor) / (1 - floor), clipped
+    to 0..1. None when there is no floor, or the floor is 1 (the task then tells nothing about what was seen)."""
+    if not is_num(raw) or not is_num(floor) or floor >= 1:
+        return None
+    return min(1.0, max(0.0, (raw - floor) / (1 - floor)))
+
+
+def above_chance(rows: list[dict], floors: dict) -> float | None:
+    """Mean above-chance score over a result's task rows, rounded to 3 decimals; `floors` maps task id -> the blind
+    baseline's score. Tasks without a usable floor are left out; None when no task has one."""
+    vals = [v for v in (above_chance_task(r.get("score"), floors.get(r.get("id"))) for r in rows) if v is not None]
+    return round(sum(vals) / len(vals), 3) if vals else None
 
 
 def slug(s: str) -> str:

@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-1",
+  "track": "frames",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-24",
+  "contender": {
+    "agent": "blind baseline",
+    "agent_version": "",
+    "model": "",
+    "settings": "answers copied from the TASKS.md examples; no video or still seen"
+  },
+  "submitted_by": "",
+  "tasks": [
+    {
+      "id": "jump-count",
+      "kind": "count",
+      "truth": 13,
+      "answer": 5,
+      "score": 0.385,
+      "note": "off by 8"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 42.0,
+      "answer": 30.5,
+      "score": 0.0,
+      "note": "27.4% off"
+    },
+    {
+      "id": "cone-touches",
+      "kind": "timestamps",
+      "truth": [
+        3.2,
+        5.4,
+        6.8,
+        10.4,
+        12.2,
+        14.8,
+        17.4
+      ],
+      "answer": [
+        1.5,
+        4.25
+      ],
+      "score": 0.11,
+      "note": "0 of 7 within 0.5 s, 2 answered"
+    },
+    {
+      "id": "shot-outcomes",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "answer": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "score": 0.8,
+      "note": "8 of 10 right, 10 answered"
+    }
+  ],
+  "total": 0.324,
+  "wall_seconds": null,
+  "evidence": ""
+}

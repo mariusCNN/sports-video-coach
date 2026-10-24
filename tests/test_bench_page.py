@@ -59,6 +59,34 @@ def test_rows_ranked_by_total(tmp_path):
     assert page_check.problems(out) == []
 
 
+def test_above_chance_next_to_raw_and_floor_row_marked(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "a.json", row("Agent A", "model-a", 0.75, [1.0, 0.75, 0.5]))
+    write(results, "base.json", row("blind baseline", "", 0.5, [0.5, 0.5, 0.5]))
+    out, html = render(tmp_path, results)
+    assert '<th class="num" scope="col">Total</th><th class="num" scope="col">Above chance</th>' in html
+    # raw 0.750 stays; above chance = mean of (1-.5)/.5, (.75-.5)/.5, 0 = 0.5
+    assert '<td class="num total">0.750</td><td class="num above">0.500</td>' in html
+    assert '<tr class="floor"><td class="num">floor</td><td><strong>Floor:</strong> blind baseline' in html
+    assert html.index("Agent A") < html.index("<strong>Floor:</strong>")
+    assert "(score - floor) / (1 - floor)" in html
+    assert "<li>1 run</li>" in html                                     # the floor is not a run
+    assert page_check.problems(out) == []
+
+
+def test_floor_alone_is_not_a_leaderboard_and_no_floor_shows_dash(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "base.json", row("blind baseline", "", 0.5, [0.5, 0.5, 0.5]))
+    _, html = render(tmp_path, results)
+    assert "No runs yet" in html and "<table" not in html
+    (results / "base.json").unlink()
+    write(results, "a.json", row("Agent A", "m", 0.75, [1.0, 0.75, 0.5]))
+    _, html = render(tmp_path, results)
+    assert '<td class="num total">0.750</td><td class="num sub">-</td>' in html
+
+
 def test_broken_file_is_a_visible_note(tmp_path):
     results = tmp_path / "results"
     results.mkdir()
