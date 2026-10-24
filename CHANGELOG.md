@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- A short clip at the top of the benchmark page and in the README (`clip.mp4` / `clip.gif`, about 18 s): the
+  `svc-bench-3` juggling video, the stills a frames-track agent gets around a 0.24 s double touch, zoomed and
+  slowed, then the true count (47) against every run's answer. `bench page` draws it from the suite and the
+  result files (`bench/clip.py`, tested), like the share card.
 - The benchmark page answers a skeptic's first questions (found by a cold "skeptical Hacker News reader" run: 16
   gaps): a folded "Before you trust this" block counted from the result files (who submitted, own config loaded,
   single runs and run-to-run spread, the blind guess's best task, evidence, time and cost), the exact prompt,

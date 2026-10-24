@@ -369,6 +369,11 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
   shows the exact prompt `bench run` sends.
 - The same build draws `card.png`, the page's link preview image (`og:image`): per suite and track, the top
   contenders' mean above chance from the page's Summary tables (needs matplotlib; without it there is no card).
+- It also draws a short clip at the top of the page, `clip.mp4` and `clip.gif` (about 18 s, `bench/clip.py`): the
+  `svc-bench-3` juggling video as contenders get it, the frames-track stills around its first double touch (two
+  touches 0.24 s apart) zoomed and slowed, then the truth against each run's answer on that task. Every number
+  comes from the suite or the result files (tests check it); needs Pillow (with matplotlib) and ffmpeg, else no
+  clip. For a post, `python -m sports_video_coach.bench.clip benchmark/results <dir>` draws it alone.
 
 ## Honesty notes
 

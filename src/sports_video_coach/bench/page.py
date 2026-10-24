@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 
 from . import card as share_card
+from . import clip as share_clip
 from . import run as bench_run
 from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task
 
@@ -682,7 +683,21 @@ def social(card: bool) -> str:
     return "\n".join(tags)
 
 
-def render(rows: list[dict], notes: list[str], card: bool = False) -> str:
+def clip_block(clip: bool) -> str:
+    """The short clip at the top (`bench.clip`: one hard moment, then truth vs answers), when it was drawn."""
+    if not clip:
+        return ""
+    return (f'<figure style="margin:1rem 0"><video src="{share_clip.MP4}" autoplay muted loop playsinline '
+            f'preload="metadata" aria-label="{esc(share_clip.ALT)}" style="display:block;width:100%;max-width:'
+            f'{share_clip.SIZE}px;height:auto;border-radius:10px"><img src="{share_clip.GIF}" '
+            f'alt="{esc(share_clip.ALT)}" style="width:100%;height:auto"></video>'
+            f'<figcaption style="color:var(--muted);font-size:.9rem;margin-top:.3rem">One hard moment of '
+            f'{share_clip.SUITE} ({share_clip.TASK}, {share_clip.TRACK} track), then what each model answered, '
+            f'from the result files. <a href="{share_clip.GIF}">GIF</a> · <a href="{share_clip.MP4}">MP4</a>'
+            f'</figcaption></figure>')
+
+
+def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False) -> str:
     code = [r for r in rows if track_of(r) == TRACK]
     board = boards(code) if any(not is_baseline(r) for r in code) else empty()
     runs = sum(1 for r in rows if not is_baseline(r))
@@ -711,6 +726,7 @@ def render(rows: list[dict], notes: list[str], card: bool = False) -> str:
 <p class="lead">{esc(WHAT)}</p>
 <ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
 <li>Measured truth only</li>{latest(rows)}</ul>
+{clip_block(clip)}
 {facts_block(rows)}
 
 <h2 id="leaderboard">Leaderboard</h2>
@@ -764,7 +780,8 @@ def main(argv: list[str]) -> int:
     card = share_card.write(rows, out)
     if card is None:
         print("[bench page] no share card: matplotlib is not installed (the page has no og:image)")
-    (out / "index.html").write_text(render(rows, notes, card is not None), encoding="utf8")
+    clip = share_clip.write(rows, out)
+    (out / "index.html").write_text(render(rows, notes, card is not None, clip is not None), encoding="utf8")
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))
