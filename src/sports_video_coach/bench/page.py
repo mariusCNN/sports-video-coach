@@ -324,8 +324,8 @@ def frames_board(rows: list[dict]) -> str:
     run = "sports-video-coach bench run --agent claude --model <model> --suite svc-bench-3 --track frames"
     prep = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-3 --track frames"
     return (f'<h2 id="frames">Frames-only track (eyes)</h2><p>{esc(FRAMES)}</p>'
-            "<p>Rerun it in one command: it prepares the suite, runs Claude Code (or <code>--agent codex</code>) "
-            "headless with no code tools, and scores the answers.</p>"
+            "<p>Rerun it in one command: it prepares the suite, runs Claude Code headless with no code tools (or "
+            "any CLI with <code>--agent cmd --cmd \"... {prompt}\"</code>), and scores the answers.</p>"
             f"<pre><code>{esc(run)}</code></pre>"
             "<p>Another agent: prepare the stills, let it fill <code>bench-frames/answers.json</code> by eye, then "
             "score it with <code>bench score bench-frames</code>.</p>"

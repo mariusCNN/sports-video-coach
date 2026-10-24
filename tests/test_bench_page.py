@@ -39,6 +39,7 @@ def test_empty_results_show_be_the_first(tmp_path):
     one = frames.index("bench run --agent claude --model &lt;model&gt; --suite svc-bench-3 --track frames")
     assert one < frames.index("bench prepare --out bench-frames --suite svc-bench-3 --track frames")  # one command first
     assert "bench score bench-frames" in frames
+    assert "--agent cmd --cmd" in frames and "--agent codex" not in frames   # frames runs Claude Code or a cmd
     assert page_check.problems(out) == []
 
 
