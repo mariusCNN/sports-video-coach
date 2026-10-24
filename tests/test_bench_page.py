@@ -335,6 +335,7 @@ def test_skeptic_facts_are_counted_from_the_files(tmp_path):
     assert "1 of 2 contenders" in facts and "differed by up to 0.524" in facts   # A: 0.869 vs 0.345 above
     assert "up to 0.30 on one task (cadence)" in facts
     assert "1 of 3 runs link a transcript" in facts
+    assert "<li>Latest run 2026-10-24</li>" in html
     assert "time recorded for 2 of 3 runs, cost for 0 of 3" in facts
     assert 'href="#prompt"' in facts and 'id="prompt"' in html
     assert "Do not read the sports-video-coach package source" in html      # the code-track prompt, verbatim

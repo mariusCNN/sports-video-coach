@@ -577,7 +577,7 @@ def frames_board(rows: list[dict]) -> str:
             f"<pre><code>{esc(prep)}</code></pre>{body}")
 
 
-OWN_CONFIG = ("CLAUDE.md loaded", "user config loaded", "AGENTS.md was loaded")
+OWN_CONFIG = ("CLAUDE.md loaded", "user config loaded", "AGENTS.md was loaded", "(user config)")
 
 
 def facts(rows: list[dict]) -> list[str]:
@@ -609,8 +609,9 @@ def facts(rows: list[dict]) -> list[str]:
         for key, vals in same.items():
             if len(vals) > 1 and (spread is None or max(vals) - min(vals) > spread[0]):
                 spread = (max(vals) - min(vals), key[1] or key[0], suite, track)
-    noise = (f" Two runs with the same settings differed by up to {spread[0]:.3f} above chance "
-             f"({esc(spread[1])}, {esc(spread[2])} {esc(spread[3])} track): read smaller gaps as noise."
+    noise = (f" Two runs with identical settings differed by up to {spread[0]:.3f} above chance "
+             f"({esc(spread[1])}, {esc(spread[2])} {esc(spread[3])} track): read smaller gaps as noise. A run "
+             "killed at its time limit scores 0 and widens its contender's range further."
              if spread else "")
     floors = [(t.get("score"), str(t["id"])) for r in rows if is_baseline(r) for t in r["tasks"]
               if is_num(t.get("score"))]
@@ -622,14 +623,15 @@ def facts(rows: list[dict]) -> list[str]:
     return [
         f"<strong>Who ran it:</strong> {who}",
         f"<strong>Own config:</strong> {own} of {n} runs say in Settings that the submitter's own agent config "
-        "(CLAUDE.md, AGENTS.md) was loaded.",
+        "(CLAUDE.md, AGENTS.md or Codex config) was loaded.",
         f"<strong>Sample size:</strong> {singles} of {contenders} contenders (per suite and track) ran once.{noise}",
         "<strong>Settings:</strong> not equalized. Each row ran at the effort and flags its Settings column names.",
         "<strong>Truth:</strong> the tool draws the videos from numbers, so the truth is exact. No human labels, no "
         "judge model.",
         "<strong>Suite design:</strong> svc-bench-2 and svc-bench-3 were each built after models scored 1.0 on the "
         "suite before, so the author knew which models already saturated it.",
-        '<strong>Prompt:</strong> one fixed text per track, the same for every model. See '
+        '<strong>Prompt:</strong> <code>bench run</code> sends one fixed text per track, the same for every '
+        'model; only the Claude Code frames rows are known to have run with it. See '
         '<a href="#prompt">the exact prompt</a>.',
         "<strong>Above chance:</strong> measured from a blind guess that copies the example answers in the task "
         f"text, not from random.{guess}",
@@ -638,6 +640,12 @@ def facts(rows: list[dict]) -> list[str]:
         f"<strong>Time and cost:</strong> in every table; time recorded for {timed} of {n} runs, cost for "
         f"{costed} of {n}.",
     ]
+
+
+def latest(rows: list[dict]) -> str:
+    """A chip with the newest run's date ('' without runs)."""
+    dates = [str(r.get("date") or "") for r in rows if not is_baseline(r) and r.get("date")]
+    return f"<li>Latest run {esc(max(dates))}</li>" if dates else ""
 
 
 def facts_block(rows: list[dict]) -> str:
@@ -702,7 +710,7 @@ def render(rows: list[dict], notes: list[str], card: bool = False) -> str:
 <h1>{TITLE}</h1>
 <p class="lead">{esc(WHAT)}</p>
 <ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
-<li>Measured truth only</li></ul>
+<li>Measured truth only</li>{latest(rows)}</ul>
 {facts_block(rows)}
 
 <h2 id="leaderboard">Leaderboard</h2>
@@ -730,8 +738,9 @@ CI re-scores it with <code>bench validate</code>.</li>
 
 <h2 id="honesty">Honesty notes</h2>
 <ul class="plain">
-<li>The benchmark and this page were built with a coding agent.</li>
-<li>Every row is reproducible: same suite, same commands, scores recomputed from the answers.</li>
+<li>The benchmark and this page were built with a coding agent (Claude Code).</li>
+<li>Every row can be rerun: same suite, same command, scores recomputed from the stored answers. A rerun's answers
+can differ (see the sample size note at the top).</li>
 <li>The author wrote the tool, drew the suites and submitted the first runs; outside runs are welcome (above).</li>
 <li>Failed and killed runs stay on the board and count in their contender's mean.</li>
 <li>Synthetic drills test counting and timing, not every part of a coach's review.</li>

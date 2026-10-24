@@ -362,7 +362,7 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
   (such as `; killed at the 1700 s time limit ...`) counts with that contender, so a failed run lowers its mean
   instead of standing apart. Equal means share a rank, marked `=`. Mean time and cost are over the runs that
   recorded them (`(k of n)` when only some did).
-- Under the chips, a folded "Before you trust this" block answers what a skeptic asks first, counted from the
+- The chips name the newest run's date. Under them, a folded "Before you trust this" block answers what a skeptic asks first, counted from the
   result files at build time: who submitted the runs, how many loaded the submitter's own agent config, how many
   contenders ran once and the largest gap between two runs with the same settings, the highest score the blind
   guess gets on one task, how many runs link evidence, and how many recorded time and cost. The Method section
