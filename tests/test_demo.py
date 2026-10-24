@@ -90,7 +90,8 @@ def test_search_engine_files_and_structured_data():
     assert f"Sitemap: {demo.SITE_URL}sitemap.xml" in robots
     ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     locs = [e.text for e in ET.fromstring(demo.sitemap_xml().encode()).findall("s:url/s:loc", ns)]
-    assert locs == [demo.SITE_URL, demo.SITE_URL + "demo/", demo.SITE_URL + "benchmark/"]
+    assert locs == [demo.SITE_URL, demo.SITE_URL + "demo/", demo.SITE_URL + "benchmark/",
+                    demo.SITE_URL + "benchmark/zh/"]
     assert all(u.startswith("https://") for u in locs)
     home = demo.landing(["film.en.mp4", "film.en.jpg"])
     assert f'href="{demo.SITE_URL}benchmark/"' in home   # the leaderboard, written by `bench page` in CI

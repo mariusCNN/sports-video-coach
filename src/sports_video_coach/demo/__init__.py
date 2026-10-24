@@ -87,7 +87,7 @@ TRY = (f"uv tool install git+{REPO_URL}", "sports-video-coach demo")   # needs f
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
 BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site
-SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/", BENCH_URL)
+SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/", BENCH_URL, f"{BENCH_URL}zh/")   # zh/: the Chinese leaderboard
 
 
 def canonical(url: str) -> str:

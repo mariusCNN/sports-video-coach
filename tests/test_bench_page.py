@@ -123,7 +123,8 @@ def test_no_external_urls_but_repo_and_evidence(tmp_path):
     urls = set(re.findall(r"""(?:https?:)?//[^\s"'<>)]+""", html))
     allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL, page.DEMO_URL)
     assert urls and all(u.startswith(allowed) for u in urls), urls
-    assert "<link" not in html and "<script" not in html   # self-contained: no stylesheet or script fetched
+    assert "<script" not in html                            # self-contained: no stylesheet or script fetched
+    assert set(re.findall(r"<link rel=\"([^\"]+)\"", html)) == {"canonical", "alternate"}
 
 
 def summary_of(html: str) -> str:
@@ -378,3 +379,69 @@ def test_first_screen_links_without_runs(tmp_path):
     nav = html[html.index('<nav class="jump"'):html.index("</nav>")]
     assert "#frames-" not in nav and "#leaderboard" not in nav and '"#rerun"' in nav
     assert page_check.problems(out) == []
+
+
+NUM_CELL = re.compile(r'<td class="num[^"]*">([^<]*)')
+NUMBER = re.compile(r"^(?:\$?\d+(?:\.\d+)?(?: s)?|\d+\.\d+&ndash;\d+\.\d+)$")
+
+
+def numbers(html: str) -> list[str]:
+    """Every number in the page's table cells, in order (ranks, scores, totals, times, costs)."""
+    return [c.strip() for c in NUM_CELL.findall(html) if NUMBER.match(c.strip())]
+
+
+def test_chinese_page_shows_the_same_rows_and_numbers_as_the_english_one():
+    from pathlib import Path
+    rows, notes = page.load(Path(__file__).resolve().parents[1] / "benchmark" / "results")
+    en, zh = (page.render(rows, notes, lang=x) for x in ("en", "zh"))
+    assert '<html lang="zh-CN">' in zh and "体育录像复盘基准测试" in zh
+    assert zh.count("<tr") == en.count("<tr") and zh.count("<table") == en.count("<table")
+    assert numbers(zh) == numbers(en) and len(numbers(en)) > 100
+    assert re.findall(r' id="([^"]+)"', zh) == re.findall(r' id="([^"]+)"', en)   # same sections and anchors
+    for text in ("Leaderboard", "Before you trust this", "Where each contender fails", "Above chance", "Method"):
+        assert text not in zh
+    assert "排行榜" in zh and "信之前先看" in zh and "每个参赛者错在哪里" in zh and "超出盲猜" in zh
+
+
+def test_language_switch_and_hreflang_both_ways(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "a.json", row("Agent A", "model-a", 0.75, [1.0, 0.75, 0.5]))
+    write(results, "base.json", row("blind baseline", "", 0.5, [0.5, 0.5, 0.5]))
+    out, en = render(tmp_path, results)
+    zh = (out / "zh" / "index.html").read_text(encoding="utf8")
+    assert '<a class="switch" href="zh/" hreflang="zh-CN" lang="zh-CN">中文</a>' in en
+    assert '<a class="switch" href="../" hreflang="en" lang="en">English</a>' in zh
+    for html in (en, zh):
+        assert f'<link rel="alternate" hreflang="en" href="{page.PAGE_URL}">' in html
+        assert f'<link rel="alternate" hreflang="zh-CN" href="{page.PAGE_URL}zh/">' in html
+        assert f'<link rel="alternate" hreflang="x-default" href="{page.PAGE_URL}">' in html
+    assert f'<link rel="canonical" href="{page.PAGE_URL}">' in en
+    assert f'<link rel="canonical" href="{page.PAGE_URL}zh/">' in zh
+    assert f'<meta property="og:url" content="{page.PAGE_URL}zh/">' in zh
+    assert '<a href="../../">sports-video-coach</a>' in zh            # the site's home, one folder further up
+    assert '<td class="num total">0.750</td><td class="num above">0.500</td>' in zh
+    assert page_check.problems(out) == [] and page_check.problems(out / "zh") == []
+
+
+def test_chinese_page_empty_state_and_clip_paths(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    out, _ = render(tmp_path, results)
+    zh = (out / "zh" / "index.html").read_text(encoding="utf8")
+    assert "还没有运行记录，来做第一个。" in zh and "<table" not in zh
+    assert page_check.problems(out / "zh") == []
+    clip = page.clip_block(True, "zh")
+    assert 'src="../clip.mp4"' in clip and 'src="../clip.gif"' in clip and 'href="../clip.gif"' in clip
+
+
+def test_chinese_diff_lines():
+    assert page.diff_answer("count", 10, {"answer": 12}, "zh") == "多了 2"
+    assert page.diff_answer("rate", 50, {"answer": 45}, "zh") == "偏低 10.0%"
+    assert page.diff_answer("timestamps", [1.0, 2.0], {"answer": [1.0, 5.0]}, "zh") == \
+        "2 个中有 1 个不在 0.5 s 内（在 2 s）；1 个对不上（在 5 s）"
+    assert page.diff_answer("outcomes", ["made", "missed"], {"answer": ["made"]}, "zh") == "只答了 2 个中的 1 个"
+    assert page.diff_answer("outcomes", ["made", "missed"], {"answer": ["missed", "missed"]}, "zh") == \
+        "2 个中错 1 个（第 1 个答成 missed）"
+    assert page.show_value("outcomes", ["made", "missed", "made"], "zh") == "进 2，不进 1"
+    assert page.diff_answer("count", 10, {}, "zh") == "未记录回答"

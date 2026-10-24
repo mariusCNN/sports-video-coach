@@ -3,7 +3,7 @@
 Which coding agent and vision model reviews sports film best? This benchmark scores each run against ground truth,
 so every number is measured, not judged.
 
-- **Leaderboard:** <https://mariusding.github.io/sports-video-coach/benchmark/>
+- **Leaderboard:** <https://mariusding.github.io/sports-video-coach/benchmark/> (in Chinese: <https://mariusding.github.io/sports-video-coach/benchmark/zh/>, built from the same result files)
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
 - **Commands:** `sports-video-coach bench run | prepare | score | validate | page | baseline`
 - **Install:** `uv tool install git+https://github.com/mariusDing/sports-video-coach` (needs ffmpeg on PATH), then

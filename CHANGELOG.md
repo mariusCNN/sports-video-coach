@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- The benchmark page in Simplified Chinese at `/benchmark/zh/` (`bench page` writes `zh/index.html` next to
+  `index.html`): the same rows and numbers from the same result files, a language switch and hreflang links both
+  ways, and the zh URL in the demo site's sitemap. README.zh.md links it.
 - `bench run --agent codex --track frames`: the Codex frames row in one command (`codex exec -s read-only`, shell
   and other tool features disabled, web search off, every contact sheet attached with `-i`, prompt on stdin).
   Beyond those switches tool restriction is by prompt only; `run.json` counts the commands it ran from the

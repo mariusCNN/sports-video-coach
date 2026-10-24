@@ -52,7 +52,7 @@ jobs:
           uv tool run --from . --with matplotlib sports-video-coach bench page benchmark/results _site/benchmark
           test -s _site/benchmark/card.png && test -s _site/benchmark/clip.mp4 && test -s _site/benchmark/clip.gif
       - name: Page check
-        run: sports-video-coach page-check _site _site/demo _site/benchmark
+        run: sports-video-coach page-check _site _site/demo _site/benchmark _site/benchmark/zh
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site

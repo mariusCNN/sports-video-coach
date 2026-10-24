@@ -1,8 +1,9 @@
 """`sports-video-coach bench page <results_dir> <out_dir>`: the public benchmark leaderboard.
 
 Reads every `*.json` result file in `<results_dir>` (schema 1, written by `bench score`) and writes
-`<out_dir>/index.html`: a self-contained static page (inline CSS, light and dark, readable at 390 px) with the
-leaderboard ranked by total (above it, a summary per contender: runs, mean total, mean and range of above
+`<out_dir>/index.html` and its Simplified Chinese twin `<out_dir>/zh/index.html` (same rows and numbers, a
+language switch and hreflang links both ways): a self-contained static page (inline CSS, light and dark,
+readable at 390 px) with the leaderboard ranked by total (above it, a summary per contender: runs, mean total, mean and range of above
 chance), with an "above chance" score next to it (the floor is the blind baseline's result
 file of that suite and track, `bench.baseline`, shown as a marked row under the ranked ones; under it a folded
 "Where each contender fails" block: per task the suite's truth, each run's stored answer, the recomputed score and
@@ -81,6 +82,106 @@ COMMANDS = (
     ("Let your agent watch the videos and fill bench-run/answers.json, then score it",
      'sports-video-coach bench score bench-run --agent "Your agent" --model "your-model"'),
 )
+NOT_RECORDED = "answer not recorded"
+FAILS = ("Every contender run, task by task: the truth (from the suite), each run's answer as its result file stores "
+         "it, the score recomputed from the two, and what was missed. The blind baseline is left out. Timestamps: an "
+         "event not answered within 0.5 s still earns part of its point up to 2 s off; an unmatched answer is one "
+         "with no event within 0.5 s.")
+SHOW = 4                       # list diffs name at most this many times or positions, then "+N more"
+LANGS = ("en", "zh")          # the page in English (index.html) and Simplified Chinese (zh/index.html)
+TAGS = {"en": "en", "zh": "zh-CN"}
+URLS = {"en": PAGE_URL, "zh": f"{PAGE_URL}zh/"}
+KIND_ZH = {"count": "次数", "rate": "比率", "timestamps": "时间点", "outcomes": "结果"}
+# The Chinese page: every English text the page shows, keyed by itself (templates keep their {fields}). `t` raises
+# KeyError on a missing entry, so a new English text without a translation fails the zh page's tests.
+ZH = {
+    SUITES[0][1]: "眼力：四段程序画的视频，事件小、短或被挡住：640x360 画面里半径 5 px 的球，16 px 宽的远处篮筐上半径 "
+                  "3 px 的球，相隔 0.24 s 的两次触球，挡在关键时刻前面的横幅和防守人，传球假动作，以及答案几乎一样的"
+                  "干扰项（第二个颠球的人、第二对传球的人、节奏相近的远处小船）。",
+    SUITES[1][1]: "难：五段程序画的视频，手持镜头，有长得像的干扰项（第二个球、两只一模一样的脚、一个抢篮板的人）、"
+                  "按规则定义的事件和噪点。",
+    SUITES[2][1]: "四段很短的程序画视频，固定机位。",
+    FRESH_WHAT: "新种子：每次运行都按结果文件里的种子（`--seed`）重新画一遍 svc-bench-3，场景和陷阱种类不变，但次数、"
+                "结果、时间和节奏都是新的。agent 的文件夹里从来没有答案；工具按种子重建答案来打分、核对每一行，并在下面"
+                "展示，所以公开过的种子就作废了。每次运行的基线是它自己那个种子上的盲猜基线。",
+    FRAMES: "静帧赛道：agent 只能看每段视频的静帧（拼成的缩略图，每张下面标着时间），没有能运行代码的工具，只能用眼睛"
+            "看。视频、真实值和打分方式都和代码赛道相同。分数衡量的是模型看到了什么、看得多仔细：只翻几张静帧的模型是在"
+            "猜，而猜也可能拿高分。",
+    ABOVE: "超出盲猜：每道题算 (score - floor) / (1 - floor)，限制在 0..1；floor 是盲猜基线的分数（它照抄题目里的示例"
+           "答案，不看视频）。0 = 不比这种瞎猜强，1 = 满分。",
+    COSTS: "用时 = 这次运行实际花的秒数；费用 = agent 自己报告的美元数（Claude Code 会报，Codex 不报）；'-' = 没有记录。",
+    SUMMARY: "n = 同一 agent、模型和设置的运行次数；范围 = 这些运行的超出盲猜总分从最低到最高（只跑一次时为短横）。"
+             "设置只多一条备注的运行（比如到时限被终止）算在同一个参赛者里。",
+    TITLE: "体育录像复盘基准测试",
+    WHAT: "哪个编程 agent 和视觉模型最会看体育录像？用程序画的训练视频来测。每次运行都和工具画进视频里的真实值比对"
+          "打分，所以每个数字都是测出来的，不是评出来的。",
+    PART_OF: "它属于 sports-video-coach，一个免费的 MIT 工具：你的编程 agent 看你自己的运动视频，给你写一页带片段和"
+             "练习的教练复盘。",
+    KINDS[0][1]: "多少次颠球、拍球或投篮。",
+    KINDS[0][2]: "1 - |误差| / 真实值，最低为 0。",
+    KINDS[1][1]: "节奏或百分比。",
+    KINDS[1][2]: "与真实值相差 2 % 以内得 1，线性下降，到 20 % 时为 0。",
+    KINDS[2][1]: "每个事件发生在什么时候。",
+    KINDS[2][2]: "每个事件：0.5 s 以内得 1，到 2 s 线性降为 0，漏掉得 0；求和后除以真实值和回答两个列表中较长的那个，"
+                 "所以多报的事件也扣分。",
+    KINDS[3][1]: "进还是没进，按顺序。",
+    KINDS[3][2]: "按位置答对的比例。",
+    COMMANDS[0][0]: "安装（需要 PATH 上有 ffmpeg）",
+    COMMANDS[1][0]: "生成题目：视频和一个空的 answers.json（最新的套件；去掉 --suite 就是 svc-bench-1）",
+    COMMANDS[2][0]: "让你的 agent 看视频、填好 bench-run/answers.json，然后打分",
+    # table
+    "transcript": "记录", "link": "链接", "Floor:": "基线：", "(no video seen)": "（没看视频）", "seed {}": "种子 {}",
+    "floor": "基线", "Agent": "Agent", "Model": "模型", "Settings": "设置", "Total": "总分",
+    "Above chance": "超出盲猜", "Time": "用时", "Cost": "费用", "Date": "日期", "Submitter": "提交者",
+    "Evidence": "证据",
+    "Scores 0 to 1 per task; total = mean. Ranked by total, then earlier date. {} {} Raw files: {}.":
+        "每道题 0 到 1 分；总分 = 平均值。按总分排序，同分时日期早的在前。{} {} 原始文件：{}。",
+    # summary
+    "Summary": "汇总", "Runs (n)": "次数 (n)", "Mean total": "平均总分", "Mean above chance": "平均超出盲猜",
+    "Range": "范围", "Mean time": "平均用时", "Mean cost": "平均费用", "Every run": "每次运行",
+    "Ranked by mean above chance; &ldquo;=&rdquo; marks a tie. {} {}":
+        "按平均超出盲猜排序；&ldquo;=&rdquo; 表示并列。{} {}",
+    "({} of {})": "（{1} 次中有 {0} 次）",
+    # where each contender fails
+    NOT_RECORDED: "未记录回答", "no answer given": "没有作答", "not a number": "不是数字",
+    "{} too many": "多了 {}", "{} too few": "少了 {}", "{}% high": "偏高 {}%", "{}% low": "偏低 {}%",
+    "not a list of seconds": "不是秒数列表", "{} of {} not within 0.5 s (at {})": "{1} 个中有 {0} 个不在 0.5 s 内（在 {2}）",
+    "{} unmatched (at {})": "{} 个对不上（在 {}）", "all within 0.5 s": "全部在 0.5 s 内", "not a list": "不是列表",
+    "#{} said {}": "第 {} 个答成 {}", "{} of {} wrong ({})": "{1} 个中错 {0} 个（{2}）",
+    "answered {} of {}": "只答了 {1} 个中的 {0} 个", "{} extra": "多答 {} 个", "; ": "；", ", ": "，",
+    " +{} more": " 等，另有 {} 个", "{} time": "{} 次", "{} times": "{} 次", "{} made, {} missed": "进 {}，不进 {}",
+    " (M = made)": "（M = 进）", "{} run {}": "{} 第 {} 次", "{} (seed {})": "{}（种子 {}）",
+    "score below 1": "未满分", "exact": "完全正确", "truth {}; {}": "真实值 {}；{}",
+    "drawn from each run's own seed; shown in its row": "按每次运行自己的种子生成；见各行", "Truth:": "真实值：",
+    "Run": "运行", "Answer": "回答", "Score": "得分", "What was missed": "漏在哪里",
+    "Where each contender fails": "每个参赛者错在哪里",
+    FAILS: "逐题列出每次参赛运行：真实值（来自套件）、结果文件里存的回答、由两者重新算出的分数，以及漏了什么。盲猜基线"
+           "不列出。时间点：没在 0.5 s 内答中的事件，偏差在 2 s 以内仍能拿部分分；对不上的回答是指 0.5 s 内没有任何事件"
+           "与它对应。",
+    # boards, empty, frames
+    "No runs on this suite yet.": "这个套件还没有运行记录。",
+    " Saturated on this track: all {} runs scored 1.0, so it ranks nobody.":
+        "在这个赛道上已经饱和：全部 {} 次运行都是 1.0，排不出高低。",
+    "No runs yet — be the first.": "还没有运行记录，来做第一个。",
+    "Run the suite with your agent (below), then open a pull request with your result file.":
+        "用你的 agent 跑一遍套件（见下文），然后提交一个带结果文件的 pull request。",
+    "No frames-only runs yet.": "还没有静帧赛道的运行记录。",
+    "Frames-only track (eyes)": "静帧赛道（眼力）",
+    "Rerun it in one command: it prepares the suite, runs Claude Code headless with no code tools (or any "
+    "CLI with {}), and scores the answers.": "一条命令重跑：准备套件，以无界面模式运行不带代码工具的 Claude Code（或用 {} 运行任意 "
+                               "CLI），再给答案打分。",
+    "Another agent: prepare the stills, let it fill {} by eye, then score it with {}.":
+        "其他 agent：先准备好静帧，让它用眼睛填好 {}，再用 {} 打分。",
+    # first screen
+    "Latest run {}": "最近一次运行 {}", "Frames-only board ({})": "静帧榜（{}）", "Code-track board": "代码赛道榜",
+    "Rerun it in one command": "一条命令重跑", "Code on GitHub": "GitHub 上的代码", "On this page": "本页导航",
+    "Before you trust this: {} things a skeptic asks first": "信之前先看：怀疑的人最先会问的 {} 件事",
+}
+
+
+def t(en: str, lang: str) -> str:
+    """`en` on the English page, its ZH entry on the Chinese one."""
+    return en if lang == "en" else ZH[en]
 
 CSS = """
 :root { --bg: #f6f5fb; --card: #fff; --ink: #1d1b38; --muted: #5c5a86; --line: #e2e0ef; --accent: #3b36a8;
@@ -151,6 +252,7 @@ details.facts li { margin-bottom: .35rem; }
 details.prompt { margin: .8rem 0; }
 details.prompt summary { cursor: pointer; font-weight: 600; }
 pre.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.name a.switch { color: var(--accent); font-weight: 600; margin-left: .6rem; text-decoration: underline; }
 .kind { font-size: .75rem; font-weight: 400; color: var(--muted); border: 1px solid var(--line);
         border-radius: 999px; padding: 0 .45rem; margin-left: .3rem; }
 """
@@ -213,11 +315,11 @@ def score_cell(v) -> str:
     return f'<td class="num">{v:.2f}</td>'
 
 
-def evidence(url) -> str:
+def evidence(url, lang: str = "en") -> str:
     url = str(url or "")
     if not url.startswith(("https://", "http://")):
         return '<td class="sub">-</td>'
-    label = "transcript" if "/benchmark/transcripts/" in url else "link"
+    label = t("transcript" if "/benchmark/transcripts/" in url else "link", lang)
     return f'<td><a href="{esc(url)}" rel="nofollow noopener">{label}</a></td>'
 
 
@@ -255,7 +357,7 @@ def above_cell(r: dict, floor: dict | None) -> str:
     return f'<td class="num above">{v:.3f}</td>'
 
 
-def table(rows: list[dict], floor_row: dict | None = None) -> str:
+def table(rows: list[dict], floor_row: dict | None = None, lang: str = "en") -> str:
     """The ranked rows of one suite and track, then the blind baseline's row (`floor_row`) marked as the floor.
     Without a floor row the above-chance column shows '-'."""
     shown = rows + ([floor_row] if floor_row else [])
@@ -269,28 +371,33 @@ def table(rows: list[dict], floor_row: dict | None = None) -> str:
         agent = esc(c.get("agent", "")) + (f' <span class="sub">{esc(c["agent_version"])}</span>'
                                            if c.get("agent_version") else "")
         if base:
-            agent = f"<strong>Floor:</strong> {agent} (no video seen)"
+            agent = f"<strong>{t('Floor:', lang)}</strong> {agent} {t('(no video seen)', lang)}"
         if r.get("seed") is not None:
-            agent += f' <span class="sub">seed {esc(r["seed"])}</span>'
+            agent += f' <span class="sub">{t("seed {}", lang).format(esc(r["seed"]))}</span>'
         scores = {str(t["id"]): t.get("score") for t in r["tasks"]}
         who = esc(r.get("submitted_by") or "-")
         tr = '<tr class="floor">' if base else "<tr>"
         body.append(
-            f'{tr}<td class="num">{"floor" if base else rank}</td><td>{agent}</td>'
+            f'{tr}<td class="num">{t("floor", lang) if base else rank}</td><td>{agent}</td>'
             f'<td>{esc(c.get("model") or "-")}</td><td class="sub">{esc(c.get("settings") or "-")}</td>'
             + "".join(score_cell(scores.get(i)) for i in ids)
             + f'<td class="num total">{float(r["total"]):.3f}</td>{above_cell(r, floor)}'
             f'{num_cell(r.get("wall_seconds"), wall)}{num_cell(r.get("cost_usd"), usd)}'
-            f'<td>{esc(r.get("date", ""))}</td><td>{who}</td>{evidence(r.get("evidence"))}</tr>')
-    return (f'<div class="scroll"><table><thead><tr><th class="num" scope="col">#</th><th scope="col">Agent</th>'
-            f'<th scope="col">Model</th><th scope="col">Settings</th>{head}<th class="num" scope="col">Total</th>'
-            f'<th class="num" scope="col">Above chance</th>'
-            f'<th class="num" scope="col">Time</th><th class="num" scope="col">Cost</th>'
-            f'<th scope="col">Date</th><th scope="col">Submitter</th><th scope="col">Evidence</th></tr></thead>'
+            f'<td>{esc(r.get("date", ""))}</td><td>{who}</td>{evidence(r.get("evidence"), lang)}</tr>')
+    col = {k: t(k, lang) for k in ("Agent", "Model", "Settings", "Total", "Above chance", "Time", "Cost", "Date",
+                                     "Submitter", "Evidence")}
+    note = t("Scores 0 to 1 per task; total = mean. Ranked by total, then earlier date. {} {} Raw files: {}.",
+             lang).format(esc(t(ABOVE, lang)), esc(t(COSTS, lang)), f'<a href="{RESULTS_URL}">benchmark/results</a>')
+    return (f'<div class="scroll"><table><thead><tr><th class="num" scope="col">#</th>'
+            f'<th scope="col">{col["Agent"]}</th>'
+            f'<th scope="col">{col["Model"]}</th><th scope="col">{col["Settings"]}</th>{head}'
+            f'<th class="num" scope="col">{col["Total"]}</th>'
+            f'<th class="num" scope="col">{col["Above chance"]}</th>'
+            f'<th class="num" scope="col">{col["Time"]}</th><th class="num" scope="col">{col["Cost"]}</th>'
+            f'<th scope="col">{col["Date"]}</th><th scope="col">{col["Submitter"]}</th>'
+            f'<th scope="col">{col["Evidence"]}</th></tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
-            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">Scores 0 to 1 per task; total = mean. '
-            f'Ranked by total, then earlier date. {esc(ABOVE)} {esc(COSTS)} '
-            f'Raw files: <a href="{RESULTS_URL}">benchmark/results</a>.</p>')
+            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">{note}</p>')
 
 
 def is_num_value(v) -> bool:
@@ -361,7 +468,7 @@ def ranks(summary: list[dict]) -> list[str]:
     return [f"{keys.index(k) + 1}{'=' if keys.count(k) > 1 else ''}" for k in keys]
 
 
-def summary_table(rows: list[dict], floor_row: dict | None = None) -> str:
+def summary_table(rows: list[dict], floor_row: dict | None = None, lang: str = "en") -> str:
     """The per-contender summary of one suite and track, shown above its table of every run."""
     body = []
     summary = summarize(rows, floor_row)
@@ -374,24 +481,28 @@ def summary_table(rows: list[dict], floor_row: dict | None = None) -> str:
         body.append(f'<tr><td class="num">{rank}</td><td>{esc(agent)}</td><td>{esc(model or "-")}</td>'
                     f'<td class="sub">{esc(settings or "-")}</td><td class="num">{s["n"]}</td>'
                     f'<td class="num total">{s["total"]:.3f}</td>{above}{spread}'
-                    f'{part_mean(s["secs"], s["n_secs"], s["n"], wall)}'
-                    f'{part_mean(s["cost"], s["n_cost"], s["n"], usd)}</tr>')
-    return ('<h4>Summary</h4><div class="scroll"><table class="summary"><thead><tr>'
-            '<th class="num" scope="col">#</th><th scope="col">Agent</th><th scope="col">Model</th>'
-            '<th scope="col">Settings</th><th class="num" scope="col">Runs (n)</th>'
-            '<th class="num" scope="col">Mean total</th><th class="num" scope="col">Mean above chance</th>'
-            '<th class="num" scope="col">Range</th><th class="num" scope="col">Mean time</th>'
-            '<th class="num" scope="col">Mean cost</th></tr></thead>'
+                    f'{part_mean(s["secs"], s["n_secs"], s["n"], wall, lang)}'
+                    f'{part_mean(s["cost"], s["n_cost"], s["n"], usd, lang)}</tr>')
+    col = {k: t(k, lang) for k in ("Summary", "Agent", "Model", "Settings", "Runs (n)", "Mean total",
+                                     "Mean above chance", "Range", "Mean time", "Mean cost", "Every run")}
+    note = t("Ranked by mean above chance; &ldquo;=&rdquo; marks a tie. {} {}", lang).format(
+        esc(t(SUMMARY, lang)), esc(t(COSTS, lang)))
+    return (f'<h4>{col["Summary"]}</h4><div class="scroll"><table class="summary"><thead><tr>'
+            f'<th class="num" scope="col">#</th><th scope="col">{col["Agent"]}</th><th scope="col">{col["Model"]}</th>'
+            f'<th scope="col">{col["Settings"]}</th><th class="num" scope="col">{col["Runs (n)"]}</th>'
+            f'<th class="num" scope="col">{col["Mean total"]}</th>'
+            f'<th class="num" scope="col">{col["Mean above chance"]}</th>'
+            f'<th class="num" scope="col">{col["Range"]}</th><th class="num" scope="col">{col["Mean time"]}</th>'
+            f'<th class="num" scope="col">{col["Mean cost"]}</th></tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
-            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">Ranked by mean above chance; '
-            f'&ldquo;=&rdquo; marks a tie. {esc(SUMMARY)} {esc(COSTS)}</p><h4>Every run</h4>')
+            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">{note}</p><h4>{col["Every run"]}</h4>')
 
 
-def part_mean(v, n_with: int, n: int, fmt) -> str:
+def part_mean(v, n_with: int, n: int, fmt, lang: str = "en") -> str:
     """A mean time or cost cell, with '(k of n)' when only some runs recorded it."""
     if v is None:
         return '<td class="num sub">-</td>'
-    part = f' <span class="sub">({n_with} of {n})</span>' if n_with < n else ""
+    part = f' <span class="sub">{t("({} of {})", lang).format(n_with, n)}</span>' if n_with < n else ""
     return f'<td class="num">{fmt(v)}{part}</td>'
 
 
@@ -410,22 +521,14 @@ def floor_of(rows: list[dict]) -> dict | None:
     return max(base, key=lambda r: (str(r.get("date", "")), r["_file"])) if base else None
 
 
-NOT_RECORDED = "answer not recorded"
-FAILS = ("Every contender run, task by task: the truth (from the suite), each run's answer as its result file stores "
-         "it, the score recomputed from the two, and what was missed. The blind baseline is left out. Timestamps: an "
-         "event not answered within 0.5 s still earns part of its point up to 2 s off; an unmatched answer is one "
-         "with no event within 0.5 s.")
-SHOW = 4                       # list diffs name at most this many times or positions, then "+N more"
-
-
 def secs(v: float) -> str:
     return f"{float(v):g} s"
 
 
-def some(items: list[str]) -> str:
+def some(items: list[str], lang: str = "en") -> str:
     """At most SHOW items, then '+N more'."""
-    head = ", ".join(items[:SHOW])
-    return head + (f" +{len(items) - SHOW} more" if len(items) > SHOW else "")
+    head = t(", ", lang).join(items[:SHOW])
+    return head + (t(" +{} more", lang).format(len(items) - SHOW) if len(items) > SHOW else "")
 
 
 def match_events(truth: list[float], answer: list[float], tol: float = 0.5) -> tuple[list[float], list[float]]:
@@ -440,80 +543,82 @@ def match_events(truth: list[float], answer: list[float], tol: float = 0.5) -> t
             sorted(a for j, a in enumerate(answer) if j not in aj))
 
 
-def diff_answer(kind: str, truth, task: dict) -> str:
+def diff_answer(kind: str, truth, task: dict, lang: str = "en") -> str:
     """What a run got wrong on one task, in a short line ('' when the answer equals the truth). `task` is the result
     file's task row; its `answer` is compared with `truth` (from the suite)."""
     if "answer" not in task:
-        return NOT_RECORDED
+        return t(NOT_RECORDED, lang)
     ans = task["answer"]
     if ans is None:
-        return "no answer given"
+        return t("no answer given", lang)
     if kind in ("count", "rate"):
         if not is_num(ans):
-            return "not a number"
+            return t("not a number", lang)
         err = ans - truth
         if err == 0:
             return ""
         if kind == "count":
-            return f"{abs(err):g} {'too many' if err > 0 else 'too few'}"
-        return f"{abs(err) / truth * 100:.1f}% {'high' if err > 0 else 'low'}"
+            return t("{} too many" if err > 0 else "{} too few", lang).format(f"{abs(err):g}")
+        return t("{}% high" if err > 0 else "{}% low", lang).format(f"{abs(err) / truth * 100:.1f}")
     if kind == "timestamps":
         if not isinstance(ans, list) or not all(is_num(a) for a in ans):
-            return "not a list of seconds"
-        missed, extra = match_events([float(t) for t in truth], sorted(float(a) for a in ans))
+            return t("not a list of seconds", lang)
+        missed, extra = match_events([float(x) for x in truth], sorted(float(a) for a in ans))
         bits = []
         if missed:
-            bits.append(f"{len(missed)} of {len(truth)} not within 0.5 s (at {some([secs(t) for t in missed])})")
+            bits.append(t("{} of {} not within 0.5 s (at {})", lang).format(
+                len(missed), len(truth), some([secs(x) for x in missed], lang)))
         if extra:
-            bits.append(f"{len(extra)} unmatched (at {some([secs(a) for a in extra])})")
-        return "; ".join(bits) or "all within 0.5 s"
+            bits.append(t("{} unmatched (at {})", lang).format(len(extra), some([secs(a) for a in extra], lang)))
+        return t("; ", lang).join(bits) or t("all within 0.5 s", lang)
     if kind == "outcomes":
         if not isinstance(ans, list):
-            return "not a list"
+            return t("not a list", lang)
         norm = [str(x).strip().lower() if x is not None else None for x in ans]
-        wrong = [f"#{i + 1} said {x}" for i, (t, x) in enumerate(zip(truth, norm)) if t != x]
-        bits = [f"{len(wrong)} of {len(truth)} wrong ({some(wrong)})"] if wrong else []
+        wrong = [t("#{} said {}", lang).format(i + 1, x) for i, (y, x) in enumerate(zip(truth, norm)) if y != x]
+        bits = [t("{} of {} wrong ({})", lang).format(len(wrong), len(truth), some(wrong, lang))] if wrong else []
         if len(norm) < len(truth):
-            bits.append(f"answered {len(norm)} of {len(truth)}")
+            bits.append(t("answered {} of {}", lang).format(len(norm), len(truth)))
         elif len(norm) > len(truth):
-            bits.append(f"{len(norm) - len(truth)} extra")
-        return "; ".join(bits)
+            bits.append(t("{} extra", lang).format(len(norm) - len(truth)))
+        return t("; ", lang).join(bits)
     return ""
 
 
-def show_value(kind: str, v) -> str:
+def show_value(kind: str, v, lang: str = "en") -> str:
     """A truth or answer in a few characters: a number, 'N times', or 'N made, M missed'."""
     if v is None:
         return "-"
     if kind == "timestamps" and isinstance(v, list):
-        return f"{len(v)} time{'s' * (len(v) != 1)}"
+        return t("{} time" if len(v) == 1 else "{} times", lang).format(len(v))
     if kind == "outcomes" and isinstance(v, list):
         made = sum(1 for x in v if str(x).strip().lower() == "made")
-        return f"{made} made, {len(v) - made} missed"
+        return t("{} made, {} missed", lang).format(made, len(v) - made)
     return f"{v:g}" if is_num(v) else str(v)
 
 
-def show_truth(kind: str, truth) -> str:
+def show_truth(kind: str, truth, lang: str = "en") -> str:
     """The truth line of a task: the value, plus the list itself for timestamps and outcomes."""
     if kind == "timestamps":
-        return f"{show_value(kind, truth)}: {', '.join(f'{t:g}' for t in truth)} s"
+        return f"{show_value(kind, truth, lang)}: {', '.join(f'{x:g}' for x in truth)} s"
     if kind == "outcomes":
-        return f"{show_value(kind, truth)}: {' '.join('M' if x == 'made' else 'x' for x in truth)} (M = made)"
-    return show_value(kind, truth)
+        return (f"{show_value(kind, truth, lang)}: {' '.join('M' if x == 'made' else 'x' for x in truth)}"
+                f"{t(' (M = made)', lang)}")
+    return show_value(kind, truth, lang)
 
 
-def run_labels(rows: list[dict]) -> list[str]:
+def run_labels(rows: list[dict], lang: str = "en") -> list[str]:
     """A short name per run: the model (or agent), with 'run k' when several runs share that name."""
     names = [str(r["contender"].get("model") or r["contender"].get("agent") or "?") for r in rows]
     seen: dict[str, int] = {}
     out = []
     for name in names:
         seen[name] = seen.get(name, 0) + 1
-        out.append(f"{name} run {seen[name]}" if names.count(name) > 1 else name)
+        out.append(t("{} run {}", lang).format(name, seen[name]) if names.count(name) > 1 else name)
     return out
 
 
-def fails(rows: list[dict], suite: str) -> list[dict]:
+def fails(rows: list[dict], suite: str, lang: str = "en") -> list[dict]:
     """Per task of `suite`: {id, kind, truth, runs: [{label, file, answer, score, why, miss}]}, derived from the
     runs' stored answers and the suite's truth (never the truth copied into a result file). The score is recomputed
     (`score_task`); a row without a stored answer keeps its stored score and says the answer was not recorded.
@@ -524,64 +629,69 @@ def fails(rows: list[dict], suite: str) -> list[dict]:
     runs = sorted((r for r in rows if not is_baseline(r)), key=lambda r: r["_file"])
     if mod is None or not runs:
         return []
-    labels = run_labels(runs)
+    labels = run_labels(runs, lang)
     out = []
-    for t in mod.TASKS:
+    for task in mod.TASKS:
         lines = []
         for r, label in zip(runs, labels):
-            row = next((x for x in r["tasks"] if str(x["id"]) == t.id), None)
+            row = next((x for x in r["tasks"] if str(x["id"]) == task.id), None)
             if row is None:
                 continue
             seed = r.get("seed")
             try:
-                truth = suite_tasks(base, seed).BY_ID[t.id].truth
+                truth = suite_tasks(base, seed).BY_ID[task.id].truth
             except ValueError:
                 continue
             if "answer" in row:
-                score = score_task(t.id, row["answer"], base, seed)["score"]
+                score = score_task(task.id, row["answer"], base, seed)["score"]
             else:
                 score = row.get("score") if is_num(row.get("score")) else None
-            why = diff_answer(t.kind, truth, row)
-            lines.append({"label": label if seed is None else f"{label} (seed {seed})", "file": r["_file"],
-                          "answer": row.get("answer"), "score": score, "why": why,
+            why = diff_answer(task.kind, truth, row, lang)
+            lines.append({"label": label if seed is None else t("{} (seed {})", lang).format(label, seed),
+                          "file": r["_file"], "answer": row.get("answer"), "score": score, "why": why,
                           "miss": score is None or score < 1, "recorded": "answer" in row, "truth": truth})
         if lines:
             same = all(x["truth"] == lines[0]["truth"] for x in lines) and not suite.endswith(FRESH)
-            out.append({"id": t.id, "kind": t.kind, "truth": lines[0]["truth"] if same else None, "runs": lines})
+            out.append({"id": task.id, "kind": task.kind, "truth": lines[0]["truth"] if same else None,
+                        "runs": lines})
     return out
 
 
-def fails_section(rows: list[dict], suite: str) -> str:
+def fails_section(rows: list[dict], suite: str, lang: str = "en") -> str:
     """The folded 'Where each contender fails' block of one suite and track ('' when nothing to show)."""
-    tasks = fails(rows, suite)
+    tasks = fails(rows, suite, lang)
     if not tasks:
         return ""
     parts = []
-    for t in tasks:
+    for task in tasks:
+        kind = task["kind"]
         body = []
-        for x in t["runs"]:
-            ans = show_value(t["kind"], x["answer"]) if x["recorded"] else "-"
+        for x in task["runs"]:
+            ans = show_value(kind, x["answer"], lang) if x["recorded"] else "-"
             score = f'{x["score"]:.2f}' if x["score"] is not None else "-"
-            why = x["why"] or ("score below 1" if x["miss"] else "exact")
-            if t["truth"] is None:
-                why = f'truth {show_truth(t["kind"], x["truth"])}; {why}'
+            why = x["why"] or t("score below 1" if x["miss"] else "exact", lang)
+            if task["truth"] is None:
+                why = t("truth {}; {}", lang).format(show_truth(kind, x["truth"], lang), why)
             tr = '<tr class="miss">' if x["miss"] else "<tr>"
             body.append(f'{tr}<td title="{esc(x["file"])}">'
                         f'{esc(x["label"])}</td><td class="num">{esc(ans)}</td><td class="num">{score}</td>'
                         f'<td class="why">{esc(why)}</td></tr>')
-        truth = ("drawn from each run's own seed; shown in its row" if t["truth"] is None
-                 else show_truth(t["kind"], t["truth"]))
-        parts.append(f'<h5>{esc(t["id"])}<span class="kind">{esc(t["kind"])}</span></h5>'
-                     f'<p class="truth"><strong>Truth:</strong> {esc(truth)}</p>'
-                     '<div class="scroll"><table class="fails"><thead><tr><th scope="col">Run</th>'
-                     '<th class="num" scope="col">Answer</th><th class="num" scope="col">Score</th>'
-                     '<th scope="col">What was missed</th></tr></thead>'
+        truth = (t("drawn from each run's own seed; shown in its row", lang) if task["truth"] is None
+                 else show_truth(kind, task["truth"], lang))
+        chip = esc(kind) if lang == "en" else f"{KIND_ZH.get(kind, kind)} · {esc(kind)}"
+        parts.append(f'<h5>{esc(task["id"])}<span class="kind">{chip}</span></h5>'
+                     f'<p class="truth"><strong>{t("Truth:", lang)}</strong> {esc(truth)}</p>'
+                     f'<div class="scroll"><table class="fails"><thead><tr><th scope="col">{t("Run", lang)}</th>'
+                     f'<th class="num" scope="col">{t("Answer", lang)}</th>'
+                     f'<th class="num" scope="col">{t("Score", lang)}</th>'
+                     f'<th scope="col">{t("What was missed", lang)}</th></tr></thead>'
                      f'<tbody>{"".join(body)}</tbody></table></div>')
-    return (f'<details class="fails"><summary>Where each contender fails</summary>'
-            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">{esc(FAILS)}</p>{"".join(parts)}</details>')
+    return (f'<details class="fails"><summary>{t("Where each contender fails", lang)}</summary>'
+            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">{esc(t(FAILS, lang))}</p>'
+            f'{"".join(parts)}</details>')
 
 
-def boards(rows: list[dict], prefix: str = "") -> str:
+def boards(rows: list[dict], prefix: str = "", lang: str = "en") -> str:
     """One leaderboard table per suite, in SUITES order (a suite with no runs says so); `prefix` keeps the anchors
     of a second track's tables apart."""
     known = [n for n, _ in SUITES]
@@ -593,39 +703,44 @@ def boards(rows: list[dict], prefix: str = "") -> str:
     for n in names:
         mine = [r for r in rows if suite_of(r) == n and not is_baseline(r)]
         floor = floor_of([r for r in rows if suite_of(r) == n])
-        body = summary_table(mine, floor) + table(mine, floor) + fails_section(mine, n) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
-        sat = (f" Saturated on this track: all {len(mine)} runs scored 1.0, so it ranks nobody."
+        none = t("No runs on this suite yet.", lang)
+        body = (summary_table(mine, floor, lang) + table(mine, floor, lang) + fails_section(mine, n, lang) if mine
+                else f'<p class="sub" style="color:var(--muted)">{none}</p>')
+        sat = (t(" Saturated on this track: all {} runs scored 1.0, so it ranks nobody.", lang).format(len(mine))
                if len(mine) > 1 and all(float(r["total"]) == 1 for r in mine) else "")
-        desc = f"<p>{esc(what.get(n, '') + sat)}</p>" if n in what or sat else ""
+        desc = f"<p>{esc((t(what[n], lang) if n in what else '') + sat)}</p>" if n in what or sat else ""
         out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
     return "\n".join(out)
 
 
-def empty() -> str:
-    return ('<div class="empty"><p><strong>No runs yet — be the first.</strong></p>'
-            "<p>Run the suite with your agent (below), then open a pull request with your result file.</p></div>")
+def empty(lang: str = "en") -> str:
+    return (f'<div class="empty"><p><strong>{t("No runs yet — be the first.", lang)}</strong></p>'
+            f"<p>{t('Run the suite with your agent (below), then open a pull request with your result file.', lang)}"
+            "</p></div>")
 
 
-def frames_board(rows: list[dict]) -> str:
+def frames_board(rows: list[dict], lang: str = "en") -> str:
     """The frames-only track's section: its own tables, or a line saying it has no runs yet."""
     mine = [r for r in rows if track_of(r) == "frames"]
-    body = boards(mine, "frames-") if any(not is_baseline(r) for r in mine) else \
-        '<p class="sub" style="color:var(--muted)">No frames-only runs yet.</p>'
+    body = boards(mine, "frames-", lang) if any(not is_baseline(r) for r in mine) else \
+        f'<p class="sub" style="color:var(--muted)">{t("No frames-only runs yet.", lang)}</p>'
     run = "sports-video-coach bench run --agent claude --model <model> --suite svc-bench-3 --track frames"
     prep = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-3 --track frames"
-    return (f'<h2 id="frames">Frames-only track (eyes)</h2><p>{esc(FRAMES)}</p>'
-            "<p>Rerun it in one command: it prepares the suite, runs Claude Code headless with no code tools (or "
-            "any CLI with <code>--agent cmd --cmd \"... {prompt}\"</code>), and scores the answers.</p>"
+    one = t("Rerun it in one command: it prepares the suite, runs Claude Code headless with no code tools (or any "
+            "CLI with {}), and scores the answers.", lang).format('<code>--agent cmd --cmd "... {prompt}"</code>')
+    other = t("Another agent: prepare the stills, let it fill {} by eye, then score it with {}.", lang).format(
+        "<code>bench-frames/answers.json</code>", "<code>bench score bench-frames</code>")
+    return (f'<h2 id="frames">{t("Frames-only track (eyes)", lang)}</h2><p>{esc(t(FRAMES, lang))}</p>'
+            f"<p>{one}</p>"
             f'<pre id="rerun"><code>{esc(run)}</code></pre>'
-            "<p>Another agent: prepare the stills, let it fill <code>bench-frames/answers.json</code> by eye, then "
-            "score it with <code>bench score bench-frames</code>.</p>"
+            f"<p>{other}</p>"
             f"<pre><code>{esc(prep)}</code></pre>{body}")
 
 
 OWN_CONFIG = ("CLAUDE.md loaded", "user config loaded", "AGENTS.md was loaded", "(user config)")
 
 
-def facts(rows: list[dict]) -> list[str]:
+def facts(rows: list[dict], lang: str = "en") -> list[str]:
     """What a skeptic asks first, one short line each, counted from the result files (HTML, already escaped)."""
     runs = [r for r in rows if not is_baseline(r)]
     if not runs:
@@ -633,9 +748,6 @@ def facts(rows: list[dict]) -> list[str]:
     n = len(runs)
     by_owner = sum(1 for r in runs if str(r.get("submitted_by") or "").lower() == OWNER.lower())
     others = n - by_owner
-    who = (f"all {n} runs were submitted by {esc(OWNER)}, who also wrote this tool; no outside runs yet."
-           if not others else f"{by_owner} of {n} runs were submitted by {esc(OWNER)}, who wrote this tool; "
-                              f"{others} by others.")
     own = sum(1 for r in runs if any(m in str(r["contender"].get("settings") or "") for m in OWN_CONFIG))
     singles = contenders = 0
     spread = None                                   # (hi - lo, model, suite, track)
@@ -654,24 +766,29 @@ def facts(rows: list[dict]) -> list[str]:
         for key, vals in same.items():
             if len(vals) > 1 and (spread is None or max(vals) - min(vals) > spread[0]):
                 spread = (max(vals) - min(vals), key[1] or key[0], suite, track)
-    noise = (f" Two runs with identical settings differed by up to {spread[0]:.3f} above chance "
-             f"({esc(spread[1])}, {esc(spread[2])} {esc(spread[3])} track): read smaller gaps as noise. A run "
-             "killed at its time limit scores 0 and widens its contender's range further."
-             if spread else "")
     floors = [(t.get("score"), str(t["id"])) for r in rows if is_baseline(r) for t in r["tasks"]
               if is_num(t.get("score"))]
     top = max(floors) if floors else None
-    guess = (f" That guess alone scores up to {top[0]:.2f} on one task ({esc(top[1])})." if top else "")
     ev = sum(1 for r in runs if str(r.get("evidence") or "").startswith(("https://", "http://")))
     fresh = sum(1 for r in runs if r.get("seed") is not None)
-    held = (f"{fresh} of {n} runs drew svc-bench-3 from a fresh seed (<code>--seed</code>) at run time, which "
+    timed = sum(1 for r in runs if is_num_value(r.get("wall_seconds")))
+    costed = sum(1 for r in runs if is_num_value(r.get("cost_usd")))
+    if lang == "zh":
+        return facts_zh(n, by_owner, others, own, singles, contenders, spread, top, ev, fresh, timed, costed)
+    who = (f"all {n} runs were submitted by {esc(OWNER)}, who also wrote this tool; no outside runs yet."
+           if not others else f"{by_owner} of {n} runs were submitted by {esc(OWNER)}, who wrote this tool; "
+                              f"{others} by others.")
+    noise =(f" Two runs with identical settings differed by up to {spread[0]:.3f} above chance "
+             f"({esc(spread[1])}, {esc(spread[2])} {esc(spread[3])} track): read smaller gaps as noise. A run "
+             "killed at its time limit scores 0 and widens its contender's range further."
+             if spread else "")
+    guess = (f" That guess alone scores up to {top[0]:.2f} on one task ({esc(top[1])})." if top else "")
+    held =(f"{fresh} of {n} runs drew svc-bench-3 from a fresh seed (<code>--seed</code>) at run time, which "
             "reduces the effect of memorising the public answers but proves nothing about training data. The "
             "agent's folder never held that truth; the result file and this page do, so a published seed is spent."
             if fresh else
             "no run used a fresh seed yet. <code>bench prepare --seed</code> draws svc-bench-3 anew at run time, "
             "with no truth in the prepared folder.")
-    timed = sum(1 for r in runs if is_num_value(r.get("wall_seconds")))
-    costed = sum(1 for r in runs if is_num_value(r.get("cost_usd")))
     return [
         f"<strong>Who ran it:</strong> {who}",
         f"<strong>Own config:</strong> {own} of {n} runs say in Settings that the submitter's own agent config "
@@ -699,50 +816,103 @@ def facts(rows: list[dict]) -> list[str]:
     ]
 
 
-def latest(rows: list[dict]) -> str:
+def facts_zh(n: int, by_owner: int, others: int, own: int, singles: int, contenders: int, spread, top, ev: int,
+             fresh: int, timed: int, costed: int) -> list[str]:
+    """`facts` on the Chinese page: the same counts, in Chinese."""
+    who = (f"全部 {n} 次运行都由这个工具的作者 {esc(OWNER)} 提交；还没有外部提交的运行。"
+           if not others else f"{n} 次运行中有 {by_owner} 次由工具作者 {esc(OWNER)} 提交，{others} 次由其他人提交。")
+    track = {"code": "代码", "frames": "静帧"}.get(spread[3], esc(spread[3])) if spread else ""
+    noise = (f"设置完全相同的两次运行，超出盲猜分最多相差 {spread[0]:.3f}（{esc(spread[1])}，{esc(spread[2])}，"
+             f"{track}赛道）：比这小的差距当作噪声看。到时限被终止的运行记 0 分，会让该参赛者的范围更宽。"
+             if spread else "")
+    guess = f"光靠这种猜法，单道题最高就能拿 {top[0]:.2f}（{esc(top[1])}）。" if top else ""
+    held = (f"{n} 次运行中有 {fresh} 次在运行时用新种子（<code>--seed</code>）重新生成 svc-bench-3，这能减少背下公开"
+            "答案的影响，但证明不了任何关于训练数据的事。agent 的文件夹里从来没有这份答案；结果文件和本页有，所以公开过的"
+            "种子就作废了。"
+            if fresh else
+            "还没有运行用过新种子。<code>bench prepare --seed</code> 会在运行时重新生成 svc-bench-3，准备好的文件夹里"
+            "没有答案。")
+    return [
+        f"<strong>谁跑的：</strong>{who}",
+        f"<strong>自带配置：</strong>{n} 次运行中有 {own} 次在设置栏注明加载了提交者自己的 agent 配置（CLAUDE.md、"
+        "AGENTS.md 或 Codex 配置）。",
+        f"<strong>样本量：</strong>{contenders} 个参赛者（按套件和赛道分）中有 {singles} 个只跑了一次。{noise}",
+        "<strong>设置：</strong>没有统一。每一行按它设置栏写的 effort 和参数运行。",
+        "<strong>真实值：</strong>视频是工具按数字画出来的，所以真实值是精确的。没有人工标注，也没有评审模型。",
+        f"<strong>真实值是公开的：</strong>公开的套件和真实值都在开源包里，模型可能在训练时见过；{held}",
+        "<strong>套件设计：</strong>svc-bench-2 和 svc-bench-3 都是在有模型把前一个套件做到 1.0 之后才做的，所以作者"
+        "当时知道哪些模型已经做满分。",
+        '<strong>提示词：</strong><code>bench run</code> 每个赛道发一段固定文本，所有模型都一样；只确定 Claude Code '
+        '静帧那几行用的是它。见<a href="#prompt">完整提示词</a>。',
+        f"<strong>超出盲猜：</strong>起点是照抄题目示例答案的盲猜，不是随机猜。{guess}",
+        f"<strong>证据：</strong>{n} 次运行中有 {ev} 次附了对话记录"
+        + ("（在证据栏）：agent 打开的每个文件、运行的每条命令和最后的回复，图片、用户目录和像密钥的字符串都已去掉。"
+           "任何人都能读；CI 会重新给答案打分，但不读这些记录。" if ev else
+           "。不偷看规则靠自觉：CI 会重新给答案打分，但看不到 agent 读了什么。"),
+        f"<strong>用时和费用：</strong>每张表都有；{n} 次运行中 {timed} 次记录了用时，{costed} 次记录了费用。",
+    ]
+
+
+def latest(rows: list[dict], lang: str = "en") -> str:
     """A chip with the newest run's date ('' without runs)."""
     dates = [str(r.get("date") or "") for r in rows if not is_baseline(r) and r.get("date")]
-    return f"<li>Latest run {esc(max(dates))}</li>" if dates else ""
+    return f"<li>{t('Latest run {}', lang).format(esc(max(dates)))}</li>" if dates else ""
 
 
-def jump(rows: list[dict]) -> str:
+def jump(rows: list[dict], lang: str = "en") -> str:
     """The first-screen links: the frames-only boards (where the headline numbers are), the code-track board, the
     one-command rerun and the repo. A board is linked only when it has runs."""
     shown = {suite_of(r) for r in rows if not is_baseline(r) and track_of(r) == "frames"}
-    links = [(f"#frames-{n}", f"Frames-only board ({n})") for n in ("svc-bench-3", "svc-bench-3" + FRESH)
-             if n in shown]
+    links = [(f"#frames-{n}", t("Frames-only board ({})", lang).format(n))
+             for n in ("svc-bench-3", "svc-bench-3" + FRESH) if n in shown]
     if any(not is_baseline(r) and track_of(r) == TRACK for r in rows):
-        links.append(("#leaderboard", "Code-track board"))
-    links += [("#rerun", "Rerun it in one command"), (REPO_URL, "Code on GitHub")]
-    return ('<nav class="jump" aria-label="On this page">'
-            + "".join(f'<a href="{esc(h)}">{esc(t)}</a>' for h, t in links) + "</nav>")
+        links.append(("#leaderboard", t("Code-track board", lang)))
+    links += [("#rerun", t("Rerun it in one command", lang)), (REPO_URL, t("Code on GitHub", lang))]
+    return (f'<nav class="jump" aria-label="{t("On this page", lang)}">'
+            + "".join(f'<a href="{esc(h)}">{esc(x)}</a>' for h, x in links) + "</nav>")
 
 
-def facts_block(rows: list[dict]) -> str:
-    items = facts(rows)
+def facts_block(rows: list[dict], lang: str = "en") -> str:
+    items = facts(rows, lang)
     if not items:
         return ""
-    return (f'<details class="facts" id="facts"><summary>Before you trust this: {len(items)} things a skeptic '
-            f'asks first</summary><ul>{"".join(f"<li>{x}</li>" for x in items)}</ul></details>')
+    head = t("Before you trust this: {} things a skeptic asks first", lang).format(len(items))
+    return (f'<details class="facts" id="facts"><summary>{head}</summary>'
+            f'<ul>{"".join(f"<li>{x}</li>" for x in items)}</ul></details>')
 
 
-def presets_step() -> str:
+def presets_step(lang: str = "en") -> str:
     """The one-command step of "Run it yourself": Claude Code, Codex and one line per preset in bench_run.PRESETS."""
     one = "sports-video-coach bench run --agent {} --suite svc-bench-3"
     lines = "".join(f"<li><code>--agent {esc(k)}</code> {esc(p.name)}: <code>{esc(bench_run.shown(k))}</code>"
                     "</li>" for k, p in bench_run.PRESETS.items())
+    pre = f"<pre><code>{esc(one.format('claude'))}\n{esc(one.format('codex'))}</code></pre>"
+    if lang == "zh":
+        return ("<li>或者一条命令全做完（准备、无界面运行、打分）：Claude Code 或 Codex"
+                f"{pre}或者用其他 agent CLI 的预设。这些预设按各 CLI 的文档写成（{esc(bench_run.DOCS_READ)} 读过），"
+                "但维护者没有实际跑过，所以没在真实 CLI 上测过；只支持代码赛道（"
+                f'<a href="{DOC_URL}#add-your-agent-in-one-command">每个参数的文档链接</a>）。其他 CLI：'
+                f'<code>--agent cmd --cmd "... {{prompt}}"</code>。<ul class="plain">{lines}</ul></li>')
     return ("<li>Or do it all in one command (prepare, run headless, score): Claude Code or Codex"
-            f"<pre><code>{esc(one.format('claude'))}\n{esc(one.format('codex'))}</code></pre>"
+            f"{pre}"
             "or a preset for another agent CLI. The presets are built from each CLI's docs (read "
             f"{esc(bench_run.DOCS_READ)}) but not run by the maintainer, so untested against the real CLIs; code "
             f'track only (<a href="{DOC_URL}#add-your-agent-in-one-command">doc links per flag</a>). Any other '
             f'CLI: <code>--agent cmd --cmd "... {{prompt}}"</code>.<ul class="plain">{lines}</ul></li>')
 
 
-def prompt_block() -> str:
+def prompt_block(lang: str = "en") -> str:
     """The exact prompts `bench run` sends (shown for svc-bench-3; other suites change only the name and count)."""
     code = bench_run.prompt("svc-bench-3", "code")
     frames = bench_run.prompt("svc-bench-3", "frames", "claude")
+    if lang == "zh":   # the prompts themselves stay English: they are what the agent was sent
+        return ('<details class="prompt" id="prompt"><summary>完整提示词</summary>'
+                "<p><code>bench run</code> 发送的原文，一字不改（以 svc-bench-3 为例；其他套件只改套件名和视频数量）。"
+                "每个赛道一段文本，所有模型相同。提示词是英文的，这里照原样展示。</p>"
+                f'<h4>代码赛道</h4><pre class="wrap" lang="en"><code>{esc(code)}</code></pre>'
+                f'<h4>静帧赛道（Claude Code）</h4><pre class="wrap" lang="en"><code>{esc(frames)}</code></pre>'
+                "<p>Claude Code 静帧那几行用的就是这段静帧提示词。其他行的结果文件没有存提示词，所以它们用的是什么"
+                "不清楚。</p></details>")
     return ('<details class="prompt" id="prompt"><summary>The exact prompt</summary>'
             "<p>What <code>bench run</code> sends, word for word (for svc-bench-3; other suites change only the "
             "suite name and video count). One text per track, the same for every model.</p>"
@@ -752,34 +922,65 @@ def prompt_block() -> str:
             "prompt in the result file, so for them it is unclear.</p></details>")
 
 
-def social(card: bool) -> str:
+CARD_TITLE_ZH = "哪个编程 agent 最会看体育录像？"
+
+
+def social(card: bool, lang: str = "en") -> str:
     """The link preview tags (Open Graph, X), as the landing page has them; og:image only when the card exists."""
-    tags = [f'<meta property="og:title" content="{esc(share_card.TITLE)}">',
-            f'<meta property="og:description" content="{esc(WHAT)}">']
-    if card:
+    title = share_card.TITLE if lang == "en" else CARD_TITLE_ZH
+    tags = [f'<meta property="og:title" content="{esc(title)}">',
+            f'<meta property="og:description" content="{esc(t(WHAT, lang))}">']
+    if card:   # one card for both pages (its text is English)
         tags += [f'<meta property="og:image" content="{PAGE_URL}{share_card.NAME}">',
                  f'<meta property="og:image:width" content="{share_card.SIZE[0]}">',
                  f'<meta property="og:image:height" content="{share_card.SIZE[1]}">']
-    tags += [f'<meta property="og:url" content="{PAGE_URL}">',
+    tags += [f'<meta property="og:url" content="{URLS[lang]}">',
              '<meta name="twitter:card" content="summary_large_image">']
     return "\n".join(tags)
 
 
-def clip_block(clip: bool) -> str:
+def alternates(lang: str) -> str:
+    """The canonical link and hreflang alternates, the same set on both pages (English is the x-default)."""
+    links = [f'<link rel="canonical" href="{URLS[lang]}">']
+    links += [f'<link rel="alternate" hreflang="{TAGS[x]}" href="{URLS[x]}">' for x in LANGS]
+    links.append(f'<link rel="alternate" hreflang="x-default" href="{URLS["en"]}">')
+    return "\n".join(links)
+
+
+def switch(lang: str) -> str:
+    """The language switch link: to the Chinese page from the English one, and back."""
+    if lang == "en":
+        return '<a class="switch" href="zh/" hreflang="zh-CN" lang="zh-CN">中文</a>'
+    return '<a class="switch" href="../" hreflang="en" lang="en">English</a>'
+
+
+CLIP_ALT_ZH = ("短片：程序画的一段颠小球视频，接着是 agent 在一次快速连续两触前后看到的静帧（放大），最后是真实触球数和各个"
+               "模型的回答。")
+
+
+def clip_block(clip: bool, lang: str = "en") -> str:
     """The short clip at the top (`bench.clip`: one hard moment, then truth vs answers), when it was drawn."""
     if not clip:
         return ""
-    return (f'<figure style="margin:1rem 0"><video src="{share_clip.MP4}" autoplay muted loop playsinline '
-            f'preload="metadata" aria-label="{esc(share_clip.ALT)}" style="display:block;width:100%;max-width:'
-            f'{share_clip.SIZE}px;height:auto;border-radius:10px"><img src="{share_clip.GIF}" '
-            f'alt="{esc(share_clip.ALT)}" style="width:100%;height:auto"></video>'
-            f'<figcaption style="color:var(--muted);font-size:.9rem;margin-top:.3rem">One hard moment of '
-            f'{share_clip.SUITE} ({share_clip.TASK}, {share_clip.TRACK} track), then what each model answered, '
-            f'from the result files. <a href="{share_clip.GIF}">GIF</a> · <a href="{share_clip.MP4}">MP4</a>'
+    up = "" if lang == "en" else "../"     # the Chinese page sits in zh/ and shows the same clip
+    alt = share_clip.ALT if lang == "en" else CLIP_ALT_ZH
+    caption = (f"One hard moment of {share_clip.SUITE} ({share_clip.TASK}, {share_clip.TRACK} track), then what each "
+               "model answered, from the result files." if lang == "en" else
+               f"{share_clip.SUITE} 里的一个难点（{share_clip.TASK}，{share_clip.TRACK} 赛道），然后是每个模型的回答，"
+               "数据来自结果文件。短片里的文字是英文。")
+    return (f'<figure style="margin:1rem 0"><video src="{up}{share_clip.MP4}" autoplay muted loop playsinline '
+            f'preload="metadata" aria-label="{esc(alt)}" style="display:block;width:100%;max-width:'
+            f'{share_clip.SIZE}px;height:auto;border-radius:10px"><img src="{up}{share_clip.GIF}" '
+            f'alt="{esc(alt)}" style="width:100%;height:auto"></video>'
+            f'<figcaption style="color:var(--muted);font-size:.9rem;margin-top:.3rem">{caption} '
+            f'<a href="{up}{share_clip.GIF}">GIF</a> · <a href="{up}{share_clip.MP4}">MP4</a>'
             f'</figcaption></figure>')
 
 
-def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False) -> str:
+def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, lang: str = "en") -> str:
+    """The page in `lang` ("en": index.html, "zh": zh/index.html); both show the same rows and numbers."""
+    if lang == "zh":
+        return render_zh(rows, notes, card, clip)
     code = [r for r in rows if track_of(r) == TRACK]
     board = boards(code) if any(not is_baseline(r) for r in code) else empty()
     runs = sum(1 for r in rows if not is_baseline(r))
@@ -799,12 +1000,13 @@ def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{TITLE}</title>
 <meta name="description" content="{esc(WHAT)}">
+{alternates("en")}
 {social(card)}
 <style>{CSS}</style>
 </head>
 <body>
 <main>
-<p class="name"><a href="../">sports-video-coach</a></p>
+<p class="name"><a href="../">sports-video-coach</a> {switch("en")}</p>
 <h1>{TITLE}</h1>
 <p class="lead">{esc(WHAT)}</p>
 <p class="lead">{esc(PART_OF)} <a href="{DEMO_URL}">See a demo coaching page</a>.</p>
@@ -856,10 +1058,90 @@ can differ (see the sample size note at the top).</li>
 """
 
 
+def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False) -> str:
+    """The Chinese page (zh/index.html): the English page's sections, rows and numbers, in Chinese."""
+    lang = "zh"
+    code = [r for r in rows if track_of(r) == TRACK]
+    board = boards(code, "", lang) if any(not is_baseline(r) for r in code) else empty(lang)
+    runs = sum(1 for r in rows if not is_baseline(r))
+    skipped = ""
+    if notes:   # the notes name files and parse errors, so they stay as `load` wrote them
+        items = "".join(f"<li>{esc(n)}</li>" for n in notes)
+        skipped = (f'<div class="note" role="note"><strong>{len(notes)} 个结果文件被跳过</strong>（不在表里）：'
+                   f"<ul>{items}</ul></div>")
+    kinds = "".join(f'<section><h3>{KIND_ZH[k]} <span class="kind">{k}</span></h3><p>{esc(t(what, lang))}</p>'
+                    f'<p class="rule">{esc(t(rule, lang))}</p></section>' for k, what, rule in KINDS)
+    steps = "".join(f"<li>{esc(t(label, lang))}<pre><code>{esc(cmd)}</code></pre></li>"
+                    for label, cmd in COMMANDS) + presets_step(lang)
+    title = t(TITLE, lang)
+    return f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{esc(t(WHAT, lang))}">
+{alternates(lang)}
+{social(card, lang)}
+<style>{CSS}</style>
+</head>
+<body>
+<main>
+<p class="name"><a href="../../">sports-video-coach</a> {switch(lang)}</p>
+<h1>{title}</h1>
+<p class="lead">{esc(t(WHAT, lang))}</p>
+<p class="lead">{esc(t(PART_OF, lang))} <a href="{DEMO_URL}">看一个示例教练复盘页</a>。</p>
+<ul class="chips"><li>套件 {", ".join(n for n, _ in SUITES)}</li><li>{runs} 次运行</li>
+<li>只用测出来的真实值</li>{latest(rows, lang)}</ul>
+{jump(rows, lang)}
+{clip_block(clip, lang)}
+{facts_block(rows, lang)}
+
+<h2 id="leaderboard">排行榜</h2>
+<p>代码赛道：agent 可以自己写追踪程序并运行。静帧赛道（agent 只用眼睛看）在<a href="#frames">下面</a>。
+设置栏照搬结果文件里的英文原文。</p>
+{skipped}{board}
+
+{frames_board(rows, lang)}
+
+<h2 id="method">方法</h2>
+<p>题目是工具画出来的合成视频，所以真实值是精确的：没有人工标注，也没有评审模型。
+agent 只看得到视频，写下回答；<code>bench score</code> 把回答和真实值比对。</p>
+{prompt_block(lang)}
+<div class="cards">{kinds}</div>
+<p>总分 = 各题分数的平均值。{esc(t(ABOVE, lang))} 完整规则：<a href="{DOC_URL}">docs/benchmark.md</a>（英文）。</p>
+
+<h2 id="run">自己跑一遍</h2>
+<ol class="steps">{steps}</ol>
+
+<h2 id="submit">提交你的运行</h2>
+<ul class="plain">
+<li>开一个 pull request，把你的结果文件加到 <code>benchmark/results/</code>。
+CI 会用 <code>bench validate</code> 重新打分。</li>
+<li>不想开 pull request？把文件贴进<a href="{ISSUE_URL}">基准结果 issue 表单</a>。</li>
+<li>规则：不读真实值文件，不读包的源码；一次运行 = 一个文件；如实报告实际用时。</li>
+</ul>
+
+<h2 id="honesty">诚实说明</h2>
+<ul class="plain">
+<li>这个基准测试和本页都是用编程 agent（Claude Code）做的，中文版也是。</li>
+<li>每一行都能重跑：同样的套件、同样的命令，分数由存下的回答重新算出。重跑的回答可能不同（见页首的样本量说明）。</li>
+<li>作者写了这个工具、画了套件、提交了最早的几次运行；欢迎外部提交（见上文）。</li>
+<li>失败和被终止的运行留在榜上，计入该参赛者的平均分。</li>
+<li>合成训练题测的是数数和计时，不是教练复盘的全部。</li>
+</ul>
+
+<footer>由 <a href="{REPO_URL}">sports-video-coach</a>（MIT）制作。</footer>
+</main>
+</body>
+</html>
+"""
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="sports-video-coach bench page", description=__doc__.split("\n\n")[0])
     ap.add_argument("results_dir", help="folder of result files (benchmark/results)")
-    ap.add_argument("out_dir", help="where to write index.html")
+    ap.add_argument("out_dir", help="where to write index.html (and zh/index.html)")
     a = ap.parse_args(argv)
     rows, notes = load(Path(a.results_dir))
     out = Path(a.out_dir)
@@ -869,10 +1151,13 @@ def main(argv: list[str]) -> int:
         print("[bench page] no share card: matplotlib is not installed (the page has no og:image)")
     clip = share_clip.write(rows, out)
     (out / "index.html").write_text(render(rows, notes, card is not None, clip is not None), encoding="utf8")
+    (out / "zh").mkdir(exist_ok=True)
+    (out / "zh" / "index.html").write_text(render(rows, notes, card is not None, clip is not None, "zh"),
+                                           encoding="utf8")
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))
-    print(f"[bench page] {(out / 'index.html').as_posix()}: {runs} run{'s' * (runs != 1)}, "
+    print(f"[bench page] {(out / 'index.html').as_posix()} and zh/index.html: {runs} run{'s' * (runs != 1)}, "
           f"{len(notes)} skipped")
     return 0
 
