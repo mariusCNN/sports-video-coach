@@ -82,6 +82,44 @@ CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next 
                         "validator per agent step. A new sport plugin is one command."))
 TRY = (f"uv tool install git+{REPO_URL}", "sports-video-coach demo")   # needs ffmpeg on PATH
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
+TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
+SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/")
+
+
+def canonical(url: str) -> str:
+    return f'<link rel="canonical" href="{url}">'
+
+
+def json_ld() -> str:
+    """The landing page's schema.org SoftwareApplication block: facts from the repo only (pyproject, LICENSE)."""
+    data = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "sports-video-coach",
+        "description": PITCH,
+        "url": SITE_URL,
+        "codeRepository": REPO_URL,
+        "sameAs": [REPO_URL],
+        "license": "https://opensource.org/licenses/MIT",
+        "operatingSystem": "Windows, Linux",
+        "applicationCategory": "MultimediaApplication",
+        "isAccessibleForFree": True,
+    }
+    # "</" cannot appear in the JSON (only URLs and plain text), so the script element cannot be closed early
+    return f'<script type="application/ld+json">{json.dumps(data, ensure_ascii=False)}</script>'
+
+
+def robots_txt() -> str:
+    # A project Pages site lives under /sports-video-coach/; crawlers read robots.txt only at the domain root
+    # (mariusding.github.io/robots.txt), so this file is not read by them. It is kept for completeness; the
+    # sitemap (submitted in Search Console or found via links) is what helps discovery.
+    return f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n"
+
+
+def sitemap_xml() -> str:
+    urls = "".join(f"  <url><loc>{u}</loc></url>\n" for u in SITE_PAGES)
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
 
 
 def version() -> str:
@@ -119,8 +157,10 @@ def landing(films: list[str]) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>sports-video-coach - AI film review for your own sports video</title>
+<title>{TITLE}</title>
 <meta name="description" content="{PITCH}">
+{canonical(SITE_URL)}
+{json_ld()}
 <meta property="og:title" content="sports-video-coach: {TAGLINE}">
 <meta property="og:description" content="{PITCH}">
 {f'<meta property="og:image" content="{SITE_URL}film.en.jpg">' if "film.en.jpg" in films else ""}
@@ -173,6 +213,7 @@ def build_site(folder: Path, site: Path) -> list[str]:
     page = site / "demo" / "index.html"
     # the demo is synthetic and meant to be found and shared; real report pages keep noindex and no preview
     card = "\n".join([
+        canonical(f"{SITE_URL}demo/"),
         '<meta property="og:title" content="sports-video-coach demo: a coaching page made from one video">',
         f'<meta property="og:description" content="{PITCH}">',
         f'<meta property="og:image" content="{SITE_URL}film.en.jpg">',
@@ -192,6 +233,8 @@ def build_site(folder: Path, site: Path) -> list[str]:
     for f in films:
         shutil.copy2(f, site / f.name)
     (site / "index.html").write_text(landing([f.name for f in films]), encoding="utf8")
+    (site / "robots.txt").write_text(robots_txt(), encoding="utf8")
+    (site / "sitemap.xml").write_text(sitemap_xml(), encoding="utf8")
     return warnings
 
 

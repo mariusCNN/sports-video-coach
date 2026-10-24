@@ -73,5 +73,29 @@ def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
     assert all(f"<h2>{t}</h2>" in home for t, _ in demo.CARDS)
     assert all(cmd in home for cmd in demo.TRY) and f'href="{demo.PLUGINS_URL}"' in home
     assert demo.version() and demo.version_note(demo.version()) in home
-    assert "noindex" not in (site / "demo" / "index.html").read_text(encoding="utf8")   # meant to be found
+    page = (site / "demo" / "index.html").read_text(encoding="utf8")
+    assert "noindex" not in page   # meant to be found
+    assert f'<link rel="canonical" href="{demo.SITE_URL}demo/">' in page and '<link rel="canonical"' in home
+    assert (site / "robots.txt").read_text(encoding="utf8") == demo.robots_txt()
+    assert (site / "sitemap.xml").read_text(encoding="utf8") == demo.sitemap_xml()
     assert page_check.problems(site) == [] and page_check.problems(site / "demo") == []
+
+
+def test_search_engine_files_and_structured_data():
+    import re
+    import xml.etree.ElementTree as ET
+    robots = demo.robots_txt()
+    assert "User-agent: *" in robots and "Allow: /" in robots
+    assert f"Sitemap: {demo.SITE_URL}sitemap.xml" in robots
+    ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    locs = [e.text for e in ET.fromstring(demo.sitemap_xml().encode()).findall("s:url/s:loc", ns)]
+    assert locs == [demo.SITE_URL, demo.SITE_URL + "demo/"] and all(u.startswith("https://") for u in locs)
+    home = demo.landing(["film.en.mp4", "film.en.jpg"])
+    assert f'<link rel="canonical" href="{demo.SITE_URL}">' in home
+    blob = re.search(r'<script type="application/ld\+json">(.*?)</script>', home, re.S).group(1)
+    data = json.loads(blob)
+    assert data["@type"] == "SoftwareApplication" and data["description"] == demo.PITCH
+    assert data["codeRepository"] == demo.REPO_URL and "MIT" in data["license"]
+    assert not {"aggregateRating", "review", "offers", "interactionStatistic"} & data.keys()   # no invented numbers
+    title = re.search(r"<title>(.*?)</title>", home).group(1)
+    assert all(p in title for p in ("sports video analysis", "basketball film review", "Claude Code", "Codex"))

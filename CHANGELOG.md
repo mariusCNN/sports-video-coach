@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Added
+- The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
+  pages, a schema.org `SoftwareApplication` block and a title that names what it does.
+
 ### Fixed
 - A plugin's page re-renders when a file its page hooks read changes (declare them in `PageHooks.inputs`); before,
   `run` ended with exit 0 and the page still showed the old number (found by a cold plugin-author test).
