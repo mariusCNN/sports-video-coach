@@ -16,6 +16,7 @@ from . import effort as effort_chart
 from . import page as P
 
 BOARD = effort_chart.SUITE + P.FRESH   # the fresh-seed frames board: unseen seeds, review by eye
+FIXED = effort_chart.SUITE             # the fixed svc-bench-3 frames board
 TRACK = "frames"
 LOCAL = ("Ollama",)                    # agents that run a model on the runner's own GPU
 BIG = 0.2                              # a gap in mean above chance the answers call large
@@ -52,6 +53,10 @@ BUILT = ("This page, the benchmark and its leaderboard were built with a coding 
          "are filled in from the result files each time the site is built.")
 
 # The Chinese page: every English text, keyed by itself; `t` raises KeyError on a missing entry (a test renders zh).
+RUN_FLOORS = "Each run's blind guess on its own seed"
+BOARDS_NOTE = ("Unless a finding names another board, the numbers below come from the fresh-seed board, where "
+               "svc-bench-3 is drawn from a new seed for every run. The fixed {} board has different figures for the "
+               "same contenders: {} is {} above chance there and {} here.")
 ZH = {
     TITLE: "编程 agent 能看懂体育录像吗？基准测试测出了什么",
     DESC: "一个有精确真实值的体育录像复盘基准测试的结论：effort 改变了什么、为什么原始分会误导、agent 能不能从视频里数"
@@ -77,11 +82,15 @@ ZH = {
     "Blind guess on the same videos": "同一批视频上的盲猜", "fresh seeds": "新种子", "-": "-",
     "default effort": "默认 effort", "effort {}": "effort {}", "{} of {}": "{1} 次中有 {0} 次",
     "not recorded": "没有记录", "no answer": "没有回答", "Task": "题目",
+    # the two svc-bench-3 boards
+    BOARDS_NOTE: "除非某条结论写明别的榜，下面的数字都来自新种子榜：每次运行都用新种子重新生成 svc-bench-3。固定的 {} 榜上"
+                 "同样这些参赛者的数字不同：{} 在那里超出盲猜 {}，在这里是 {}。",
     # effort
+    "Likely, on few runs.": "可能有，但运行次数少。",
+    " Changing only the effort moved {} from {} ({}, n={}) to {} ({}, n={}) above chance.":
+        "只改 effort，{} 的超出盲猜分就从 {}（{}，n={}）变到 {}（{}，n={}）。",
     "Does reasoning effort matter for video review?": "effort 对看录像有影响吗？",
     "Yes, a lot.": "有，而且很大。", "A little.": "有一点。",
-    " Changing only the effort moved {} from {} ({}) to {} ({}) above chance.":
-        "只改 effort，{} 的超出盲猜分就从 {}（{}）变到 {}（{}）。",
     " At {} it gave no answer before the time limit.": "用 {} 时，它在时限前没有给出回答。",
     EFFORT_HOW: "同一模型，每次运行都用新种子重新生成 svc-bench-3，静帧赛道（只看静帧，不跑代码）；只改了 "
                                "effort 设置。",
@@ -95,6 +104,7 @@ ZH = {
         "单看说明不了什么。不看视频的盲猜总分就有 {}–{}，所以要看超出盲猜那一栏：{} 总分 {}，超出盲猜只有 {}。",
     "The blind guess copies the example answers in the task text. On fresh seeds each run has its own floor; "
     "those {} floors total {}–{}.": "盲猜照抄题目里的示例答案。新种子上每次运行有自己的基线；这 {} 个基线的总分是 {}–{}。",
+    RUN_FLOORS: "每次运行在自己种子上的盲猜", "Seed": "种子",
     "Floors are computed by the tool for every suite and seed; one blind guess per suite, no randomness.":
         "基线由工具为每个套件和种子算出；每个套件一个盲猜，没有随机性。",
     # code track
@@ -119,8 +129,14 @@ ZH = {
         "同一个量化模型跑了 {} 次，temperature 0；更大的本地模型可能更好。",
     # cost
     "What does a near-perfect review cost?": "接近满分的复盘要花多少？",
-    "On the fresh-seed board the cheapest contender at {} or more above chance was {}: {} and {} per run, scoring {} "
-    "above chance.": "新种子榜上，超出盲猜 {} 及以上的参赛者里最便宜的是 {}：每次 {}、{}，超出盲猜 {}。",
+    "On the fresh-seed board, of the contenders at {} or more above chance with a recorded cost, the cheapest was {}: "
+    "{} and {} per run ({}), scoring {} above chance.":
+        "新种子榜上，超出盲猜 {} 及以上、有费用记录的参赛者里最便宜的是 {}：每次 {}、{}（{}），超出盲猜 {}。",
+    " {} also reached {} but reports no cost.": "{} 也达到了 {}，但没有报告费用。",
+    "Not run on fresh seeds: {}.": "没在新种子上跑过的：{}。",
+    "{} on the fixed {} board: {} above chance over {}{}, {} per run": "{0} 在固定的 {1} 榜上：{3}，超出盲猜 {2}{4}，每次 {5}",
+    " (best {})": "（最好 {}）", " ({})": "（{}）",
+    "one run": "1 次运行",
     " {} cost {} per run, scoring {} above chance.": "{} 每次 {}，超出盲猜 {}。",
     COST_HOW:
         "费用是 agent 自己报告的数（Claude Code 会报，Codex 和 Ollama 不报）；用时是实际秒数。",
@@ -176,6 +192,27 @@ def contender(key: tuple[str, str, str]) -> dict:
             "effort": effort_chart.effort_of(settings)}
 
 
+def ident(key: tuple[str, str, str]) -> tuple[str, str, str]:
+    """A contender across boards: agent, model and effort (other settings text differs between the boards)."""
+    c = contender(key)
+    return c["agent"], c["model"], c["effort"]
+
+
+def fixed_finding(rows: list[dict]) -> dict | None:
+    """The fixed svc-bench-3 frames board next to the fresh one: the shared contender whose above chance differs
+    most, and the fixed board's contenders that never ran on fresh seeds."""
+    fixed = board_rows(rows, FIXED, TRACK)
+    fresh = board_rows(rows, BOARD, TRACK)
+    a = {ident(x["key"]): x for x in P.summarize(fixed, P.floor_of(fixed)) if x["above"] is not None}
+    b = {ident(x["key"]): x for x in P.summarize(fresh) if x["above"] is not None}
+    if not a or not b:
+        return None
+    shared = [k for k in a if k in b]
+    diff = max(shared, key=lambda k: (abs(a[k]["above"] - b[k]["above"]), k), default=None)
+    return {"diff": {"fixed": a[diff], "fresh": b[diff]} if diff else None,
+            "missing": [a[k] for k in a if k not in b]}
+
+
 def effort_finding(rows: list[dict]) -> dict | None:
     """The effort data, plus the bar pair with the widest gap in one contender (answered bars only)."""
     data = effort_chart.effort_data(rows)
@@ -207,9 +244,10 @@ def floor_finding(rows: list[dict]) -> dict | None:
     summary = [x for x in P.summarize(mine) if x["above"] is not None]
     if not suites or not summary:
         return None
-    seeds = [v for v in (floor_total(r, None) for r in mine if not P.is_baseline(r)) if v is not None]
+    seeds = [{"key": P.contender_key(r), "seed": r["seed"], "floor": v, "file": r["_file"]}
+             for r in mine if not P.is_baseline(r) for v in [floor_total(r, None)] if v is not None]
     worst = max(summary, key=lambda x: (round(x["total"] - x["above"], 6), x["key"]))
-    totals = [x["total"] for x in suites] + seeds
+    totals = [x["total"] for x in suites] + [x["floor"] for x in seeds]
     return {"suites": suites, "seeds": seeds, "lo": min(totals), "hi": max(totals), "summary": summary,
             "worst": worst}
 
@@ -254,7 +292,8 @@ def cost_finding(rows: list[dict]) -> dict | None:
     if not top:
         return None
     return {"summary": summary, "cheap": min(top, key=lambda x: (x["cost"], x["key"])),
-            "dear": max(top, key=lambda x: (x["cost"], x["key"])), "runs": sum(x["n"] for x in summary)}
+            "dear": max(top, key=lambda x: (x["cost"], x["key"])), "runs": sum(x["n"] for x in summary),
+            "unpriced": [x for x in summary if x["above"] >= TOP and x["cost"] is None]}
 
 
 def fails_finding(rows: list[dict]) -> dict | None:
@@ -291,7 +330,8 @@ def findings_data(rows: list[dict]) -> dict:
     return {"date": max(dates) if dates else "", "runs": runs,
             "evidence": {r["_file"]: r.get("evidence") or "" for r in rows},
             "effort": effort_finding(rows), "floor": floor_finding(rows), "code": code_finding(rows),
-            "local": local_finding(rows), "cost": cost_finding(rows), "fails": fails_finding(rows)}
+            "local": local_finding(rows), "cost": cost_finding(rows), "fails": fails_finding(rows),
+            "fixed": fixed_finding(rows)}
 
 
 # ---- rendering -------------------------------------------------------------------------------------------------
@@ -355,10 +395,13 @@ def board_label(board: str, lang: str) -> str:
 def effort_section(f: dict, ev: dict, lang: str) -> str:
     b = f["best"]
     s = effort_chart.setting
-    answer = t("Yes, a lot." if b["gap"] >= BIG else "A little.", lang) + t(
-        " Changing only the effort moved {} from {} ({}) to {} ({}) above chance.", lang).format(
-        esc(b["label"]), n3(b["lo"]["above"]), esc(s(b["lo"]["effort"], lang)), n3(b["hi"]["above"]),
-        esc(s(b["hi"]["effort"], lang)))
+    # a strong word only when the gap is large and every compared bar has at least two runs
+    verdict = ("A little." if b["gap"] < BIG else "Yes, a lot." if min(b["lo"]["n"], b["hi"]["n"]) >= 2
+               else "Likely, on few runs.")
+    answer = t(verdict, lang) + t(
+        " Changing only the effort moved {} from {} ({}, n={}) to {} ({}, n={}) above chance.", lang).format(
+        esc(b["label"]), n3(b["lo"]["above"]), esc(s(b["lo"]["effort"], lang)), b["lo"]["n"], n3(b["hi"]["above"]),
+        esc(s(b["hi"]["effort"], lang)), b["hi"]["n"])
     for x in b["silent"]:
         answer += t(" At {} it gave no answer before the time limit.", lang).format(esc(s(x["effort"], lang)))
     rows = []
@@ -391,10 +434,17 @@ def floor_section(f: dict, lang: str) -> str:
     rows = [f'<tr>{agent_cell(x["key"], lang)}<td class="num">{x["n"]}</td><td class="num">{n3(x["total"])}</td>'
             f'<td class="num above">{n3(x["above"])}</td></tr>' for x in f["summary"]]
     head = [t(k, lang) for k in ("Contender", "Runs", "Total", "Above chance")]
+    floors = [x["floor"] for x in f["seeds"]]
     seeds = (t("The blind guess copies the example answers in the task text. On fresh seeds each run has its own "
-               "floor; those {} floors total {}–{}.", lang).format(len(f["seeds"]), n3(min(f["seeds"])),
-                                                                    n3(max(f["seeds"]))) if f["seeds"] else "")
-    body = (f'<p>{esc(t("Blind guess total", lang))}:</p><ul class="chips">{chips}</ul><p>{esc(seeds)}</p>'
+               "floor; those {} floors total {}–{}.", lang).format(len(floors), n3(min(floors)), n3(max(floors)))
+             if floors else "")
+    fold = ""
+    if f["seeds"]:   # every per-seed floor the page quotes, so a reader can check the range
+        cells = [f'<tr>{agent_cell(x["key"], lang)}<td class="num">{esc(x["seed"])}</td>'
+                 f'<td class="num">{n3(x["floor"])}</td></tr>' for x in sorted(f["seeds"], key=lambda x: x["floor"])]
+        fold = (f'<details class="fold"><summary>{esc(t(RUN_FLOORS, lang))}</summary>'
+                + scroll([t(k, lang) for k in ("Contender", "Seed", "Blind guess total")], cells) + "</details>")
+    body = (f'<p>{esc(t("Blind guess total", lang))}:</p><ul class="chips">{chips}</ul><p>{esc(seeds)}</p>{fold}'
             + scroll(head, rows) + f'<p class="sub">{esc(t(ABOVE_NOTE, lang))}</p>')
     foot = links([(f"#frames-{BOARD}", board_label(BOARD, lang)), ("#facts", t("Before you trust this", lang))],
                  [], {}, lang)
@@ -447,21 +497,40 @@ def cost_cell(x: dict, lang: str) -> str:
     return f'<td class="num">{P.usd(x["cost"])}{part}</td>'
 
 
-def cost_section(f: dict, lang: str) -> str:
+def missing_line(fixed: dict | None, lang: str) -> str:
+    """The fixed board's contenders that never ran on fresh seeds, with their cost there."""
+    if not fixed or not fixed["missing"]:
+        return ""
+    items = [t("{} on the fixed {} board: {} above chance over {}{}, {} per run", lang).format(
+                 name(x["key"], lang), FIXED, n3(x["above"]),
+                 t("one run", lang) if x["n"] == 1 else t("{} runs", lang).format(x["n"]),
+                 t(" (best {})", lang).format(n3(x["hi"])) if x["n"] > 1 and x["hi"] != x["above"] else "",
+                 (P.usd(x["cost"]) + (t(" ({})", lang).format(t("{} of {}", lang).format(x["n_cost"], x["n"]))
+                                      if x["n_cost"] < x["n"] else "")) if x["cost"] is not None
+                 else t("not recorded", lang))
+             for x in fixed["missing"]]
+    return f'<p>{esc(t("Not run on fresh seeds: {}.", lang).format(join(items, lang)))}</p>'
+
+
+def cost_section(f: dict, lang: str, fixed: dict | None = None) -> str:
     c, d = f["cheap"], f["dear"]
-    answer = t("On the fresh-seed board the cheapest contender at {} or more above chance was {}: {} and {} per "
-               "run, scoring {} above chance.", lang).format(f"{TOP:g}", esc(name(c["key"], lang)), P.usd(c["cost"]),
-                                            P.wall(c["secs"]), n3(c["above"]))
+    answer = t("On the fresh-seed board, of the contenders at {} or more above chance with a recorded cost, the "
+               "cheapest was {}: {} and {} per run ({}), scoring {} above chance.", lang).format(
+        f"{TOP:g}", esc(name(c["key"], lang)), P.usd(c["cost"]), P.wall(c["secs"]),
+        t("one run", lang) if c["n"] == 1 else t("{} runs", lang).format(c["n"]), n3(c["above"]))
     if d is not c:
         answer += t(" {} cost {} per run, scoring {} above chance.", lang).format(esc(name(d["key"], lang)), P.usd(d["cost"]),
                                                                n3(d["above"]))
+    for x in f["unpriced"]:
+        answer += t(" {} also reached {} but reports no cost.", lang).format(esc(name(x["key"], lang)), n3(x["above"]))
     rows = [f'<tr>{agent_cell(x["key"], lang)}<td class="num">{x["n"]}</td>'
             f'<td class="num above">{n3(x["above"])}</td>'
             f'<td class="num">{P.wall(x["secs"]) if x["secs"] is not None else "-"}</td>{cost_cell(x, lang)}</tr>'
             for x in f["summary"]]
     head = [t(k, lang) for k in ("Contender", "Runs", "Above chance", "Time per run", "Cost per run")]
-    body = (f"<p>{esc(t(COST_HOW, lang))}</p>" + scroll(head, rows))
-    foot = links([(f"#frames-{BOARD}", board_label(BOARD, lang))], [], {}, lang)
+    body = f"<p>{esc(t(COST_HOW, lang))}</p>" + scroll(head, rows) + missing_line(fixed, lang)
+    foot = links([(f"#frames-{BOARD}", board_label(BOARD, lang))]
+                 + ([(f"#frames-{FIXED}", FIXED)] if fixed and fixed["missing"] else []), [], {}, lang)
     bound = esc(t("Means over {} runs; most contenders ran once or twice. Prices are per run of four short videos.",
                   lang).format(f["runs"]))
     return section("cost", "What does a near-perfect review cost?", answer, body, foot, bound, lang)
@@ -491,6 +560,9 @@ section.finding { background: var(--card); border: 1px solid var(--line); border
                   padding: .2rem 1rem 1rem; margin: 1.2rem 0 0; }
 section.finding h2 { margin: .9rem 0 .5rem; }
 section.finding p { max-width: 40rem; }
+p.note { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .5rem .8rem; }
+details.fold { margin: .6rem 0; }
+details.fold summary { cursor: pointer; font-weight: 600; }
 p.answer { background: var(--bg); border-left: 4px solid var(--accent); border-radius: 6px; padding: .5rem .8rem; }
 p.links, p.bound, p.sub { font-size: .88rem; color: var(--muted); }
 section.finding .scroll { margin: .5rem 0; }
@@ -526,6 +598,16 @@ def head_tags(data: dict, lang: str, image: str | None) -> str:
     return "\n".join(tags)
 
 
+def boards_note(fixed: dict | None, lang: str) -> str:
+    """Near the top: the findings use the fresh-seed board; the fixed board differs, with the widest example."""
+    if not fixed or not fixed["diff"]:
+        return ""
+    a, b = fixed["diff"]["fixed"], fixed["diff"]["fresh"]
+    text = t(BOARDS_NOTE, lang).format(f'<a href="../#frames-{FIXED}">{esc(FIXED)}</a>', esc(name(b["key"], lang)),
+                                   n3(a["above"]), n3(b["above"]))
+    return f'<p class="note">{text}</p>'
+
+
 def render(rows: list[dict], lang: str = "en", image: str | None = None, data: dict | None = None) -> str:
     """The findings page in `lang`; `image` is the og:image file name next to the leaderboard (or None)."""
     data = data if data is not None else findings_data(rows)
@@ -540,7 +622,7 @@ def render(rows: list[dict], lang: str = "en", image: str | None = None, data: d
     if data["local"]:
         parts.append(local_section(data["local"], ev, lang))
     if data["cost"]:
-        parts.append(cost_section(data["cost"], lang))
+        parts.append(cost_section(data["cost"], lang, data.get("fixed")))
     if data["fails"]:
         parts.append(fails_section(data["fails"], lang))
     if not parts:
@@ -570,6 +652,7 @@ def render(rows: list[dict], lang: str = "en", image: str | None = None, data: d
 <h1>{esc(t(TITLE, lang))}</h1>
 <p class="lead">{esc(t(LEAD, lang))}</p>
 <ul class="chips">{chips}</ul>
+{boards_note(data.get("fixed"), lang)}
 {"".join(parts)}
 <h2 id="not-shown">{esc(t("What this benchmark does not show", lang))}</h2>
 <ul class="plain">{nots}</ul>

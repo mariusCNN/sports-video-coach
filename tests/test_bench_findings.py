@@ -46,7 +46,10 @@ def test_numbers_equal_the_page_functions(rows):
     # effort: the bars are effort_data's, and the answer quotes the widest pair
     assert d["effort"]["data"] == effort_chart.effort_data(rows)
     b = d["effort"]["best"]
-    assert f'from {n3(b["lo"]["above"])}' in html and f'to {n3(b["hi"]["above"])}' in html
+    assert f'from {n3(b["lo"]["above"])} (' in html and f'to {n3(b["hi"]["above"])} (' in html
+    assert f'n={b["lo"]["n"]})' in html and f'n={b["hi"]["n"]})' in html
+    strong = b["gap"] >= F.BIG and min(b["lo"]["n"], b["hi"]["n"]) >= 2
+    assert ("Yes, a lot." in html) == strong
 
     # floor: each suite's blind guess is the board's floor row; fresh floors are seed_floor's mean
     for s in d["floor"]["suites"]:
@@ -57,7 +60,9 @@ def test_numbers_equal_the_page_functions(rows):
         if not page.is_baseline(r):
             f = page.seed_floor(str(r.get("suite") or page.SUITE), page.track_of(r), r["seed"])
             seeds.append(sum(f.values()) / len(f))
-    assert sorted(d["floor"]["seeds"]) == sorted(seeds)
+    assert sorted(x["floor"] for x in d["floor"]["seeds"]) == sorted(seeds)
+    for x in d["floor"]["seeds"]:   # every per-seed floor is shown in the fold
+        assert f'{x["seed"]} {n3(x["floor"])}' in html
     assert f'{n3(d["floor"]["lo"])}–{n3(d["floor"]["hi"])}' in html
 
     # every contender row on the fresh board is summarize's
@@ -84,6 +89,22 @@ def test_numbers_equal_the_page_functions(rows):
     # cost: cheapest at TOP or more, with summarize's cost and time
     c = d["cost"]["cheap"]
     assert c["above"] >= F.TOP and page.usd(c["cost"]) in html and page.wall(c["secs"]) in html
+    assert "with a recorded cost" in html
+    for x in d["cost"]["unpriced"]:
+        assert x["cost"] is None and f'{F.name(x["key"], "en")} also reached {n3(x["above"])}' in html
+
+    # the fixed board: summarize with its floor row; the note and the not-on-fresh-seeds line quote it
+    fixed = F.board_rows(rows, F.FIXED, F.TRACK)
+    fsum = {F.ident(x["key"]): x for x in page.summarize(fixed, page.floor_of(fixed))}
+    a, b = d["fixed"]["diff"]["fixed"], d["fixed"]["diff"]["fresh"]
+    assert a == fsum[F.ident(a["key"])] and b == summary[b["key"]]
+    assert f'is {n3(a["above"])} above chance there and {n3(b["above"])} here' in html
+    fresh_ids = {F.ident(k) for k in summary}
+    assert [x["key"] for x in d["fixed"]["missing"]] == [x["key"] for k, x in fsum.items() if k not in fresh_ids]
+    for x in d["fixed"]["missing"]:
+        assert f'{F.name(x["key"], "en")} on the fixed {F.FIXED} board: {n3(x["above"])}' in html
+        part = f' ({x["n_cost"]} of {x["n"]})' if x["n_cost"] < x["n"] else ""
+        assert x["cost"] is None or f'{page.usd(x["cost"])}{part} per run' in html
 
     # fails: page.fails' scores, the hardest task over runs that answered
     mine = [r for r in fresh if not page.is_baseline(r)]
@@ -146,3 +167,19 @@ def test_no_results_say_no_findings_yet(tmp_path):
     assert "No runs yet, so no findings yet." in html and 'class="finding"' not in html
     assert "还没有运行记录" in F.render([], "zh")
     assert '"datePublished"' not in html
+
+
+def test_effort_answer_word_follows_the_run_counts():
+    def bar(effort, above, n):
+        return {"effort": effort, "above": above, "n": n, "no_answer": 0, "timed_out": False, "secs": 10.0,
+                "files": []}
+    def html(lo_n, hi_n, gap=0.5):
+        best = {"label": "M", "lo": bar("low", 0.4, lo_n), "hi": bar("high", 0.4 + gap, hi_n), "gap": gap,
+                "silent": []}
+        f = {"data": {"groups": [{"label": "M", "agent": "A", "bars": [best["lo"], best["hi"]]}]}, "best": best,
+             "runs": lo_n + hi_n, "singles": 0, "settings": 2}
+        return text(F.effort_section(f, {}, "en"))
+    assert "Yes, a lot." in html(2, 3)
+    one = html(2, 1)   # one side is a single run: no strong word, and n is stated
+    assert "Yes, a lot." not in one and "Likely, on few runs." in one and "n=1)" in one and "n=2)" in one
+    assert "A little." in html(1, 1, gap=0.1)
