@@ -64,6 +64,8 @@ COMMANDS = (
      "sports-video-coach bench prepare --out bench-run --suite svc-bench-2"),
     ("Let your agent watch the videos and fill bench-run/answers.json, then score it",
      'sports-video-coach bench score bench-run --agent "Your agent" --model "your-model"'),
+    ("Or in one command: prepare, run Claude Code or Codex headless on the frames-only track, score",
+     "sports-video-coach bench run --agent claude --model <model> --suite svc-bench-3 --track frames"),
 )
 
 CSS = """

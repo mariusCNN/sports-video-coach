@@ -35,6 +35,7 @@ def test_empty_results_show_be_the_first(tmp_path):
     assert "No runs yet" in html and "be the first" in html
     assert "<table" not in html
     assert "bench prepare --out bench-run" in html and "bench score bench-run" in html
+    assert "bench run --agent claude --model &lt;model&gt; --suite svc-bench-3 --track frames" in html
     assert page_check.problems(out) == []
 
 
