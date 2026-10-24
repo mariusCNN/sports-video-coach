@@ -12,6 +12,7 @@ the English image).
 from __future__ import annotations
 
 import re
+import textwrap
 from pathlib import Path
 
 NAMES = {"en": "effort.png", "zh": "effort-zh.png"}
@@ -23,6 +24,7 @@ ORDER = (DEFAULT, "minimal", "low", "medium", "high", "xhigh", "max")   # bar or
 TIMEOUT = 1200      # `bench run --timeout` default (s): a run with no answer that ran this long was killed by it
 CJK_FONTS = ("Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "SimHei")
 ANCHOR = "effort"
+NOTE_WIDTH = 36  # characters per note line at fontsize 15
 
 TITLE = "Same model, different effort: score on unseen seeds"
 SUB = "{} fresh seeds · frames track (stills only, no code) · {}"
@@ -52,7 +54,8 @@ def no_answer(r: dict) -> bool:
 
 def effort_data(rows: list[dict]) -> dict:
     """What the chart and the page section show: {"suite", "date", "groups": [{"agent", "model", "label", "bars":
-    [{"effort", "n", "above", "lo", "hi", "secs", "files", "no_answer", "timed_out"}]}]}. Groups (contenders with
+    [{"effort", "n", "above", "lo", "hi", "secs", "files", "no_answer", "timed_out", "limits"}]}]}; "limits": the
+    time limits the timed-out runs hit, each its wall time rounded down to whole 100 s, sorted, no repeats. Groups (contenders with
     two or more effort settings) ordered by agent and model; bars in ORDER."""
     from . import page as P
     runs = [r for r in rows if not P.is_baseline(r) and r.get("seed") is not None
@@ -73,12 +76,13 @@ def effort_data(rows: list[dict]) -> dict:
             vals = [v for v in (P.above_value(r, None) for r in mine) if v is not None]
             secs, _ = P.mean_of(mine, "wall_seconds")
             silent = [r for r in mine if no_answer(r)]
+            killed = [float(r["wall_seconds"]) for r in silent if P.is_num_value(r.get("wall_seconds"))
+                      and float(r["wall_seconds"]) >= TIMEOUT]
             bars.append({"effort": e, "n": len(mine), "files": [r["_file"] for r in mine],
                          "above": round(sum(vals) / len(vals), 3) if vals else None,
                          "lo": round(min(vals), 3) if vals else None, "hi": round(max(vals), 3) if vals else None,
                          "secs": secs, "no_answer": len(silent),
-                         "timed_out": sum(1 for r in silent if P.is_num_value(r.get("wall_seconds"))
-                                          and float(r["wall_seconds"]) >= TIMEOUT)})
+                         "timed_out": len(killed), "limits": sorted({int(w // 100 * 100) for w in killed})})
             used += mine
         groups.append({"agent": agent, "model": model, "label": model_label(model, agent), "bars": bars})
     dates = [str(r.get("date")) for r in used if r.get("date")]
@@ -88,6 +92,13 @@ def effort_data(rows: list[dict]) -> dict:
 def setting(e: str, lang: str = "en") -> str:
     from .page import t
     return t("default effort", lang) if e == DEFAULT else t("effort {}", lang).format(e)
+
+
+def limits_word(b: dict, lang: str = "en") -> str:
+    """The time limits a bar's timed-out runs hit, e.g. "1200 s and 2400 s"."""
+    from .page import t
+    each = [f"{x} s" for x in b["limits"]]
+    return each[0] if len(each) == 1 else t(", ", lang).join(each[:-1]) + t(" and ", lang) + each[-1]
 
 
 def runs_word(n: int, lang: str = "en") -> str:
@@ -101,8 +112,8 @@ def phrase(b: dict, lang: str = "en") -> str:
     s, runs = setting(b["effort"], lang), runs_word(b["n"], lang)
     if b["n"] == b["no_answer"]:
         if b["timed_out"] == b["n"]:
-            return t("{}: no answer, killed at the {} s time limit, scored 0 ({})", lang).format(
-                s, f"{b['secs']:.0f}", runs)
+            return t("{}: no answer, killed at the time limit ({}), scored 0 ({})", lang).format(
+                s, limits_word(b, lang), runs)
         return t("{}: no answer, scored 0 ({})", lang).format(s, runs)
     secs = f"{b['secs']:.0f}" if b["secs"] is not None else "-"
     silent = t("; {} gave no answer", lang).format(b["no_answer"]) if b["no_answer"] else ""
@@ -124,7 +135,7 @@ def bar_note(b: dict, lang: str) -> str:
     scored 0."""
     from .page import t
     if b["n"] == b["no_answer"]:
-        why = (t("no answer, timed out at {} s", lang).format(f"{b['secs']:.0f}") if b["timed_out"] == b["n"]
+        why = (t("no answer, timed out at {}", lang).format(limits_word(b, lang)) if b["timed_out"] == b["n"]
                else t("no answer", lang))
         return f"n={b['n']} · {why}"
     parts = [f"n={b['n']}"]
@@ -187,7 +198,9 @@ def draw(data: dict, path: Path, lang: str = "en", font: str | None = None) -> P
                 value = "0" if failed else f"{b['above']:.3f}" if b["above"] is not None else "-"
                 fig.text(x_bar + w_bar + 0.015, y, value, fontsize=21, fontweight="bold",
                          color=warn if failed else ink, va="center")
-                fig.text(x_bar + w_bar + 0.105, y, bar_note(b, lang), fontsize=15, color=warn if failed else muted,
+                # A long note (two time limits) wraps rather than running off the right edge.
+                note = "\n".join(textwrap.wrap(bar_note(b, lang), NOTE_WIDTH))
+                fig.text(x_bar + w_bar + 0.105, y, note, fontsize=15, color=warn if failed else muted,
                          va="center")
                 y -= step
         fig.text(0.04, 0.075, t(FLOOR, lang), fontsize=14, color=muted, va="center")

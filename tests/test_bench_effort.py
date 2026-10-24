@@ -95,9 +95,20 @@ def test_bars_label_n_range_time_and_a_timed_out_run(fake_above):
     assert effort.bar_note(bars[2], "en") == "n=1 · no answer, timed out at 1200 s"
     line = effort.lines(data)[0]
     assert line.startswith("M 1.0 · Claude Code: default effort: 0.450 mean, range 0.400–0.500 (2 runs, 20 s")
-    assert "effort max: no answer, killed at the 1200 s time limit, scored 0 (1 run)" in line
+    assert "effort max: no answer, killed at the time limit (1200 s), scored 0 (1 run)" in line
     zh = effort.lines(data, "zh")[0]
-    assert "默认 effort：平均 0.450" in zh and "到 1200 s 时限被终止" in zh
+    assert "默认 effort：平均 0.450" in zh and "到时限（1200 s）被终止" in zh
+
+
+def test_each_timed_out_run_states_its_own_limit(fake_above):
+    rows = runs_of(("claude-m-1-0", "default effort", 0.4, 10, True), ("claude-m-1-0", "effort max", 0.0, 1200.5, False),
+                   ("claude-m-1-0", "effort max", 0.0, 2400.9, False))
+    b = effort.effort_data(rows)["groups"][0]["bars"][1]
+    assert (b["n"], b["timed_out"], b["limits"]) == (2, 2, [1200, 2400])
+    assert effort.bar_note(b, "en") == "n=2 · no answer, timed out at 1200 s and 2400 s"
+    assert effort.phrase(b) == "effort max: no answer, killed at the time limit (1200 s and 2400 s), scored 0 (2 runs)"
+    assert effort.phrase(b, "zh") == "effort max：没有回答，到时限（1200 s 和 2400 s）被终止，记 0 分（2 次运行）"
+    assert "1800" not in effort.bar_note(b, "en") + effort.phrase(b)      # never the mean wall time
 
 
 def test_no_answer_runs_inside_a_bar_are_named(fake_above):

@@ -222,11 +222,11 @@ ZH = {
     "No contender ran at two effort settings yet.": "还没有参赛者在两种 effort 设置下都跑过。",
     "default effort": "默认 effort", "effort {}": "effort {}",
     "1 run": "1 次运行", "{} runs": "{} 次运行", "; {} gave no answer": "；{} 次没有回答", "{} no answer": "{} 次没回答",
-    "{}: no answer, killed at the {} s time limit, scored 0 ({})": "{}：没有回答，到 {} s 时限被终止，记 0 分（{}）",
+    "{}: no answer, killed at the time limit ({}), scored 0 ({})": "{}：没有回答，到时限（{}）被终止，记 0 分（{}）",
     "{}: no answer, scored 0 ({})": "{}：没有回答，记 0 分（{}）",
     "{}: {} ({}, {} s)": "{}：{}（{}，{} s）",
     "{}: {} mean, range {}–{} ({}, {} s per run{})": "{}：平均 {}，范围 {}–{}（{}，每次 {} s{}）",
-    "no answer, timed out at {} s": "没有回答，{} s 超时", "no answer": "没有回答", "{} s/run": "每次 {} s",
+    "no answer, timed out at {}": "没有回答，{} 超时", " and ": " 和 ", "no answer": "没有回答", "{} s/run": "每次 {} s",
 }
 
 
