@@ -508,6 +508,11 @@ and link them; the page labels such a link "transcript".
   touches 0.24 s apart) zoomed and slowed, then the truth against each run's answer on that task. Every number
   comes from the suite or the result files (tests check it); needs Pillow (with matplotlib) and ffmpeg, else no
   clip. For a post, `python -m sports_video_coach.bench.clip benchmark/results <dir>` draws it alone.
+- "Count it yourself" (`#count`, `bench/count.py`), right after the first-screen links: the visitor plays
+  `count.mp4`, the `svc-bench-3` juggling video exactly as contenders got it (no answer drawn on it, about 400 KB,
+  needs ffmpeg only), types a count, and only then sees the truth, every stored answer to that task from the
+  result files, the blind guess and a line to copy. Without JavaScript the answers sit behind a closed
+  "count, then open" fold. The answer clip moves inside that fold. No tracking, no network calls.
 
 ## Honesty notes
 

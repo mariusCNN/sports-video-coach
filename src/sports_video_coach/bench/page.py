@@ -23,6 +23,7 @@ from pathlib import Path
 
 from . import card as share_card
 from . import clip as share_clip
+from . import count as count_it
 from . import run as bench_run
 from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task, suite_tasks
 
@@ -92,6 +93,8 @@ SHOW = 4                       # list diffs name at most this many times or posi
 LANGS = ("en", "zh")          # the page in English (index.html) and Simplified Chinese (zh/index.html)
 TAGS = {"en": "en", "zh": "zh-CN"}
 URLS = {"en": PAGE_URL, "zh": f"{PAGE_URL}zh/"}
+COUNT_VIDEO = "The task video: two players juggle small yellow balls; count the left (red) player's touches."
+COUNT_OPEN = "Counted? Open for the truth and every model's answer"
 KIND_ZH = {"count": "次数", "rate": "比率", "timestamps": "时间点", "outcomes": "结果"}
 # The Chinese page: every English text the page shows, keyed by itself (templates keep their {fields}). `t` raises
 # KeyError on a missing entry, so a new English text without a translation fails the zh page's tests.
@@ -177,6 +180,34 @@ ZH = {
     "Latest run {}": "最近一次运行 {}", "Frames-only board ({})": "静帧榜（{}）", "Code-track board": "代码赛道榜",
     "Rerun it in one command": "一条命令重跑", "Code on GitHub": "GitHub 上的代码", "On this page": "本页导航",
     "Before you trust this: {} things a skeptic asks first": "信之前先看：怀疑的人最先会问的 {} 件事",
+    # count it yourself
+    count_it.QUESTION: "两名球员各用一只脚颠一模一样的黄色小球，侧面视角：左边是红色球员，右边是橙红色球员。数左边（红色）"
+                       "球员的触球次数：他的脚每碰到自己的球一次算一次。快速连续两触（球从脚上稍微弹起，马上又被碰到）算两"
+                       "次。球落地反弹不算触球。右边球员的触球不算。镜头是手持的。",
+    "Count it yourself": "自己数一数",
+    "The {} task of {}: the same {} s video every contender got, with no answer drawn on it. Watch it, count, type "
+    "your number; only then does the page show the truth and what each model answered.":
+        "{1} 里的 {0} 题：和每个参赛者拿到的是同一段 {2} 秒视频，上面没有画答案。看完、数好、填上你的数字，页面才会显示"
+        "真实值和每个模型的回答。",
+    "The task text the contenders got:": "参赛者拿到的题目（译自英文原文）：",
+    COUNT_VIDEO: "题目视频：两名球员颠黄色小球；数左边（红色）球员的触球次数。",
+    "Your count": "你数的次数", "Show the answers": "看答案",
+    COUNT_OPEN: "数完了？点开看真实值和每个模型的回答",
+    "Truth: {} touches": "真实值：{} 次",
+    "You counted {n}: off by {d}, which the bench scores {s}.": "你数的是 {n}：差 {d}，按基准的规则得 {s} 分。",
+    "frames track": "静帧赛道", "code track": "代码赛道", "Blind guess (no video seen)": "盲猜（没看视频）",
+    "How the bench scores a count: {}": "基准怎么给次数题打分：{}",
+    "Frames track: the model saw stills of this video, one every {} s, and ran no code. Code track: it could write "
+    "and run its own tracker. The blind guess copies the example in the task text.":
+        "静帧赛道：模型只看这段视频的静帧（每 {} 秒一张），不能运行代码。代码赛道：它可以自己写追踪程序并运行。盲猜照抄"
+        "题目里的示例答案。",
+    "Answers as stored in {}, one per run; exact ones in green; &ndash; = the run gave no answer.":
+        "回答照搬 {} 里存的，每次运行一个；答对的是绿色；&ndash; = 这次运行没有作答。",
+    "Your line to share": "可以分享的一句话", "Copy": "复制", "Copied": "已复制",
+    "I counted {n} touches. Truth: {truth}. Models by eye (stills): {models}. Count it yourself: {url}":
+        "我数了 {n} 次。真实值：{truth}。模型（只看静帧）：{models}。你也来数：{url}",
+    "I counted {n} touches. Truth: {truth}. Models: {models}. Count it yourself: {url}":
+        "我数了 {n} 次。真实值：{truth}。模型：{models}。你也来数：{url}",
 }
 
 
@@ -254,6 +285,33 @@ details.prompt { margin: .8rem 0; }
 details.prompt summary { cursor: pointer; font-weight: 600; }
 pre.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
 .name a.switch { color: var(--accent); font-weight: 600; margin-left: .6rem; text-decoration: underline; }
+.count { margin: 1.4rem 0 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+         padding: .2rem 1rem 1rem; }
+.count h2 { margin: .8rem 0 .4rem; }
+.count blockquote { margin: .4rem 0 .8rem; padding-left: .8rem; border-left: 3px solid var(--line);
+                    color: var(--muted); font-size: .9rem; }
+.count video { display: block; width: 100%; max-width: 640px; height: auto; border-radius: 8px; background: #000; }
+.count [hidden] { display: none; }
+.count form { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .8rem 0 0; }
+.count input { font: inherit; width: 6.5rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 8px;
+               background: var(--bg); color: var(--ink); }
+.count button { font: inherit; font-weight: 600; padding: .35rem .9rem; border: 0; border-radius: 8px;
+                background: var(--accent); color: var(--bg); cursor: pointer; }
+.count details { margin: .8rem 0 0; }
+.count summary { cursor: pointer; font-weight: 600; }
+.count .truth { font-size: 1.15rem; margin: .7rem 0 .3rem; }
+.count .you { font-weight: 600; margin: .3rem 0; }
+.count ul.answers { list-style: none; margin: .5rem 0; padding: 0; }
+.count ul.answers li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .8rem;
+                       padding: .35rem 0; border-bottom: 1px solid var(--line); }
+.count ul.answers li:last-child { border-bottom: 0; }
+.count .ans { font-variant-numeric: tabular-nums; font-weight: 700; }
+.count .ans .exact { color: var(--good); }
+.count li.blind { color: var(--muted); }
+.count .rule { font-size: .85rem; color: var(--muted); margin: .3rem 0; }
+.count textarea { display: block; width: 100%; font: inherit; font-size: .9rem; margin: .3rem 0;
+                  padding: .4rem .5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+                  color: var(--ink); }
 .kind { font-size: .75rem; font-weight: 400; color: var(--muted); border: 1px solid var(--line);
         border-radius: 999px; padding: 0 .45rem; margin-left: .3rem; }
 """
@@ -927,6 +985,103 @@ def prompt_block(lang: str = "en") -> str:
             "prompt in the result file, so for them it is unclear.</p></details>")
 
 
+COUNT_JS = """
+(function () {
+  var box = document.getElementById("count"), form = document.getElementById("count-form"),
+      reveal = document.getElementById("count-reveal"), input = document.getElementById("count-n"),
+      you = document.getElementById("count-you"), share = document.getElementById("count-share"),
+      line = document.getElementById("count-line"), copy = document.getElementById("count-copy");
+  if (!box || !form || !reveal) return;
+  var truth = Number(box.getAttribute("data-truth"));
+  form.hidden = false;
+  reveal.hidden = true;
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var n = parseInt(input.value, 10);
+    if (!(n >= 0)) { input.focus(); return; }
+    var d = Math.abs(n - truth), s = Math.max(0, 1 - d / truth).toFixed(2);
+    you.textContent = box.getAttribute("data-you").replace("{n}", n).replace("{d}", d).replace("{s}", s);
+    line.value = box.getAttribute("data-line").replace("{n}", n);
+    you.hidden = share.hidden = reveal.hidden = false;
+    reveal.open = true;
+    you.focus();
+  });
+  copy.addEventListener("click", function () {
+    function done() { copy.textContent = box.getAttribute("data-copied"); }
+    line.select();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(line.value).then(done, function () { if (document.execCommand("copy")) done(); });
+    } else if (document.execCommand("copy")) { done(); }
+  });
+})();
+"""
+
+
+def count_answers(runs: list[dict], truth) -> str:
+    """A contender's stored answers, one per run: exact ones marked, a run without an answer as a dash."""
+    return ", ".join("&ndash;" if r["answer"] is None else
+                     f'<span class="exact">{esc(r["answer"])}</span>' if r["answer"] == truth else esc(r["answer"])
+                     for r in runs)
+
+
+def share_line(data: dict, lang: str = "en") -> str:
+    """The line a visitor copies, with {n} left for their count: the truth and the frames-track models' answers
+    (they looked by eye, as the visitor did; every contender when no frames run exists)."""
+    eye = [c for c in data["contenders"] if c["track"] == "frames"]
+    models = t("; ", lang).join(
+        f'{c["label"]} {t(", ", lang).join(str(r["answer"]) for r in c["runs"] if r["answer"] is not None)}'
+        for c in (eye or data["contenders"]) if any(r["answer"] is not None for r in c["runs"]))
+    line = t("I counted {n} touches. Truth: {truth}. Models by eye (stills): {models}. Count it yourself: {url}"
+             if eye else "I counted {n} touches. Truth: {truth}. Models: {models}. Count it yourself: {url}", lang)
+    return line.format(n="{n}", truth=data["truth"], models=models, url=URLS[lang] + "#count")
+
+
+def count_block(rows: list[dict], lang: str = "en", inner: str = "") -> str:
+    """The "Count it yourself" block (`bench.count`): the task video, a count box, and a reveal with the truth, each
+    contender's stored answers and the blind guess ('' when no contender ran the task). Without JavaScript the count
+    box stays hidden and the reveal is a closed <details>; with it the reveal shows only after a count is entered.
+    `inner` (the clip, which shows the answer) goes inside the reveal."""
+    data = count_it.count_data(rows)
+    if data is None:
+        return ""
+    up = "" if lang == "en" else "../"
+    truth = data["truth"]
+    items = [f'<li><span>{esc(c["label"])} <span class="kind">{t(c["track"] + " track", lang)}</span></span>'
+             f'<span class="ans">{count_answers(c["runs"], truth)}</span></li>' for c in data["contenders"]]
+    if data["floor"]:
+        items.append(f'<li class="blind"><span>{t("Blind guess (no video seen)", lang)}</span>'
+                     f'<span class="ans">{esc(data["floor"]["answer"])}</span></li>')
+    lead = t("The {} task of {}: the same {} s video every contender got, with no answer drawn on it. Watch it, "
+             "count, type your number; only then does the page show the truth and what each model answered.",
+             lang).format(f"<code>{esc(data['task'])}</code>", esc(data["suite"]), f"{data['seconds']:g}")
+    rule = t("How the bench scores a count: {}", lang).format(esc(t(KINDS[0][2], lang)))
+    tracks = t("Frames track: the model saw stills of this video, one every {} s, and ran no code. Code track: it "
+               "could write and run its own tracker. The blind guess copies the example in the task text.",
+               lang).format(f"{count_it.STILL_S:g}")
+    stored = t("Answers as stored in {}, one per run; exact ones in green; &ndash; = the run gave no answer.",
+               lang).format(f'<a href="{RESULTS_URL}">benchmark/results</a>')
+    you = t("You counted {n}: off by {d}, which the bench scores {s}.", lang)
+    return (f'<section class="count" id="count" aria-labelledby="count-h" data-truth="{truth}" '
+            f'data-you="{esc(you)}" data-line="{esc(share_line(data, lang))}" data-copied="{esc(t("Copied", lang))}">'
+            f'<h2 id="count-h">{t("Count it yourself", lang)}</h2><p>{lead}</p>'
+            f'<p>{t("The task text the contenders got:", lang)}</p>'
+            f'<blockquote>{esc(t(data["question"], lang))}</blockquote>'
+            f'<video src="{up}{count_it.MP4}" poster="{up}{count_it.POSTER}" controls muted playsinline '
+            f'preload="none" width="640" height="360" aria-label="{esc(t(COUNT_VIDEO, lang))}"></video>'
+            f'<form id="count-form" hidden><label for="count-n">{t("Your count", lang)}</label>'
+            f'<input id="count-n" type="number" inputmode="numeric" min="0" max="999" step="1" required>'
+            f'<button type="submit">{t("Show the answers", lang)}</button></form>'
+            f'<details id="count-reveal"><summary>{esc(t(COUNT_OPEN, lang))}</summary>'
+            f'<p class="truth"><strong>{t("Truth: {} touches", lang).format(truth)}</strong></p>'
+            f'<p class="you" id="count-you" tabindex="-1" aria-live="polite" hidden></p>'
+            f'<ul class="answers">{"".join(items)}</ul>'
+            f'<p class="rule">{rule}</p><p class="rule">{tracks}</p><p class="rule">{stored}</p>'
+            f'<div id="count-share" hidden><label for="count-line">{t("Your line to share", lang)}</label>'
+            f'<textarea id="count-line" rows="3" readonly></textarea>'
+            f'<button type="button" id="count-copy">{t("Copy", lang)}</button></div>{inner}</details>'
+            f"<script>{COUNT_JS}</script></section>")
+
+
 CARD_TITLE_ZH = "哪个编程 agent 最会看体育录像？"
 
 
@@ -982,10 +1137,18 @@ def clip_block(clip: bool, lang: str = "en") -> str:
             f'</figcaption></figure>')
 
 
-def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, lang: str = "en") -> str:
+def top_blocks(rows: list[dict], clip: bool, count: bool, lang: str = "en") -> str:
+    """The count block (when its video was drawn) with the clip inside its reveal (the clip shows the answer), or the
+    clip alone."""
+    block = count_block(rows, lang, clip_block(clip, lang)) if count else ""
+    return block or clip_block(clip, lang)
+
+
+def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, lang: str = "en",
+           count: bool = False) -> str:
     """The page in `lang` ("en": index.html, "zh": zh/index.html); both show the same rows and numbers."""
     if lang == "zh":
-        return render_zh(rows, notes, card, clip)
+        return render_zh(rows, notes, card, clip, count)
     code = [r for r in rows if track_of(r) == TRACK]
     board = boards(code) if any(not is_baseline(r) for r in code) else empty()
     runs = sum(1 for r in rows if not is_baseline(r))
@@ -1018,7 +1181,7 @@ def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = 
 <ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
 <li>Measured truth only</li>{latest(rows)}</ul>
 {jump(rows)}
-{clip_block(clip)}
+{top_blocks(rows, clip, count)}
 {facts_block(rows)}
 
 <h2 id="leaderboard">Leaderboard</h2>
@@ -1063,7 +1226,7 @@ can differ (see the sample size note at the top).</li>
 """
 
 
-def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False) -> str:
+def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, count: bool = False) -> str:
     """The Chinese page (zh/index.html): the English page's sections, rows and numbers, in Chinese."""
     lang = "zh"
     code = [r for r in rows if track_of(r) == TRACK]
@@ -1099,7 +1262,7 @@ def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool
 <ul class="chips"><li>套件 {", ".join(n for n, _ in SUITES)}</li><li>{runs} 次运行</li>
 <li>只用测出来的真实值</li>{latest(rows, lang)}</ul>
 {jump(rows, lang)}
-{clip_block(clip, lang)}
+{top_blocks(rows, clip, count, lang)}
 {facts_block(rows, lang)}
 
 <h2 id="leaderboard">排行榜</h2>
@@ -1155,10 +1318,13 @@ def main(argv: list[str]) -> int:
     if card is None:
         print("[bench page] no share card: matplotlib is not installed (the page has no og:image)")
     clip = share_clip.write(rows, out)
-    (out / "index.html").write_text(render(rows, notes, card is not None, clip is not None), encoding="utf8")
+    count = count_it.write(rows, out)
+    if count is None:
+        print("[bench page] no count-it-yourself block: needs ffmpeg and a run of the task")
+    shown = (card is not None, clip is not None)
+    (out / "index.html").write_text(render(rows, notes, *shown, count=count is not None), encoding="utf8")
     (out / "zh").mkdir(exist_ok=True)
-    (out / "zh" / "index.html").write_text(render(rows, notes, card is not None, clip is not None, "zh"),
-                                           encoding="utf8")
+    (out / "zh" / "index.html").write_text(render(rows, notes, *shown, "zh", count is not None), encoding="utf8")
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))
