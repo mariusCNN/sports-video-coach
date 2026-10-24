@@ -241,6 +241,9 @@ def main(argv=None) -> int:
     if argv[0] == "run":
         from .run import main as run_main
         return run_main(argv[1:])
+    if argv[0] == "baseline":
+        from .baseline import main as baseline_main
+        return baseline_main(argv[1:])
     if argv[0] not in cmds:
         print(f"unknown bench command {argv[0]!r}; one of: prepare, score, validate, page, run", file=sys.stderr)
         return 2

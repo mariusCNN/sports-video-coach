@@ -182,9 +182,9 @@ def test_blind_baseline_is_deterministic_and_never_reads_the_truth(monkeypatch):
 
 
 def test_blind_baseline_result_file_validates(tmp_path):
-    from sports_video_coach.bench import baseline as B
     out = tmp_path / "b.json"
-    assert B.main(["--suite", "svc-bench-2", "--track", "frames", "--date", "2026-10-24", "--out", str(out)]) == 0
+    assert bench.main(["baseline", "--suite", "svc-bench-2", "--track", "frames", "--date", "2026-10-24",
+                       "--out", str(out)]) == 0
     res = json.loads(out.read_text(encoding="utf8"))
     assert res["contender"]["agent"] == S.BASELINE_AGENT and res["track"] == "frames"
     assert S.validate_file(out) == []

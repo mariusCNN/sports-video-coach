@@ -1,6 +1,6 @@
 """The blind baseline: the floor of the benchmark, a guesser that answers every task without seeing any video.
 
-  python -m sports_video_coach.bench.baseline --suite svc-bench-2 [--track frames] [--date D] [--out FILE]
+  sports-video-coach bench baseline --suite svc-bench-2 [--track frames] [--date D] [--out FILE]
 
 It reads only the text a contender is given (`TASKS.md` for that suite and track, built by `bench.tasks_md`) and
 answers each task from it, with no prior of its own and nothing tuned to the truth:
@@ -72,7 +72,7 @@ def result(suite: str = SUITE, track: str = F.TRACK, date: str | None = None) ->
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="python -m sports_video_coach.bench.baseline",
+    ap = argparse.ArgumentParser(prog="sports-video-coach bench baseline",
                                  description="Score the blind baseline (answers from the task text only) and write "
                                              "a result file.")
     ap.add_argument("--suite", default=SUITE, choices=sorted(S.SUITES))

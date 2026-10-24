@@ -5,7 +5,7 @@ so every number is measured, not judged.
 
 - **Leaderboard:** <https://mariusding.github.io/sports-video-coach/benchmark/>
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
-- **Commands:** `sports-video-coach bench run | prepare | score | validate | page`
+- **Commands:** `sports-video-coach bench run | prepare | score | validate | page | baseline`
 
 ## Suites
 
@@ -126,7 +126,7 @@ the leaderboard shows, next to each raw total, how far the run got above a blind
 **The floor: a blind baseline.** A deterministic guesser that sees no video and no still:
 
 ```bash
-python -m sports_video_coach.bench.baseline --suite svc-bench-2 [--track frames] [--date D] [--out FILE]
+sports-video-coach bench baseline --suite svc-bench-2 [--track frames] [--date D] [--out FILE]
 ```
 
 - It reads only the task text a contender gets (`TASKS.md` of that suite and track) and answers each task with

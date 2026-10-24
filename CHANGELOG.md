@@ -25,7 +25,7 @@ All notable changes to this project are documented here. The format follows [Kee
   frames-only track (Opus 5.5, Codex, two Sonnet 5.5 runs), each one real run.
 - An "above chance" score on the benchmark leaderboard, next to the raw total: per task (score - floor) /
   (1 - floor), clipped to 0..1, where the floor is a blind baseline that copies the example answers from the task
-  text (`python -m sports_video_coach.bench.baseline`, result files in `benchmark/results/`, shown as a marked
+  text (`sports-video-coach bench baseline`, result files in `benchmark/results/`, shown as a marked
   floor row). Computed from the existing result files; no schema change.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
