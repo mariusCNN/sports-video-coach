@@ -30,6 +30,7 @@ REPO_URL = f"https://github.com/{OWNER}/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
+WANTED_URL = f"{REPO_URL}/issues/7"   # open issue: run an untested preset against the real CLI, send the row
 PAGE_URL = "https://mariusding.github.io/sports-video-coach/benchmark/"   # where the demo-site CI publishes it
 DEMO_URL = "https://mariusding.github.io/sports-video-coach/demo/"        # the coaching page the demo builds
 SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
@@ -736,7 +737,9 @@ def presets_step() -> str:
             "or a preset for another agent CLI. The presets are built from each CLI's docs (read "
             f"{esc(bench_run.DOCS_READ)}) but not run by the maintainer, so untested against the real CLIs; code "
             f'track only (<a href="{DOC_URL}#add-your-agent-in-one-command">doc links per flag</a>). Any other '
-            f'CLI: <code>--agent cmd --cmd "... {{prompt}}"</code>.<ul class="plain">{lines}</ul></li>')
+            f'CLI: <code>--agent cmd --cmd "... {{prompt}}"</code>.<ul class="plain">{lines}</ul>'
+            f'Use one of these agents? Run it and tell us how it went: <a href="{WANTED_URL}">issue #7</a> '
+            "(a result row, or the error if the preset's flags are wrong).</li>")
 
 
 def prompt_block() -> str:

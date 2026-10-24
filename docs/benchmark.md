@@ -403,6 +403,10 @@ binaries that record their arguments, not against the real CLIs. A flag may have
 the exact command, and `--agent cmd --cmd "..."` runs your own. The result's `settings` starts with `preset, not run
 by the maintainer (--agent <name>)`; the version is read with the CLI's own version command.
 
+**Use one of these agents?** [Issue #7](https://github.com/mariusDing/sports-video-coach/issues/7) asks for one run
+of each preset: send the result row, or the error if a flag is wrong (or fix the argv in
+`src/sports_video_coach/bench/run.py`).
+
 | Preset | Agent | Command it runs | Flags from | Status |
 |---|---|---|---|---|
 | `--agent gemini` | Gemini CLI | `gemini --approval-mode yolo [--model M] -p <prompt>` | [docs](https://geminicli.com/docs/cli/cli-reference/) | not run by the maintainer; your own config; Google moved individual users to Antigravity CLI on 2026-06-18; API-key and Code Assist users keep Gemini CLI |

@@ -24,7 +24,7 @@
 工具在你自己的电脑上跑；agent 看的帧会发给它的模型服务商，和你给它看的其他东西一样。免费，MIT 协议。
 
 **基准测试：**哪个编程 agent 看运动录像最准，按精确的真值打分：
-[排行榜](https://mariusding.github.io/sports-video-coach/benchmark/) · 一条命令重跑静帧榜：`sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames` · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）。
+[排行榜](https://mariusding.github.io/sports-video-coach/benchmark/) · 一条命令重跑静帧榜：`sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames` · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）· 用 Gemini CLI、Qwen Code、Aider、OpenCode、Cursor CLI、Copilot CLI 或 Goose？这些预设还没人用真 CLI 跑过：[跑一次，把结果发来（issue #7）](https://github.com/mariusDing/sports-video-coach/issues/7)。
 
 <a href="https://mariusding.github.io/sports-video-coach/benchmark/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="基准测试短片：程序画的颠球视频，agent 看到的一次快速连续两触的静帧，再对比真实触球数（47）和各个模型的回答"></a>
 
