@@ -33,6 +33,8 @@ Every task scores from 0 to 1.
 ## Rules
 
 - **No peeking.** The agent must not read the truth files or the package source (`src/sports_video_coach/bench/`).
+- **Any tool on the videos is fine.** Looking at frames, ffmpeg, OpenCV or a script the agent writes all count: this
+  ranks coding agents as film reviewers, and writing measuring code is part of the job.
 - **One run = one file.** Do not pick the best of several runs; submit each run or none.
 - **Honest wall time.** `wall_seconds` is what the run really took, or `null` if you did not time it.
 - **No hand edits.** `score` and `total` are written by `bench score` only.
