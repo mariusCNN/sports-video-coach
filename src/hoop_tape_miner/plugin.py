@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from sports_video_coach import CLONE
 from sports_video_coach.plugin import Kind, Plugin
 
 from . import film_hooks, page_hooks, site_hooks
@@ -99,6 +100,5 @@ PLUGIN = Plugin(
     film=film_hooks.FILM,
     site=site_hooks.SITE,
     requires=("pandas", "scipy", "sklearn", "matplotlib", "torch", "ultralytics", "supervision", "transformers"),
-    install="a clone with the tracking extras: git clone https://github.com/mariusDing/sports-video-coach, `uv sync` "
-            "in it, then `uv run ...` (docs/basketball.md)",
+    install=f"a clone with the tracking extras: `{CLONE}`, `uv sync` in it, then `uv run ...` (docs/basketball.md)",
 )

@@ -21,7 +21,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from .. import media, page_check, pipeline as P, workspace
+from .. import INSTALL, media, page_check, pipeline as P, workspace
 from ..plugins.generic import new, unit as U
 
 FILES = Path(__file__).parent / "files"
@@ -83,7 +83,7 @@ CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next 
          ("Coaches", "One game in: a team page and a page per player, with clips and audio, shared as private links."),
          ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "
                         "validator per agent step. A new sport plugin is one command."))
-TRY = (f"uv tool install git+{REPO_URL}", "sports-video-coach demo")   # needs ffmpeg on PATH
+TRY = (INSTALL, "sports-video-coach demo")   # needs ffmpeg on PATH
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
 BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site

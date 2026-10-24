@@ -21,6 +21,7 @@ import html
 import json
 from pathlib import Path
 
+from .. import INSTALL
 from . import card as share_card
 from . import clip as share_clip
 from . import count as count_it
@@ -79,7 +80,7 @@ KINDS = (
     ("outcomes", "Made or missed, in order.", "Fraction of positions answered correctly."),
 )
 COMMANDS = (
-    ("Install (needs ffmpeg on PATH)", f"uv tool install git+{REPO_URL}"),
+    ("Install (needs ffmpeg on PATH)", INSTALL),
     ("Make the tasks: videos and an empty answers.json (the newest suite; leave out --suite for svc-bench-1)",
      "sports-video-coach bench prepare --out bench-run --suite svc-bench-3"),
     ("Let your agent watch the videos and fill bench-run/answers.json, then score it",

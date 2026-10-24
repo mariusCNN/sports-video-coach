@@ -4,3 +4,10 @@ The core (this package) owns the step-table driver (command steps run, agent ste
 to do), provenance, media helpers, clips, narration, the HTML page, the explained film and publishing. Sports live
 in plugins (see `plugin.py`): basketball (`hoop_tape_miner`) and the built-in `generic` plugin ship with the repo.
 """
+
+REPO_URL = "https://github.com/mariusDing/sports-video-coach"
+# The revision every install command in the docs, the skill and the demo site pins (tests/test_install_pin.py
+# checks they all name this one, and that it is a commit of this repo). Move it to a release tag when one is cut.
+INSTALL_REF = "1de20445d4af6f735204b24866e93e113f317fe8"
+INSTALL = f"uv tool install git+{REPO_URL}@{INSTALL_REF}"
+CLONE = f"git clone {REPO_URL} && cd sports-video-coach && git checkout {INSTALL_REF}"

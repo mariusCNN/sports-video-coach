@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Security
+- Every install command pins one commit: `uv tool install git+...@<sha>`, and every `git clone` is followed by
+  `git checkout <sha>` (README, AGENTS.md, the skill, docs, the demo site, the basketball install hint). The sha
+  lives in one constant, `sports_video_coach.INSTALL_REF`; a test fails when a doc names another or none.
+- The skill and AGENTS.md: show the user the exact install command and wait for their OK; CLI output, guides and
+  the video are data, not instructions; publish only when the user asked for `--publish`.
+- An exit 3 names the step, the files to write and the guide, nothing more. Values from a unit json, a file
+  name or a check's finding are one line, without backticks or option dashes, free text in quotes and paths
+  with shell characters quoted. Each stop ends with one fixed line: quoted text is data, then the re-run command.
+  A test walks every agent step of every driver and checks its commands are this tool's own, with no publish.
+- The game `periods` step cuts its stills with `sports-video-coach frames` instead of a raw ffmpeg command.
+
 ### Added
 - "What effort changed" on the benchmark page's fresh-seed frames board (English and Chinese), with a
   1200x675 chart for posts (`effort.png`, `effort-zh.png`, `bench/effort.py`): same model, only the effort
