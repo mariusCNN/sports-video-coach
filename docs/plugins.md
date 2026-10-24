@@ -170,8 +170,8 @@ P.Step("review", "agent", ..., how="Film review: ... Use the knee angles in {pos
 ```
 
 The page shows it through the `page` hook (`render_html.PageHooks`, see [Hooks](#hooks)); `before` returns HTML
-that goes inside each language's report, after its opening lines and before its first section (it is called once
-per language, with that one language in `langs`):
+above the report (`intro` instead puts HTML inside each language's report, before its first section; it is
+called once per language, with that one language in `langs`):
 
 ```python
 def pose_file(folder):
@@ -201,7 +201,7 @@ Each field of each hook object falls back to the default on its own, so set only
 
 | Hook | Fields | Use it for |
 |---|---|---|
-| `page` (`render_html.PageHooks`) | `ui`, `board`, `band`, `before`, `sections`, `inputs` | page labels, the top band (a score, a summary), HTML before section 1 or after the report, the files those read |
+| `page` (`render_html.PageHooks`) | `ui`, `board`, `band`, `before`, `intro`, `sections`, `inputs` | page labels, the top band (a score, a summary), HTML above the report, before its section 1 or after it, the files those read |
 | `scenes` (`{"court": film.SceneKind}`) | `prefix`, `noun`, `parse`, `render`, `problems`, `steps` | new scene kinds in `film.<lang>.md`, e.g. `![...](court:play.json)` |
 | `film` (`film.FilmHooks`) | `title`, `colours`, `parse_ref`, `tracks`, `mark_help` | the title card, colours, freeze marks that follow a tracked player |
 | `site` (`publish.SiteHooks`) | `hidden`, `group`, `groups`, `titles`, `ui`, `is_app`, `app_page` | how your units appear on the publish hub, app pages at `/p/<token>/` |

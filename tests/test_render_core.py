@@ -86,6 +86,19 @@ def test_plugin_hooks_fall_back_per_field(tmp_path, monkeypatch):
     assert page.count("<!--assets-->") == 1 and 'href="#en-s2">Extra</a>' in page
 
 
+def test_before_goes_above_the_report_once_and_intro_inside_each(tmp_path, monkeypatch):
+    folder = _generic(tmp_path / "f", None)
+    calls = []
+    hooks = render_html.PageHooks(
+        before=lambda f, sb, langs: calls.append(len(langs)) or "<!--above-->",
+        intro=lambda f, sb, langs: f"<!--in-{langs[0][0]}-->")
+    monkeypatch.setattr(render_html, "hooks_of", lambda f: (hooks, "demo", {}))
+    page = render_html.page(folder)
+    assert calls == [len(render_html.report_langs(folder))]          # before: once, with every language
+    assert page.count("<!--above-->") == 1 and page.index("<!--above-->") < page.index('<article class="report"')
+    art = page[page.index('<article class="report" data-lang="en"'):]
+    assert art.index("<!--in-en-->") < art.index("</article>")
+
 def test_audio_length_label_says_seconds_under_a_minute():
     en, zh = render_html.UI["en"], render_html.UI["zh"]
     assert render_html.length_label(en, 47.1) == "About 45 seconds. Read along or just listen."

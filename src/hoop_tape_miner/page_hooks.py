@@ -360,10 +360,10 @@ def band(sb: dict, lab) -> str:
         us_pts=us if known else "", them_pts=them if known else "", halves="".join(halves))
 
 
-def before(folder: Path, sb: dict, langs: list[tuple]) -> str:
-    """Four Factors panel above a game report (not on training, movement or season pages)."""
+def intro(folder: Path, sb: dict, langs: list[tuple]) -> str:
+    """Four Factors panel inside a game report, before section 1 (not on training, movement or season pages)."""
     return "" if sb.get("training") or sb.get("season") else four_factors_panel(folder, sb, langs)
 
 
-PAGE = render_html.PageHooks(ui=UI, board=scoreboard, band=band, before=before, sections=sections)
+PAGE = render_html.PageHooks(ui=UI, board=scoreboard, band=band, intro=intro, sections=sections)
 

@@ -93,8 +93,8 @@ All notable changes to this project are documented here. The format follows [Kee
   instead of boxes and a yellow marker for what to do. Headings use Barlow Condensed (Latin) and Noto Serif SC
   (Chinese) from Google Fonts with `no-referrer`, so a private page's address is not sent along.
 - Basketball: the Four Factors sit inside each report, after the opening lines and before section 1, as us/them
-  bars; possessions and points per trip moved into a fold. A plugin's `before` hook is now called once per
-  language and its HTML goes inside that report.
+  bars; possessions and points per trip moved into a fold. A new optional `PageHooks.intro` hook puts a
+  plugin's HTML inside each language's report, before section 1; `before` still puts HTML above the report.
 - The report guides ask for an analyst's voice: number first, its baseline, then the order; no stock AI phrasing
   (checked by `sports-video-coach humanize`).
 - The page's language switch names every language in its own words (English, Español, Français, Deutsch,

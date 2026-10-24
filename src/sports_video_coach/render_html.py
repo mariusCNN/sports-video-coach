@@ -169,7 +169,8 @@ class PageHooks:
     ui: dict[str, dict[str, str]] = field(default_factory=dict)  # labels per language, merged over UI
     board: Callable[[Path], dict] | None = None   # folder -> band data; its "colours" {"us"|"them": (main, light)}
     band: Callable[[dict, Callable[[str], str]], str] | None = None  # (band data, lab) -> top band HTML
-    before: Callable[[Path, dict, list], str] | None = None  # (folder, band data, [one lang]) -> HTML in that report, before its first section
+    before: Callable[[Path, dict, list], str] | None = None  # (folder, band data, langs) -> HTML above the report
+    intro: Callable[[Path, dict, list], str] | None = None  # (folder, band data, [one lang]) -> HTML in that report, before its first section
     # (folder, lang, embed, number of its first h2) -> (HTML, h2 titles, page assets added once) after the report
     sections: Callable[[Path, str, bool, int], tuple[str, list[str], str]] | None = None
     # report folder -> files the hooks above read (a plugin stage's json): the run's html step re-renders the page
@@ -454,8 +455,8 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
         if hooks.sections:  # plugin sections after the report (e.g. charts, tables from the plugin's data)
             more, more_heads, more_assets = hooks.sections(folder, code, embed, len(heads) + 1)
             body, heads, assets = body + more, heads + more_heads, assets or more_assets
-        if hooks.before:  # plugin panel (e.g. the Four Factors) after the verdict and key numbers, before section 1
-            pre = hooks.before(folder, sb, [(code, attr, _, fname)])
+        if hooks.intro:  # plugin panel (e.g. the Four Factors) after the verdict and key numbers, before section 1
+            pre = hooks.intro(folder, sb, [(code, attr, _, fname)])
             cut = body.find("<h2 id=")
             body = body[:cut] + pre + body[cut:] if cut >= 0 else pre + body
         arts.append(f'<article class="report" data-lang="{code}" lang="{attr}"{hide(code)}>{inline_images(body, folder)}</article>')
@@ -485,7 +486,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
         us_hex=us_hex, them_hex=them_hex, us_light=us_light, them_light=them_light,
         us_light_rgb=", ".join(map(str, units.hex_to_rgb(us_light))),
         listen=listen, mini=mini, tocs="".join(tocs), lang_css=LANG_CSS,
-        articles="".join(arts) + assets,
+        articles=(hooks.before(folder, sb, langs) if hooks.before else "") + "".join(arts) + assets,
     )
 
 
