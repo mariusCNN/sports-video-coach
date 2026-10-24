@@ -21,6 +21,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - The game `periods` step cuts its stills with `sports-video-coach frames` instead of a raw ffmpeg command.
 
 ### Added
+- A worked example plugin, `examples/plugins/swim-stroke-rate/`: `new-plugin` plus one OpenCV/NumPy stage that
+  measures swimming stroke rate (45.0 cycles/min on a synthetic clip whose truth is 45), its number on the page, a
+  `synth` stage that draws a test swimmer at a known rate, and a README mapping each file to the plugin contract.
+  Load it with `SVC_PLUGIN_PATH=examples/plugins`; `new-plugin` now points at it. See `docs/plugins.md`.
 - "What effort changed" on the benchmark page's fresh-seed frames board (English and Chinese), with a
   1200x675 chart for posts (`effort.png`, `effort-zh.png`, `bench/effort.py`): same model, only the effort
   setting changed, mean above chance per setting with n, range and time per run, a run with no answer shown as

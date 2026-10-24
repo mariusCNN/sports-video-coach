@@ -62,6 +62,13 @@ To ship one as a package, declare an entry point:
 tennis = "svc_tennis.plugin:PLUGIN"
 ```
 
+## Worked example
+
+[`examples/plugins/swim-stroke-rate/`](../examples/plugins/swim-stroke-rate/) is this template filled in for one
+sport: a `stroke` stage measures swimming stroke rate with plain OpenCV and NumPy (no GPU), the review step quotes
+it, the page shows it, and a `synth` stage draws a test swimmer at a known rate for the tests. Its README says which
+file does what and how to turn it into your sport. Try it in a clone with `SVC_PLUGIN_PATH=examples/plugins`.
+
 ## The contract
 
 A plugin is a `sports_video_coach.plugin.Plugin` object named `PLUGIN`:
