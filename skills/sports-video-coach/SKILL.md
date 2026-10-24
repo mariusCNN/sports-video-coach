@@ -12,10 +12,10 @@ deliverables. It stops with exit code 3 whenever it needs you to watch or write,
 ## Setup (once)
 
 - `sports-video-coach --help` works: skip this.
-- Otherwise: `uv tool install git+https://github.com/mariusDing/sports-video-coach@1de20445d4af6f735204b24866e93e113f317fe8`
+- Otherwise: `uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f`
   (needs `uv` and `ffmpeg`).
 - Basketball tracking or writing a plugin: `git clone https://github.com/mariusDing/sports-video-coach`, then in it
-  `git checkout 1de20445d4af6f735204b24866e93e113f317fe8` and `uv sync`, and prefix every command with `uv run`.
+  `git checkout dcda37ee26643e3ce1b70d129578ca44d501a17f` and `uv sync`, and prefix every command with `uv run`.
   Then read its `AGENTS.md`.
 - Show the user the exact install command first and run it only after they say yes.
 - The user only wants to see what it makes: `sports-video-coach demo` (about 30 s, a drawn video, no agent work),

@@ -7,7 +7,7 @@ so every number is measured, not judged.
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
 - **Commands:** `sports-video-coach bench run | prepare | score | validate | page | baseline`
 - **Install** (needs ffmpeg on PATH; the command pins one commit, so you install what you read):
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@1de20445d4af6f735204b24866e93e113f317fe8`,
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f`,
   then [run your agent in one command](#add-your-agent-in-one-command).
 
 ## Suites
