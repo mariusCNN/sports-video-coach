@@ -144,7 +144,7 @@ def test_page_has_one_table_per_suite_hard_first(tmp_path):
     out = tmp_path / "site"
     assert page.main([str(results), str(out)]) == 0
     html = (out / "index.html").read_text(encoding="utf8")
-    assert html.count("<table") == 2
+    assert html.count("<table>") == 2 and html.count("<table class=\"summary\">") == 2   # runs + summary per suite
     assert html.index('id="svc-bench-2"') < html.index("Agent 2") < html.index('id="svc-bench-1"') \
         < html.index("Agent 1")
     assert ">dribble-count</th>" in html and ">jump-count</th>" in html

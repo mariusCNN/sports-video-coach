@@ -119,3 +119,52 @@ def test_no_external_urls_but_repo_and_evidence(tmp_path):
     allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev")
     assert urls and all(u.startswith(allowed) for u in urls), urls
     assert "<link" not in html and "<script" not in html   # self-contained: no stylesheet or script fetched
+
+
+def summary_of(html: str) -> str:
+    return html[html.index('<table class="summary">'):html.index("<h4>Every run</h4>")]
+
+
+def test_summary_groups_runs_per_contender_and_ranks_by_mean_above_chance(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "base.json", row("blind baseline", "", 0.5, [0.5, 0.5, 0.5]))
+    write(results, "a1.json", row("Agent A", "model-a", 1.0, [1.0, 1.0, 1.0]))            # above 1.0
+    write(results, "a2.json", row("Agent A", "model-a", 0.5, [0.5, 0.5, 0.5]))            # above 0.0
+    write(results, "b.json", row("Agent B", "model-b", 0.8, [0.8, 0.8, 0.8]))               # above 0.6
+    write(results, "a-hi.json", row("Agent A", "model-a", 0.9, [0.9, 0.9, 0.9], contender={
+        "agent": "Agent A", "model": "model-a", "settings": "effort high"}))             # another contender
+    out, html = render(tmp_path, results)
+    s = summary_of(html)
+    assert html.index("<h4>Summary</h4>") < html.index("<h4>Every run</h4>") < html.index("<strong>Floor:</strong>")
+    # effort high (0.8) > Agent B (0.6) > Agent A at effort medium (mean of 1.0 and 0.0 = 0.5)
+    assert s.index("effort high") < s.index("Agent B") < s.index("effort medium")
+    assert ('<td class="num">2</td><td class="num total">0.750</td><td class="num above">0.500</td>'
+            '<td class="num">0.000&ndash;1.000</td>') in s
+    assert "blind baseline" not in s and "Floor" not in s
+    assert s.count("<tr>") == 4                                         # header + three contenders
+    assert "a dash for a single run" in html
+    assert page_check.problems(out) == []
+
+
+def test_summary_single_run_shows_a_dash_not_a_range(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "base.json", row("blind baseline", "", 0.5, [0.5, 0.5, 0.5]))
+    write(results, "a.json", row("Agent A", "model-a", 0.75, [1.0, 0.75, 0.5]))
+    _, html = render(tmp_path, results)
+    s = summary_of(html)
+    assert ('<td class="num">1</td><td class="num total">0.750</td><td class="num above">0.500</td>'
+            '<td class="num sub">-</td>') in s
+    assert "&ndash;" not in s
+
+
+def test_summary_without_a_floor_ranks_by_mean_total(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "lo.json", row("Agent Low", "m", 0.4, [0.4, 0.4, 0.4]))
+    write(results, "hi.json", row("Agent High", "m", 0.8, [0.8, 0.8, 0.8]))
+    _, html = render(tmp_path, results)
+    s = summary_of(html)
+    assert s.index("Agent High") < s.index("Agent Low")
+    assert "&ndash;" not in s and '<td class="num above">' not in s

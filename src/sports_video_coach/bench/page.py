@@ -2,7 +2,8 @@
 
 Reads every `*.json` result file in `<results_dir>` (schema 1, written by `bench score`) and writes
 `<out_dir>/index.html`: a self-contained static page (inline CSS, light and dark, readable at 390 px) with the
-leaderboard ranked by total, with an "above chance" score next to it (the floor is the blind baseline's result
+leaderboard ranked by total (above it, a summary per contender: runs, mean total, mean and range of above
+chance), with an "above chance" score next to it (the floor is the blind baseline's result
 file of that suite and track, `bench.baseline`, shown as a marked row under the ranked ones) (one table per suite, the hard suite first; runs on the frames-only track, which
 see still images and run no code, in their own tables below), the method, how to run it yourself, how to submit a
 run and honesty notes. With no
@@ -40,6 +41,8 @@ FRAMES = ("Frames-only track: the agent sees still images of each video (contact
 ABOVE = ("Above chance: per task, (score - floor) / (1 - floor), clipped to 0..1, where the floor is the score of "
          "the blind baseline (it copies the example answers from the task text and sees no video); 0 = no better "
          "than that guess, 1 = perfect.")
+SUMMARY = ("n = runs of that agent, model and settings; range = lowest to highest above-chance total over them "
+           "(a dash for a single run).")
 TITLE = "Sports film review benchmark"
 WHAT = ("Which coding agent and vision model reviews sports film best? Each run is scored against ground truth "
         "drawn into synthetic videos, so every number is measured, not judged.")
@@ -81,6 +84,7 @@ a { color: var(--accent); }
 h1 { font-size: clamp(1.5rem, 5vw, 2.2rem); line-height: 1.2; margin: .2rem 0 .6rem; }
 h2 { font-size: 1.2rem; margin: 2.2rem 0 .6rem; }
 h3 { font-size: 1rem; margin: 0 0 .2rem; }
+h4 { font-size: .9rem; margin: .9rem 0 .3rem; }
 .lead { margin: 0 0 1rem; max-width: 40rem; }
 .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; padding: 0; list-style: none; }
 .chips li { font-size: .85rem; padding: .15rem .6rem; border-radius: 999px; background: var(--card);
@@ -183,8 +187,12 @@ def is_baseline(r: dict) -> bool:
     return r["contender"].get("agent") == BASELINE_AGENT
 
 
+def above_value(r: dict, floor: dict | None) -> float | None:
+    return above_chance([{"id": str(t["id"]), "score": t.get("score")} for t in r["tasks"]], floor) if floor else None
+
+
 def above_cell(r: dict, floor: dict | None) -> str:
-    v = above_chance([{"id": str(t["id"]), "score": t.get("score")} for t in r["tasks"]], floor) if floor else None
+    v = above_value(r, floor)
     if v is None:
         return '<td class="num sub">-</td>'
     return f'<td class="num above">{v:.3f}</td>'
@@ -224,6 +232,52 @@ def table(rows: list[dict], floor_row: dict | None = None) -> str:
             f'Raw files: <a href="{RESULTS_URL}">benchmark/results</a>.</p>')
 
 
+def contender_key(r: dict) -> tuple[str, str, str]:
+    c = r["contender"]
+    return str(c.get("agent") or ""), str(c.get("model") or ""), str(c.get("settings") or "")
+
+
+def summarize(rows: list[dict], floor_row: dict | None = None) -> list[dict]:
+    """One entry per contender (agent + model + settings) of the given runs: n, mean total, and the mean, min and
+    max above chance (None without a floor). Ranked by mean above chance, then mean total, then name. The blind
+    baseline is never a contender."""
+    floor = {str(t["id"]): t.get("score") for t in floor_row["tasks"]} if floor_row else None
+    groups: dict[tuple[str, str, str], list[dict]] = {}
+    for r in rows:
+        if not is_baseline(r):
+            groups.setdefault(contender_key(r), []).append(r)
+    out = []
+    for key, runs in groups.items():
+        above = [v for v in (above_value(r, floor) for r in runs) if v is not None]
+        out.append({"key": key, "n": len(runs), "total": sum(float(r["total"]) for r in runs) / len(runs),
+                    "above": sum(above) / len(above) if above else None,
+                    "lo": min(above) if above else None, "hi": max(above) if above else None})
+    out.sort(key=lambda s: (s["above"] is None, -(s["above"] or 0), -s["total"], s["key"]))
+    return out
+
+
+def summary_table(rows: list[dict], floor_row: dict | None = None) -> str:
+    """The per-contender summary of one suite and track, shown above its table of every run."""
+    body = []
+    for rank, s in enumerate(summarize(rows, floor_row), 1):
+        agent, model, settings = s["key"]
+        above = (f'<td class="num above">{s["above"]:.3f}</td>' if s["above"] is not None
+                 else '<td class="num sub">-</td>')
+        spread = (f'<td class="num">{s["lo"]:.3f}&ndash;{s["hi"]:.3f}</td>' if s["n"] > 1 and s["lo"] is not None
+                  else '<td class="num sub">-</td>')
+        body.append(f'<tr><td class="num">{rank}</td><td>{esc(agent)}</td><td>{esc(model or "-")}</td>'
+                    f'<td class="sub">{esc(settings or "-")}</td><td class="num">{s["n"]}</td>'
+                    f'<td class="num total">{s["total"]:.3f}</td>{above}{spread}</tr>')
+    return ('<h4>Summary</h4><div class="scroll"><table class="summary"><thead><tr>'
+            '<th class="num" scope="col">#</th><th scope="col">Agent</th><th scope="col">Model</th>'
+            '<th scope="col">Settings</th><th class="num" scope="col">Runs (n)</th>'
+            '<th class="num" scope="col">Mean total</th><th class="num" scope="col">Mean above chance</th>'
+            '<th class="num" scope="col">Range</th></tr></thead>'
+            f'<tbody>{"".join(body)}</tbody></table></div>'
+            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">Ranked by mean above chance. '
+            f'{esc(SUMMARY)}</p><h4>Every run</h4>')
+
+
 def suite_of(r: dict) -> str:
     return str(r.get("suite") or SUITE)
 
@@ -243,7 +297,7 @@ def boards(rows: list[dict], prefix: str = "") -> str:
         mine = [r for r in rows if suite_of(r) == n and not is_baseline(r)]
         base = [r for r in rows if suite_of(r) == n and is_baseline(r)]
         floor = max(base, key=lambda r: (str(r.get("date", "")), r["_file"])) if base else None   # latest wins
-        body = table(mine, floor) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
+        body = summary_table(mine, floor) + table(mine, floor) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
         desc = f"<p>{esc(what[n])}</p>" if n in what else ""
         out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
     return "\n".join(out)

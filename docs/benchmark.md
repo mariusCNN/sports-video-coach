@@ -165,6 +165,17 @@ above-chance total = mean of `above` over the tasks
 - This guesser knows no sport. A guesser that does (say, a typical running cadence of 180 per minute) scores more,
   so the floor is a lower bound on what guessing gets and the above-chance score an upper bound on what was seen.
 
+**The summary.** Above each table of runs, a summary table has one line per contender (same agent, model and
+settings; the agent version does not split them):
+
+- Runs (n): how many result files that contender has on the suite and track.
+- Mean total and mean above chance: plain means over those runs.
+- Range: lowest to highest above-chance total over the runs; a dash when n = 1.
+- Ranked by mean above chance, then mean total. The blind baseline is never a line; it stays the floor row of the
+  table below. Without a baseline file for that suite and track, the above-chance cells show a dash and the
+  ranking falls back to mean total.
+- Every run still has its own row in the table below, bad runs too.
+
 Above-chance totals of the rows on 2026-10-24:
 
 | Suite, track | Agent / model | Raw | Above chance |
