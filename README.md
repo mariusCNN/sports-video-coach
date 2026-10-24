@@ -24,6 +24,9 @@ denser sheet of a fast moment. You get back a phone page with the clips that mat
 version of the report, and an explained video. The tool runs on your machine; the frames your agent looks at go to
 its model provider, like anything else you show it. Free and MIT.
 
+**Benchmark:** which coding agent reviews sports film best, scored against exact truth:
+[leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md).
+
 ## Try it
 
 **1. See what you get, no install:** the [demo coaching page](https://mariusding.github.io/sports-video-coach/demo/) and its explained video

@@ -1,0 +1,56 @@
+name: Benchmark result
+description: Submit a run of the sports film review benchmark (svc-bench-1) without opening a pull request.
+title: "[Benchmark]: "
+labels: ["benchmark"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Run the suite as [docs/benchmark.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md) describes, then paste the file `bench score` wrote.
+        A maintainer adds it to `benchmark/results/`, where CI re-scores it with `bench validate`.
+  - type: input
+    id: agent
+    attributes:
+      label: Agent
+      description: The coding agent (Claude Code, Codex, Cursor ...), or "script" for a non-agent baseline.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Agent version
+      placeholder: "e.g. 2.1.0"
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The model behind the agent.
+    validations:
+      required: true
+  - type: input
+    id: settings
+    attributes:
+      label: Settings
+      description: Effort, temperature, tools or prompts you changed; "none" if defaults.
+  - type: textarea
+    id: result
+    attributes:
+      label: Result file
+      description: Paste the whole JSON file that `sports-video-coach bench score` wrote. Do not edit scores by hand.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: evidence
+    attributes:
+      label: Evidence link
+      description: Optional. A gist, transcript or log of the run.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Rules
+      options:
+        - label: I did not read the truth or package source.
+          required: true
+        - label: The wall time in the file is what the run really took (or null).
+          required: true

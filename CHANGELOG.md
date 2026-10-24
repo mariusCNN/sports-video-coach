@@ -5,6 +5,13 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- A sports film review benchmark scored against measured truth only: `sports-video-coach bench prepare / score /
+  validate`, suite `svc-bench-1` with synthetic drawn videos and exact truth (counts, rates, timestamps, outcomes).
+- `sports-video-coach bench page` builds the public leaderboard from `benchmark/results/` (ranked by total, a "no
+  runs yet" state, unreadable files listed as skipped); the demo site publishes it at `/benchmark/` and links it
+  from the landing page and the sitemap. Method, rules and how to submit: `docs/benchmark.md`.
+- Outside runs can be submitted as a pull request (CI runs `bench validate` on every result file) or through the
+  new benchmark result issue form.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
 

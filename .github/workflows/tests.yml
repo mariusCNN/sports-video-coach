@@ -30,3 +30,10 @@ jobs:
           uv pip install --no-sources --torch-backend cpu -e ".[basketball]" pytest
       - name: Test
         run: uv run --no-sync pytest -q
+      - name: Benchmark result files re-score against the suite's truth
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(benchmark/results/*.json)
+          if [ ${#files[@]} -eq 0 ]; then echo "no benchmark results yet"; exit 0; fi
+          uv run --no-sync sports-video-coach bench validate "${files[@]}"

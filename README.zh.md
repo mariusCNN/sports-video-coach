@@ -23,6 +23,9 @@
 你拿回一个手机网页：关键片段、每个问题的练习方法和目标、报告的语音版，还有一段讲解视频。
 工具在你自己的电脑上跑；agent 看的帧会发给它的模型服务商，和你给它看的其他东西一样。免费，MIT 协议。
 
+**基准测试：**哪个编程 agent 看运动录像最准，按精确的真值打分：
+[排行榜](https://mariusding.github.io/sports-video-coach/benchmark/) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）。
+
 ## 试一下
 
 **1. 先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
