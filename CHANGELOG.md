@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- A share card for the benchmark page: `bench page` draws `card.png` (1200x630) from the Summary numbers, and
+  the page has Open Graph and X tags so links to `/benchmark/` show it as their preview.
 - The benchmark leaderboard has a summary table above each suite's runs: one line per agent, model and settings
   with the number of runs, mean total, mean above chance and its range, ranked by mean above chance.
 - Four more `svc-bench-3` frames-only runs on the leaderboard: second runs of Opus 5.5 and Sonnet 5.5, Haiku 5.5,

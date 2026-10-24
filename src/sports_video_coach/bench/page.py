@@ -6,7 +6,8 @@ leaderboard ranked by total (above it, a summary per contender: runs, mean total
 chance), with an "above chance" score next to it (the floor is the blind baseline's result
 file of that suite and track, `bench.baseline`, shown as a marked row under the ranked ones) (one table per suite, the hard suite first; runs on the frames-only track, which
 see still images and run no code, in their own tables below), the method, how to run it yourself, how to submit a
-run and honesty notes. With no
+run and honesty notes, and `card.png`, the share card link previews show (`bench.card`, needs matplotlib; the
+page's `og:image` points at it). With no
 results it shows a "no runs yet" state; a file that does not parse is skipped and named in a visible note. The page
 never invents a row: every number on it comes from a result file.
 """
@@ -17,12 +18,14 @@ import html
 import json
 from pathlib import Path
 
+from . import card as share_card
 from .score import BASELINE_AGENT, above_chance
 
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
+PAGE_URL = "https://mariusding.github.io/sports-video-coach/benchmark/"   # where the demo-site CI publishes it
 SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
 SUITES = (                     # (name, what it is), shown in this order; unknown suites follow by name
     ("svc-bench-3", "Eyes: four drawn videos whose events are small, short or hidden: a ball 5 px in radius on a "
@@ -286,6 +289,12 @@ def track_of(r: dict) -> str:
     return str(r.get("track") or TRACK)
 
 
+def floor_of(rows: list[dict]) -> dict | None:
+    """The floor of one suite and track's rows: its latest blind-baseline result file, or None."""
+    base = [r for r in rows if is_baseline(r)]
+    return max(base, key=lambda r: (str(r.get("date", "")), r["_file"])) if base else None
+
+
 def boards(rows: list[dict], prefix: str = "") -> str:
     """One leaderboard table per suite, in SUITES order (a suite with no runs says so); `prefix` keeps the anchors
     of a second track's tables apart."""
@@ -295,8 +304,7 @@ def boards(rows: list[dict], prefix: str = "") -> str:
     out = []
     for n in names:
         mine = [r for r in rows if suite_of(r) == n and not is_baseline(r)]
-        base = [r for r in rows if suite_of(r) == n and is_baseline(r)]
-        floor = max(base, key=lambda r: (str(r.get("date", "")), r["_file"])) if base else None   # latest wins
+        floor = floor_of([r for r in rows if suite_of(r) == n])
         body = summary_table(mine, floor) + table(mine, floor) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
         desc = f"<p>{esc(what[n])}</p>" if n in what else ""
         out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
@@ -318,7 +326,20 @@ def frames_board(rows: list[dict]) -> str:
             f"<pre><code>{esc(cmd)}</code></pre>{body}")
 
 
-def render(rows: list[dict], notes: list[str]) -> str:
+def social(card: bool) -> str:
+    """The link preview tags (Open Graph, X), as the landing page has them; og:image only when the card exists."""
+    tags = [f'<meta property="og:title" content="{esc(share_card.TITLE)}">',
+            f'<meta property="og:description" content="{esc(WHAT)}">']
+    if card:
+        tags += [f'<meta property="og:image" content="{PAGE_URL}{share_card.NAME}">',
+                 f'<meta property="og:image:width" content="{share_card.SIZE[0]}">',
+                 f'<meta property="og:image:height" content="{share_card.SIZE[1]}">']
+    tags += [f'<meta property="og:url" content="{PAGE_URL}">',
+             '<meta name="twitter:card" content="summary_large_image">']
+    return "\n".join(tags)
+
+
+def render(rows: list[dict], notes: list[str], card: bool = False) -> str:
     code = [r for r in rows if track_of(r) == TRACK]
     board = boards(code) if any(not is_baseline(r) for r in code) else empty()
     runs = sum(1 for r in rows if not is_baseline(r))
@@ -337,6 +358,7 @@ def render(rows: list[dict], notes: list[str]) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{TITLE}</title>
 <meta name="description" content="{esc(WHAT)}">
+{social(card)}
 <style>{CSS}</style>
 </head>
 <body>
@@ -392,7 +414,10 @@ def main(argv: list[str]) -> int:
     rows, notes = load(Path(a.results_dir))
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "index.html").write_text(render(rows, notes), encoding="utf8")
+    card = share_card.write(rows, out)
+    if card is None:
+        print("[bench page] no share card: matplotlib is not installed (the page has no og:image)")
+    (out / "index.html").write_text(render(rows, notes, card is not None), encoding="utf8")
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))

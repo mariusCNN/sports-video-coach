@@ -318,6 +318,8 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
   scores differ.
 - The leaderboard page is rebuilt from the folder by `bench page` on every push to master. A file that does not
   parse is listed on the page as skipped, never silently dropped.
+- The same build draws `card.png`, the page's link preview image (`og:image`): per suite and track, the top
+  contenders' mean above chance from the page's Summary tables (needs matplotlib; without it there is no card).
 
 ## Honesty notes
 

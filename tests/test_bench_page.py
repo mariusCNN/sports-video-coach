@@ -3,7 +3,7 @@ import json
 import re
 
 from sports_video_coach import page_check
-from sports_video_coach.bench import page
+from sports_video_coach.bench import card, page
 
 
 def row(agent: str, model: str, total: float, scores: list[float], **extra) -> dict:
@@ -116,7 +116,7 @@ def test_no_external_urls_but_repo_and_evidence(tmp_path):
     write(results, "r.json", row("A", "m", 0.5, [0.5, 0.5, 0.5], evidence="https://example.org/ev"))
     _, html = render(tmp_path, results)
     urls = set(re.findall(r"""(?:https?:)?//[^\s"'<>)]+""", html))
-    allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev")
+    allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL)
     assert urls and all(u.startswith(allowed) for u in urls), urls
     assert "<link" not in html and "<script" not in html   # self-contained: no stylesheet or script fetched
 
@@ -168,3 +168,55 @@ def test_summary_without_a_floor_ranks_by_mean_total(tmp_path):
     s = summary_of(html)
     assert s.index("Agent High") < s.index("Agent Low")
     assert "&ndash;" not in s and '<td class="num above">' not in s
+
+
+def test_share_card_is_written_and_the_preview_tags_point_at_it(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "base.json", row("blind baseline", "", 0.5, [0.5, 0.5, 0.5]))
+    write(results, "a.json", row("Agent A", "model-a", 1.0, [1.0, 1.0, 1.0]))
+    out, html = render(tmp_path, results)
+    png = (out / card.NAME).read_bytes()
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert (int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")) == card.SIZE
+    assert f'<meta property="og:image" content="{page.PAGE_URL}card.png">' in html
+    assert f'<meta property="og:url" content="{page.PAGE_URL}">' in html
+    assert '<meta name="twitter:card" content="summary_large_image">' in html and 'property="og:title"' in html
+    assert page_check.problems(out) == []
+
+
+def test_without_matplotlib_there_is_no_card_and_no_og_image(tmp_path, monkeypatch):
+    monkeypatch.setitem(__import__("sys").modules, "matplotlib", None)   # import matplotlib raises ImportError
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "a.json", row("Agent A", "model-a", 1.0, [1.0, 1.0, 1.0]))
+    out, html = render(tmp_path, results)
+    assert not (out / card.NAME).exists()
+    assert "og:image" not in html and 'property="og:title"' in html
+
+
+def test_card_numbers_are_the_summary_numbers(tmp_path):
+    rows = []
+    for suite, track, name, scores in (
+            ("svc-bench-2", "frames", "base", [0.5, 0.5, 0.5]), ("svc-bench-2", "frames", "a1", [1.0, 1.0, 1.0]),
+            ("svc-bench-2", "frames", "a2", [0.5, 0.5, 0.5]), ("svc-bench-2", "frames", "b", [0.8, 0.8, 0.8]),
+            ("svc-bench-2", "code", "base", [0.5, 0.5, 0.5]), ("svc-bench-2", "code", "c", [0.9, 0.9, 0.9]),
+            ("svc-bench-3", "frames", "nofloor", [0.9, 0.9, 0.9]),          # no blind baseline: not on the card
+            ("svc-bench-1", "code", "base", [0.5, 0.5, 0.5]),
+            *[("svc-bench-1", "code", f"x{i}", [1.0 - i / 10] * 3) for i in range(6)]):
+        agent = {"base": "blind baseline", "a1": "Agent A", "a2": "Agent A"}.get(name, f"Agent {name}")
+        r = row(agent, "" if name == "base" else "claude-model", sum(scores) / 3, scores, suite=suite, track=track)
+        r["_file"] = f"{suite}-{track}-{name}.json"
+        rows.append(r)
+    data = card.card_data(rows)
+    assert data["date"] == "2026-10-24"
+    assert [(p["suite"], p["track"]) for p in data["panels"]] == [
+        ("svc-bench-2", "frames"), ("svc-bench-2", "code"), ("svc-bench-1", "code")]   # suite order, frames first
+    frames = data["panels"][0]["bars"]
+    # Agent B 0.6 above chance; Agent A the mean of 1.0 and 0.0 over two runs, as in the page's Summary
+    assert [(b["agent"], b["n"], b["above"]) for b in frames] == [("Agent b", 1, 0.6), ("Agent A", 2, 0.5)]
+    assert frames[0]["label"] == "model · Agent b"
+    assert len(data["panels"][2]["bars"]) == card.BARS
+    summary = page.summarize([r for r in rows if r["suite"] == "svc-bench-2" and r["track"] == "frames"],
+                             page.floor_of([r for r in rows if r["suite"] == "svc-bench-2" and r["track"] == "frames"]))
+    assert [round(s["above"], 3) for s in summary] == [b["above"] for b in frames]
