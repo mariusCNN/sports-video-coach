@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-2",
+  "track": "frames",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-24",
+  "contender": {
+    "agent": "Codex",
+    "agent_version": "0.159.3",
+    "model": "gpt-6-astra",
+    "settings": "frames track; codex exec -s read-only, shell/exec/code-mode features disabled, sheets attached with -i; reasoning effort xhigh (user config); the user's global Codex AGENTS.md was loaded (it replied in Chinese)"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "dribble-count",
+      "kind": "count",
+      "truth": 56,
+      "answer": 56,
+      "score": 1.0,
+      "note": "exact"
+    },
+    {
+      "id": "squat-reps",
+      "kind": "count",
+      "truth": 8,
+      "answer": 8,
+      "score": 1.0,
+      "note": "exact"
+    },
+    {
+      "id": "cadence-change",
+      "kind": "rate",
+      "truth": 182.186,
+      "answer": 182,
+      "score": 1.0,
+      "note": "0.1% off"
+    },
+    {
+      "id": "cone-touches-pan",
+      "kind": "timestamps",
+      "truth": [
+        3.6,
+        7.6,
+        10.6,
+        11.0,
+        11.4,
+        14.8,
+        19.6,
+        22.0,
+        23.2,
+        26.6
+      ],
+      "answer": [
+        3.6,
+        7.6,
+        10.6,
+        11.0,
+        11.4,
+        14.8,
+        19.6,
+        22.0,
+        23.2,
+        26.6
+      ],
+      "score": 1.0,
+      "note": "10 of 10 within 0.5 s, 10 answered"
+    },
+    {
+      "id": "shot-outcomes-hard",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "answer": [
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "score": 1.0,
+      "note": "12 of 12 right, 12 answered"
+    }
+  ],
+  "total": 1.0,
+  "wall_seconds": 585.1,
+  "evidence": "",
+  "cost_usd": null
+}
