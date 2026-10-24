@@ -170,12 +170,13 @@ class PageHooks:
     board: Callable[[Path], dict] | None = None   # folder -> band data; its "colours" {"us"|"them": (main, light)}
     band: Callable[[dict, Callable[[str], str]], str] | None = None  # (band data, lab) -> top band HTML
     before: Callable[[Path, dict, list], str] | None = None  # (folder, band data, langs) -> HTML above the report
-    intro: Callable[[Path, dict, list], str] | None = None  # (folder, band data, [one lang]) -> HTML in that report, before its first section
     # (folder, lang, embed, number of its first h2) -> (HTML, h2 titles, page assets added once) after the report
     sections: Callable[[Path, str, bool, int], tuple[str, list[str], str]] | None = None
     # report folder -> files the hooks above read (a plugin stage's json): the run's html step re-renders the page
     # when one changes, as it does for the READMEs, audio and clips
     inputs: Callable[[Path], list[Path]] | None = None
+    # (folder, band data, [one lang]) -> HTML in that report, before its first section; last, so positional use holds
+    intro: Callable[[Path, dict, list], str] | None = None
 
 
 DEFAULT = PageHooks()

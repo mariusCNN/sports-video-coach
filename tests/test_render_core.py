@@ -99,6 +99,11 @@ def test_before_goes_above_the_report_once_and_intro_inside_each(tmp_path, monke
     art = page[page.index('<article class="report" data-lang="en"'):]
     assert art.index("<!--in-en-->") < art.index("</article>")
 
+def test_page_hooks_keep_their_positional_order():
+    f = [object() for _ in range(6)]
+    h = render_html.PageHooks(*f)
+    assert (h.ui, h.board, h.band, h.before, h.sections, h.inputs, h.intro) == (*f, None)
+
 def test_audio_length_label_says_seconds_under_a_minute():
     en, zh = render_html.UI["en"], render_html.UI["zh"]
     assert render_html.length_label(en, 47.1) == "About 45 seconds. Read along or just listen."
