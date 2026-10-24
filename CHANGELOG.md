@@ -16,6 +16,7 @@ All notable changes to this project are documented here. The format follows [Kee
   flicker. `score`, `validate` and the leaderboard handle both suites (one table each); suite 1 files are unchanged.
 - Outside runs can be submitted as a pull request (CI runs `bench validate` on every result file) or through the
   new benchmark result issue form.
+- `sports-video-coach bench run --agent claude|codex|cmd` puts an agent on the benchmark in one command: prepare, run it headless with a timeout, score, and print a prefilled issue form link.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
 
