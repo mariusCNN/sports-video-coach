@@ -64,8 +64,6 @@ COMMANDS = (
      "sports-video-coach bench prepare --out bench-run --suite svc-bench-2"),
     ("Let your agent watch the videos and fill bench-run/answers.json, then score it",
      'sports-video-coach bench score bench-run --agent "Your agent" --model "your-model"'),
-    ("Or in one command: prepare, run Claude Code or Codex headless on the frames-only track, score",
-     "sports-video-coach bench run --agent claude --model <model> --suite svc-bench-3 --track frames"),
 )
 
 CSS = """
@@ -323,9 +321,15 @@ def frames_board(rows: list[dict]) -> str:
     mine = [r for r in rows if track_of(r) == "frames"]
     body = boards(mine, "frames-") if any(not is_baseline(r) for r in mine) else \
         '<p class="sub" style="color:var(--muted)">No frames-only runs yet.</p>'
-    cmd = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-3 --track frames"
+    run = "sports-video-coach bench run --agent claude --model <model> --suite svc-bench-3 --track frames"
+    prep = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-3 --track frames"
     return (f'<h2 id="frames">Frames-only track (eyes)</h2><p>{esc(FRAMES)}</p>'
-            f"<pre><code>{esc(cmd)}</code></pre>{body}")
+            "<p>Rerun it in one command: it prepares the suite, runs Claude Code (or <code>--agent codex</code>) "
+            "headless with no code tools, and scores the answers.</p>"
+            f"<pre><code>{esc(run)}</code></pre>"
+            "<p>Another agent: prepare the stills, let it fill <code>bench-frames/answers.json</code> by eye, then "
+            "score it with <code>bench score bench-frames</code>.</p>"
+            f"<pre><code>{esc(prep)}</code></pre>{body}")
 
 
 def social(card: bool) -> str:
