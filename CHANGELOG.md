@@ -10,6 +10,11 @@ All notable changes to this project are documented here. The format follows [Kee
   on the frames track, with no agent CLI: one request per task with that task's contact sheets, the answer read
   from the reply's json block, a transcript without image bytes, the key only from an environment variable. The
   code track is refused. See `docs/benchmark.md`, "Any vision model behind an OpenAI-compatible API".
+- "Count it yourself" on the benchmark page (English and Chinese): play the `svc-bench-3` juggling video, type
+  your count of the red player's touches, then see the truth (47), every model's stored answer to that task and
+  the blind guess, all read from `benchmark/results/` at build time, plus a line to copy (`bench/count.py`,
+  `count.mp4` + `count.jpg`, built by the demo-site CI). Works without JavaScript behind a closed fold; the
+  answer clip now sits inside it so the page no longer gives the count away.
 - The benchmark page in Simplified Chinese at `/benchmark/zh/` (`bench page` writes `zh/index.html` next to
   `index.html`): the same rows and numbers from the same result files, a language switch and hreflang links both
   ways, and the zh URL in the demo site's sitemap. README.zh.md links it.
