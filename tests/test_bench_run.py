@@ -126,14 +126,24 @@ def test_prompt_is_one_safe_line(name):
     assert "\n" not in p and not set(p) & set('"%^!&|<>')       # survives Windows .cmd shims unchanged
 
 
-def test_claude_stats_reads_model_and_cost_only_when_stated(tmp_path):
+def test_claude_stats_reads_model_version_and_cost_only_when_stated(tmp_path):
     t = tmp_path / "transcript.jsonl"
-    t.write_text("\n".join([json.dumps({"type": "system", "subtype": "init", "model": "claude-haiku-5-5"}),
-                            "not json", json.dumps({"type": "result", "total_cost_usd": 0.123456})]),
+    init = {"type": "system", "subtype": "init", "model": "claude-haiku-5-5", "claude_code_version": "2.1.9"}
+    t.write_text("\n".join([json.dumps(init), "not json", json.dumps({"type": "result", "total_cost_usd": 0.123456})]),
                  encoding="utf8")
-    assert R.claude_stats(t) == {"model": "claude-haiku-5-5", "cost_usd": 0.1235}
+    assert R.claude_stats(t) == {"model": "claude-haiku-5-5", "version": "2.1.9", "cost_usd": 0.1235}
     t.write_text(json.dumps({"type": "result"}), encoding="utf8")
     assert R.claude_stats(t) == {}
+
+
+def test_codex_stats_reads_only_the_header(tmp_path):
+    log = tmp_path / "stderr.log"
+    log.write_text("Reading additional input from stdin...\nOpenAI Codex v0.1\n--------\nworkdir: C:\\x\n"
+                   "model: gpt-x\nreasoning effort: high\n--------\nuser\nmodel: not-this\n", encoding="utf8")
+    assert R.codex_stats(log) == {"model": "gpt-x", "effort": "high"}
+    log.write_text("no header\nmodel: gpt-x\n", encoding="utf8")
+    assert R.codex_stats(log) == {}
+    assert R.codex_stats(tmp_path / "missing.log") == {}
 
 
 def test_issue_url_drops_a_result_too_long_for_a_url():

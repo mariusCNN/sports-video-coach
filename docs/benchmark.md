@@ -105,7 +105,9 @@ sports-video-coach bench run --agent cmd --name Aider --cmd "aider --yes-always 
 
 - The agent gets the same prompt as every other row (`PROMPT.txt` in the run folder), with stdin closed.
 - **Measured, not claimed:** `wall_seconds` is timed by `bench run`. `cost_usd` is filled only when the agent
-  reports it (Claude Code's result event); otherwise `null`.
+  reports it (Claude Code's result event); otherwise `null`. Without `--model`, the model (and the Claude Code
+  version, or the Codex reasoning effort) is read from what the agent itself prints (Claude Code's init event,
+  the header of `codex exec`); a value the agent does not print stays empty.
 - The run folder keeps the transcript, `stderr.log` and `run.json` (exit code, timed out or not).
 - A missing or broken `answers.json` scores 0; the run still writes a result file.
 - Then submit the file as below. Running in a clone? Copy it to `benchmark/results/` for a pull request.

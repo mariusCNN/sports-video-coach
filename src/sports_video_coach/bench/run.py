@@ -114,7 +114,7 @@ def execute(argv: list[str], cwd: Path, transcript: Path, stderr: Path, timeout:
 
 
 def claude_stats(transcript: Path) -> dict:
-    """Model and cost from a Claude Code stream-json transcript (only what the transcript states)."""
+    """Model, version and cost from a Claude Code stream-json transcript (only what the transcript states)."""
     out = {}
     try:
         lines = transcript.read_text(encoding="utf8", errors="replace").splitlines()
@@ -129,8 +129,27 @@ def claude_stats(transcript: Path) -> dict:
             continue
         if ev.get("type") == "system" and ev.get("subtype") == "init" and isinstance(ev.get("model"), str):
             out.setdefault("model", ev["model"])
+            if isinstance(ev.get("claude_code_version"), str):
+                out.setdefault("version", ev["claude_code_version"])
         if ev.get("type") == "result" and S.is_num(ev.get("total_cost_usd")):
             out["cost_usd"] = round(float(ev["total_cost_usd"]), 4)
+    return out
+
+
+def codex_stats(log: Path) -> dict:
+    """Model and reasoning effort from the header `codex exec` prints to stderr (only what the header states)."""
+    out = {}
+    try:
+        lines = log.read_text(encoding="utf8", errors="replace").splitlines()
+    except OSError:
+        return out
+    seps = [i for i, line in enumerate(lines[:40]) if line.strip() == "--------"]
+    for line in lines[seps[0] + 1:seps[1]] if len(seps) >= 2 else []:
+        key, _, value = line.partition(":")
+        if key.strip() == "model" and value.strip():
+            out["model"] = value.strip()
+        if key.strip() == "reasoning effort" and value.strip():
+            out["effort"] = value.strip()
     return out
 
 
@@ -212,15 +231,17 @@ def main(argv=None) -> int:
     status = f"killed at the {a.timeout:g} s timeout" if code is None else f"exit code {code}"
     print(f"agent finished in {wall:g} s, {status}; transcript {transcript}")
 
-    stats = claude_stats(transcript) if a.agent == "claude" else {}
+    stats = (claude_stats(transcript) if a.agent == "claude"
+             else codex_stats(out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
-    version = agent_version(exe[0]) if a.agent != "cmd" else ""
+    settings = a.settings.strip() or (f"reasoning effort {stats['effort']}" if "effort" in stats else "")
+    version = stats.get("version") or (agent_version(exe[0]) if a.agent != "cmd" else "")
     try:
         answers = S.read_answers(out)
     except (OSError, ValueError, SystemExit) as e:   # a missing or broken answers.json scores 0, like an empty one
         print(f"answers.json could not be read ({e}); every task scores 0")
         answers = {}
-    res = S.result(answers, name, model, version, a.settings.strip(), a.by.strip(),
+    res = S.result(answers, name, model, version, settings, a.by.strip(),
                    int(wall) if wall == int(wall) else wall, a.evidence.strip(), suite=a.suite)
     res["cost_usd"] = stats.get("cost_usd")
     run_info = {"exit_code": code, "timed_out": code is None, "timeout_seconds": a.timeout}
