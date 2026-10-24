@@ -24,8 +24,29 @@ denser sheet of a fast moment. You get back a phone page with the clips that mat
 version of the report, and an explained video. The tool runs on your machine; the frames your agent looks at go to
 its model provider, like anything else you show it. Free and MIT.
 
-**Benchmark:** which coding agent reviews sports film best, scored against exact truth:
-[leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/) · rerun the frames-only board in one command: `sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames` · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md) · any vision model behind an OpenAI-compatible API (Ollama, LM Studio, vLLM, OpenRouter), free on your own GPU: `sports-video-coach bench run --agent openai --track frames --suite svc-bench-3 --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M` · use Gemini CLI, Qwen Code, Aider, OpenCode, Cursor CLI, Copilot CLI or Goose? Their presets are untested: [run one and send the row (issue #7)](https://github.com/mariusDing/sports-video-coach/issues/7).
+## Benchmark: which agent reads sports film best
+
+Drawn drills, scored against the exact truth the tool drew in. No judge model.
+
+- **Fresh-seed board** (frames only, a new unseen seed per run, mean score above a blind guess, 1 = perfect):
+  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 (0.778 at low effort) · Claude Sonnet 5.5 0.419 at default effort,
+  0.994 at high (max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
+  One run per effort setting; all runs so far are the author's.
+- [Leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariusding.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)
+- Rerun the frames-only board in one command:
+
+```bash
+sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
+```
+
+<details><summary>Another agent CLI, or a vision model on your own GPU</summary>
+
+- Any vision model behind an OpenAI-compatible API (Ollama, LM Studio, vLLM, OpenRouter), free on your own GPU: the same command with
+  `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
+- Gemini CLI, Qwen Code, Aider, OpenCode, Cursor CLI, Copilot CLI, Goose: presets untested.
+  [Run one and send the row (issue #7)](https://github.com/mariusDing/sports-video-coach/issues/7).
+
+</details>
 
 <a href="https://mariusding.github.io/sports-video-coach/benchmark/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="Benchmark clip: a drawn juggling video, the stills an agent sees around a quick double touch, then the true touch count (47) against what each model answered"></a>
 

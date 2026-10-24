@@ -23,8 +23,29 @@
 你拿回一个手机网页：关键片段、每个问题的练习方法和目标、报告的语音版，还有一段讲解视频。
 工具在你自己的电脑上跑；agent 看的帧会发给它的模型服务商，和你给它看的其他东西一样。免费，MIT 协议。
 
-**基准测试：**哪个编程 agent 看运动录像最准，按精确的真值打分：
-[中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/) · 一条命令重跑静帧榜：`sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames` · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）· 任何接在 OpenAI 兼容接口后面的视觉模型（Ollama、LM Studio、vLLM、OpenRouter），用自己的显卡免费跑：`sports-video-coach bench run --agent openai --track frames --suite svc-bench-3 --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M` · 用 Gemini CLI、Qwen Code、Aider、OpenCode、Cursor CLI、Copilot CLI 或 Goose？这些预设还没人用真 CLI 跑过：[跑一次，把结果发来（issue #7）](https://github.com/mariusDing/sports-video-coach/issues/7)。
+## 基准测试：哪个 agent 看运动录像最准
+
+程序画的练习视频，按工具自己画进去的精确真值打分。不用评审模型。
+
+- **新种子榜**（只看静帧，每次运行用一个没公开过的新种子，分数是比盲猜高出的部分取平均，1 = 全对）：
+  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997（low effort 时 0.778）· Claude Sonnet 5.5 默认 effort 0.419，high 时 0.994（max 超时）·
+  本地显卡上的 qwen3-vl 4B 0.000。
+  每个 effort 设置只跑了一次；目前所有运行都是作者自己跑的。
+- [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/#frames-svc-bench-3-fresh) · [自己数一数触球](https://mariusding.github.io/sports-video-coach/benchmark/zh/#count) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）
+- 一条命令重跑静帧榜：
+
+```bash
+sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
+```
+
+<details><summary>别的 agent CLI，或自己显卡上的视觉模型</summary>
+
+- 任何接在 OpenAI 兼容接口后面的视觉模型（Ollama、LM Studio、vLLM、OpenRouter），用自己的显卡免费跑：同一条命令，换成
+  `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
+- Gemini CLI、Qwen Code、Aider、OpenCode、Cursor CLI、Copilot CLI、Goose：这些预设还没人用真 CLI 跑过。
+  [跑一次，把结果发来（issue #7）](https://github.com/mariusDing/sports-video-coach/issues/7)。
+
+</details>
 
 <a href="https://mariusding.github.io/sports-video-coach/benchmark/zh/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="基准测试短片：程序画的颠球视频，agent 看到的一次快速连续两触的静帧，再对比真实触球数（47）和各个模型的回答"></a>
 
