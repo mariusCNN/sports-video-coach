@@ -2,7 +2,9 @@
 
 Reads every `*.json` result file in `<results_dir>` (schema 1, written by `bench score`) and writes
 `<out_dir>/index.html`: a self-contained static page (inline CSS, light and dark, readable at 390 px) with the
-leaderboard ranked by total (one table per suite, the hard suite first), the method, how to run it yourself, how to submit a run and honesty notes. With no
+leaderboard ranked by total (one table per suite, the hard suite first; runs on the frames-only track, which
+see still images and run no code, in their own tables below), the method, how to run it yourself, how to submit a
+run and honesty notes. With no
 results it shows a "no runs yet" state; a file that does not parse is skipped and named in a visible note. The page
 never invents a row: every number on it comes from a result file.
 """
@@ -23,6 +25,10 @@ SUITES = (                     # (name, what it is), shown in this order; unknow
                     "identical feet, a rebounder), rule-defined events and noise."),
     ("svc-bench-1", "Four short drawn videos on a still camera. Saturated: every agent tried scored 1.0."),
 )
+TRACK = "code"                 # a result file without a track field is on the code track
+FRAMES = ("Frames-only track: the agent sees still images of each video (contact sheets with the time under every "
+          "still) and has no tool that runs code, so it must review by eye. Same videos, same truth, same scoring "
+          "as the code track; the scores measure the model's eyes, not its tracker.")
 TITLE = "Sports film review benchmark"
 WHAT = ("Which coding agent and vision model reviews sports film best? Each run is scored against ground truth "
         "drawn into synthetic videos, so every number is measured, not judged.")
@@ -187,8 +193,13 @@ def suite_of(r: dict) -> str:
     return str(r.get("suite") or SUITE)
 
 
-def boards(rows: list[dict]) -> str:
-    """One leaderboard table per suite, in SUITES order (a suite with no runs says so)."""
+def track_of(r: dict) -> str:
+    return str(r.get("track") or TRACK)
+
+
+def boards(rows: list[dict], prefix: str = "") -> str:
+    """One leaderboard table per suite, in SUITES order (a suite with no runs says so); `prefix` keeps the anchors
+    of a second track's tables apart."""
     known = [n for n, _ in SUITES]
     names = known + sorted({suite_of(r) for r in rows} - set(known))
     what = dict(SUITES)
@@ -197,7 +208,7 @@ def boards(rows: list[dict]) -> str:
         mine = [r for r in rows if suite_of(r) == n]
         body = table(mine) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
         desc = f"<p>{esc(what[n])}</p>" if n in what else ""
-        out.append(f'<h3 id="{esc(n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
+        out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
     return "\n".join(out)
 
 
@@ -206,8 +217,19 @@ def empty() -> str:
             "<p>Run the suite with your agent (below), then open a pull request with your result file.</p></div>")
 
 
+def frames_board(rows: list[dict]) -> str:
+    """The frames-only track's section: its own tables, or a line saying it has no runs yet."""
+    mine = [r for r in rows if track_of(r) == "frames"]
+    body = boards(mine, "frames-") if mine else \
+        '<p class="sub" style="color:var(--muted)">No frames-only runs yet.</p>'
+    cmd = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-2 --track frames"
+    return (f'<h2 id="frames">Frames-only track (eyes)</h2><p>{esc(FRAMES)}</p>'
+            f"<pre><code>{esc(cmd)}</code></pre>{body}")
+
+
 def render(rows: list[dict], notes: list[str]) -> str:
-    board = boards(rows) if rows else empty()
+    code = [r for r in rows if track_of(r) == TRACK]
+    board = boards(code) if code else empty()
     skipped = ""
     if notes:
         items = "".join(f"<li>{esc(n)}</li>" for n in notes)
@@ -235,6 +257,8 @@ def render(rows: list[dict], notes: list[str]) -> str:
 
 <h2 id="leaderboard">Leaderboard</h2>
 {skipped}{board}
+
+{frames_board(rows)}
 
 <h2 id="method">Method</h2>
 <p>The tasks are synthetic videos drawn by the tool, so the truth is exact: no human labels, no judge model.

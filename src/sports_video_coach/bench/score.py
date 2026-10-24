@@ -10,6 +10,8 @@ Per-task score, 0..1, rounded to 3 decimals:
 - outcomes: the fraction of positions where the answer equals the truth, over max(len(truth), len(answer)).
 A missing (null) or malformed answer scores 0. total = mean task score, rounded to 3 decimals.
 Both suites use the same kinds and rules; a result file names its suite and is re-scored against that suite.
+Tracks (see `frames`): a result on the `frames` track (still images, no code) says `"track": "frames"`; a file
+without a track is on the `code` track. Both are scored the same way against the same truth.
 """
 from __future__ import annotations
 
@@ -18,7 +20,7 @@ import json
 import re
 from pathlib import Path
 
-from . import suite as _s1, suite2 as _s2
+from . import frames as F, suite as _s1, suite2 as _s2
 from .suite import BY_ID, KINDS, SUITE, TASKS
 
 SUITES = {m.SUITE: m for m in (_s1, _s2)}     # suite name -> module with TASKS and BY_ID
@@ -115,6 +117,15 @@ def answers_suite(folder: Path) -> str:
     return name
 
 
+def answers_track(folder: Path) -> str:
+    """The track named in <folder>/answers.json (code when it names none)."""
+    p = Path(folder) / "answers.json"
+    name = json.loads(p.read_text(encoding="utf8")).get("track", F.TRACK)
+    if name not in F.TRACKS:
+        raise SystemExit(f"{p} is for track {name!r}, this tool scores {list(F.TRACKS)}")
+    return name
+
+
 def read_answers(folder: Path) -> dict:
     """{task id: answer} from <folder>/answers.json, for the suite it names (unknown ids are an error, missing ones
     are null)."""
@@ -133,9 +144,10 @@ def read_answers(folder: Path) -> dict:
 
 def result(answers: dict, agent: str, model: str, agent_version: str = "", settings: str = "", by: str = "",
            wall_seconds: float | None = None, evidence: str = "", date: str | None = None,
-           suite: str = SUITE) -> dict:
+           suite: str = SUITE, track: str = F.TRACK) -> dict:
     rows = [score_task(t.id, answers.get(t.id), suite) for t in SUITES[suite].TASKS]
-    return {"schema": SCHEMA, "suite": suite, "tool_version": tool_version(),
+    on = {} if track == F.TRACK else {"track": track}     # a code-track file stays as it always was
+    return {"schema": SCHEMA, "suite": suite, **on, "tool_version": tool_version(),
             "date": date or dt.date.today().isoformat(),
             "contender": {"agent": agent, "agent_version": agent_version, "model": model, "settings": settings},
             "submitted_by": by, "tasks": rows, "total": total(rows),
@@ -144,10 +156,10 @@ def result(answers: dict, agent: str, model: str, agent_version: str = "", setti
 
 def default_path(res: dict) -> Path:
     c = res["contender"]
-    # suite 1 files keep their original names; later suites add the suite name
-    suite = res.get("suite", SUITE)
-    name = "-".join(x for x in (res["date"], slug(c["agent"]), slug(c["model"]), "" if suite == SUITE else suite)
-                    if x)
+    # suite 1 files keep their original names; later suites add the suite name, the frames track adds "frames"
+    suite, track = res.get("suite", SUITE), res.get("track", F.TRACK)
+    name = "-".join(x for x in (res["date"], slug(c["agent"]), slug(c["model"]), "" if suite == SUITE else suite,
+                                "" if track == F.TRACK else track) if x)
     return Path("benchmark") / "results" / f"{name}.json"
 
 
@@ -156,7 +168,8 @@ def table(res: dict) -> str:
     head = f"{c['agent']}" + (f" {c['agent_version']}" if c["agent_version"] else "") + \
            (f" / {c['model']}" if c["model"] else "") + (f" ({c['settings']})" if c["settings"] else "")
     w = max(len(r["id"]) for r in res["tasks"])
-    lines = [f"{res.get('suite', SUITE)}: {head}", ""]
+    track = res.get("track", F.TRACK)
+    lines = [f"{res.get('suite', SUITE)}{'' if track == F.TRACK else f' ({track} track)'}: {head}", ""]
     lines += [f"  {r['id']:{w}s}  {r['kind']:10s}  {r['score']:.3f}  {r['note']}" for r in res["tasks"]]
     lines += ["", f"  {'total':{w}s}  {'':10s}  {res['total']:.3f}"]
     return "\n".join(lines)
@@ -174,6 +187,8 @@ def problems(res) -> list[str]:
         out.append(f"suite is {name!r}, expected one of {sorted(SUITES)}")
         name = SUITE
     by_id = SUITES[name].BY_ID
+    if res.get("track", F.TRACK) not in F.TRACKS:
+        out.append(f"track is {res.get('track')!r}, expected one of {list(F.TRACKS)} (or none, for code)")
     try:
         dt.date.fromisoformat(str(res.get("date")))
     except ValueError:

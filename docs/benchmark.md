@@ -66,11 +66,57 @@ one event per blob), while a careful reviewer who reads the rule and checks the 
 The truth of every task was also read back from the drawn pixels by a careful scripted reader before the suite was
 published, so a reviewer who follows the rules can reach it from the film alone.
 
+## Frames-only track (eyes)
+
+On the default `code` track every agent so far wrote a pixel tracker and scored about 1.0, so the code track ranks
+coding agents but not their models' eyes. The `frames` track asks the other question: how well does a model review
+film by eye, with no code at all?
+
+```bash
+sports-video-coach bench prepare --out bench-frames --suite svc-bench-2 --track frames
+```
+
+- **What the agent gets.** No videos. Each video becomes its stills, every 2nd frame (one every 0.08 s), in
+  `frames/<task>/` (640x360, named by time, e.g. `t012.48.jpg`) and on contact sheets of 25 in `sheets/<task>/`, the
+  time printed under every still. `TASKS.md` lists every sheet; `answers.json` says `"track": "frames"`.
+- **Why every 2nd frame.** The shortest thing a task needs seen is about 0.3 s (a treadmill step, a squat plate
+  below the line), so it falls on at least 3 stills.
+- **Same truth, same scoring** as the code track. `bench score` copies the track into the result file and names it
+  `...-frames.json`; `bench validate` checks it like any other.
+- **No tools that run code.** The agent may only look at the images and write its answers. If its harness has no
+  file-writing tool, it ends its reply with `answers.json` in a `json` block and you save that file.
+- The leaderboard shows the frames track in its own tables, under the code track.
+
+How the first rows were run (both with stdin closed and a timeout; the transcript proves which tools existed):
+
+| Agent | How "no code" was enforced | Checked in the transcript |
+|---|---|---|
+| Claude Code | `claude -p --restricted --safe-mode --strict-mcp-config --tools Read --permission-prompts none --output-format stream-json --verbose --model M`, run in the prepared folder | The `init` event lists `tools: ["Read"]`, no MCP servers; `--restricted` confines Read to the folder; every `tool_use` is a Read of a file in the folder. |
+| Codex CLI | `codex exec - -s read-only --json` with `--disable` for `shell_tool`, `unified_exec`, `code_mode_host`, `code_mode`, `view_image`, `browser_use`, `computer_use`, `apps`, `plugins`, `multi_agent`, `image_generation`; the prompt (with `TASKS.md`) on stdin and every contact sheet attached with `-i` | No `command_execution` item; the code-mode tool fails closed ("code-mode host is disabled"). Codex cannot open files this way, so it sees the sheets but not the full-size stills. |
+
+First rows (svc-bench-2, one run each, 2026-10-24):
+
+| Agent | Model | Total | Wall | Cost |
+|---|---|---|---|---|
+| Claude Code 2.1.310 | claude-opus-5-5 | 1.000 | 522 s | $3.04 |
+| Codex 0.159.3 | gpt-6-astra (xhigh) | 1.000 | 585 s | not reported |
+| Claude Code 2.1.310 | claude-sonnet-5-5 | 0.755 | 77 s | $0.24 |
+
+- **Strong models still saturate by eye.** Opus read 118 images (sheets and full-size stills); Codex saw all 102
+  sheets. Both got every task exactly right.
+- **The spread measures diligence more than eyesight.** Sonnet opened 16 of the 102 sheets (13 cone sheets, 3
+  squat sheets) and said it guessed the dribble count, the cadence and the shots without opening their sheets. The
+  one task it looked at closely, the cones, is its one real eyesight miss: 4 of the 10 touches (0.40).
+- **Guessing scores high.** Sonnet's unread shots, "made, missed" alternating, scored 0.83; its guessed dribble
+  count 0.80. A second Sonnet run, not submitted, read three files and scored 0.646. Counts and rates get partial
+  credit and the shot outcomes are mostly alternating, so read a frames total against a floor of about 0.65, not 0.
+
 ## Rules
 
 - **No peeking.** The agent must not read the truth files or the package source (`src/sports_video_coach/bench/`).
-- **Any tool on the videos is fine.** Looking at frames, ffmpeg, OpenCV or a script the agent writes all count: this
-  ranks coding agents as film reviewers, and writing measuring code is part of the job.
+- **Any tool on the videos is fine** on the code track. Looking at frames, ffmpeg, OpenCV or a script the agent
+  writes all count: this ranks coding agents as film reviewers, and writing measuring code is part of the job. On the
+  frames track no code at all (see [above](#frames-only-track-eyes)).
 - **One run = one file.** Do not pick the best of several runs; submit each run or none.
 - **Honest wall time.** `wall_seconds` is what the run really took, or `null` if you did not time it.
 - **No hand edits.** `score` and `total` are written by `bench score` only.
@@ -150,4 +196,5 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
 }
 ```
 
-`suite` is `svc-bench-1` or `svc-bench-2`; the task ids must be that suite's. Unknown fields are kept.
+`suite` is `svc-bench-1` or `svc-bench-2`; the task ids must be that suite's. `track` is `"frames"` for a
+frames-only run and absent for the code track. Unknown fields are kept.
