@@ -21,7 +21,7 @@ from pathlib import Path
 from urllib.parse import urlencode, quote
 
 from .. import media
-from . import score as S
+from . import frames as F, score as S
 from .suite import SUITE
 
 ISSUE_FORM = "https://github.com/mariusDing/sports-video-coach/issues/new"
@@ -41,9 +41,30 @@ PROMPT = (
     "End with one line per task: your answer and how you got it."
 )
 
+FENCE = "`" * 3
+# The frames track: no code, so the agent may have no tool that writes files and ends its reply with answers.json.
+# Same one-line rules as PROMPT; with Claude Code it is the prompt the leaderboard's frames rows were run with.
+FRAMES_PROMPT = (
+    "You are a contender in a sports film review benchmark (suite {suite}, frames track). "
+    "This track measures how well you review film by eye: you get still images of {n} short videos and no way to "
+    "run code. Judge by looking only. Do not try to read anything outside the given images and task text, and do "
+    "not start helpers or sub-agents. Work alone, do not ask questions. "
+    "End your reply with the whole answers.json (keys suite, track, answers; replace each null with your answer "
+    "in the stated format) in one " + FENCE + "json block, after one line per task: your answer and how you got it. "
+    "The current folder holds TASKS.md, answers.json and the images (contact sheets in sheets/, full-size stills in "
+    "frames/). {read} TASKS.md first, then the images it lists."
+)
+CLAUDE_FRAMES = ["claude", "-p", "--restricted", "--safe-mode", "--strict-mcp-config", "--tools", "Read",
+                 "--permission-prompts", "none", "--output-format", "stream-json", "--verbose"]
+CLAUDE_FRAMES_SETTINGS = "frames track; claude -p --restricted --safe-mode --tools Read; default effort"
 
-def prompt(suite: str) -> str:
-    return PROMPT.format(suite=suite, n=len(S.SUITES[suite].TASKS))
+
+def prompt(suite: str, track: str = F.TRACK, agent: str = "") -> str:
+    n = len(S.SUITES[suite].TASKS)
+    if track == F.TRACK:
+        return PROMPT.format(suite=suite, n=n)
+    read = "Your only tool is Read: read" if agent == "claude" else "Read"
+    return FRAMES_PROMPT.format(suite=suite, n=n, read=read)
 
 
 def split_template(template: str) -> list[str]:
@@ -55,11 +76,16 @@ def split_template(template: str) -> list[str]:
     return list(lex)
 
 
-def command(agent: str, text: str, prompt_file: Path, model: str = "", template: str = "") -> list[str]:
+def command(agent: str, text: str, prompt_file: Path, model: str = "", template: str = "",
+            track: str = F.TRACK) -> list[str]:
     """The argv that runs `agent` headless on the prompt `text` (also saved in `prompt_file`)."""
     if agent == "claude":
-        argv = ["claude", "-p", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"]
+        argv = (CLAUDE_FRAMES if track != F.TRACK else
+                ["claude", "-p", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"])
         return argv + (["--model", model] if model else []) + [text]
+    if agent == "codex" and track != F.TRACK:
+        raise SystemExit("bench run --track frames runs Claude Code or --agent cmd; for Codex see the frames track "
+                         "in docs/benchmark.md")
     if agent == "codex":
         argv = ["codex", "exec", "-c", "check_for_update_on_startup=false", "--skip-git-repo-check",
                 "-s", "workspace-write"]
@@ -136,6 +162,47 @@ def claude_stats(transcript: Path) -> dict:
     return out
 
 
+def final_text(transcript: Path, agent: str) -> str:
+    """The agent's last reply: Claude Code's `result` event, else the whole transcript of another CLI."""
+    try:
+        text = transcript.read_text(encoding="utf8", errors="replace")
+    except OSError:
+        return ""
+    if agent != "claude":
+        return text
+    final = ""
+    for line in text.splitlines():
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(ev, dict) and ev.get("type") == "result" and isinstance(ev.get("result"), str):
+            final = ev["result"]
+    return final
+
+
+def answers_from_reply(out: Path, text: str, suite: str, track: str) -> bool:
+    """Save the last json block of the agent's reply as <out>/answers.json when the agent left that file empty
+    (an agent with no file-writing tool ends with it, as TASKS.md asks). True if it was saved."""
+    try:
+        if any(v is not None for v in S.read_answers(out).values()):
+            return False
+    except (OSError, ValueError, SystemExit):
+        pass
+    blocks = re.findall(FENCE + r"json[ \t]*\r?\n(.*?)" + FENCE, text, re.S)
+    try:
+        data = json.loads(blocks[-1]) if blocks else None
+    except ValueError:
+        return False
+    answers = data.get("answers", data) if isinstance(data, dict) else None
+    if not isinstance(answers, dict):
+        return False
+    ids = [t.id for t in S.SUITES[suite].TASKS]
+    media.write_json_atomic(out / "answers.json",
+                            {"suite": suite, "track": track, "answers": {i: answers.get(i) for i in ids}})
+    return True
+
+
 def codex_stats(log: Path) -> dict:
     """Model and reasoning effort from the header `codex exec` prints to stderr (only what the header states)."""
     out = {}
@@ -166,8 +233,10 @@ def agent_version(argv0: str) -> str:
 def issue_url(res: dict) -> str:
     """A prefilled benchmark_result issue form URL (the result file is left out if it would make it too long)."""
     c = res["contender"]
+    on_track = f" {res['track']} track" if res.get("track", F.TRACK) != F.TRACK else ""
     fields = {"template": "benchmark_result.yml",
-              "title": f"[Benchmark]: {c['agent']} {c['model']} on {res['suite']} ({res['total']})".replace("  ", " "),
+              "title": f"[Benchmark]: {c['agent']} {c['model']} on {res['suite']}{on_track} ({res['total']})"
+                       .replace("  ", " "),
               "agent": c["agent"], "version": c["agent_version"], "model": c["model"],
               "settings": c["settings"] or "none", "evidence": res.get("evidence", "")}
     url = ISSUE_FORM + "?" + urlencode({k: v for k, v in fields.items() if v}, quote_via=quote)
@@ -187,6 +256,9 @@ def main(argv=None) -> int:
         description="Prepare a suite, run one agent on it headless (stdin closed, killed at the timeout), "
                     "score it and print the result file and a prefilled issue form link.")
     ap.add_argument("--suite", default=SUITE, choices=sorted(S.SUITES), help=f"default {SUITE}")
+    ap.add_argument("--track", default=F.TRACK, choices=F.TRACKS,
+                    help="code (default): videos, any tool; frames: still images only, no code (Claude Code runs "
+                         "with Read as its only tool)")
     ap.add_argument("--agent", required=True, choices=["claude", "codex", "cmd"],
                     help="claude (Claude Code), codex (Codex CLI) or cmd (any other CLI, with --cmd)")
     ap.add_argument("--model", default="", help="passed to the agent CLI as --model (and {model} in --cmd)")
@@ -209,12 +281,12 @@ def main(argv=None) -> int:
         ap.error("--cmd is only for --agent cmd")
 
     out = (a.out or default_out(a.name or a.agent, a.model)).resolve()
-    text = prompt(a.suite)
+    text = prompt(a.suite, a.track, a.agent)
     prompt_file = out / "PROMPT.txt"
-    argv_ = command(a.agent, text, prompt_file, a.model, a.cmd)
+    argv_ = command(a.agent, text, prompt_file, a.model, a.cmd, a.track)
     transcript = out / ("transcript.jsonl" if a.agent == "claude" else "transcript.txt")
     if a.dry_run:
-        print(f"suite {a.suite}, folder {out}, timeout {a.timeout:g} s, stdin closed")
+        print(f"suite {a.suite}, track {a.track}, folder {out}, timeout {a.timeout:g} s, stdin closed")
         print(subprocess.list2cmdline(argv_) if os.name == "nt" else shlex.join(argv_))
         return 0
     if out.exists() and any(out.iterdir()):
@@ -222,9 +294,10 @@ def main(argv=None) -> int:
     exe = resolve(argv_)
     name = a.name or AGENTS.get(a.agent) or Path(argv_[0]).stem
 
-    print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} videos into {out}")
+    what = "videos" if a.track == F.TRACK else "videos as stills"
+    print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} {what} into {out}")
     from . import prepare
-    prepare(out, suite=a.suite)
+    prepare(out, suite=a.suite, track=a.track)
     media.write_text_atomic(prompt_file, text + "\n")
     print(f"running {name} (timeout {a.timeout:g} s) ...", flush=True)
     code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout)
@@ -234,7 +307,10 @@ def main(argv=None) -> int:
     stats = (claude_stats(transcript) if a.agent == "claude"
              else codex_stats(out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
-    settings = a.settings.strip() or (f"reasoning effort {stats['effort']}" if "effort" in stats else "")
+    settings = a.settings.strip() or (f"reasoning effort {stats['effort']}" if "effort" in stats else
+                                      CLAUDE_FRAMES_SETTINGS if a.agent == "claude" and a.track != F.TRACK else "")
+    if a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track):
+        print("answers.json: saved from the json block at the end of the agent's reply")
     version = stats.get("version") or (agent_version(exe[0]) if a.agent != "cmd" else "")
     try:
         answers = S.read_answers(out)
@@ -242,7 +318,7 @@ def main(argv=None) -> int:
         print(f"answers.json could not be read ({e}); every task scores 0")
         answers = {}
     res = S.result(answers, name, model, version, settings, a.by.strip(),
-                   int(wall) if wall == int(wall) else wall, a.evidence.strip(), suite=a.suite)
+                   int(wall) if wall == int(wall) else wall, a.evidence.strip(), suite=a.suite, track=a.track)
     res["cost_usd"] = stats.get("cost_usd")
     run_info = {"exit_code": code, "timed_out": code is None, "timeout_seconds": a.timeout}
     media.write_json_atomic(out / "run.json", run_info)

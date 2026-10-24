@@ -155,3 +155,86 @@ def test_issue_url_drops_a_result_too_long_for_a_url():
     res["padding"] = "x" * 10000
     long = R.issue_url(res)
     assert len(long) <= R.MAX_URL and "result" not in parse_qs(urlparse(long).query)
+
+
+REPLY = """
+import pathlib, sys
+answers = pathlib.Path(sys.argv[1]).read_text(encoding="utf8")
+print("I read " + pathlib.Path(sys.argv[2]).read_text(encoding="utf8")[:60])
+print("juggle: by eye ...")
+print("```json")
+print(answers)
+print("```")
+"""
+
+
+@pytest.fixture
+def stills(monkeypatch):
+    """Every task draws a 30-frame grey video, so the frames track has real stills and sheets to cut."""
+    import cv2
+    import numpy as np
+
+    def tiny(out):
+        w = cv2.VideoWriter(str(out), cv2.VideoWriter_fourcc(*"mp4v"), suite.FPS, (160, 90))
+        for i in range(30):
+            w.write(np.full((90, 160, 3), i * 8, dtype=np.uint8))
+        w.release()
+        return out
+    monkeypatch.setattr(suite.Task, "draw", property(lambda t: tiny), raising=False)
+
+
+def test_run_frames_track_saves_answers_from_the_reply_and_names_the_track(tmp_path, stills, capsys):
+    script = tmp_path / "reply_agent.py"
+    script.write_text(REPLY, encoding="utf8")
+    fill = tmp_path / "fill.json"
+    fill.write_text(json.dumps({"suite": "svc-bench-1", "track": "frames", "answers": TRUTH}), encoding="utf8")
+    out = tmp_path / "run"
+    cmd = f'"{sys.executable}" "{script}" "{fill}" {{prompt_file}}'
+    assert bench.main(["run", "--track", "frames", "--agent", "cmd", "--cmd", cmd, "--out", str(out),
+                       "--name", "fake", "--model", "m-1"]) == 0
+    assert not list(out.glob("*.mp4")) and list((out / "sheets").iterdir())
+    assert "frames track" in (out / "PROMPT.txt").read_text(encoding="utf8")
+    saved = json.loads((out / "answers.json").read_text(encoding="utf8"))
+    assert saved == {"suite": "svc-bench-1", "track": "frames", "answers": TRUTH}
+    res = result_of(out)
+    assert res["track"] == "frames" and res["total"] == 1.0 and not S.problems(res)
+    assert (out / S.default_path(res).name).exists() and S.default_path(res).name.endswith("-frames.json")
+    printed = capsys.readouterr().out
+    assert "saved from the json block" in printed
+    url = [line for line in printed.splitlines() if line.startswith(R.ISSUE_FORM)][0]
+    q = parse_qs(urlparse(url).query)
+    assert q["title"] == ["[Benchmark]: fake m-1 on svc-bench-1 frames track (1.0)"]
+
+
+def test_answers_from_reply_keeps_a_filled_file_and_ignores_the_prompt_text(tmp_path):
+    blank = {"suite": "svc-bench-1", "track": "frames", "answers": {t: None for t in TRUTH}}
+    (tmp_path / "answers.json").write_text(json.dumps(blank), encoding="utf8")
+    # the prompt's own words "in one ```json block" are not a block; no reply block leaves the file as it was
+    assert not R.answers_from_reply(tmp_path, R.prompt("svc-bench-1", "frames"), "svc-bench-1", "frames")
+    reply = 'x\n```json\n{"jump-count": 3, "ghost": 1}\n```\n'
+    assert R.answers_from_reply(tmp_path, reply, "svc-bench-1", "frames")
+    got = json.loads((tmp_path / "answers.json").read_text(encoding="utf8"))["answers"]
+    assert got["jump-count"] == 3 and "ghost" not in got
+    assert not R.answers_from_reply(tmp_path, reply.replace("3", "9"), "svc-bench-1", "frames")  # already filled
+    final = [{"type": "assistant"}, {"type": "result", "result": "the reply"}]
+    t = tmp_path / "t.jsonl"
+    t.write_text("\n".join(json.dumps(e) for e in final), encoding="utf8")
+    assert R.final_text(t, "claude") == "the reply" and R.final_text(t, "cmd").startswith('{"type"')
+
+
+def test_frames_track_runs_claude_with_read_only_and_the_published_prompt(tmp_path, capsys):
+    p = R.prompt("svc-bench-3", "frames", "claude")
+    assert p.startswith("You are a contender in a sports film review benchmark (suite svc-bench-3, frames track).")
+    assert "still images of 4 short videos" in p and p.endswith("Your only tool is Read: read TASKS.md first, "
+                                                                "then the images it lists.")
+    assert R.prompt("svc-bench-3", "frames", "cmd").endswith("frames/). Read TASKS.md first, then the images it "
+                                                             "lists.")
+    for text in (p, R.prompt("svc-bench-2", "frames")):
+        assert "\n" not in text and not set(text) & set('"%^!&|<>')
+    c = R.command("claude", p, tmp_path / "PROMPT.txt", "claude-sonnet-5-5", track="frames")
+    assert c[c.index("--tools") + 1] == "Read" and "--restricted" in c and "--dangerously-skip-permissions" not in c
+    with pytest.raises(SystemExit, match="frames"):
+        R.command("codex", p, tmp_path / "PROMPT.txt", track="frames")
+    assert bench.main(["run", "--track", "frames", "--suite", "svc-bench-3", "--agent", "claude",
+                       "--out", str(tmp_path / "dry"), "--dry-run"]) == 0
+    assert "--tools Read" in capsys.readouterr().out

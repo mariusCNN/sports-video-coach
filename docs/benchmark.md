@@ -1,4 +1,4 @@
-# Sports film review benchmark (svc-bench-1, svc-bench-2)
+# Sports film review benchmark (svc-bench-1, svc-bench-2, svc-bench-3)
 
 Which coding agent and vision model reviews sports film best? This benchmark scores each run against ground truth,
 so every number is measured, not judged.
@@ -6,15 +6,18 @@ so every number is measured, not judged.
 - **Leaderboard:** <https://mariusding.github.io/sports-video-coach/benchmark/>
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
 - **Commands:** `sports-video-coach bench run | prepare | score | validate | page | baseline`
+- **Install:** `uv tool install git+https://github.com/mariusDing/sports-video-coach` (needs ffmpeg on PATH), then
+  [run your agent in one command](#add-your-agent-in-one-command).
 
 ## Suites
 
 | Suite | Videos | What it tests |
 |---|---|---|
+| `svc-bench-3` (eyes) | 4, 21 to 53 s | Small, short and hidden events, for the frames track. See [below](#suite-svc-bench-3-eyes). |
 | `svc-bench-2` (hard) | 5, 28 to 56 s | A hand-held camera, look-alike decoys, rule-defined events, noise. See [below](#suite-svc-bench-2-hard). |
 | `svc-bench-1` | 4, 20 to 31 s | Still camera, flat colours. Saturated: every agent tried wrote a pixel tracker and scored 1.0. |
 
-`bench prepare --out <dir>` draws `svc-bench-1`; add `--suite svc-bench-2` for the hard suite. `answers.json` names
+`bench prepare --out <dir>` draws `svc-bench-1`; add `--suite svc-bench-2` or `--suite svc-bench-3` for the others. `answers.json` names
 its suite, and `bench score` and `bench validate` score each file against the suite it names. The leaderboard shows
 one table per suite.
 
@@ -91,7 +94,9 @@ sports-video-coach bench prepare --out bench-frames --suite svc-bench-2 --track 
   file-writing tool, it ends its reply with `answers.json` in a `json` block and you save that file.
 - The leaderboard shows the frames track in its own tables, under the code track.
 
-How the first rows were run (both with stdin closed and a timeout; the transcript proves which tools existed):
+How the first rows were run (both with stdin closed and a timeout; the transcript proves which tools existed).
+`bench run --track frames --agent claude` runs the Claude Code row's command with the same prompt (see
+[below](#add-your-agent-in-one-command)):
 
 | Agent | How "no code" was enforced | Checked in the transcript |
 |---|---|---|
@@ -271,7 +276,11 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 ```
 
 It draws the suite in a fresh folder, runs the agent there headless, scores the answers and prints the result file
-and a prefilled issue form link.
+and a prefilled issue form link. The frames track, as the leaderboard's frames rows were run:
+
+```bash
+sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite svc-bench-3 --track frames
+```
 
 | Option | What it does |
 |---|---|
@@ -279,9 +288,13 @@ and a prefilled issue form link.
 | `--agent codex` | Codex CLI: `codex exec --skip-git-repo-check -s workspace-write` |
 | `--agent cmd --cmd "..."` | Any other CLI. `{prompt}` becomes the prompt text, `{prompt_file}` a file holding it, `{model}` the model. |
 | `--model M` | Passed to the agent as `--model M` |
-| `--suite` | `svc-bench-1` (default) or `svc-bench-2` |
+| `--suite` | `svc-bench-1` (default), `svc-bench-2` or `svc-bench-3` |
+| `--track frames` | Stills instead of videos, no code. Claude Code runs with Read as its only tool (the command in the [frames table](#frames-only-track-eyes)); the json block that ends the agent's reply becomes `answers.json`. Not for `--agent codex` yet. |
 | `--out DIR` | Run folder, new or empty (default `~/svc-bench-runs/<agent>-<model>-<time>`) |
 | `--timeout N` | Kill the agent after N seconds (default 1200) |
+| `--by HANDLE` | Your GitHub handle, saved as `submitted_by` |
+| `--settings S` | What you changed from defaults (effort, prompts, tools); empty means defaults |
+| `--evidence URL` | A published transcript or log |
 | `--dry-run` | Print the command it would run; run nothing |
 
 Examples for other agents (check your CLI's own flags for a non-interactive, auto-approve run):
@@ -299,13 +312,14 @@ sports-video-coach bench run --agent cmd --name Aider --cmd "aider --yes-always 
 - The run folder keeps the transcript, `stderr.log` and `run.json` (exit code, timed out or not).
 - A missing or broken `answers.json` scores 0; the run still writes a result file.
 - Then submit the file as below. Running in a clone? Copy it to `benchmark/results/` for a pull request.
+- Ran the steps by hand (`bench prepare`, your agent, `bench score`)? `bench score` prints the same issue form link.
 
 ## Submit your run
 
 Pick one:
 
 - **Pull request:** add your file to `benchmark/results/` as `<date>-<agent>-<model>.json` (lower case, `-` for
-  spaces; `bench score` adds `-svc-bench-2` for the hard suite) and fill the benchmark part of the PR template.
+  spaces; `bench score` adds the suite for `svc-bench-2` and `svc-bench-3`, and `-frames` for the frames track) and fill the benchmark part of the PR template.
 - **Issue form:** paste the file into the
   [benchmark result form](https://github.com/mariusDing/sports-video-coach/issues/new?template=benchmark_result.yml);
   a maintainer adds it.
@@ -342,5 +356,5 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
 }
 ```
 
-`suite` is `svc-bench-1` or `svc-bench-2`; the task ids must be that suite's. `track` is `"frames"` for a
+`suite` is `svc-bench-1`, `svc-bench-2` or `svc-bench-3`; the task ids must be that suite's. `track` is `"frames"` for a
 frames-only run and absent for the code track. Unknown fields are kept.

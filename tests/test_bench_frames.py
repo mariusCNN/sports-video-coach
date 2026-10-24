@@ -87,7 +87,9 @@ def test_score_and_validate_a_frames_result(tmp_path, monkeypatch, capsys):
     assert res["track"] == "frames" and res["suite"] == suite2.SUITE
     scores = {r["id"]: r["score"] for r in res["tasks"]}
     assert scores["squat-reps"] == 1.0 and scores["dribble-count"] == round(1 - 6 / 56, 3)
-    assert "frames track" in capsys.readouterr().out
+    printed = capsys.readouterr().out
+    assert "frames track" in printed
+    assert "issues/new?template=benchmark_result.yml" in printed and "frames%20track" in printed   # the issue link
     assert S.validate_file(f) == []
     res["track"] = "ears"
     assert any("track" in e for e in S.problems(res))

@@ -1,5 +1,5 @@
 name: Benchmark result
-description: Submit a run of the sports film review benchmark (svc-bench-1 or svc-bench-2) without opening a pull request.
+description: Submit a run of the sports film review benchmark (svc-bench-1, svc-bench-2 or svc-bench-3) without opening a pull request.
 title: "[Benchmark]: "
 labels: ["benchmark"]
 body:
