@@ -11,6 +11,8 @@ the frames track). The truth is exact (we drew them). Run one with any agent:
   sports-video-coach bench score <dir> --agent A --model M [--agent-version V] [--settings S] [--by HANDLE]
                                 [--wall-seconds N] [--evidence URL] [--out FILE]
   sports-video-coach bench validate <result.json...>   re-score a result file; exit 1 if it was edited or broken
+  sports-video-coach bench report <result.json...>     its score as Markdown, numbers as the page shows them (CI
+                                                        puts it in a pull request's checks summary)
   sports-video-coach bench page ...                     the leaderboard page from benchmark/results/
   sports-video-coach bench run --agent claude|codex|cmd [--model M] [--suite S] [--track frames] [--seed [N]]
                                 [--cmd "..."] [--dry-run]
@@ -295,11 +297,14 @@ def main(argv=None) -> int:
     if argv[0] == "baseline":
         from .baseline import main as baseline_main
         return baseline_main(argv[1:])
+    if argv[0] == "report":
+        from .report import main as report_main
+        return report_main(argv[1:])
     if argv[0] == "transcript":
         from .transcript import main as transcript_main
         return transcript_main(argv[1:])
     if argv[0] not in cmds:
-        print(f"unknown bench command {argv[0]!r}; one of: prepare, score, validate, page, run, "
-              "baseline, transcript", file=sys.stderr)
+        print(f"unknown bench command {argv[0]!r}; one of: prepare, score, validate, report, page, "
+              "run, baseline, transcript", file=sys.stderr)
         return 2
     return cmds[argv[0]](argv[1:])

@@ -511,9 +511,15 @@ Pick one:
 
 - **Pull request:** add your file to `benchmark/results/` as `<date>-<agent>-<model>.json` (lower case, `-` for
   spaces; `bench score` adds the suite for `svc-bench-2` and `svc-bench-3`, and `-frames` for the frames track) and fill the benchmark part of the PR template.
+  Within minutes the pull request's checks show its score: open the `tests` run, then its Summary tab. For each
+  added or changed result file it says whether the file validates, and gives the suite, track, contender, total,
+  above chance, time, cost, where it would rank on its table, and per task your answer, the truth, the score and
+  what was missed, with the same numbers the leaderboard page will show. A file that does not validate fails the
+  check and the summary says why. To see the same report before you open the pull request:
+  `sports-video-coach bench report benchmark/results/<your file>.json` (Markdown on stdout, exit 1 if invalid).
 - **Issue form:** paste the file into the
   [benchmark result form](https://github.com/mariusDing/sports-video-coach/issues/new?template=benchmark_result.yml);
-  a maintainer adds it.
+  a maintainer adds it. This is the path that needs no git.
 
 An evidence link (a gist, a transcript, a log) is optional but makes your row easier to trust. The maintainer's
 own runs keep their redacted transcripts in `benchmark/transcripts/<result-stem>.jsonl` (gzipped over 300 KB)
@@ -522,6 +528,9 @@ and link them; the page labels such a link "transcript".
 ## How rows are checked
 
 - CI runs `sports-video-coach bench validate benchmark/results/*.json` on every pull request.
+- On a pull request, CI also runs `sports-video-coach bench report` on the result files the pull request adds or
+  changes (`git diff` against the base branch) and writes the Markdown into the run's Summary tab. The job is
+  read-only (`contents: read`, no comment, no secret), so a pull request from a fork gets it too.
 - `validate` re-scores each file from its `answer` fields against the suite's truth and rejects a file whose
   scores differ.
 - The leaderboard page is rebuilt from the folder by `bench page` on every push to master. A file that does not

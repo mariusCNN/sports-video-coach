@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `bench report <result.json...>`: a result file's score as Markdown (validates or why not; suite, track,
+  contender, total, above chance, time, cost, rank on its table, and per task answer vs truth, score and what was
+  missed), computed by the leaderboard page's code. A pull request that adds or changes a file in
+  `benchmark/results/` now gets that report in its `tests` run's Summary tab (read-only job, works for forks) and
+  fails when the file does not validate. See `docs/benchmark.md`, "Submit your run".
 - `bench run --agent openai --track frames --base-url URL --model M [--api-key-env VAR]`: any vision model
   behind an OpenAI-compatible chat-completions endpoint (Ollama, LM Studio, vLLM, llama.cpp server, OpenRouter)
   on the frames track, with no agent CLI: one request per task with that task's contact sheets, the answer read
