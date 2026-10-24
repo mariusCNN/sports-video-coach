@@ -194,7 +194,8 @@ small, short or hidden, so they have to be found still by still, and a lazy read
 sports-video-coach bench prepare --out bench-eyes --suite svc-bench-3 --track frames
 ```
 
-- **Small things.** A 5 px ball on a 640 px frame, a 3 px ball at a far rim, a small yellow oar blade.
+- **Small things.** A ball 5 px in radius on a 640x360 frame, a ball 3 px in radius at a 16 px wide far rim, a small
+  yellow oar blade.
 - **Short events.** The two contacts of a double touch are 0.24 s (3 stills) apart; a one-touch pass has no hold.
 - **Hidden moments.** A banner crosses the rim on 3 of the 12 shots; a red defender is in front of the passer at 4
   of the 12 releases. The rule says to judge those by where the ball goes.

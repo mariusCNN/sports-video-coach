@@ -24,9 +24,9 @@ RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
 SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
 SUITES = (                     # (name, what it is), shown in this order; unknown suites follow by name
-    ("svc-bench-3", "Eyes: four drawn videos whose events are small, short or hidden: a 6 px ball and a far 16 px "
-                    "rim, double touches 0.24 s apart, a banner and a defender in front of the moment, pass fakes, "
-                    "and decoys with nearly the same answer (a second juggler, a second pair passing, a far boat "
+    ("svc-bench-3", "Eyes: four drawn videos whose events are small, short or hidden: a ball 5 px in radius on a "
+                    "640x360 frame, a ball 3 px in radius at a 16 px wide far rim, double touches 0.24 s apart, a "
+                    "banner and a defender in front of the moment, pass fakes, and decoys with nearly the same answer (a second juggler, a second pair passing, a far boat "
                     "at a close rate)."),
     ("svc-bench-2", "Hard: five drawn videos with a hand-held camera, look-alike decoys (a second ball, two "
                     "identical feet, a rebounder), rule-defined events and noise. On the frames track the top "

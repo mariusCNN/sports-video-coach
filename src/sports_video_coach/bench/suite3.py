@@ -3,7 +3,8 @@ frames-only track after strong models scored 1.0 on `svc-bench-2` by eye.
 
 Every task stays answerable from the stills a frames-track contender gets (one every 0.08 s), but only by looking
 closely, often at the full-size stills rather than the contact sheets:
-- small, distant things: a 6 px ball through a 16 px far rim, an oar blade a few pixels tall;
+- small, distant things: a ball 5 px in radius on a 640x360 frame, a ball 3 px in radius at a 16 px wide far rim,
+  an oar blade a few pixels tall;
 - short events: a double touch whose hop lasts 0.24 s and rises about 10 px, a one-touch pass with no hold;
 - occlusion at the moment of the event: a banner passes in front of the rim, a defender stands in front of the
   passer, so the event must be inferred from where the ball goes next;
@@ -120,7 +121,8 @@ def draw_juggle(out: Path) -> Path:
 
 
 # --- outcomes: shots at a far hoop, with a banner passing in front of the rim ----------------------------------------
-# A wide shot: the rim is 16 px wide and the ball 6 px. Made = the ball goes down through the ring and out of the net.
+# A wide shot: the rim is 16 px wide and the ball 3 px in radius. Made = the ball goes down through the ring and out
+# of the net.
 # On three shots a fan's banner covers the rim when the ball gets there; the ball is seen again below or beside it.
 FAR_FLOOR = 330
 RX, RY, RHALF = 490, 256, 8          # rim centre and half width
