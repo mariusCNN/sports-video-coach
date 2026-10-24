@@ -993,13 +993,15 @@ def facts_block(rows: list[dict], lang: str = "en") -> str:
 def presets_step(lang: str = "en") -> str:
     """The one-command step of "Run it yourself": Claude Code, Codex and one line per preset in bench_run.PRESETS."""
     one = "sports-video-coach bench run --agent {} --suite svc-bench-3"
+    checked = "参数已对照 {} 的 --help 核对" if lang == "zh" else "flags checked against {} --help"
     lines = "".join(f"<li><code>--agent {esc(k)}</code> {esc(p.name)}: <code>{esc(bench_run.shown(k))}</code>"
-                    "</li>" for k, p in bench_run.PRESETS.items())
+                    f" ({esc(checked.format(p.checked))})</li>" for k, p in bench_run.PRESETS.items())
     pre = f"<pre><code>{esc(one.format('claude'))}\n{esc(one.format('codex'))}</code></pre>"
     if lang == "zh":
         return ("<li>或者一条命令全做完（准备、无界面运行、打分）：Claude Code 或 Codex"
                 f"{pre}或者用其他 agent CLI 的预设。这些预设按各 CLI 的文档写成（{esc(bench_run.DOCS_READ)} 读过），"
-                "但维护者没有实际跑过，所以没在真实 CLI 上测过；只支持代码赛道（"
+                f"参数在 {esc(bench_run.HELP_CHECKED)} 对照真实 CLI 的 --help 核对过，"
+                "但维护者没有用它们实际跑过题目；只支持代码赛道（"
                 f'<a href="{DOC_URL}#add-your-agent-in-one-command">每个参数的文档链接</a>）。其他 CLI：'
                 f'<code>--agent cmd --cmd "... {{prompt}}"</code>。<ul class="plain">{lines}</ul>'
                 f'用其中某个 agent？跑一次，告诉我们结果：<a href="{WANTED_URL}">issue #7</a>'
@@ -1007,7 +1009,8 @@ def presets_step(lang: str = "en") -> str:
     return ("<li>Or do it all in one command (prepare, run headless, score): Claude Code or Codex"
             f"{pre}"
             "or a preset for another agent CLI. The presets are built from each CLI's docs (read "
-            f"{esc(bench_run.DOCS_READ)}) but not run by the maintainer, so untested against the real CLIs; code "
+            f"{esc(bench_run.DOCS_READ)}), with every flag checked against the real CLI's --help on "
+            f"{esc(bench_run.HELP_CHECKED)}, but not run by the maintainer on a task; code "
             f'track only (<a href="{DOC_URL}#add-your-agent-in-one-command">doc links per flag</a>). Any other '
             f'CLI: <code>--agent cmd --cmd "... {{prompt}}"</code>.<ul class="plain">{lines}</ul>'
             f'Use one of these agents? Run it and tell us how it went: <a href="{WANTED_URL}">issue #7</a> '

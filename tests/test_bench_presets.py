@@ -80,8 +80,8 @@ def test_each_preset_runs_its_documented_command_and_scores(tmp_path, fake_bin, 
 def test_preset_prompt_placement_and_no_model(tmp_path):
     pf = tmp_path / "PROMPT.txt"
     assert R.command("gemini", "P", pf) == ["gemini", "--approval-mode", "yolo", "-p", "P"]
-    assert R.command("qwen", "P", pf, "q") == ["qwen", "--safe-mode", "--approval-mode", "yolo", "--model", "q",
-                                               "-p", "P"]
+    # qwen 0.26.1 --help: -p "deprecated: Use the positional prompt instead"; the positional "Defaults to one-shot"
+    assert R.command("qwen", "P", pf, "q") == ["qwen", "--safe-mode", "--approval-mode", "yolo", "--model", "q", "P"]
     aider = R.command("aider", "P", pf)
     assert aider[aider.index("--message-file") + 1] == str(pf) and aider[-1] == "answers.json"
     assert "P" not in aider and "--yes-always" in aider and "--no-git" in aider
@@ -126,9 +126,22 @@ def test_help_says_presets_are_untested(capsys):
 
 def test_settings_name_the_preset():
     assert R.settings_text("qwen", "code", False) == ("preset, not run by the maintainer (--agent qwen); --safe-mode: "
-                                                      "no context files, hooks, extensions, skills, MCP servers or "
-                                                      "subagents")
+                                                      "no context files, hooks, extensions, skills or MCP servers")
     assert R.settings_text("gemini", "code", False, "effort high").endswith("runner's own config; effort high")
+
+
+def test_presets_name_the_cli_version_their_flags_were_checked_against():
+    # checked against each real CLI's --help on HELP_CHECKED; a re-check updates these and the docs table
+    assert {k: p.checked for k, p in R.PRESETS.items()} == {
+        "gemini": "0.65.0", "qwen": "0.26.1", "aider": "0.86.2", "opencode": "1.19.4",
+        "cursor": "2026.10.22-27dcf5f", "copilot": "1.0.103", "goose": "1.56.0"}
+    assert [t for t in R.PRESETS["qwen"].argv if t == "-p"] == []
+    doc = DOC.read_text(encoding="utf8")
+    for key, p in R.PRESETS.items():
+        assert re.search(rf"^\| `{key}` \| {re.escape(p.name)} {re.escape(p.checked)} \|", doc, re.M), key
+    for lang in ("en", "zh"):
+        html = page.render([], [], lang=lang)
+        assert all(p.checked in html for p in R.PRESETS.values()) and R.HELP_CHECKED in html
 
 
 def test_shown_command_lines():

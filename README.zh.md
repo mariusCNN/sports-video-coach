@@ -42,7 +42,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
 
 - 任何接在 OpenAI 兼容接口后面的视觉模型（Ollama、LM Studio、vLLM、OpenRouter），用自己的显卡免费跑：同一条命令，换成
   `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
-- Gemini CLI、Qwen Code、Aider、OpenCode、Cursor CLI、Copilot CLI、Goose：这些预设还没人用真 CLI 跑过。
+- Gemini CLI、Qwen Code、Aider、OpenCode、Cursor CLI、Copilot CLI、Goose：这些预设的参数已对照各 CLI 的 `--help` 核对，但还没人用真 CLI 跑过题目。
   [跑一次，把结果发来（issue #7）](https://github.com/mariusDing/sports-video-coach/issues/7)。
 
 </details>

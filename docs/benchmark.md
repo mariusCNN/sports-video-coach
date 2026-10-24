@@ -421,17 +421,18 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 | `--evidence URL` | A published transcript or log (publish the redacted copy, see below) |
 | `--dry-run` | Print the command it would run; run nothing |
 
-**Presets for other agent CLIs (untested):**
+**Presets for other agent CLIs (flags checked, never run on a task):**
 
 ```bash
 sports-video-coach bench run --agent gemini --model <model> --suite svc-bench-3
 ```
 
 Each preset runs the command below in the run folder (stdin closed, killed at the timeout, `<prompt>` is the
-prompt text, `<prompt file>` is `PROMPT.txt`). The flags come only from each CLI's own docs, read on
-2026-10-25. **The maintainer has none of these CLIs and never ran them**: the presets are tested against fake
-binaries that record their arguments, not against the real CLIs. A flag may have changed since; `--dry-run` prints
-the exact command, and `--agent cmd --cmd "..."` runs your own. The result's `settings` starts with `preset, not run
+prompt text, `<prompt file>` is `PROMPT.txt`). The flags come from each CLI's own docs, read on 2026-10-25, and
+were then checked against the real CLI's `--help` and version command on 2026-10-25 (versions below). **The
+maintainer has no account for these CLIs and never ran them on a task**: only `--help` and the version command were
+run, and the presets are tested against fake binaries that record their arguments. A flag may change in a later
+version; `--dry-run` prints the exact command, and `--agent cmd --cmd "..."` runs your own. The result's `settings` starts with `preset, not run
 by the maintainer (--agent <name>)`; the version is read with the CLI's own version command.
 
 **Use one of these agents?** [Issue #7](https://github.com/mariusDing/sports-video-coach/issues/7) asks for one run
@@ -441,12 +442,26 @@ of each preset: send the result row, or the error if a flag is wrong (or fix the
 | Preset | Agent | Command it runs | Flags from | Status |
 |---|---|---|---|---|
 | `--agent gemini` | Gemini CLI | `gemini --approval-mode yolo [--model M] -p <prompt>` | [docs](https://geminicli.com/docs/cli/cli-reference/) | not run by the maintainer; your own config; Google moved individual users to Antigravity CLI on 2026-06-18; API-key and Code Assist users keep Gemini CLI |
-| `--agent qwen` | Qwen Code | `qwen --safe-mode --approval-mode yolo [--model M] -p <prompt>` | [docs](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/) | not run by the maintainer; --safe-mode: no context files, hooks, extensions, skills, MCP servers or subagents |
+| `--agent qwen` | Qwen Code | `qwen --safe-mode --approval-mode yolo [--model M] <prompt>` | [docs](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/) | not run by the maintainer; --safe-mode: no context files, hooks, extensions, skills or MCP servers |
 | `--agent aider` | Aider | `aider --yes-always --no-git --no-check-update --no-pretty --no-stream [--model M] --read TASKS.md --message-file <prompt file> answers.json` | [docs](https://aider.chat/docs/config/options.html) | not run by the maintainer; your own config; it edits answers.json; whether --yes-always also runs the shell commands it suggests is not stated in the docs |
 | `--agent opencode` | OpenCode | `opencode run --auto [--model M] <prompt>` | [docs](https://opencode.ai/docs/cli/) | not run by the maintainer; your own config; --model takes provider/model |
 | `--agent cursor` | Cursor CLI | `agent -p --force --trust --output-format text [--model M] <prompt>` | [docs](https://cursor.com/docs/cli/reference/parameters) | not run by the maintainer; your own config |
 | `--agent copilot` | GitHub Copilot CLI | `copilot -p <prompt> --allow-all-tools --no-ask-user -s [--model M]` | [docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically) | not run by the maintainer; your own config |
 | `--agent goose` | Goose | `goose run --no-session [--model M] -t <prompt>` | [docs](https://goose-docs.ai/docs/guides/goose-cli-commands) | not run by the maintainer; your own config; tool approval follows your GOOSE_MODE (Autonomous by default) |
+
+Flags checked against each CLI's own `--help` on 2026-10-25 (installed without an account; no task was run):
+
+| Preset | CLI version checked | Status |
+|---|---|---|
+| `gemini` | Gemini CLI 0.65.0 | every flag listed in `--help` |
+| `qwen` | Qwen Code 0.26.1 | fixed: `-p` is deprecated in favour of the positional prompt, so the prompt is now positional; other flags listed |
+| `aider` | Aider 0.86.2 | every flag listed in `--help` |
+| `opencode` | OpenCode 1.19.4 | every flag listed in `opencode run --help` |
+| `cursor` | Cursor CLI 2026.10.22-27dcf5f | every flag listed in `agent --help` |
+| `copilot` | GitHub Copilot CLI 1.0.103 | every flag listed in `--help`; `copilot version` works |
+| `goose` | Goose 1.56.0 | every flag listed in `goose run --help` |
+
+Whether each run then finishes the task (auth, approvals, tool use on Windows) is still unchecked.
 
 - Code track only: none of these CLIs documents a way to be limited to reading files (as Claude Code's `--tools
   Read` is), so `--track frames` with a preset stops with a message. Gemini CLI's plan mode is not read-only
