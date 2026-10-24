@@ -43,9 +43,9 @@ SUITES = (                     # (name, what it is), shown in this order; unknow
 )
 FRESH = "-fresh"               # a run drawn from a fresh seed is listed under its suite's name plus this
 FRESH_WHAT = ("Fresh seeds: svc-bench-3 drawn anew for each run from the seed in its result file (`--seed`), with "
-              "the same scenes and kinds of traps but new counts, outcomes, times and rates. Their truth was never "
-              "published: the tool rebuilds it from the seed to score and to check each row. Each run's floor is "
-              "the blind baseline on its own seed.")
+              "the same scenes and kinds of traps but new counts, outcomes, times and rates. The agent's folder "
+              "never held the truth; the tool rebuilds it from the seed to score and check each row, and shows it "
+              "below, so a published seed is spent. Each run's floor is the blind baseline on its own seed.")
 TRACK = "code"                 # a result file without a track field is on the code track
 FRAMES = ("Frames-only track: the agent sees still images of each video (contact sheets with the time under every "
           "still) and has no tool that runs code, so it must review by eye. Same videos, same truth, same scoring "
@@ -659,11 +659,12 @@ def facts(rows: list[dict]) -> list[str]:
     guess = (f" That guess alone scores up to {top[0]:.2f} on one task ({esc(top[1])})." if top else "")
     ev = sum(1 for r in runs if str(r.get("evidence") or "").startswith(("https://", "http://")))
     fresh = sum(1 for r in runs if r.get("seed") is not None)
-    held = (f"{fresh} of {n} runs drew svc-bench-3 from a fresh seed (<code>--seed</code>), whose truth was never "
-            "published; the tool rebuilds it from the seed in the result file to score and check the row."
+    held = (f"{fresh} of {n} runs drew svc-bench-3 from a fresh seed (<code>--seed</code>) at run time, which "
+            "reduces the effect of memorising the public answers but proves nothing about training data. The "
+            "agent's folder never held that truth; the result file and this page do, so a published seed is spent."
             if fresh else
-            "no run used a fresh seed yet. <code>bench prepare --seed</code> draws svc-bench-3 anew, with truth "
-            "that was never published.")
+            "no run used a fresh seed yet. <code>bench prepare --seed</code> draws svc-bench-3 anew at run time, "
+            "with no truth in the prepared folder.")
     timed = sum(1 for r in runs if is_num_value(r.get("wall_seconds")))
     costed = sum(1 for r in runs if is_num_value(r.get("cost_usd")))
     return [

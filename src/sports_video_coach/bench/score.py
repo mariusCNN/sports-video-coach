@@ -15,7 +15,8 @@ Both suites use the same kinds and rules; a result file names its suite and is r
 Tracks (see `frames`): a result on the `frames` track (still images, no code) says `"track": "frames"`; a file
 without a track is on the `code` track. Both are scored the same way against the same truth.
 Fresh seeds (`svc-bench-3` only, see `suite3.seeded`): a result drawn from a seed says `"seed": N`; its truth is
-rebuilt from the seed whenever it is scored or validated, and is never stored anywhere but in the result file.
+rebuilt from the seed whenever it is scored or validated; it is never in the prepared folder, but the scored result
+file (and the page built from it) shows it.
 """
 from __future__ import annotations
 

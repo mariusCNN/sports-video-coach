@@ -104,8 +104,8 @@ When done, the person running the benchmark scores it:
 
 
 FRESH_NOTE = """
-These videos were drawn from a fresh seed: their counts, outcomes, times and rates are new, so no answer published
-for {suite} applies to them.
+These videos were drawn from a fresh seed: their counts, outcomes, times and rates differ from the published
+{suite}, so its published answers do not apply to them.
 """
 
 
@@ -188,7 +188,7 @@ def prepare(out: Path, ids: list[str] | None = None, force: bool = False, suite:
 def add_seed(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--seed", nargs="?", const="random", default=None, metavar="N",
                     help="draw the suite from a fresh seed N (svc-bench-3 only): new counts, outcomes, times and "
-                         "rates whose truth was never published; --seed alone picks a random one")
+                         "rates, truth not in the prepared folder; --seed alone picks a random one")
 
 
 def pick_seed(ap: argparse.ArgumentParser, a) -> int | None:

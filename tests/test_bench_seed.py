@@ -1,4 +1,4 @@
-"""svc-bench-3 on fresh seeds: new events from an integer seed, truth rebuilt from the seed, never written out."""
+"""svc-bench-3 on fresh seeds: new events from an integer seed, truth rebuilt from the seed, not in the prepared folder."""
 import json
 
 import pytest

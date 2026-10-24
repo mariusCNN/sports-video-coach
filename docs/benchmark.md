@@ -263,7 +263,8 @@ First rows (frames track, 2026-10-24, one run each, every run submitted; run as 
 ### Fresh seeds (`--seed`)
 
 The published suites and their truth ship in the open package, so a model may have seen them in training.
-`svc-bench-3` can also be drawn anew from an integer seed: the same four scenes and kinds of traps, with new counts,
+`svc-bench-3` can also be drawn anew at run time from an integer seed, which reduces the effect of memorising the
+fixed suite's answers: the same four scenes and kinds of traps, with new counts,
 shot outcomes, release times and stroke rates.
 
 ```bash
@@ -271,8 +272,10 @@ sports-video-coach bench prepare --out bench-fresh --suite svc-bench-3 --track f
 sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-bench-3 --track frames --seed 4242
 ```
 
-- **Truth is never written.** Not to the run folder, not to the repo: `bench score` and `bench validate` rebuild
-  it from the `seed` in `answers.json` and in the result file. The seed is in the run folder; turning it into the
+- **The prepared folder never holds the truth.** `bench score` and `bench validate` rebuild it from the `seed`
+  in `answers.json` and in the result file. The scored result file does contain it (its `truth` fields), and so
+  does the page once the file is in `benchmark/results/`: a published seed is spent, so each run should draw a new
+  one (`--seed` alone picks a random one). The seed is in the run folder; turning it into the
   truth means running the package's generator, which the no-peeking rule already forbids.
 - **Same task text, new numbers.** `TASKS.md` says the videos were drawn from a fresh seed and gives that seed's
   shot count (10 to 13) and video lengths; the rules are word for word the same.
@@ -293,12 +296,12 @@ First fresh-seed row (frames track, 2026-10-25, seed 205159368 drawn at random b
 |---|---|---|---|---|---|---|---|---|---|
 | Claude Code 2.1.310 | claude-opus-5-5 | 0.994 | 0.994 | 0.978 | 1.000 | 1.000 | 1.000 | 317 s | $2.32 |
 
-- **Opus nearly holds its published score on numbers it cannot have seen.** It counted 44 touches against 45 (it
+- **Opus nearly holds its published score on a seed drawn at run time.** It counted 44 touches against 45 (it
   said itself the count "could be off by one or two"), called all 11 shots, found the 11 releases within 0.05 s
   and gave a stroke rate of 33.1 against 33.149, in 121 Reads.
-- **One run, one seed.** It fits the published 1.000 not coming from memory; it does not say how often Opus scores
-  1.0 on a fresh seed. The blind floor on this seed is 0.111 / 0.455 / 0.142 / 0.667 (published: 0.106 / 0.500 /
-  0.167 / 0.551).
+- **One run, one seed.** It proves nothing about what was in any model's training data, and it does not say how
+  often Opus scores 1.0 on a fresh seed. The blind floor on this seed is 0.111 / 0.455 / 0.142 / 0.667 (published:
+  0.106 / 0.500 / 0.167 / 0.551).
 
 ## Rules
 
@@ -471,7 +474,8 @@ and link them; the page labels such a link "transcript".
   maintainer run links its redacted transcript (`benchmark/transcripts/`), so anyone can check which tools
   existed, which files the agent opened and what it replied. Redaction drops images, home folders, the runner's
   hook output and config lists; the six blind-guess baselines ran no agent and have none.
-- Fresh seeds (`--seed`) answer "the model saw the truth in training" for `svc-bench-3` only; `svc-bench-1` and
+- Fresh seeds (`--seed`) reduce the effect of memorising the public answers, for `svc-bench-3` only (a seed
+  becomes public too once its result file is published); `svc-bench-1` and
   `-2` have none.
 - Most contenders ran once. Two Sonnet 5.5 runs with the same command on `svc-bench-3` frames differed by 0.224
   above chance, so smaller gaps between single runs are within noise.

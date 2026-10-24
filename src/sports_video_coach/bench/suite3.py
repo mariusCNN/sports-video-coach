@@ -19,11 +19,11 @@ drift apart, and the noise uses a fixed seed. The truth lives here and is never 
 Fresh seeds: the numbers that make the events (the juggling sequence, the shots, the passes and the defender's walk,
 the stroke lengths) form a `Spec`. `DEFAULT` is the published suite (the module-level names below are its values);
 `seeded(n)` draws a new `Spec` from the integer seed n, with the same scenes, rules and kinds of traps but different
-counts, outcomes, times and rates, and builds its tasks and truth from it. A seeded truth is never stored anywhere:
-`bench score` and `bench validate` rebuild it from the seed a result file records. The generators keep each seed as
-readable as the published suite (checked by a pixel read-back of the stills, see docs/benchmark.md): high juggling arcs
-take longer, a pass across the middle player is a lob, the defender hides only held balls and stays clear of every
-other release, catch and flight.
+counts, outcomes, times and rates, and builds its tasks and truth from it. A seeded truth is never written to the
+prepared folder: `bench score` and `bench validate` rebuild it from the seed a result file records (the scored file
+shows it). The generators keep each seed as readable as the published suite (checked by a pixel read-back of the
+stills, see docs/benchmark.md): high juggling arcs take longer, a pass across the middle player is a lob, the defender
+hides only held balls and stays clear of every other release, catch and flight.
 """
 from __future__ import annotations
 

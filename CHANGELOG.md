@@ -10,8 +10,9 @@ All notable changes to this project are documented here. The format follows [Kee
   `docs/benchmark.md` and on the benchmark page's "Run it yourself"). Not run by the maintainer, so untested
   against the real CLIs (tested with fake binaries); the result's `settings` says so. Code track only.
 - Fresh seeds for `svc-bench-3` (`bench prepare --seed [N]`, `bench run --seed [N]`): the same scenes and traps
-  drawn anew, with new counts, outcomes, times and rates, so a model cannot have seen the truth in training. The
-  truth is never written; `bench score` and `bench validate` rebuild it from the `seed` in the result file. Seeded
+  drawn anew at run time, with new counts, outcomes, times and rates, which reduces the effect of memorising the
+  fixed public suite's answers. The prepared folder never holds the truth; `bench score` and `bench validate`
+  rebuild it from the `seed`. A scored result file and the page do show it, so a published seed is spent. Seeded
   runs get their own board (`svc-bench-3-fresh`) and their own blind floor on the page. A pixel read-back scores
   1.000 on six seeds. Without `--seed` the published suite is unchanged.
 - `bench transcript` redacts a transcript or log for publishing (images, home folders, user and host names,
