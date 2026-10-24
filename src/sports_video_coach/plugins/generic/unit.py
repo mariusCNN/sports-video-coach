@@ -165,7 +165,7 @@ STEPS = [
                "{plugin}:review-check {folder}` merges them. An unclear moment, or a fast object (shuttle, ball, a "
                "swing) between two tiles: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 "
                "--end 0:15 --every 0.2` cuts a dense sheet of just that."),
-    P.Step("report", "agent", reports_written,
+    P.Step("report", "agent", reports_written, checks=P.report_checks,
            errors=lambda g: P.missing([g.folder / P.readme(l) for l in g.langs], g),  # a language added: only its file
            derives=lambda g: [(g.folder / P.readme(l), [g.review / "review.json"]) for l in g.langs],
            how="Write the coaching report {readmes} in {folder} from {review}/review.json, as `sports-video-coach "

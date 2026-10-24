@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- A humanize step for everything the agent writes. `sports-video-coach humanize <folder or file>` flags stock AI
+  phrasing in reports, narration and film scripts (zh and en lists: not-X-but-Y contrasts, written connectives
+  such as "moreover" / "此外", hype words, self-asked questions, summary openers, slide labels such as "练习：" read
+  aloud, dense dashes; other languages get the dash check). The driven run keeps the report, listen-script and
+  film-script steps waiting until the findings are fixed or kept with `--accept`. The new guide `sports-video-coach
+  guide humanize` (shared by every plugin) says how to rewrite them in a coach's voice without changing a fact.
 - A sports film review benchmark scored against measured truth only: `sports-video-coach bench prepare / score /
   validate`, suite `svc-bench-1` with synthetic drawn videos and exact truth (counts, rates, timestamps, outcomes).
 - `sports-video-coach bench page` builds the public leaderboard from `benchmark/results/` (ranked by total, a "no
@@ -33,6 +39,9 @@ All notable changes to this project are documented here. The format follows [Kee
   Sonnet 5.5 0.612.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
+- Report blocks for the page: `::: verdict`, `::: keys` (stat tiles), `::: do` (what to do), `::: note` and
+  `::: more <summary>` (a fold), each closed by `:::`. The report guides use them for the first screen: the
+  verdict, three to six key numbers and this week's orders.
 
 ### Fixed
 - A plugin's page re-renders when a file its page hooks read changes (declare them in `PageHooks.inputs`); before,
@@ -87,6 +96,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The report page has a new look, closer to a pro team's post-game film-room report: a navy score band with
+  condensed numerals, a reading column with numbered sections, play cards for the clips, tables with rules
+  instead of boxes and a yellow marker for what to do. Headings use Barlow Condensed (Latin) and Noto Serif SC
+  (Chinese) from Google Fonts with `no-referrer`, so a private page's address is not sent along.
+- Basketball: the Four Factors sit inside each report, after the opening lines and before section 1, as us/them
+  bars; possessions and points per trip moved into a fold. A new optional `PageHooks.intro` hook puts a
+  plugin's HTML inside each language's report, before section 1; `before` still puts HTML above the report.
+- The report guides ask for an analyst's voice: number first, its baseline, then the order; no stock AI phrasing
+  (checked by `sports-video-coach humanize`).
 - The page's language switch names every language in its own words (English, Español, Français, Deutsch,
   Português, beside 中文, 日本語, 한국어), not a mix of names and codes (EN).
 

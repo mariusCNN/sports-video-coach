@@ -45,3 +45,13 @@ def test_team_page_without_summary_has_no_panel(tmp_path):
 @pytest.mark.parametrize("value,want", [(None, "–"), (12.34, "12.3%")])
 def test_panel_pct_format(value, want):
     assert page_hooks._ff_pct(value) == want
+
+
+def test_panel_sits_in_each_report_before_section_one(tmp_path):
+    ann = CS.annotate(TRIPS)
+    page = render_html.page(_team_folder(tmp_path, {"all": {"four_factors": CS.four_factors(ann, min_poss=1)}}))
+    for lang in ("zh", "en"):
+        art = page[page.index(f'<article class="report" data-lang="{lang}"'):]
+        art = art[:art.index("</article>")]
+        assert art.count('class="factors"') == 1 and art.index('class="factors"') < art.index(f'id="{lang}-s1"')
+    assert 'class="ff-bars"' in page and '<details class="more">' in page  # bars up front, the table in a fold

@@ -8,7 +8,8 @@ from sports_video_coach import plugin, render_html
 
 FIXTURE = Path(__file__).parent / "fixtures" / "report_min"
 # page(FIXTURE) rendered by hoop_tape_miner.render_html before it moved into the core (commit 65734f0); since then
-# only the language registry changed it (CJK / Japanese / Korean CSS, a language-free switch script).
+# only the language registry changed it (CJK / Japanese / Korean CSS, a language-free switch script) and the
+# 2026-10 film-room style system (stylesheet, web fonts, no-referrer meta; the markup stayed the same).
 GOLDEN = Path(__file__).parent / "fixtures" / "report_min.page.html"
 
 
@@ -85,6 +86,24 @@ def test_plugin_hooks_fall_back_per_field(tmp_path, monkeypatch):
     assert page.count("<!--assets-->") == 1 and 'href="#en-s2">Extra</a>' in page
 
 
+def test_before_goes_above_the_report_once_and_intro_inside_each(tmp_path, monkeypatch):
+    folder = _generic(tmp_path / "f", None)
+    calls = []
+    hooks = render_html.PageHooks(
+        before=lambda f, sb, langs: calls.append(len(langs)) or "<!--above-->",
+        intro=lambda f, sb, langs: f"<!--in-{langs[0][0]}-->")
+    monkeypatch.setattr(render_html, "hooks_of", lambda f: (hooks, "demo", {}))
+    page = render_html.page(folder)
+    assert calls == [len(render_html.report_langs(folder))]          # before: once, with every language
+    assert page.count("<!--above-->") == 1 and page.index("<!--above-->") < page.index('<article class="report"')
+    art = page[page.index('<article class="report" data-lang="en"'):]
+    assert art.index("<!--in-en-->") < art.index("</article>")
+
+def test_page_hooks_keep_their_positional_order():
+    f = [object() for _ in range(6)]
+    h = render_html.PageHooks(*f)
+    assert (h.ui, h.board, h.band, h.before, h.sections, h.inputs, h.intro) == (*f, None)
+
 def test_audio_length_label_says_seconds_under_a_minute():
     en, zh = render_html.UI["en"], render_html.UI["zh"]
     assert render_html.length_label(en, 47.1) == "About 45 seconds. Read along or just listen."
@@ -128,3 +147,28 @@ def test_one_language_page_has_no_switch(tmp_path):  # an empty outlined pill lo
     page = render_html.page(folder)
     assert "Serve practice" in page and 'class="lang" role="group"' not in page and 'data-set-lang="' not in page
     assert 'class="lang" role="group"' in render_html.page(_generic(tmp_path / "two" / "2025-03-15", None))
+
+
+def test_report_blocks_render_as_styled_containers():  # ::: verdict / keys / do / note / more in a README
+    md = render_html.MD.render
+    out = md("::: verdict\nLost the middle.\n:::\n\n::: keys\n- **9–21** first half\n:::\n")
+    assert '<div class="block verdict">\n<p>Lost the middle.</p>\n</div>' in out
+    assert '<div class="block keys">\n<ul>\n<li><strong>9–21</strong> first half</li>' in out
+    out = md("::: do Monday\n1. Sprint back\n:::\n\n::: more Why **this**\n| a | b |\n|---|---|\n| 1 | 2 |\n:::\n")
+    assert '<div class="block do">\n<p class="block-title">Monday</p>\n<ol>' in out
+    assert '<details class="more"><summary>Why <strong>this</strong></summary>\n<table>' in out and "</details>" in out
+    nested = md("::: do\n::: note\nx\n:::\ny\n:::\n")  # a block inside a block closes at its own fence
+    assert nested.index('class="block note"') < nested.index("<p>x</p>") < nested.index("</div>") < nested.index("<p>y</p>")
+    assert md("text\n\n::: unknown-kind\nz\n:::") .count('class="block unknown-kind"') == 1
+
+
+def test_numbered_section_heading_sets_its_number_apart():
+    body, heads = render_html.render("# T\n\n## 3. What went wrong\n\n## Notes\n", "en")
+    assert '<h2 id="en-s1"><span class="sec-no">3</span><span>What went wrong</span></h2>' in body
+    assert '<h2 id="en-s2">Notes</h2>' in body and heads == ["3. What went wrong", "Notes"]
+
+
+def test_page_loads_fonts_without_sending_the_page_address():
+    page = render_html.page(FIXTURE)
+    assert '<meta name="referrer" content="no-referrer">' in page  # private links stay out of the font host's logs
+    assert "fonts.googleapis.com/css2?family=Barlow+Condensed" in page and "display=swap" in page

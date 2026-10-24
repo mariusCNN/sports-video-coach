@@ -39,3 +39,4 @@ Seven of ten tosses in front of the head: that is the target for next week.
 - One `film.<lang>.md` per language of `languages`, each wholly in its own language (captions, freeze labels and
   chapter titles too), with no other language's words left in. The subtitles, the voice and the font follow the
   file's language (`film` prints which voice and font it used).
+- Last, the humanize pass (`sports-video-coach guide humanize`): it must sound like a coach talking, not a chatbot. The run flags stock AI phrasing (not-X-but-Y, "moreover"/"此外", hype words, self-asked questions, slide labels read aloud, dashes) and waits until it is fixed; keep every fact while you rewrite.

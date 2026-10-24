@@ -42,7 +42,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, ClassVar
 
-from . import artifacts, clips, media, workspace
+from . import artifacts, clips, humanize, media, workspace
 from . import langs as L
 
 WAITING = 3
@@ -578,11 +578,22 @@ def missing(paths: list[Path], g: Unit) -> list[str]:
 
 
 def listen_checks(g: Unit) -> list[str]:
-    """A narration script whose stated length ("about 2 minutes") is off its read time, per script written."""
+    """A narration script whose stated length ("about 2 minutes") is off its read time, per script written; then
+    stock AI phrasing in them (humanize)."""
     from . import narrate
     found = [narrate.length_problem(d / f"listen.{l}.md", l) for d in g.reports() for l in g.langs
              if (d / f"listen.{l}.md").exists()]
-    return [p for p in found if p]
+    return [p for p in found if p] + humanize.checks([d / f"listen.{l}.md" for d in g.reports() for l in g.langs])
+
+
+def film_checks(g: Unit) -> list[str]:
+    """Stock AI phrasing in the film scripts (humanize)."""
+    return humanize.checks([g.folder / f"film.{l}.md" for l in g.langs])
+
+
+def report_checks(g: Unit) -> list[str]:
+    """Stock AI phrasing in the reports (humanize): a plugin's report step passes it as `checks`."""
+    return humanize.checks([d / readme(l) for d in g.reports() for l in g.langs], g.langs)
 
 
 def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film_script_how: str,
@@ -611,7 +622,8 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
         Step("film-script", "agent", lambda g: all((g.folder / f"film.{l}.md").exists() for l in g.langs),
              how=film_script_how, artifact="film",
              errors=lambda g: missing([g.folder / f"film.{l}.md" for l in g.langs], g),
-             derives=lambda g: [(g.folder / f"film.{l}.md", [d / readme(l) for d in g.reports()]) for l in g.langs]),
+             derives=lambda g: [(g.folder / f"film.{l}.md", [d / readme(l) for d in g.reports()]) for l in g.langs],
+             checks=film_checks),
         Step("film", "cmd", film_done, film_args, long=True,
              inputs=lambda g: [*(g.folder / f"film.{l}.md" for l in g.langs), video(g)], again=("--force",),
              artifact="film"),  # film keeps a language whose mp4 is newer than its script; a new video re-renders all

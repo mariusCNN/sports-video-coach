@@ -32,3 +32,7 @@ A spoken version of a report, rendered to MP3 by `hoop-tape-miner narrate` (edge
 2. Measure the real length: `ffprobe -v error -show_entries format=duration -of csv=p=0 listen.<lang>.mp3`.
 3. If the "runs about N minutes" sentence is off by a minute or more, fix it and re-render. The HTML page shows the measured length on the play button, so the two must agree.
 4. Listen to the first and last 30 seconds: check how jersey numbers, scores and team names are pronounced; respell phonetically in the script if needed.
+
+## Humanize pass
+
+Before rendering, do the humanize pass (`uv run hoop-tape-miner guide humanize`, or `sports-video-coach guide humanize`): the script must sound like a coach talking. The run flags stock AI phrasing (not-X-but-Y, "moreover"/"此外", hype words, self-asked questions, slide labels such as "练习：" read aloud, dashes) and keeps this step waiting until it is fixed. Keep every fact, number and clip marker.

@@ -39,6 +39,9 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 
 ## Rules
 
+- Optional page blocks, each opened by `::: name` and closed by `:::` on their own lines: `::: verdict` (the
+  bottom line as a headline), `::: keys` (a list of `**number** label` items, drawn as stat tiles), `::: do`
+  (what to do, a yellow box), `::: note` (small print) and `::: more <summary>` (a fold for long evidence).
 - 2-4 numbered sections, most important first; each has a clip, then the same five bold-labelled parts in
   the same order.
 - Every claim has a time or a clip from `review.json`. Never add what the review did not see.
@@ -75,3 +78,4 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
   `--sport-name fr=navette`), or later set `"sport": {"zh": "折返跑", "fr": "Navette", "en": "shuttle run"}` in
   `analysis.json`. A name given this way always wins over the built-in one.
 - French: quotation marks are « … » (with a space inside), not "…".
+- Last, the humanize pass (`sports-video-coach guide humanize`): it must sound like a coach talking, not a chatbot. The run flags stock AI phrasing (not-X-but-Y, "moreover"/"此外", hype words, self-asked questions, slide labels read aloud, dashes) and waits until it is fixed; keep every fact while you rewrite.

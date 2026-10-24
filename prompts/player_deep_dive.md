@@ -12,10 +12,27 @@ For one focus player only, written to them in the second person. Goal: they see 
 ```
 # #N personal deep dive: {us_team} {us_score}–{them_score} {them_team} ({date})
 
-For #N only. Times are video times (full video mm:ss); "likely" means the jersey was unclear and the call is inferred.
+For #N only. Times are video times (mm:ss); "likely" means the jersey was unclear and the call is inferred.
 
-**In one line: <the contrast that decided your game, in counts: when you did X we scored a/b; when you did Y it was c/d>.** <Where you were during the decisive run and the comeback, with on-court score.>
+::: verdict
+<The contrast that decided your game, in counts: when you did X we scored a/b; when you did Y it was c/d.>
 
+<Where you were during the decisive run and the comeback, with the on-court score.>
+:::
+
+::: do Next game
+1. <Call one, 2-6 words> <when to use it>
+2. <Call two>
+3. <Call three>
+:::
+
+::: keys
+- **8** points (official)
+- **+10** with you on
+- **2** turnovers
+:::
+
+::: more The full line
 | Item | This game |
 |---|---|
 | Official | points, makes by type, fouls |
@@ -23,6 +40,7 @@ For #N only. Times are video times (full video mm:ss); "likely" means the jersey
 | Score with you on | a–b (±n); with you off c–d (±n) |
 | Likely assists | ... |
 | Turnovers | confirmed + likely |
+:::
 
 ---
 
@@ -33,7 +51,7 @@ Stint table: #, video time in–out, length, score while on, +/-. Then 2-3 bulle
 Two short paragraphs: what the team used you for, and the one shape your best and worst possessions share.
 
 ## 3. Key patterns (3-5)
-One H3 each. A small table (time, what happened, result) or a short list, then the answer, ideally a moment from this game where the player already did it right ("you already showed the answer: at mm:ss ..."). End each with a one-line rule in bold.
+One H3 each. A small table (time, what happened, result) or a short list, then the answer, ideally a moment from this game where the player already did it right ("you already showed the answer: at mm:ss ..."). End each with its rule as a blockquote, one line: `> **Rule:** Pass before the second defender arrives.` (the page sets it as a yellow callout).
 
 ## 4. Rewatch these 6 clips
 **Best 3** and **Worst 3**: time range (mm:ss–mm:ss) + what to look for (the exact cue: hips turning, last moment to pass, feet set before the catch).
@@ -47,10 +65,14 @@ Table: #, what, how, volume, target. 4-6 drills, each tied to a pattern in secti
 **Three calls**: 2-6 words each, said to yourself during play, with one sentence on when to use it.
 **Three measurable targets**, each with this game's number for comparison.
 
----
-
+::: note
 Data note: <what the official sheet does and does not record; which official events cannot be confirmed on film; what is off-video>.
+:::
 ```
+
+The blocks (`verdict`, `keys`, `do`, `more`, `note`) are described in `prompts/coach_report.md`; the first screen is
+the verdict and the three calls, with three or four stat tiles under them. Keep the verdict to two short
+sentences and each call to one line, so both fit under the score board on a phone.
 
 ## Writing rules
 
@@ -62,3 +84,5 @@ Data note: <what the official sheet does and does not record; which official eve
 6. Jersey numbers only, no names. No local paths or repo links.
 7. Both languages, each a complete file (`README.md` Chinese, `README.en.md` English, as the HTML page expects) with the same facts, times and section order, written naturally. Run `hoop-tape-miner clips <game>/player-<N>` then `hoop-tape-miner html <game>/player-<N>`; `game.json` is found in the parent folder.
 8. Length: roughly 1,200-1,800 words per language.
+9. Voice: the analyst's voice from `prompts/coach_report.md` ("Voice"), in the second person: number, meaning,
+   order. Run `sports-video-coach humanize <game>/player-<N>` and fix what it flags.

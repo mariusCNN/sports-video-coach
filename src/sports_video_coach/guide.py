@@ -14,9 +14,17 @@ from pathlib import Path
 from . import plugin
 
 
+SHARED = ("humanize",)  # core guides every plugin has: the generic one unless the plugin writes its own
+
+
 def guides(p: plugin.Plugin) -> dict[str, Path]:
-    """{name: path} of the plugin's guides (prompts/*.md), by file name without `.md`."""
-    return {f.stem: f for f in sorted(p.prompts.glob("*.md"))} if p.prompts and p.prompts.is_dir() else {}
+    """{name: path} of the plugin's guides (prompts/*.md), by file name without `.md`, plus the shared guides
+    (SHARED) from the generic plugin when the plugin has none of that name."""
+    own = {f.stem: f for f in sorted(p.prompts.glob("*.md"))} if p.prompts and p.prompts.is_dir() else {}
+    if p.name == "generic":
+        return own
+    base = guides(plugin.get("generic"))
+    return own | {n: base[n] for n in SHARED if n in base and n not in own} if own else own
 
 
 def unit_plugin(folder: str) -> plugin.Plugin:
