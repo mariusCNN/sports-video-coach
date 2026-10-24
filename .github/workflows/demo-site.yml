@@ -8,7 +8,7 @@ name: demo site
 on:
   push:
     branches: [master]
-    paths: ["src/sports_video_coach/**", "pyproject.toml", ".github/workflows/demo-site.yml"]
+    paths: ["src/sports_video_coach/**", "benchmark/**", "pyproject.toml", ".github/workflows/demo-site.yml"]
   workflow_dispatch:
 
 permissions:
@@ -44,8 +44,10 @@ jobs:
         run: uv tool install .
       - name: Demo, English and Chinese, and the static site (English landing page, coaching page in demo/)
         run: sports-video-coach demo --out demo --lang en zh --site _site
+      - name: Benchmark leaderboard (benchmark/results, an empty folder gives a "no runs yet" page)
+        run: sports-video-coach bench page benchmark/results _site/benchmark
       - name: Page check
-        run: sports-video-coach page-check _site _site/demo
+        run: sports-video-coach page-check _site _site/demo _site/benchmark
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site

@@ -83,7 +83,8 @@ CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next 
 TRY = (f"uv tool install git+{REPO_URL}", "sports-video-coach demo")   # needs ffmpeg on PATH
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
-SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/")
+BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site
+SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/", BENCH_URL)
 
 
 def canonical(url: str) -> str:
@@ -197,6 +198,7 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <h2 class="try">Try it (needs ffmpeg)</h2>
 <pre><code>{try_it}</code></pre>
 <p>Your sport needs more than frames? <a href="{PLUGINS_URL}">Write a plugin for your sport</a>.</p>
+<p>Which coding agent reviews sports film best? See the <a href="{BENCH_URL}">benchmark leaderboard</a>.</p>
 <small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
 no person appears. {("Other languages: " + other) if other else ""}{version_note(ver)}</small>
 </main>
