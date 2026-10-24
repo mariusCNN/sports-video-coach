@@ -167,6 +167,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Benchmark page, first screen: one line on what sports-video-coach is with a link to the demo coaching page, and
+  links to the frames-only boards, the code-track board, the one-command rerun and the GitHub repo (before, the repo
+  link sat in the footer, about 13 phone screens down). The code-track leaderboard now says the frames-only track
+  is further down.
+- README (en, zh): the benchmark's one command is now the frames-only rerun (`bench run --agent claude --suite
+  svc-bench-3 --track frames`), the board the headline numbers come from; the old `bench run --agent claude` ran
+  svc-bench-1 on the code track, which every run already scores near 1.0 on.
 - The report page has a new look, closer to a pro team's post-game film-room report: a navy score band with
   condensed numerals, a reading column with numbered sections, play cards for the clips, tables with rules
   instead of boxes and a yellow marker for what to do. Headings use Barlow Condensed (Latin) and Noto Serif SC

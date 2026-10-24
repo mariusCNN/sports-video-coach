@@ -31,6 +31,7 @@ DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
 PAGE_URL = "https://mariusding.github.io/sports-video-coach/benchmark/"   # where the demo-site CI publishes it
+DEMO_URL = "https://mariusding.github.io/sports-video-coach/demo/"        # the coaching page the demo builds
 SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
 SUITES = (                     # (name, what it is), shown in this order; unknown suites follow by name
     ("svc-bench-3", "Eyes: four drawn videos whose events are small, short or hidden: a ball 5 px in radius on a "
@@ -62,6 +63,8 @@ SUMMARY = ("n = runs of that agent, model and settings; range = lowest to highes
 TITLE = "Sports film review benchmark"
 WHAT = ("Which coding agent and vision model reviews sports film best, on synthetic drills? Each run is scored "
         "against ground truth the tool drew into the videos, so every number is measured, not judged.")
+PART_OF = ("It is part of sports-video-coach, a free MIT tool: your coding agent reviews your own sports video and "
+           "writes you a coaching page with clips and drills.")
 
 KINDS = (
     ("count", "How many reps, bounces or shots.", "1 - |error| / truth, never below 0."),
@@ -103,6 +106,8 @@ h3 { font-size: 1rem; margin: 0 0 .2rem; }
 h4 { font-size: .9rem; margin: .9rem 0 .3rem; }
 .lead { margin: 0 0 1rem; max-width: 40rem; }
 .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+nav.jump { margin: .7rem 0 0; font-size: .92rem; }
+nav.jump a { display: inline-block; margin: .15rem .9rem .15rem 0; }
 .chips li { font-size: .85rem; padding: .15rem .6rem; border-radius: 999px; background: var(--card);
             border: 1px solid var(--line); }
 .scroll { overflow-x: auto; background: var(--card); border-radius: 10px; border: 1px solid var(--line); }
@@ -611,7 +616,7 @@ def frames_board(rows: list[dict]) -> str:
     return (f'<h2 id="frames">Frames-only track (eyes)</h2><p>{esc(FRAMES)}</p>'
             "<p>Rerun it in one command: it prepares the suite, runs Claude Code headless with no code tools (or "
             "any CLI with <code>--agent cmd --cmd \"... {prompt}\"</code>), and scores the answers.</p>"
-            f"<pre><code>{esc(run)}</code></pre>"
+            f'<pre id="rerun"><code>{esc(run)}</code></pre>'
             "<p>Another agent: prepare the stills, let it fill <code>bench-frames/answers.json</code> by eye, then "
             "score it with <code>bench score bench-frames</code>.</p>"
             f"<pre><code>{esc(prep)}</code></pre>{body}")
@@ -698,6 +703,19 @@ def latest(rows: list[dict]) -> str:
     """A chip with the newest run's date ('' without runs)."""
     dates = [str(r.get("date") or "") for r in rows if not is_baseline(r) and r.get("date")]
     return f"<li>Latest run {esc(max(dates))}</li>" if dates else ""
+
+
+def jump(rows: list[dict]) -> str:
+    """The first-screen links: the frames-only boards (where the headline numbers are), the code-track board, the
+    one-command rerun and the repo. A board is linked only when it has runs."""
+    shown = {suite_of(r) for r in rows if not is_baseline(r) and track_of(r) == "frames"}
+    links = [(f"#frames-{n}", f"Frames-only board ({n})") for n in ("svc-bench-3", "svc-bench-3" + FRESH)
+             if n in shown]
+    if any(not is_baseline(r) and track_of(r) == TRACK for r in rows):
+        links.append(("#leaderboard", "Code-track board"))
+    links += [("#rerun", "Rerun it in one command"), (REPO_URL, "Code on GitHub")]
+    return ('<nav class="jump" aria-label="On this page">'
+            + "".join(f'<a href="{esc(h)}">{esc(t)}</a>' for h, t in links) + "</nav>")
 
 
 def facts_block(rows: list[dict]) -> str:
@@ -789,12 +807,16 @@ def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = 
 <p class="name"><a href="../">sports-video-coach</a></p>
 <h1>{TITLE}</h1>
 <p class="lead">{esc(WHAT)}</p>
+<p class="lead">{esc(PART_OF)} <a href="{DEMO_URL}">See a demo coaching page</a>.</p>
 <ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
 <li>Measured truth only</li>{latest(rows)}</ul>
+{jump(rows)}
 {clip_block(clip)}
 {facts_block(rows)}
 
 <h2 id="leaderboard">Leaderboard</h2>
+<p>Code track: the agent may write and run its own tracker. The frames-only track, where the agent reviews by eye,
+is <a href="#frames">further down</a>.</p>
 {skipped}{board}
 
 {frames_board(rows)}

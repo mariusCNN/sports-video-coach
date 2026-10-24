@@ -121,7 +121,7 @@ def test_no_external_urls_but_repo_and_evidence(tmp_path):
     write(results, "r.json", row("A", "m", 0.5, [0.5, 0.5, 0.5], evidence="https://example.org/ev"))
     _, html = render(tmp_path, results)
     urls = set(re.findall(r"""(?:https?:)?//[^\s"'<>)]+""", html))
-    allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL)
+    allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL, page.DEMO_URL)
     assert urls and all(u.startswith(allowed) for u in urls), urls
     assert "<link" not in html and "<script" not in html   # self-contained: no stylesheet or script fetched
 
@@ -355,3 +355,26 @@ def test_saturated_only_when_every_run_scored_one(tmp_path):
     assert "Saturated" not in html
     code = html[html.index('id="leaderboard"'):html.index('id="frames"')]
     assert code.index('id="svc-bench-1"') < code.index('id="svc-bench-3"')    # suites with no runs go last
+
+
+def test_first_screen_links_boards_rerun_repo_and_demo(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "c.json", row("A", "m", 0.5, [0.5, 0.5, 0.5]))
+    write(results, "f.json", row("B", "n", 0.6, [0.6, 0.6, 0.6], suite="svc-bench-3", track="frames"))
+    out, html = render(tmp_path, results)
+    top = html[:html.index('<h2 id="leaderboard">')]
+    nav = top[top.index('<nav class="jump"'):top.index("</nav>")]
+    assert '"#frames-svc-bench-3"' in nav and "-fresh" not in nav            # no fresh-seed runs, no link
+    assert '"#leaderboard"' in nav and '"#rerun"' in nav and f'"{page.REPO_URL}"' in nav
+    assert f'href="{page.DEMO_URL}"' in top and "your own sports video" in top
+    assert page_check.problems(out) == []                                      # every jump target exists
+
+
+def test_first_screen_links_without_runs(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    out, html = render(tmp_path, results)
+    nav = html[html.index('<nav class="jump"'):html.index("</nav>")]
+    assert "#frames-" not in nav and "#leaderboard" not in nav and '"#rerun"' in nav
+    assert page_check.problems(out) == []

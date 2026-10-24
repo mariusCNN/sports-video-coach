@@ -25,7 +25,7 @@ version of the report, and an explained video. The tool runs on your machine; th
 its model provider, like anything else you show it. Free and MIT.
 
 **Benchmark:** which coding agent reviews sports film best, scored against exact truth:
-[leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/) · one command: `sports-video-coach bench run --agent claude` · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md).
+[leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/) · rerun the frames-only board in one command: `sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames` · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md).
 
 <a href="https://mariusding.github.io/sports-video-coach/benchmark/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="Benchmark clip: a drawn juggling video, the stills an agent sees around a quick double touch, then the true touch count (47) against what each model answered"></a>
 
