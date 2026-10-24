@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "seed": 166697672,
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-25",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-haiku-5-5",
+    "settings": "frames track; claude -p --restricted --safe-mode --tools Read; default effort"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 40,
+      "answer": 60,
+      "score": 0.5,
+      "note": "off by 20"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "made",
+        "made",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "missed"
+      ],
+      "answer": [
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "score": 0.455,
+      "note": "5 of 11 right, 11 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        0.72,
+        2.24,
+        3.32,
+        4,
+        5.6,
+        6.8,
+        7.96,
+        10.56,
+        12.56,
+        14.44,
+        16.88,
+        18.8
+      ],
+      "answer": [
+        0.84,
+        3.56,
+        10.6
+      ],
+      "score": 0.25,
+      "note": "4 of 12 within 0.5 s, 3 answered"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 33.333,
+      "answer": 30,
+      "score": 0.556,
+      "note": "10.0% off"
+    }
+  ],
+  "total": 0.44,
+  "wall_seconds": 95.5,
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-25-claude-code-claude-haiku-5-5-svc-bench-3-frames-seed166697672.jsonl.gz",
+  "cost_usd": 0.0559
+}
