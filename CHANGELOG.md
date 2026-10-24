@@ -5,9 +5,15 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- The benchmark page answers a skeptic's first questions (found by a cold "skeptical Hacker News reader" run: 16
+  gaps): a folded "Before you trust this" block counted from the result files (who submitted, own config loaded,
+  single runs and run-to-run spread, the blind guess's best task, evidence, time and cost), the exact prompt,
+  time and cost columns, tied ranks marked `=`, a killed run counted in its contender's mean (Fable 5.1 on
+  `svc-bench-3` frames: 0.494 over 2 runs, not 0.988 over 1), "saturated" only where every run scored 1.0, suites
+  with runs first, and timestamp misses worded "not within 0.5 s" (they still earn part credit up to 2 s).
 - The benchmark page shows where each contender fails: under every suite's table, a folded block per task with
-  the truth, each run's answer, its recomputed score and what was missed (e.g. "missed 2 of 12 (at 12.16 s,
-  15.84 s)", "3 of 12 wrong (#5 said made, ...)"). Derived from the stored answers and the suite's truth at build time.
+  the truth, each run's answer, its recomputed score and what was missed (e.g. "2 of 12 not within 0.5 s (at
+  12.16 s, 15.84 s)", "3 of 12 wrong (#5 said made, ...)"). Derived from the stored answers and the suite's truth at build time.
 - `bench run` runs Claude Code clean-room by default: none of the runner's own agent config (CLAUDE.md, skills,
   plugins, hooks, MCP servers, user settings) reaches the contender, and `settings` says `clean-room: no user
   config`; `--use-my-config` opts out. Codex is not isolated: it runs with the runner's own `~/.codex`, and

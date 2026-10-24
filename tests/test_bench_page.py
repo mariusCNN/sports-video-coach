@@ -242,9 +242,9 @@ def test_fails_diff_timestamps_names_missed_and_extra_events():
     truth = [1.0, 3.0, 5.0, 7.0]
     assert page.diff_answer("timestamps", truth, {"answer": [1.1, 2.9, 5.2, 7.4]}) == "all within 0.5 s"
     why = page.diff_answer("timestamps", truth, {"answer": [1.0, 5.1, 12.4]})
-    assert why == "missed 2 of 4 (at 3 s, 7 s); 1 extra (at 12.4 s)"
+    assert why == "2 of 4 not within 0.5 s (at 3 s, 7 s); 1 unmatched (at 12.4 s)"
     many = page.diff_answer("timestamps", [float(i) for i in range(10)], {"answer": []})
-    assert many == "missed 10 of 10 (at 0 s, 1 s, 2 s, 3 s +6 more)"
+    assert many == "10 of 10 not within 0.5 s (at 0 s, 1 s, 2 s, 3 s +6 more)"
 
 
 def test_fails_diff_outcome_sequence():
@@ -288,3 +288,68 @@ def test_fails_section_on_the_page_is_folded_and_skips_the_baseline(tmp_path):
     assert html.index("<h4>Summary</h4>") < html.index('<details class="fails">')
     assert "Where each contender fails" in sec and "2 too few" in sec and "<strong>Truth:</strong> 13" in sec
     assert "model-a" in sec and "base.json" not in sec
+
+
+def test_summary_counts_a_killed_run_with_its_contender_and_marks_ties():
+    ok = row("A", "m", 1.0, [1.0, 1.0, 1.0])
+    killed = row("A", "m", 0.0, [0.0, 0.0, 0.0])
+    killed["contender"]["settings"] = "effort medium; killed at the 1700 s time limit"
+    tied = row("B", "n", 1.0, [1.0, 1.0, 1.0])
+    for i, r in enumerate((ok, killed, tied)):
+        r["_file"] = f"{i}.json"
+    summary = page.summarize([ok, killed, tied])
+    by = {s["key"][:2]: s for s in summary}
+    assert by[("A", "m")]["n"] == 2 and by[("A", "m")]["total"] == 0.5    # the failure counts in the mean
+    assert by[("A", "m")]["key"][2] == "effort medium"
+    assert page.ranks(summary) == ["1", "2"]
+    assert page.ranks(page.summarize([ok, tied])) == ["1=", "1="]
+
+
+def test_time_and_cost_columns_show_what_was_recorded(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "a.json", row("Agent A", "m", 0.9, [0.9, 0.9, 0.9], wall_seconds=489.3, cost_usd=3.9145))
+    write(results, "b.json", row("Agent A", "m", 0.7, [0.7, 0.7, 0.7], wall_seconds=100))
+    out, html = render(tmp_path, results)
+    assert ">Time</th>" in html and ">Cost</th>" in html and ">Mean time</th>" in html
+    assert "489 s" in html and "$3.91" in html and "295 s" in html     # the mean of 489.3 and 100
+    assert "(1 of 2)" in html                                            # only one run reported its cost
+    assert page_check.problems(out) == []
+
+
+def test_skeptic_facts_are_counted_from_the_files(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    a = row("Agent A", "m", 0.9, [0.9, 0.9, 0.9], submitted_by="mariusDing", wall_seconds=10)
+    a["contender"]["settings"] = "user CLAUDE.md loaded"
+    write(results, "a.json", a)
+    write(results, "a2.json", {**a, "total": 0.5, "tasks": [dict(t, score=0.5) for t in a["tasks"]]})
+    write(results, "b.json", row("Agent B", "n", 0.8, [0.8, 0.8, 0.8], evidence="https://example.org/t"))
+    base = row(page.BASELINE_AGENT, "", 0.2, [0.2, 0.3, 0.2])
+    write(results, "base.json", base)
+    out, html = render(tmp_path, results)
+    facts = html[html.index('id="facts"'):html.index('id="leaderboard"')]
+    assert "Before you trust this: 10 things" in facts
+    assert "2 of 3 runs were submitted by mariusDing" in facts and "1 by others" in facts
+    assert "2 of 3 runs say in Settings" in facts
+    assert "1 of 2 contenders" in facts and "differed by up to 0.524" in facts   # A: 0.869 vs 0.345 above
+    assert "up to 0.30 on one task (cadence)" in facts
+    assert "1 of 3 runs link a transcript" in facts
+    assert "time recorded for 2 of 3 runs, cost for 0 of 3" in facts
+    assert 'href="#prompt"' in facts and 'id="prompt"' in html
+    assert "Do not read the sports-video-coach package source" in html      # the code-track prompt, verbatim
+    assert page_check.problems(out) == []
+
+
+def test_saturated_only_when_every_run_scored_one(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "a.json", row("Agent A", "m", 1.0, [1.0, 1.0, 1.0]))
+    write(results, "b.json", row("Agent B", "n", 1.0, [1.0, 1.0, 1.0]))
+    _, html = render(tmp_path, results)
+    assert "Saturated on this track: all 2 runs scored 1.0" in html
+    write(results, "c.json", row("Agent C", "o", 0.9, [0.9, 0.9, 0.9]))
+    _, html = render(tmp_path, results)
+    assert "Saturated" not in html
+    code = html[html.index('id="leaderboard"'):html.index('id="frames"')]
+    assert code.index('id="svc-bench-1"') < code.index('id="svc-bench-3"')    # suites with no runs go last

@@ -21,9 +21,11 @@ import json
 from pathlib import Path
 
 from . import card as share_card
+from . import run as bench_run
 from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task
 
-REPO_URL = "https://github.com/mariusDing/sports-video-coach"
+OWNER = "mariusDing"           # the repo owner, who also wrote the tool and submitted its first runs
+REPO_URL = f"https://github.com/{OWNER}/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
@@ -35,22 +37,25 @@ SUITES = (                     # (name, what it is), shown in this order; unknow
                     "banner and a defender in front of the moment, pass fakes, and decoys with nearly the same answer (a second juggler, a second pair passing, a far boat "
                     "at a close rate)."),
     ("svc-bench-2", "Hard: five drawn videos with a hand-held camera, look-alike decoys (a second ball, two "
-                    "identical feet, a rebounder), rule-defined events and noise. On the frames track the top "
-                    "models (Opus 5.5, Codex) scored 1.0 by eye."),
-    ("svc-bench-1", "Four short drawn videos on a still camera. Saturated: every agent tried scored 1.0."),
+                    "identical feet, a rebounder), rule-defined events and noise."),
+    ("svc-bench-1", "Four short drawn videos on a still camera."),
 )
 TRACK = "code"                 # a result file without a track field is on the code track
 FRAMES = ("Frames-only track: the agent sees still images of each video (contact sheets with the time under every "
           "still) and has no tool that runs code, so it must review by eye. Same videos, same truth, same scoring "
-          "as the code track; the scores measure the model's eyes, not its tracker.")
+          "as the code track. The scores measure what the model saw and how much it looked: a model that opens few "
+          "stills guesses, and a guess can score well.")
 ABOVE = ("Above chance: per task, (score - floor) / (1 - floor), clipped to 0..1, where the floor is the score of "
          "the blind baseline (it copies the example answers from the task text and sees no video); 0 = no better "
          "than that guess, 1 = perfect.")
+COSTS = ("Time = wall seconds the run took; cost = USD the agent itself reported (Claude Code does, Codex does "
+         "not); '-' = not recorded.")
 SUMMARY = ("n = runs of that agent, model and settings; range = lowest to highest above-chance total over them "
-           "(a dash for a single run).")
+           "(a dash for a single run). A run whose settings only add a note (such as being killed at the time "
+           "limit) counts with its contender.")
 TITLE = "Sports film review benchmark"
-WHAT = ("Which coding agent and vision model reviews sports film best? Each run is scored against ground truth "
-        "drawn into synthetic videos, so every number is measured, not judged.")
+WHAT = ("Which coding agent and vision model reviews sports film best, on synthetic drills? Each run is scored "
+        "against ground truth the tool drew into the videos, so every number is measured, not judged.")
 
 KINDS = (
     ("count", "How many reps, bounces or shots.", "1 - |error| / truth, never below 0."),
@@ -62,8 +67,8 @@ KINDS = (
 )
 COMMANDS = (
     ("Install (needs ffmpeg on PATH)", f"uv tool install git+{REPO_URL}"),
-    ("Make the tasks: videos and an empty answers.json (the hard suite; leave out --suite for svc-bench-1)",
-     "sports-video-coach bench prepare --out bench-run --suite svc-bench-2"),
+    ("Make the tasks: videos and an empty answers.json (the newest suite; leave out --suite for svc-bench-1)",
+     "sports-video-coach bench prepare --out bench-run --suite svc-bench-3"),
     ("Let your agent watch the videos and fill bench-run/answers.json, then score it",
      'sports-video-coach bench score bench-run --agent "Your agent" --model "your-model"'),
 )
@@ -127,6 +132,14 @@ details.fails h5 { font-size: .9rem; margin: 1rem 0 .2rem; }
 details.fails p.truth { margin: 0 0 .4rem; font-size: .88rem; overflow-wrap: anywhere; }
 td.why { white-space: normal; min-width: 11rem; overflow-wrap: anywhere; }
 tr.miss td.why { color: var(--warn-ink); background: var(--warn-bg); }
+details.facts { margin: 1rem 0 0; background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px;
+                padding: .5rem .9rem; font-size: .92rem; }
+details.facts summary { cursor: pointer; font-weight: 600; }
+details.facts ul { margin: .4rem 0 .2rem; padding-left: 1.1rem; }
+details.facts li { margin-bottom: .35rem; }
+details.prompt { margin: .8rem 0; }
+details.prompt summary { cursor: pointer; font-weight: 600; }
+pre.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
 .kind { font-size: .75rem; font-weight: 400; color: var(--muted); border: 1px solid var(--line);
         border-radius: 999px; padding: 0 .45rem; margin-left: .3rem; }
 """
@@ -235,15 +248,40 @@ def table(rows: list[dict], floor_row: dict | None = None) -> str:
             f'<td>{esc(c.get("model") or "-")}</td><td class="sub">{esc(c.get("settings") or "-")}</td>'
             + "".join(score_cell(scores.get(i)) for i in ids)
             + f'<td class="num total">{float(r["total"]):.3f}</td>{above_cell(r, floor)}'
+            f'{num_cell(r.get("wall_seconds"), wall)}{num_cell(r.get("cost_usd"), usd)}'
             f'<td>{esc(r.get("date", ""))}</td><td>{who}</td>{evidence(r.get("evidence"))}</tr>')
     return (f'<div class="scroll"><table><thead><tr><th class="num" scope="col">#</th><th scope="col">Agent</th>'
             f'<th scope="col">Model</th><th scope="col">Settings</th>{head}<th class="num" scope="col">Total</th>'
             f'<th class="num" scope="col">Above chance</th>'
+            f'<th class="num" scope="col">Time</th><th class="num" scope="col">Cost</th>'
             f'<th scope="col">Date</th><th scope="col">Submitter</th><th scope="col">Evidence</th></tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
             f'<p class="sub" style="font-size:.85rem;color:var(--muted)">Scores 0 to 1 per task; total = mean. '
-            f'Ranked by total, then earlier date. {esc(ABOVE)} '
+            f'Ranked by total, then earlier date. {esc(ABOVE)} {esc(COSTS)} '
             f'Raw files: <a href="{RESULTS_URL}">benchmark/results</a>.</p>')
+
+
+def is_num_value(v) -> bool:
+    return not isinstance(v, bool) and isinstance(v, (int, float))
+
+
+def wall(v: float) -> str:
+    return f"{v:.0f} s"
+
+
+def usd(v: float) -> str:
+    return f"${v:.2f}"
+
+
+def num_cell(v, fmt) -> str:
+    """A time or cost cell: '-' when the run did not record it."""
+    return f'<td class="num">{fmt(float(v))}</td>' if is_num_value(v) else '<td class="num sub">-</td>'
+
+
+def mean_of(runs: list[dict], field: str) -> tuple[float | None, int]:
+    """(mean of `field` over the runs that recorded it, how many did)."""
+    vals = [float(r[field]) for r in runs if is_num_value(r.get(field))]
+    return (sum(vals) / len(vals) if vals else None), len(vals)
 
 
 def contender_key(r: dict) -> tuple[str, str, str]:
@@ -251,29 +289,51 @@ def contender_key(r: dict) -> tuple[str, str, str]:
     return str(c.get("agent") or ""), str(c.get("model") or ""), str(c.get("settings") or "")
 
 
+def merge_notes(keys: list[tuple[str, str, str]]) -> dict[tuple[str, str, str], tuple[str, str, str]]:
+    """Each key mapped to the contender it belongs to: a run whose settings are another run's settings of the same
+    agent and model plus a note ("...; killed at the time limit") is the same contender, so its failure counts in
+    that contender's mean instead of standing apart."""
+    out = {}
+    for k in keys:
+        bases = [b for b in keys if b[:2] == k[:2] and b[2] and k[2].startswith(b[2] + "; ")]
+        out[k] = min(bases, key=lambda b: len(b[2])) if bases else k
+    return out
+
+
 def summarize(rows: list[dict], floor_row: dict | None = None) -> list[dict]:
     """One entry per contender (agent + model + settings) of the given runs: n, mean total, and the mean, min and
     max above chance (None without a floor). Ranked by mean above chance, then mean total, then name. The blind
     baseline is never a contender."""
     floor = {str(t["id"]): t.get("score") for t in floor_row["tasks"]} if floor_row else None
+    runs_ = [r for r in rows if not is_baseline(r)]
+    to = merge_notes(sorted({contender_key(r) for r in runs_}))
     groups: dict[tuple[str, str, str], list[dict]] = {}
-    for r in rows:
-        if not is_baseline(r):
-            groups.setdefault(contender_key(r), []).append(r)
+    for r in runs_:
+        groups.setdefault(to[contender_key(r)], []).append(r)
     out = []
     for key, runs in groups.items():
         above = [v for v in (above_value(r, floor) for r in runs) if v is not None]
+        secs_, n_secs = mean_of(runs, "wall_seconds")
+        cost, n_cost = mean_of(runs, "cost_usd")
         out.append({"key": key, "n": len(runs), "total": sum(float(r["total"]) for r in runs) / len(runs),
                     "above": sum(above) / len(above) if above else None,
-                    "lo": min(above) if above else None, "hi": max(above) if above else None})
+                    "lo": min(above) if above else None, "hi": max(above) if above else None,
+                    "secs": secs_, "n_secs": n_secs, "cost": cost, "n_cost": n_cost})
     out.sort(key=lambda s: (s["above"] is None, -(s["above"] or 0), -s["total"], s["key"]))
     return out
+
+
+def ranks(summary: list[dict]) -> list[str]:
+    """Shown ranks: entries with the same mean above chance and mean total (to 3 decimals) share a rank, marked '='."""
+    keys = [(None if s["above"] is None else round(s["above"], 3), round(s["total"], 3)) for s in summary]
+    return [f"{keys.index(k) + 1}{'=' if keys.count(k) > 1 else ''}" for k in keys]
 
 
 def summary_table(rows: list[dict], floor_row: dict | None = None) -> str:
     """The per-contender summary of one suite and track, shown above its table of every run."""
     body = []
-    for rank, s in enumerate(summarize(rows, floor_row), 1):
+    summary = summarize(rows, floor_row)
+    for rank, s in zip(ranks(summary), summary):
         agent, model, settings = s["key"]
         above = (f'<td class="num above">{s["above"]:.3f}</td>' if s["above"] is not None
                  else '<td class="num sub">-</td>')
@@ -281,15 +341,26 @@ def summary_table(rows: list[dict], floor_row: dict | None = None) -> str:
                   else '<td class="num sub">-</td>')
         body.append(f'<tr><td class="num">{rank}</td><td>{esc(agent)}</td><td>{esc(model or "-")}</td>'
                     f'<td class="sub">{esc(settings or "-")}</td><td class="num">{s["n"]}</td>'
-                    f'<td class="num total">{s["total"]:.3f}</td>{above}{spread}</tr>')
+                    f'<td class="num total">{s["total"]:.3f}</td>{above}{spread}'
+                    f'{part_mean(s["secs"], s["n_secs"], s["n"], wall)}'
+                    f'{part_mean(s["cost"], s["n_cost"], s["n"], usd)}</tr>')
     return ('<h4>Summary</h4><div class="scroll"><table class="summary"><thead><tr>'
             '<th class="num" scope="col">#</th><th scope="col">Agent</th><th scope="col">Model</th>'
             '<th scope="col">Settings</th><th class="num" scope="col">Runs (n)</th>'
             '<th class="num" scope="col">Mean total</th><th class="num" scope="col">Mean above chance</th>'
-            '<th class="num" scope="col">Range</th></tr></thead>'
+            '<th class="num" scope="col">Range</th><th class="num" scope="col">Mean time</th>'
+            '<th class="num" scope="col">Mean cost</th></tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
-            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">Ranked by mean above chance. '
-            f'{esc(SUMMARY)}</p><h4>Every run</h4>')
+            f'<p class="sub" style="font-size:.85rem;color:var(--muted)">Ranked by mean above chance; '
+            f'&ldquo;=&rdquo; marks a tie. {esc(SUMMARY)} {esc(COSTS)}</p><h4>Every run</h4>')
+
+
+def part_mean(v, n_with: int, n: int, fmt) -> str:
+    """A mean time or cost cell, with '(k of n)' when only some runs recorded it."""
+    if v is None:
+        return '<td class="num sub">-</td>'
+    part = f' <span class="sub">({n_with} of {n})</span>' if n_with < n else ""
+    return f'<td class="num">{fmt(v)}{part}</td>'
 
 
 def suite_of(r: dict) -> str:
@@ -308,7 +379,9 @@ def floor_of(rows: list[dict]) -> dict | None:
 
 NOT_RECORDED = "answer not recorded"
 FAILS = ("Every contender run, task by task: the truth (from the suite), each run's answer as its result file stores "
-         "it, the score recomputed from the two, and what was missed. The blind baseline is left out.")
+         "it, the score recomputed from the two, and what was missed. The blind baseline is left out. Timestamps: an "
+         "event not answered within 0.5 s still earns part of its point up to 2 s off; an unmatched answer is one "
+         "with no event within 0.5 s.")
 SHOW = 4                       # list diffs name at most this many times or positions, then "+N more"
 
 
@@ -357,9 +430,9 @@ def diff_answer(kind: str, truth, task: dict) -> str:
         missed, extra = match_events([float(t) for t in truth], sorted(float(a) for a in ans))
         bits = []
         if missed:
-            bits.append(f"missed {len(missed)} of {len(truth)} (at {some([secs(t) for t in missed])})")
+            bits.append(f"{len(missed)} of {len(truth)} not within 0.5 s (at {some([secs(t) for t in missed])})")
         if extra:
-            bits.append(f"{len(extra)} extra (at {some([secs(a) for a in extra])})")
+            bits.append(f"{len(extra)} unmatched (at {some([secs(a) for a in extra])})")
         return "; ".join(bits) or "all within 0.5 s"
     if kind == "outcomes":
         if not isinstance(ans, list):
@@ -468,13 +541,17 @@ def boards(rows: list[dict], prefix: str = "") -> str:
     of a second track's tables apart."""
     known = [n for n, _ in SUITES]
     names = known + sorted({suite_of(r) for r in rows if not is_baseline(r)} - set(known))
+    ran = {suite_of(r) for r in rows if not is_baseline(r)}
+    names = [n for n in names if n in ran] + [n for n in names if n not in ran]   # empty suites last
     what = dict(SUITES)
     out = []
     for n in names:
         mine = [r for r in rows if suite_of(r) == n and not is_baseline(r)]
         floor = floor_of([r for r in rows if suite_of(r) == n])
         body = summary_table(mine, floor) + table(mine, floor) + fails_section(mine, n) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
-        desc = f"<p>{esc(what[n])}</p>" if n in what else ""
+        sat = (f" Saturated on this track: all {len(mine)} runs scored 1.0, so it ranks nobody."
+               if len(mine) > 1 and all(float(r["total"]) == 1 for r in mine) else "")
+        desc = f"<p>{esc(what.get(n, '') + sat)}</p>" if n in what or sat else ""
         out.append(f'<h3 id="{esc(prefix + n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
     return "\n".join(out)
 
@@ -498,6 +575,90 @@ def frames_board(rows: list[dict]) -> str:
             "<p>Another agent: prepare the stills, let it fill <code>bench-frames/answers.json</code> by eye, then "
             "score it with <code>bench score bench-frames</code>.</p>"
             f"<pre><code>{esc(prep)}</code></pre>{body}")
+
+
+OWN_CONFIG = ("CLAUDE.md loaded", "user config loaded", "AGENTS.md was loaded")
+
+
+def facts(rows: list[dict]) -> list[str]:
+    """What a skeptic asks first, one short line each, counted from the result files (HTML, already escaped)."""
+    runs = [r for r in rows if not is_baseline(r)]
+    if not runs:
+        return []
+    n = len(runs)
+    by_owner = sum(1 for r in runs if str(r.get("submitted_by") or "").lower() == OWNER.lower())
+    others = n - by_owner
+    who = (f"all {n} runs were submitted by {esc(OWNER)}, who also wrote this tool; no outside runs yet."
+           if not others else f"{by_owner} of {n} runs were submitted by {esc(OWNER)}, who wrote this tool; "
+                              f"{others} by others.")
+    own = sum(1 for r in runs if any(m in str(r["contender"].get("settings") or "") for m in OWN_CONFIG))
+    singles = contenders = 0
+    spread = None                                   # (hi - lo, model, suite, track)
+    for (suite, track) in sorted({(suite_of(r), track_of(r)) for r in runs}):
+        mine = [r for r in rows if suite_of(r) == suite and track_of(r) == track]
+        floor = floor_of(mine)
+        for x in summarize(mine, floor):
+            contenders += 1
+            singles += x["n"] == 1
+        scores = {str(t["id"]): t.get("score") for t in floor["tasks"]} if floor else None
+        same: dict[tuple[str, str, str], list[float]] = {}   # repeats with identical settings: run-to-run noise
+        for r in mine:
+            v = above_value(r, scores)
+            if not is_baseline(r) and v is not None:
+                same.setdefault(contender_key(r), []).append(v)
+        for key, vals in same.items():
+            if len(vals) > 1 and (spread is None or max(vals) - min(vals) > spread[0]):
+                spread = (max(vals) - min(vals), key[1] or key[0], suite, track)
+    noise = (f" Two runs with the same settings differed by up to {spread[0]:.3f} above chance "
+             f"({esc(spread[1])}, {esc(spread[2])} {esc(spread[3])} track): read smaller gaps as noise."
+             if spread else "")
+    floors = [(t.get("score"), str(t["id"])) for r in rows if is_baseline(r) for t in r["tasks"]
+              if is_num(t.get("score"))]
+    top = max(floors) if floors else None
+    guess = (f" That guess alone scores up to {top[0]:.2f} on one task ({esc(top[1])})." if top else "")
+    ev = sum(1 for r in runs if str(r.get("evidence") or "").startswith(("https://", "http://")))
+    timed = sum(1 for r in runs if is_num_value(r.get("wall_seconds")))
+    costed = sum(1 for r in runs if is_num_value(r.get("cost_usd")))
+    return [
+        f"<strong>Who ran it:</strong> {who}",
+        f"<strong>Own config:</strong> {own} of {n} runs say in Settings that the submitter's own agent config "
+        "(CLAUDE.md, AGENTS.md) was loaded.",
+        f"<strong>Sample size:</strong> {singles} of {contenders} contenders (per suite and track) ran once.{noise}",
+        "<strong>Settings:</strong> not equalized. Each row ran at the effort and flags its Settings column names.",
+        "<strong>Truth:</strong> the tool draws the videos from numbers, so the truth is exact. No human labels, no "
+        "judge model.",
+        "<strong>Suite design:</strong> svc-bench-2 and svc-bench-3 were each built after models scored 1.0 on the "
+        "suite before, so the author knew which models already saturated it.",
+        '<strong>Prompt:</strong> one fixed text per track, the same for every model. See '
+        '<a href="#prompt">the exact prompt</a>.',
+        "<strong>Above chance:</strong> measured from a blind guess that copies the example answers in the task "
+        f"text, not from random.{guess}",
+        f"<strong>Evidence:</strong> {ev} of {n} runs link a transcript. The no-peeking rule is honour-based: CI "
+        "re-scores the answers but cannot see what the agent read.",
+        f"<strong>Time and cost:</strong> in every table; time recorded for {timed} of {n} runs, cost for "
+        f"{costed} of {n}.",
+    ]
+
+
+def facts_block(rows: list[dict]) -> str:
+    items = facts(rows)
+    if not items:
+        return ""
+    return (f'<details class="facts" id="facts"><summary>Before you trust this: {len(items)} things a skeptic '
+            f'asks first</summary><ul>{"".join(f"<li>{x}</li>" for x in items)}</ul></details>')
+
+
+def prompt_block() -> str:
+    """The exact prompts `bench run` sends (shown for svc-bench-3; other suites change only the name and count)."""
+    code = bench_run.prompt("svc-bench-3", "code")
+    frames = bench_run.prompt("svc-bench-3", "frames", "claude")
+    return ('<details class="prompt" id="prompt"><summary>The exact prompt</summary>'
+            "<p>What <code>bench run</code> sends, word for word (for svc-bench-3; other suites change only the "
+            "suite name and video count). One text per track, the same for every model.</p>"
+            f"<h4>Code track</h4><pre class=\"wrap\"><code>{esc(code)}</code></pre>"
+            f"<h4>Frames track (Claude Code)</h4><pre class=\"wrap\"><code>{esc(frames)}</code></pre>"
+            "<p>The Claude Code frames rows were run with this frames prompt. The other rows do not store their "
+            "prompt in the result file, so for them it is unclear.</p></details>")
 
 
 def social(card: bool) -> str:
@@ -542,6 +703,7 @@ def render(rows: list[dict], notes: list[str], card: bool = False) -> str:
 <p class="lead">{esc(WHAT)}</p>
 <ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
 <li>Measured truth only</li></ul>
+{facts_block(rows)}
 
 <h2 id="leaderboard">Leaderboard</h2>
 {skipped}{board}
@@ -551,6 +713,7 @@ def render(rows: list[dict], notes: list[str], card: bool = False) -> str:
 <h2 id="method">Method</h2>
 <p>The tasks are synthetic videos drawn by the tool, so the truth is exact: no human labels, no judge model.
 The agent sees only the videos and writes its answers; <code>bench score</code> compares them with the truth.</p>
+{prompt_block()}
 <div class="cards">{kinds}</div>
 <p>Total = the mean of the task scores. {esc(ABOVE)} Full rules: <a href="{DOC_URL}">docs/benchmark.md</a>.</p>
 
@@ -569,7 +732,8 @@ CI re-scores it with <code>bench validate</code>.</li>
 <ul class="plain">
 <li>The benchmark and this page were built with a coding agent.</li>
 <li>Every row is reproducible: same suite, same commands, scores recomputed from the answers.</li>
-<li>The author's own tool and agent get no special treatment: their errors are shown like anyone else's.</li>
+<li>The author wrote the tool, drew the suites and submitted the first runs; outside runs are welcome (above).</li>
+<li>Failed and killed runs stay on the board and count in their contender's mean.</li>
 <li>Synthetic drills test counting and timing, not every part of a coach's review.</li>
 </ul>
 

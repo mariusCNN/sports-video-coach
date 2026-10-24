@@ -358,6 +358,15 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
   line of what was missed: off by how much for counts and rates, which events were missed or extra (with their
   times) for timestamps, which shots were called wrong for outcomes. The blind baseline is left out. A task row
   without a stored answer says "answer not recorded" and keeps its stored score.
+- Each Summary groups runs by agent, model and settings; a run whose settings only add a note to another run's
+  (such as `; killed at the 1700 s time limit ...`) counts with that contender, so a failed run lowers its mean
+  instead of standing apart. Equal means share a rank, marked `=`. Mean time and cost are over the runs that
+  recorded them (`(k of n)` when only some did).
+- Under the chips, a folded "Before you trust this" block answers what a skeptic asks first, counted from the
+  result files at build time: who submitted the runs, how many loaded the submitter's own agent config, how many
+  contenders ran once and the largest gap between two runs with the same settings, the highest score the blind
+  guess gets on one task, how many runs link evidence, and how many recorded time and cost. The Method section
+  shows the exact prompt `bench run` sends.
 - The same build draws `card.png`, the page's link preview image (`og:image`): per suite and track, the top
   contenders' mean above chance from the page's Summary tables (needs matplotlib; without it there is no card).
 
@@ -365,7 +374,17 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
 
 - The benchmark and its page were built with a coding agent.
 - Every row is reproducible: same suite, same commands, scores recomputed from the answers.
-- The author's own tool and agent get no special treatment; their misses are shown like anyone else's.
+- The author wrote the tool, drew the suites and submitted the first runs, with their own agent config loaded
+  where the Settings column says so. No outside runs yet; the page counts this from the files.
+- `svc-bench-2` and `svc-bench-3` were each built after models scored 1.0 on the suite before, so the author knew
+  which models already saturated it.
+- Settings are not equalized across agents (Codex ran at reasoning effort xhigh, Claude Code at its default);
+  each row names its own.
+- The no-peeking rule is honour-based: CI re-scores the answers but cannot see what the agent read. On the frames
+  track the transcript shows which tools existed; no transcript is linked yet.
+- Most contenders ran once. Two Sonnet 5.5 runs with the same command on `svc-bench-3` frames differed by 0.224
+  above chance, so smaller gaps between single runs are within noise.
+- Failed and killed runs stay on the board and count in their contender's mean.
 - Synthetic drills test counting and timing. They do not cover every part of a coach's review (cues, drills,
   judgement of technique).
 

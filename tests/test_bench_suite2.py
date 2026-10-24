@@ -148,7 +148,7 @@ def test_page_has_one_table_per_suite_hard_first(tmp_path):
     assert html.index('id="svc-bench-2"') < html.index("Agent 2") < html.index('id="svc-bench-1"') \
         < html.index("Agent 1")
     assert ">dribble-count</th>" in html and ">jump-count</th>" in html
-    assert "--suite svc-bench-2" in html
+    assert "--suite svc-bench-3" in html   # "Run it yourself" uses the newest suite
 
 
 @needs_ffmpeg
