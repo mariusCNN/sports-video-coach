@@ -100,6 +100,6 @@
   ],
   "total": 0.96,
   "wall_seconds": 261.6,
-  "evidence": "",
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-24-claude-code-claude-opus-5-5-svc-bench-2.jsonl",
   "cost_usd": 1.4038
 }

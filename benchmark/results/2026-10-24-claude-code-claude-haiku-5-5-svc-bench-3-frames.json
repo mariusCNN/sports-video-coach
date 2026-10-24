@@ -94,6 +94,6 @@
   ],
   "total": 0.585,
   "wall_seconds": 136,
-  "evidence": "",
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-24-claude-code-claude-haiku-5-5-svc-bench-3-frames.jsonl",
   "cost_usd": 0.0395
 }

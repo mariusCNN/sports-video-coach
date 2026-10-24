@@ -97,6 +97,6 @@
   ],
   "total": 0.646,
   "wall_seconds": 12,
-  "evidence": "",
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-24-claude-code-claude-sonnet-5-5-svc-bench-2-run2-frames.jsonl",
   "cost_usd": 0.0511
 }

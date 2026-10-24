@@ -99,6 +99,6 @@
   ],
   "total": 0.989,
   "wall_seconds": 1645.2,
-  "evidence": "",
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-24-claude-code-claude-fable-5-1-svc-bench-3-run2-frames.jsonl.gz",
   "cost_usd": 19.2322
 }

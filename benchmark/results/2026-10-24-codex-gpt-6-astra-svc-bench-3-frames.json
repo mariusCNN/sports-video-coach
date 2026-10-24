@@ -100,6 +100,6 @@
   ],
   "total": 0.862,
   "wall_seconds": 765.5,
-  "evidence": "",
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-24-codex-gpt-6-astra-svc-bench-3-frames.txt",
   "cost_usd": null
 }
