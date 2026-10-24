@@ -14,6 +14,8 @@ the frames track). The truth is exact (we drew them). Run one with any agent:
   sports-video-coach bench run --agent claude|codex|cmd [--model M] [--suite S] [--track frames] [--cmd "..."]
                                 [--dry-run]
                                 all of it in one command: prepare, run the agent headless, score, issue link
+  sports-video-coach bench transcript <src> [<dst>] [--redact WORD]
+                                a copy of a transcript that is safe to publish (bench run writes one itself)
 """
 from __future__ import annotations
 
@@ -249,7 +251,11 @@ def main(argv=None) -> int:
     if argv[0] == "baseline":
         from .baseline import main as baseline_main
         return baseline_main(argv[1:])
+    if argv[0] == "transcript":
+        from .transcript import main as transcript_main
+        return transcript_main(argv[1:])
     if argv[0] not in cmds:
-        print(f"unknown bench command {argv[0]!r}; one of: prepare, score, validate, page, run", file=sys.stderr)
+        print(f"unknown bench command {argv[0]!r}; one of: prepare, score, validate, page, run, "
+              "baseline, transcript", file=sys.stderr)
         return 2
     return cmds[argv[0]](argv[1:])

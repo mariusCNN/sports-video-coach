@@ -66,6 +66,7 @@ def test_run_scores_a_fake_agent_end_to_end(tmp_path, fake, capsys):
     log = (out / "transcript.txt").read_text(encoding="utf8")
     assert "stdin: ''" in log                                   # stdin is closed, the agent cannot wait on it
     assert "prompt: You are a contender" in log and (out / "PROMPT.txt").exists()
+    assert "stdin: ''" in (out / "transcript.redacted.txt").read_text(encoding="utf8")   # the copy to publish
     assert json.loads((out / "run.json").read_text(encoding="utf8"))["timed_out"] is False
     printed = capsys.readouterr().out
     url = [line for line in printed.splitlines() if line.startswith(R.ISSUE_FORM)][0]

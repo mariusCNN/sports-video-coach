@@ -1,6 +1,7 @@
 """`sports-video-coach bench run`: prepare a suite, run one agent on it headless, score it, in one command.
 
-The agent runs in a fresh folder with stdin closed and is killed at the timeout. Its transcript stays in the folder.
+The agent runs in a fresh folder with stdin closed and is killed at the timeout. Its transcript stays in the folder,
+next to a redacted copy that is safe to publish (`bench transcript`).
 The wall time is measured here; the cost is read from the agent's own output when it reports one (Claude Code's
 `result` event), never estimated.
 """
@@ -320,7 +321,8 @@ def main(argv=None) -> int:
     ap.add_argument("--timeout", type=float, default=1200, help="kill the agent after this many seconds (1200)")
     ap.add_argument("--settings", default="", help='what you changed from defaults, e.g. "effort high"')
     ap.add_argument("--by", default="", help="your GitHub handle")
-    ap.add_argument("--evidence", default="", help="URL of the transcript, if you publish it")
+    ap.add_argument("--evidence", default="", help="URL of the transcript, if you publish it (publish the redacted "
+                                                   "copy, transcript.redacted.*)")
     ap.add_argument("--use-my-config", action="store_true",
                     help="run Claude Code with your own agent config (CLAUDE.md, skills, plugins, hooks, MCP "
                          "servers, user settings). Default: clean room, none of it; the result's settings say which. "
@@ -363,6 +365,12 @@ def main(argv=None) -> int:
     code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env())
     status = f"killed at the {a.timeout:g} s timeout" if code is None else f"exit code {code}"
     print(f"agent finished in {wall:g} s, {status}; transcript {transcript}")
+    if transcript.exists():
+        from .transcript import default_dst, redact
+        try:
+            print(f"redacted copy to publish (read it first): {redact(transcript, default_dst(transcript))}")
+        except OSError as e:     # the run and its score matter more than the copy
+            print(f"could not write the redacted copy ({e}); `sports-video-coach bench transcript` makes one")
 
     stats = (claude_stats(transcript) if a.agent == "claude"
              else codex_stats(out / "stderr.log") if a.agent == "codex" else {})
