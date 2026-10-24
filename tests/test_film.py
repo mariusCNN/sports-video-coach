@@ -384,6 +384,24 @@ def test_a_clip_banner_goes_at_the_first_freeze():
     sc = film.parse_script("![cap](clip:0:01-0:09)\nA.\n")[0]
     banner = lambda **kw: next(e for e in film.scene_events(sc, 20, 0, 0, [], "en", "", 720, **kw) if e[2] == "Banner")
     assert banner()[1] == film.BANNER_S and banner(banner_to=3.2)[1] == 3.2
+    assert banner(banner_to=0.0)[1] == 0.0  # a freeze on the clip's first frame: no banner over it
+
+
+def test_a_short_hold_still_shows_every_mark_and_the_label():
+    marks = fd.parse_freeze_line('> 00:04 我0.4,0.6 我0.6,0.62 我0.4,0.6->我0.6,0.62 "open"')[1]
+    zoom = fd.freeze_zoom(marks, 4.0, None, 1280, 720, (0, 0, 1280, 720))
+    ev = fd.freeze_events(marks, "open", 4.0, None, 1280, 720, (0, 0, 1280, 720), 2.0, 2.0 + film.FREEZE_S,
+                          zoom=zoom, animate=True)
+    assert all(e[1] > e[0] for e in ev) and ev[-1][2] == "Mark"  # the arrow and the label start before stop
+    assert any("\\clip(" in e[3] for e in ev)
+
+
+def test_a_clock_time_in_a_title_is_not_a_kicker_and_a_stat_keeps_its_zeros():
+    sc = film.parse_script("## At 03:10 the press broke\n")[0]
+    assert [e[2] for e in film.scene_events(sc, 5, 0, 0, [], "en", "", 720)] == ["Kicker", "Title"]
+    for src in ("0.05", "4:05"):
+        ev = film.scene_events(film.parse_script(f"![x](stat:{src})\n")[0], 5, 0, 0, [], "en", "", 720)
+        assert [e for e in ev if e[2] == "Big"][-1][3].endswith("}" + src)
 
 
 def test_a_dark_team_colour_is_lightened_for_card_text():

@@ -228,11 +228,11 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
         stop = max(t0 + 0.6, end - (OUT_S + 0.1 if zoom else 0.0))
     else:
         t0, stop = start, end
-    beat = [t0]  # when the next mark appears
+    beat = [t0, STEP_S]  # when the next mark appears, and the step to the one after it
 
-    def at(step: float = STEP_S) -> float:
+    def at(step: float | None = None) -> float:
         s = beat[0]
-        beat[0] += step if animate else 0.0
+        beat[0] += (beat[1] if step is None else step) if animate else 0.0
         return s
 
     def fad(fade_in: int = 180) -> str:
@@ -246,6 +246,10 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
         if m in ring_marks:
             ex, ey = (c - a) * 0.9 + uw * 0.02 * z, (d - b) * 0.7 + u * 0.03 * z
             spots.append([(a + c) / 2 - ex, (b + d) / 2 - ey, (a + c) / 2 + ex, (b + d) / 2 + ey])
+    steps = sum(m in feet for m in ring_marks) + sum(
+        mk[0] == "arrow" and mk[1] in feet and mk[2] in feet for mk in marks)
+    if animate and steps:  # a short hold quickens the beat, so the last arrow and the label still show before stop
+        beat[1] = max(0.05, min(STEP_S, (stop - t0 - 0.15 - (0.3 if label else 0.0)) / steps))
     if spots:  # dim the rest with a soft edge: the marked players are lifted, not washed out by a pale shape
         holes = " ".join(ellipse((r[0] + r[2]) / 2, (r[1] + r[3]) / 2, (r[2] - r[0]) / 2, (r[3] - r[1]) / 2,
                                  reverse=True) for r in _merge(spots))

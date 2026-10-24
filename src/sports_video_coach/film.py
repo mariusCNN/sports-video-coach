@@ -79,7 +79,7 @@ MIN_ZOOM_HOLD = 1.5              # a shorter freeze is not zoomed (in and out wo
 BANNER_S = 6.0                  # a clip's caption shows this long, at its start
 MIN_ARROW = 0.1                  # --dry warns about a spot-to-spot arrow shorter than this (frame fractions)
 COUNT_S, COUNT_STEPS = 0.6, 12   # a stat card's number counts up in this long, in so many steps
-KICKER_RE = re.compile(r"^([^：:]{1,12})[：:]\s*(.+)$")  # "第一件事：有压力" -> kicker "第一件事", title "有压力"
+KICKER_RE = re.compile(r"^([^：:]{1,12})(?:：|:(?!\d))\s*(.+)$")  # "第一件事：有压力" -> kicker, title; never in 03:10
 SLOW_TAG = {c: L.film_tag(c, "slow") for c in L.CODES}
 FREEZE_TAG = {c: L.film_tag(c, "freeze") for c in L.CODES}
 TARGET_S = (120, 240)  # film length the guides ask for (2-4 min)
@@ -568,7 +568,7 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
     elif sc.kind == "stat":
         ev += stat_events(sc.src, sc.text, length, lang, h, fw, fh)
     elif sc.text:  # what the clip is about, while it starts; then the picture is the players'
-        ev.append((0, min(length, BANNER_S, banner_to or BANNER_S), "Banner", "{\\fad(250,300)}" + wrap(sc.text, (fw - 2.5 * side) / small)))
+        ev.append((0, min(length, BANNER_S, BANNER_S if banner_to is None else banner_to), "Banner", "{\\fad(250,300)}" + wrap(sc.text, (fw - 2.5 * side) / small)))
     if slow:
         ev += fd.badge(SLOW_TAG.get(lang, SLOW_TAG["en"]), clip_s, clip_s + slow, fw, fh, icon="play")
     subs = sorted((LEAD + s, LEAD + e, t) for s, e, t in cues)
@@ -629,7 +629,8 @@ def stat_events(src: str, text: str, length: float, lang: str, h: int, fw: int, 
         n, t0 = COUNT_STEPS, 0.15
         for k in range(n + 1):
             p = 1 - (1 - k / n) ** 3  # ease out: fast, then settles
-            shown = re.sub(r"\d+", lambda mm: str(round(int(mm[0]) * p)), src)
+            shown = re.sub(r"\d+", lambda mm: str(round(int(mm[0]) * p)).zfill(  # keeps 0.05 and 4:05 as written
+                len(mm[0]) if mm[0].startswith("0") else 1), src)
             s = 0.0 if k == 0 else t0 + (k - 1) * COUNT_S / n
             e = length if k == n else t0 + k * COUNT_S / n
             ev.append((s, e, style, head + ("\\fad(150,0)}" if k == 0 else "\\fad(0,250)}" if k == n else "}")
