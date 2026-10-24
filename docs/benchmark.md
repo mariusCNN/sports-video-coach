@@ -598,7 +598,9 @@ and link them; the page labels such a link "transcript".
   guess gets on one task, how many runs link evidence, and how many recorded time and cost. The Method section
   shows the exact prompt `bench run` sends.
 - The same build draws `card.png`, the page's link preview image (`og:image`): per suite and track, the top
-  contenders' mean above chance from the page's Summary tables (needs matplotlib; without it there is no card).
+  contenders' mean above chance from the page's Summary tables (needs matplotlib; without it there is no card),
+  and `card-zh.png`, the same card in Chinese for the zh page (needs a CJK font, else the zh page uses `card.png`).
+  The zh findings page previews `effort-zh.png`.
 - It also draws `effort.png` and `effort-zh.png` (1200x675, `bench/effort.py`), shown under "What effort changed" on
   the fresh-seed frames board: per contender run at two or more effort settings, each setting's mean above chance
   with n, range, time per run and runs that gave no answer, all read from the result files (a new result file

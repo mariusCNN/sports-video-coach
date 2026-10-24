@@ -2,15 +2,19 @@
 dev.to and chat apps show. It is drawn from the same per-contender summary as the page's Summary tables
 (`page.summarize`, same floor), so it never drifts from them: per suite and track, the top contenders' mean
 "above chance" score as bars. `card_data` is the data step (tested); `draw` needs matplotlib, which the light
-install does not have: without it `bench page` skips the card and the page has no `og:image`.
+install does not have: without it `bench page` skips the card and the page has no `og:image`. `card-zh.png` is the
+Chinese card for the Chinese pages (only when a CJK font is installed, as for `effort-zh.png`; else they show
+`card.png`).
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-NAME = "card.png"
+NAMES = {"en": "card.png", "zh": "card-zh.png"}
+NAME = NAMES["en"]
 SIZE = (1200, 630)
 TITLE = "Which coding agent is the best sports film reviewer?"
+SUB = "sports-video-coach benchmark  ·  {}  ·  scored against drawn ground truth"
 PANELS = 3       # suite + track panels on the card, hardest first
 BARS = 4         # top contenders per panel
 TRACKS = ("frames", "code")   # within a suite, the frames-only track (eyes) first
@@ -43,49 +47,58 @@ def card_data(rows: list[dict]) -> dict:
     return {"date": max(dates) if dates else "", "panels": panels[:PANELS]}
 
 
-def draw(data: dict, path: Path) -> Path:
-    """Write the card for `card_data` output to `path` (PNG, SIZE pixels)."""
+def draw(data: dict, path: Path, lang: str = "en", font: str | None = None) -> Path:
+    """Write the card for `card_data` output to `path` (PNG, SIZE pixels); `font` for the Chinese text."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from .page import t
 
     ink, muted, bg, bar, track = "#1d1b38", "#5c5a86", "#f6f5fb", "#3b36a8", "#e2e0ef"
     w, h = SIZE
-    fig = plt.figure(figsize=(w / 100, h / 100), dpi=100, facecolor=bg)
-    fig.text(0.04, 0.9, TITLE, fontsize=26, fontweight="bold", color=ink, va="center")
-    fig.text(0.04, 0.81, f"sports-video-coach benchmark  ·  {data['date']}  ·  scored against drawn ground truth",
-             fontsize=17, color=muted, va="center")
-    panels = data["panels"]
-    if not panels:
-        fig.text(0.04, 0.5, "No runs yet: be the first.", fontsize=30, color=ink)
-    gap, left, right = 0.03, 0.04, 0.96
-    pw = (right - left - gap * (len(panels) - 1)) / max(len(panels), 1)
-    for i, p in enumerate(panels):
-        x0 = left + i * (pw + gap)
-        fig.text(x0, 0.72, p["suite"], fontsize=22, fontweight="bold", color=ink, va="center")
-        fig.text(x0, 0.665, "frames only (eyes)" if p["track"] == "frames" else "code track", fontsize=16,
-                 color=muted, va="center")
-        for j, b in enumerate(p["bars"]):
-            y = 0.585 - j * 0.115
-            fig.text(x0, y, b["label"], fontsize=19, color=ink, va="center")
-            ax = fig.add_axes((x0, y - 0.07, pw * 0.78, 0.04))
-            ax.set_xlim(0, 1)
-            ax.barh([0], [1], color=track, height=1)
-            ax.barh([0], [b["above"]], color=bar, height=1)
-            ax.axis("off")
-            fig.text(x0 + pw * 0.8, y - 0.05, f"{b['above']:.2f}", fontsize=20, fontweight="bold", color=ink,
-                     va="center")
-    fig.text(0.04, 0.045, FLOOR, fontsize=15, color=muted, va="center")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=100, facecolor=bg)
-    plt.close(fig)
+    rc = {"font.family": "sans-serif", "font.sans-serif": ([font] if font else []) + ["DejaVu Sans"]}
+    with plt.rc_context(rc):
+        fig = plt.figure(figsize=(w / 100, h / 100), dpi=100, facecolor=bg)
+        fig.text(0.04, 0.9, t(TITLE, lang), fontsize=26, fontweight="bold", color=ink, va="center")
+        fig.text(0.04, 0.81, t(SUB, lang).format(data["date"]), fontsize=17, color=muted, va="center")
+        panels = data["panels"]
+        if not panels:
+            fig.text(0.04, 0.5, t("No runs yet: be the first.", lang), fontsize=30, color=ink)
+        gap, left, right = 0.03, 0.04, 0.96
+        pw = (right - left - gap * (len(panels) - 1)) / max(len(panels), 1)
+        for i, p in enumerate(panels):
+            x0 = left + i * (pw + gap)
+            fig.text(x0, 0.72, p["suite"], fontsize=22, fontweight="bold", color=ink, va="center")
+            fig.text(x0, 0.665, t("frames only (eyes)" if p["track"] == "frames" else "code track", lang), fontsize=16,
+                     color=muted, va="center")
+            for j, b in enumerate(p["bars"]):
+                y = 0.585 - j * 0.115
+                fig.text(x0, y, b["label"], fontsize=19, color=ink, va="center")
+                ax = fig.add_axes((x0, y - 0.07, pw * 0.78, 0.04))
+                ax.set_xlim(0, 1)
+                ax.barh([0], [1], color=track, height=1)
+                ax.barh([0], [b["above"]], color=bar, height=1)
+                ax.axis("off")
+                fig.text(x0 + pw * 0.8, y - 0.05, f"{b['above']:.2f}", fontsize=20, fontweight="bold", color=ink,
+                         va="center")
+        fig.text(0.04, 0.045, t(FLOOR, lang), fontsize=15, color=muted, va="center")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path, dpi=100, facecolor=bg)
+        plt.close(fig)
     return path
 
 
-def write(rows: list[dict], out_dir: Path) -> Path | None:
-    """Draw the card into out_dir; None (nothing written) when matplotlib is not installed."""
+def write(rows: list[dict], out_dir: Path) -> dict[str, Path]:
+    """Draw the card per language into out_dir: {lang: path}, empty when matplotlib is not installed; no "zh"
+    entry when no CJK font is installed."""
     try:
         import matplotlib  # noqa: F401
     except ImportError:
-        return None
-    return draw(card_data(rows), out_dir / NAME)
+        return {}
+    from .effort import cjk_font
+    data = card_data(rows)
+    out = {"en": draw(data, out_dir / NAMES["en"])}
+    font = cjk_font()
+    if font:
+        out["zh"] = draw(data, out_dir / NAMES["zh"], "zh", font)
+    return out

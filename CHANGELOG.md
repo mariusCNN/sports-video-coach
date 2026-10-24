@@ -154,6 +154,10 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- The Chinese benchmark pages' link previews showed English images: `/benchmark/zh/` now points `og:image` at a
+  Chinese share card (`card-zh.png`, drawn from the same numbers when a CJK font is installed, as on the demo
+  site's runner) and `/benchmark/zh/findings/` at `effort-zh.png`; every benchmark page also states `og:locale`
+  (`en_US` / `zh_CN`).
 - A plugin from `new-plugin` with a hyphen in its name (`swim-rate`) and a relative import in its
   `__init__.py` failed collection of its own scaffolded tests: pytest imported the folder's `__init__.py` as a lone
   module. The core now ships a pytest plugin (entry point `pytest11`) that collects such a folder as a plain folder,

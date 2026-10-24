@@ -576,7 +576,8 @@ def head_tags(data: dict, lang: str, image: str | None) -> str:
     tags += [f'<link rel="alternate" hreflang="{P.TAGS[x]}" href="{URLS[x]}">' for x in P.LANGS]
     tags.append(f'<link rel="alternate" hreflang="x-default" href="{URLS["en"]}">')
     tags += [f'<meta property="og:type" content="article">', f'<meta property="og:title" content="{esc(title)}">',
-             f'<meta property="og:description" content="{esc(desc)}">', f'<meta property="og:url" content="{url}">']
+             f'<meta property="og:description" content="{esc(desc)}">', f'<meta property="og:url" content="{url}">',
+             f'<meta property="og:locale" content="{P.LOCALES[lang]}">']
     if image:
         tags.append(f'<meta property="og:image" content="{P.PAGE_URL}{image}">')
     tags += ['<meta name="twitter:card" content="summary_large_image">',
@@ -665,19 +666,25 @@ def render(rows: list[dict], lang: str = "en", image: str | None = None, data: d
 """
 
 
-def image_for(card: bool, effort) -> str | None:
-    """The og:image: the effort chart when it was drawn, else the share card, else none."""
-    return effort_chart.NAMES["en"] if "en" in effort else share_card.NAME if card else None
+def image_for(card, effort, lang: str = "en") -> str | None:
+    """The og:image of the page in `lang`: the effort chart when it was drawn, else the share card, else none; each
+    in `lang` when drawn in it (`card`, `effort`: the languages drawn), else in English."""
+    for drawn, names in ((effort, effort_chart.NAMES), (card, share_card.NAMES)):
+        if lang in drawn:
+            return names[lang]
+        if "en" in drawn:
+            return names["en"]
+    return None
 
 
-def write(rows: list[dict], out_dir: Path, card: bool = False, effort=()) -> list[Path]:
-    """Write findings/index.html and zh/findings/index.html under out_dir (the leaderboard's folder)."""
+def write(rows: list[dict], out_dir: Path, card=(), effort=()) -> list[Path]:
+    """Write findings/index.html and zh/findings/index.html under out_dir (the leaderboard's folder); `card` and
+    `effort`: the languages whose share card and effort chart were drawn."""
     data = findings_data(rows)
-    image = image_for(card, effort)
     paths = []
     for lang, sub in (("en", Path("findings")), ("zh", Path("zh") / "findings")):
         d = out_dir / sub
         d.mkdir(parents=True, exist_ok=True)
-        (d / "index.html").write_text(render(rows, lang, image, data), encoding="utf8")
+        (d / "index.html").write_text(render(rows, lang, image_for(card, effort, lang), data), encoding="utf8")
         paths.append(d / "index.html")
     return paths

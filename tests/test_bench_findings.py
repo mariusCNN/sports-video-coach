@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 import pytest
 
 from sports_video_coach import demo, page_check
+from sports_video_coach.bench import card
 from sports_video_coach.bench import effort as effort_chart
 from sports_video_coach.bench import findings as F
 from sports_video_coach.bench import page
@@ -124,6 +125,7 @@ def test_written_by_bench_page_with_head_tags(site, rows):
         assert f'<link rel="canonical" href="{F.URLS[lang]}">' in html
         assert all(f'href="{u}"' in html for u in F.URLS.values())   # hreflang both ways
         assert '<meta property="og:type" content="article">' in html and 'name="twitter:card"' in html
+        assert f'<meta property="og:locale" content="{page.LOCALES[lang]}">' in html
         ld = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S).group(1))
         assert ld["@type"] == "Article" and ld["url"] == F.URLS[lang]
         assert ld["datePublished"] == F.findings_data(rows)["date"]
@@ -131,6 +133,14 @@ def test_written_by_bench_page_with_head_tags(site, rows):
             "编程 agent", "coding agent")
     assert '<a href="findings/">' in (site / "index.html").read_text(encoding="utf8")
     assert '<a href="findings/">' in (site / "zh" / "index.html").read_text(encoding="utf8")
+
+
+def test_each_language_previews_its_own_image():
+    both, en = ("en", "zh"), ("en",)
+    assert F.image_for(both, both, "zh") == effort_chart.NAMES["zh"] and F.image_for(both, both) == "effort.png"
+    assert F.image_for(both, en, "zh") == effort_chart.NAMES["en"]   # no CJK font: the English chart
+    assert F.image_for(both, (), "zh") == card.NAMES["zh"] and F.image_for(en, (), "zh") == card.NAME
+    assert F.image_for((), (), "zh") is None
 
 
 def test_links_and_anchors_resolve_in_the_built_site(site):

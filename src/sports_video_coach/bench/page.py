@@ -10,7 +10,7 @@ file of that suite and track, `bench.baseline`, shown as a marked row under the 
 what was missed) (one table per suite, the hard suite first; runs on the frames-only track, which
 see still images and run no code, in their own tables below), the method, how to run it yourself, how to submit a
 run and honesty notes, and `card.png`, the share card link previews show (`bench.card`, needs matplotlib; the
-page's `og:image` points at it). With no
+page's `og:image` points at it; the Chinese page's at `card-zh.png` when a CJK font drew one). With no
 results it shows a "no runs yet" state; a file that does not parse is skipped and named in a visible note. The page
 never invents a row: every number on it comes from a result file.
 """
@@ -94,6 +94,7 @@ FAILS = ("Every contender run, task by task: the truth (from the suite), each ru
 SHOW = 4                       # list diffs name at most this many times or positions, then "+N more"
 LANGS = ("en", "zh")          # the page in English (index.html) and Simplified Chinese (zh/index.html)
 TAGS = {"en": "en", "zh": "zh-CN"}
+LOCALES = {"en": "en_US", "zh": "zh_CN"}   # og:locale
 URLS = {"en": PAGE_URL, "zh": f"{PAGE_URL}zh/"}
 COUNT_VIDEO = "The task video: two players juggle small yellow balls; count the left (red) player's touches."
 COUNT_OPEN = "Counted? Open for the truth and every model's answer"
@@ -228,6 +229,11 @@ ZH = {
     "{}: {} ({}, {} s)": "{}：{}（{}，{} s）",
     "{}: {} mean, range {}–{} ({}, {} s per run{})": "{}：平均 {}，范围 {}–{}（{}，每次 {} s{}）",
     "no answer, timed out at {}": "没有回答，{} 超时", " and ": " 和 ", "no answer": "没有回答", "{} s/run": "每次 {} s",
+    # the share card (bench.card: card-zh.png)
+    share_card.TITLE: "哪个编程 agent 最会看体育录像？",
+    share_card.SUB: "sports-video-coach 基准测试  ·  {}  ·  按绘制的真实值打分",
+    "frames only (eyes)": "只看静帧（用眼睛）", "No runs yet: be the first.": "还没有运行记录：来做第一个。",
+    share_card.FLOOR: "每个参赛者超出盲猜的平均分：0 = 盲猜基线的答案（没看视频），1 = 满分。",
 }
 
 
@@ -1135,16 +1141,15 @@ def count_block(rows: list[dict], lang: str = "en", inner: str = "") -> str:
             f"<script>{COUNT_JS}</script></section>")
 
 
-CARD_TITLE_ZH = "哪个编程 agent 最会看体育录像？"
-
-
-def social(card: bool, lang: str = "en") -> str:
-    """The link preview tags (Open Graph, X), as the landing page has them; og:image only when the card exists."""
-    title = share_card.TITLE if lang == "en" else CARD_TITLE_ZH
-    tags = [f'<meta property="og:title" content="{esc(title)}">',
-            f'<meta property="og:description" content="{esc(t(WHAT, lang))}">']
-    if card:   # one card for both pages (its text is English)
-        tags += [f'<meta property="og:image" content="{PAGE_URL}{share_card.NAME}">',
+def social(card=(), lang: str = "en") -> str:
+    """The link preview tags (Open Graph, X), as the landing page has them; `card`: the languages whose share card
+    was drawn. og:image is the card in the page's language, else the English one, else none."""
+    tags = [f'<meta property="og:title" content="{esc(t(share_card.TITLE, lang))}">',
+            f'<meta property="og:description" content="{esc(t(WHAT, lang))}">',
+            f'<meta property="og:locale" content="{LOCALES[lang]}">']
+    if card:
+        name = share_card.NAMES[lang] if lang in card else share_card.NAME
+        tags += [f'<meta property="og:image" content="{PAGE_URL}{name}">',
                  f'<meta property="og:image:width" content="{share_card.SIZE[0]}">',
                  f'<meta property="og:image:height" content="{share_card.SIZE[1]}">']
     tags += [f'<meta property="og:url" content="{URLS[lang]}">',
@@ -1197,10 +1202,10 @@ def top_blocks(rows: list[dict], clip: bool, count: bool, lang: str = "en") -> s
     return block or clip_block(clip, lang)
 
 
-def render(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, lang: str = "en",
+def render(rows: list[dict], notes: list[str], card=(), clip: bool = False, lang: str = "en",
            count: bool = False, effort=()) -> str:
-    """The page in `lang` ("en": index.html, "zh": zh/index.html); both show the same rows and numbers. `effort`:
-    the languages whose effort chart was drawn."""
+    """The page in `lang` ("en": index.html, "zh": zh/index.html); both show the same rows and numbers. `card`
+    and `effort`: the languages whose share card and effort chart were drawn."""
     if lang == "zh":
         return render_zh(rows, notes, card, clip, count, effort)
     code = [r for r in rows if track_of(r) == TRACK]
@@ -1281,7 +1286,7 @@ can differ (see the sample size note at the top).</li>
 """
 
 
-def render_zh(rows: list[dict], notes: list[str], card: bool = False, clip: bool = False, count: bool = False,
+def render_zh(rows: list[dict], notes: list[str], card=(), clip: bool = False, count: bool = False,
               effort=()) -> str:
     """The Chinese page (zh/index.html): the English page's sections, rows and numbers, in Chinese."""
     lang = "zh"
@@ -1371,9 +1376,11 @@ def main(argv: list[str]) -> int:
     rows, notes = load(Path(a.results_dir))
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    card = share_card.write(rows, out)
-    if card is None:
+    card = tuple(share_card.write(rows, out))
+    if not card:
         print("[bench page] no share card: matplotlib is not installed (the page has no og:image)")
+    elif "zh" not in card:
+        print("[bench page] share card in English only: no CJK font found (" + ", ".join(effort_chart.CJK_FONTS) + ")")
     clip = share_clip.write(rows, out)
     count = count_it.write(rows, out)
     effort = tuple(effort_chart.write(rows, out))
@@ -1384,12 +1391,12 @@ def main(argv: list[str]) -> int:
               + ")")
     if count is None:
         print("[bench page] no count-it-yourself block: needs ffmpeg and a run of the task")
-    shown = (card is not None, clip is not None)
+    shown = (card, clip is not None)
     (out / "index.html").write_text(render(rows, notes, *shown, count=count is not None, effort=effort), encoding="utf8")
     (out / "zh").mkdir(exist_ok=True)
     (out / "zh" / "index.html").write_text(render(rows, notes, *shown, "zh", count is not None, effort), encoding="utf8")
     from . import findings   # imports this module, so not at the top
-    findings.write(rows, out, card is not None, effort)
+    findings.write(rows, out, card, effort)
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))

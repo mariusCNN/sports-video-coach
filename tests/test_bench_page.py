@@ -3,7 +3,7 @@ import json
 import re
 
 from sports_video_coach import page_check
-from sports_video_coach.bench import card, page
+from sports_video_coach.bench import card, effort, page
 
 
 def row(agent: str, model: str, total: float, scores: list[float], **extra) -> dict:
@@ -188,7 +188,33 @@ def test_share_card_is_written_and_the_preview_tags_point_at_it(tmp_path):
     assert f'<meta property="og:image" content="{page.PAGE_URL}card.png">' in html
     assert f'<meta property="og:url" content="{page.PAGE_URL}">' in html
     assert '<meta name="twitter:card" content="summary_large_image">' in html and 'property="og:title"' in html
+    assert '<meta property="og:locale" content="en_US">' in html
     assert page_check.problems(out) == []
+    # the Chinese page previews the Chinese card (when a CJK font drew it), with Chinese text
+    zh = (out / "zh" / "index.html").read_text(encoding="utf8")
+    name = card.NAMES["zh"] if effort.cjk_font() else card.NAME
+    assert f'<meta property="og:image" content="{page.PAGE_URL}{name}">' in zh
+    assert '<meta property="og:locale" content="zh_CN">' in zh and "哪个编程 agent 最会看体育录像？" in zh
+    if effort.cjk_font():
+        png = (out / card.NAMES["zh"]).read_bytes()
+        assert (int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")) == card.SIZE
+
+
+def test_without_a_cjk_font_the_zh_page_previews_the_english_card(tmp_path, monkeypatch):
+    __import__("pytest").importorskip("matplotlib")
+    monkeypatch.setattr(effort, "cjk_font", lambda: None)
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "a.json", row("Agent A", "model-a", 1.0, [1.0, 1.0, 1.0]))
+    out, _ = render(tmp_path, results)
+    assert not (out / card.NAMES["zh"]).exists()
+    zh = (out / "zh" / "index.html").read_text(encoding="utf8")
+    assert f'<meta property="og:image" content="{page.PAGE_URL}card.png">' in zh
+
+
+def test_every_card_text_has_a_translation():
+    for en in (card.TITLE, card.SUB, card.FLOOR, "frames only (eyes)", "code track", "No runs yet: be the first."):
+        assert page.ZH[en]
 
 
 def test_without_matplotlib_there_is_no_card_and_no_og_image(tmp_path, monkeypatch):
