@@ -329,7 +329,8 @@ def test_skeptic_facts_are_counted_from_the_files(tmp_path):
     write(results, "base.json", base)
     out, html = render(tmp_path, results)
     facts = html[html.index('id="facts"'):html.index('id="leaderboard"')]
-    assert "Before you trust this: 10 things" in facts
+    assert "Before you trust this: 11 things" in facts
+    assert "no run used a fresh seed yet" in facts
     assert "2 of 3 runs were submitted by mariusDing" in facts and "1 by others" in facts
     assert "2 of 3 runs say in Settings" in facts
     assert "1 of 2 contenders" in facts and "differed by up to 0.524" in facts   # A: 0.869 vs 0.345 above

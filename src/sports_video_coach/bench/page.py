@@ -23,7 +23,7 @@ from pathlib import Path
 from . import card as share_card
 from . import clip as share_clip
 from . import run as bench_run
-from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task
+from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task, suite_tasks
 
 OWNER = "mariusDing"           # the repo owner, who also wrote the tool and submitted its first runs
 REPO_URL = f"https://github.com/{OWNER}/sports-video-coach"
@@ -41,6 +41,11 @@ SUITES = (                     # (name, what it is), shown in this order; unknow
                     "identical feet, a rebounder), rule-defined events and noise."),
     ("svc-bench-1", "Four short drawn videos on a still camera."),
 )
+FRESH = "-fresh"               # a run drawn from a fresh seed is listed under its suite's name plus this
+FRESH_WHAT = ("Fresh seeds: svc-bench-3 drawn anew for each run from the seed in its result file (`--seed`), with "
+              "the same scenes and kinds of traps but new counts, outcomes, times and rates. Their truth was never "
+              "published: the tool rebuilds it from the seed to score and to check each row. Each run's floor is "
+              "the blind baseline on its own seed.")
 TRACK = "code"                 # a result file without a track field is on the code track
 FRAMES = ("Frames-only track: the agent sees still images of each video (contact sheets with the time under every "
           "still) and has no tool that runs code, so it must review by eye. Same videos, same truth, same scoring "
@@ -216,7 +221,25 @@ def is_baseline(r: dict) -> bool:
     return r["contender"].get("agent") == BASELINE_AGENT
 
 
+def seed_floor(suite: str, track: str, seed: int) -> dict | None:
+    """{task id: the blind baseline's score} on a fresh seed (computed, never stored), or None for a bad seed."""
+    key = (suite, track, seed)
+    if key not in _SEED_FLOORS:
+        from .baseline import result as blind
+        try:
+            _SEED_FLOORS[key] = {str(t["id"]): t["score"] for t in blind(suite, track, seed=seed)["tasks"]}
+        except (KeyError, ValueError):
+            _SEED_FLOORS[key] = None
+    return _SEED_FLOORS[key]
+
+
+_SEED_FLOORS: dict[tuple, dict | None] = {}
+
+
 def above_value(r: dict, floor: dict | None) -> float | None:
+    """A run's above-chance score against `floor`; a run on a fresh seed is measured against its own seed's floor."""
+    if r.get("seed") is not None:
+        floor = seed_floor(str(r.get("suite") or SUITE), track_of(r), r["seed"])
     return above_chance([{"id": str(t["id"]), "score": t.get("score")} for t in r["tasks"]], floor) if floor else None
 
 
@@ -242,6 +265,8 @@ def table(rows: list[dict], floor_row: dict | None = None) -> str:
                                            if c.get("agent_version") else "")
         if base:
             agent = f"<strong>Floor:</strong> {agent} (no video seen)"
+        if r.get("seed") is not None:
+            agent += f' <span class="sub">seed {esc(r["seed"])}</span>'
         scores = {str(t["id"]): t.get("score") for t in r["tasks"]}
         who = esc(r.get("submitted_by") or "-")
         tr = '<tr class="floor">' if base else "<tr>"
@@ -366,7 +391,8 @@ def part_mean(v, n_with: int, n: int, fmt) -> str:
 
 
 def suite_of(r: dict) -> str:
-    return str(r.get("suite") or SUITE)
+    """The board a run is listed on: its suite, or its suite plus FRESH when it was drawn from a fresh seed."""
+    return str(r.get("suite") or SUITE) + ("" if r.get("seed") is None else FRESH)
 
 
 def track_of(r: dict) -> str:
@@ -486,8 +512,10 @@ def fails(rows: list[dict], suite: str) -> list[dict]:
     """Per task of `suite`: {id, kind, truth, runs: [{label, file, answer, score, why, miss}]}, derived from the
     runs' stored answers and the suite's truth (never the truth copied into a result file). The score is recomputed
     (`score_task`); a row without a stored answer keeps its stored score and says the answer was not recorded.
-    Empty for a suite this tool does not know."""
-    mod = TRUTH_SUITES.get(suite)
+    Empty for a suite this tool does not know. On a fresh-seed board (`suite` ends in FRESH) each run's truth is
+    rebuilt from its own seed: the task's truth is then None and every run row carries its own `truth`."""
+    base = suite.removesuffix(FRESH)
+    mod = TRUTH_SUITES.get(base)
     runs = sorted((r for r in rows if not is_baseline(r)), key=lambda r: r["_file"])
     if mod is None or not runs:
         return []
@@ -499,16 +527,22 @@ def fails(rows: list[dict], suite: str) -> list[dict]:
             row = next((x for x in r["tasks"] if str(x["id"]) == t.id), None)
             if row is None:
                 continue
+            seed = r.get("seed")
+            try:
+                truth = suite_tasks(base, seed).BY_ID[t.id].truth
+            except ValueError:
+                continue
             if "answer" in row:
-                score = score_task(t.id, row["answer"], suite)["score"]
+                score = score_task(t.id, row["answer"], base, seed)["score"]
             else:
                 score = row.get("score") if is_num(row.get("score")) else None
-            why = diff_answer(t.kind, t.truth, row)
-            lines.append({"label": label, "file": r["_file"], "answer": row.get("answer"), "score": score,
-                          "why": why, "miss": score is None or score < 1,
-                          "recorded": "answer" in row})
+            why = diff_answer(t.kind, truth, row)
+            lines.append({"label": label if seed is None else f"{label} (seed {seed})", "file": r["_file"],
+                          "answer": row.get("answer"), "score": score, "why": why,
+                          "miss": score is None or score < 1, "recorded": "answer" in row, "truth": truth})
         if lines:
-            out.append({"id": t.id, "kind": t.kind, "truth": t.truth, "runs": lines})
+            same = all(x["truth"] == lines[0]["truth"] for x in lines) and not suite.endswith(FRESH)
+            out.append({"id": t.id, "kind": t.kind, "truth": lines[0]["truth"] if same else None, "runs": lines})
     return out
 
 
@@ -524,12 +558,16 @@ def fails_section(rows: list[dict], suite: str) -> str:
             ans = show_value(t["kind"], x["answer"]) if x["recorded"] else "-"
             score = f'{x["score"]:.2f}' if x["score"] is not None else "-"
             why = x["why"] or ("score below 1" if x["miss"] else "exact")
+            if t["truth"] is None:
+                why = f'truth {show_truth(t["kind"], x["truth"])}; {why}'
             tr = '<tr class="miss">' if x["miss"] else "<tr>"
             body.append(f'{tr}<td title="{esc(x["file"])}">'
                         f'{esc(x["label"])}</td><td class="num">{esc(ans)}</td><td class="num">{score}</td>'
                         f'<td class="why">{esc(why)}</td></tr>')
+        truth = ("drawn from each run's own seed; shown in its row" if t["truth"] is None
+                 else show_truth(t["kind"], t["truth"]))
         parts.append(f'<h5>{esc(t["id"])}<span class="kind">{esc(t["kind"])}</span></h5>'
-                     f'<p class="truth"><strong>Truth:</strong> {esc(show_truth(t["kind"], t["truth"]))}</p>'
+                     f'<p class="truth"><strong>Truth:</strong> {esc(truth)}</p>'
                      '<div class="scroll"><table class="fails"><thead><tr><th scope="col">Run</th>'
                      '<th class="num" scope="col">Answer</th><th class="num" scope="col">Score</th>'
                      '<th scope="col">What was missed</th></tr></thead>'
@@ -545,7 +583,7 @@ def boards(rows: list[dict], prefix: str = "") -> str:
     names = known + sorted({suite_of(r) for r in rows if not is_baseline(r)} - set(known))
     ran = {suite_of(r) for r in rows if not is_baseline(r)}
     names = [n for n in names if n in ran] + [n for n in names if n not in ran]   # empty suites last
-    what = dict(SUITES)
+    what = dict(SUITES) | {n + FRESH: FRESH_WHAT for n in TRUTH_SUITES}
     out = []
     for n in names:
         mine = [r for r in rows if suite_of(r) == n and not is_baseline(r)]
@@ -620,6 +658,12 @@ def facts(rows: list[dict]) -> list[str]:
     top = max(floors) if floors else None
     guess = (f" That guess alone scores up to {top[0]:.2f} on one task ({esc(top[1])})." if top else "")
     ev = sum(1 for r in runs if str(r.get("evidence") or "").startswith(("https://", "http://")))
+    fresh = sum(1 for r in runs if r.get("seed") is not None)
+    held = (f"{fresh} of {n} runs drew svc-bench-3 from a fresh seed (<code>--seed</code>), whose truth was never "
+            "published; the tool rebuilds it from the seed in the result file to score and check the row."
+            if fresh else
+            "no run used a fresh seed yet. <code>bench prepare --seed</code> draws svc-bench-3 anew, with truth "
+            "that was never published.")
     timed = sum(1 for r in runs if is_num_value(r.get("wall_seconds")))
     costed = sum(1 for r in runs if is_num_value(r.get("cost_usd")))
     return [
@@ -630,6 +674,8 @@ def facts(rows: list[dict]) -> list[str]:
         "<strong>Settings:</strong> not equalized. Each row ran at the effort and flags its Settings column names.",
         "<strong>Truth:</strong> the tool draws the videos from numbers, so the truth is exact. No human labels, no "
         "judge model.",
+        "<strong>Public truth:</strong> the published suites and their truth ship in the open package, so a model "
+        f"could have seen them in training; {held}",
         "<strong>Suite design:</strong> svc-bench-2 and svc-bench-3 were each built after models scored 1.0 on the "
         "suite before, so the author knew which models already saturated it.",
         '<strong>Prompt:</strong> <code>bench run</code> sends one fixed text per track, the same for every '

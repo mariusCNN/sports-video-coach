@@ -15,10 +15,22 @@ closely, often at the full-size stills rather than the contact sheets:
 Drawn like suite 2 (numpy / OpenCV frames piped to ffmpeg, 640x360 at 25 fps, hand-held camera shake, noise, flicker,
 a short motion blur, CRF 30). Every truth is computed from the same numbers that drive the drawing, so the two cannot
 drift apart, and the noise uses a fixed seed. The truth lives here and is never written into a prepared folder.
+
+Fresh seeds: the numbers that make the events (the juggling sequence, the shots, the passes and the defender's walk,
+the stroke lengths) form a `Spec`. `DEFAULT` is the published suite (the module-level names below are its values);
+`seeded(n)` draws a new `Spec` from the integer seed n, with the same scenes, rules and kinds of traps but different
+counts, outcomes, times and rates, and builds its tasks and truth from it. A seeded truth is never stored anywhere:
+`bench score` and `bench validate` rebuild it from the seed a result file records. The generators keep each seed as
+readable as the published suite (checked by a pixel read-back of the stills, see docs/benchmark.md): high juggling arcs
+take longer, a pass across the middle player is a lob, the defender hides only held balls and stays clear of every
+other release, catch and flight.
 """
 from __future__ import annotations
 
+import functools
 import math
+import random
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +40,7 @@ from .suite2 import Path2, bgr, canvas, circle, frames, lerp_keys, line, rect, r
 
 SUITE = "svc-bench-3"
 WW, WH = 700, 420          # world size; the camera shows x 30..670, y 30..390 give or take the shake
+MAX_SEED = 2 ** 63 - 1
 
 
 def fsec(f: int) -> float:
@@ -85,9 +98,6 @@ def juggle_path(cs: list[tuple[int, str, int]], x0: float) -> Path2:
 
 
 JUG_N = frames(JUG_S)
-JUG_CONTACTS = contacts(JUGGLE, JUG_FIRST, JUG_N)
-DECOY_CONTACTS = contacts(DECOY_JUGGLE, DECOY_FIRST, JUG_N)
-JUG_TOUCHES = [f for f, k, _ in JUG_CONTACTS if k == "F" and f < JUG_N]
 
 
 def foot_lift(cs: list[tuple[int, str, int]], t: float) -> float:
@@ -95,15 +105,16 @@ def foot_lift(cs: list[tuple[int, str, int]], t: float) -> float:
     return max([max(0.0, 1 - abs(t - f / FPS) / 0.16) for f, k, _ in cs if k == "F"] + [0.0])
 
 
-def draw_juggle(out: Path) -> Path:
+def draw_juggle(out: Path, v: Instance | None = None) -> Path:
+    v = v or DEFAULT_INSTANCE
     world = canvas(WW, WH, "2a3550")
     for x in range(40, WW, 110):
         world[60:JUG_FLOOR, x:x + 4] = bgr("4a5775")                                  # wall panels
     world[JUG_FLOOR:JUG_FLOOR + 3] = bgr("e0e0e0")
     world[JUG_FLOOR + 3:] = bgr("6b4a2f")
     ball = bgr("f2c522")
-    players = [(JUG_X, bgr("d0312d"), juggle_path(JUG_CONTACTS, JUG_X), JUG_CONTACTS),
-               (DECOY_X, bgr("e0603a"), juggle_path(DECOY_CONTACTS, DECOY_X), DECOY_CONTACTS)]
+    players = [(JUG_X, bgr("d0312d"), juggle_path(v.jug_contacts, JUG_X), v.jug_contacts),
+               (DECOY_X, bgr("e0603a"), juggle_path(v.decoy_contacts, DECOY_X), v.decoy_contacts)]
 
     def draw(img, t, ox, oy):
         for x0, shirt, path, cs in players:
@@ -140,7 +151,7 @@ def far_outcome(kind: str) -> str:
     return "made" if kind.split("+")[-1].rstrip("*") in MADE3 else "missed"
 
 
-def far_shots() -> tuple[Path2, list[float]]:
+def far_shots(shots: list[str] = SHOTS3) -> tuple[Path2, list[float]]:
     """The ball path, and the times the ball reaches the rim on the shots the banner covers."""
     p, covered = Path2(FAR_HANDS), []
     hx, hy = FAR_HANDS
@@ -152,7 +163,7 @@ def far_shots() -> tuple[Path2, list[float]]:
     def orbit(dur, phi1):
         p.seg(dur, lambda u: (RX + 6 * math.cos(phi1 * u), RY - 4 - 1.5 * abs(math.sin(phi1 * u))))
 
-    for kind in SHOTS3:
+    for kind in shots:
         p.hold(0.6)
         what = kind.split("+")[-1]
         if kind.startswith("fake+"):
@@ -200,20 +211,18 @@ def far_shots() -> tuple[Path2, list[float]]:
     return p, covered
 
 
-FAR_PATH, FAR_COVERED = far_shots()
-FAR_S = math.ceil(FAR_PATH.t * FPS) / FPS
-
-
-def banner_x(t: float) -> float | None:
-    """Centre x of the banner at t (it passes the rim centre 0.16 s after the ball arrives), or None when off."""
-    for ta in FAR_COVERED:
+def banner_x(t: float, covered: list[float] | None = None) -> float | None:
+    """Centre x of the banner at t (it passes the rim centre 0.16 s after the ball arrives), or None when off.
+    `covered`: the arrival times of the covered shots (default: the published suite's)."""
+    for ta in DEFAULT_INSTANCE.far_covered if covered is None else covered:
         x = RX + BANNER_V * (t - ta - 0.16)
         if abs(x - RX) < 400:
             return x
     return None
 
 
-def draw_far(out: Path) -> Path:
+def draw_far(out: Path, v: Instance | None = None) -> Path:
+    v = v or DEFAULT_INSTANCE
     world = canvas(WW, WH, "26324a")
     world[FAR_FLOOR:] = bgr("8b5a2b")
     world[FAR_FLOOR:FAR_FLOOR + 2] = bgr("d8d8d8")
@@ -226,7 +235,7 @@ def draw_far(out: Path) -> Path:
     shooter, banner = bgr("3355cc"), bgr("d9d2c0")
 
     def draw(img, t, ox, oy):
-        (bx, by), hands, _ = FAR_PATH.at(t)
+        (bx, by), hands, _ = v.far_path.at(t)
         rise = (FAR_HANDS[1] - by) * 0.6 if hands else 0.0
         rect(img, 166 - ox, 276 - rise - oy, 178 - ox, FAR_FLOOR - rise - oy, shooter)      # shooter
         circle(img, 172 - ox, 270 - rise - oy, 5, bgr("c89a74"))
@@ -235,13 +244,13 @@ def draw_far(out: Path) -> Path:
                      ((RX - 7, RY + 2), (RX + 4, NET_Y)), ((RX + 7, RY + 2), (RX - 4, NET_Y))):
             line(img, (a[0] - ox, a[1] - oy), (b[0] - ox, b[1] - oy), net, 1)
         rect(img, RX - RHALF - ox, RY - oy, RX + RHALF - ox, RY + 2 - oy, rim)
-        x = banner_x(t)
+        x = banner_x(t, v.far_covered)
         if x is not None:
             rect(img, x - BANNER_W / 2 - ox, RY - 44 - oy, x + BANNER_W / 2 - ox, RY + 10 - oy, banner)
             rect(img, x - BANNER_W / 2 - ox, RY - 30 - oy, x + BANNER_W / 2 - ox, RY - 24 - oy, bgr("2f6b3a"))
             rect(img, x - 2 - ox, RY + 10 - oy, x + 2 - ox, WH - oy, bgr("5a4a3a"))            # its pole
 
-    return render(out, FAR_S, world, shaky(WW, WH, (30, 30), 9, 7, 1.3), draw, seed=32)
+    return render(out, v.far_s, world, shaky(WW, WH, (30, 30), 9, 7, 1.3), draw, seed=32)
 
 
 # --- timestamps: pass releases, with fakes, one-touch passes, a defender in front and a decoy pair ----------------
@@ -257,15 +266,17 @@ PASSES = [("A", "B", "arc", 1.0, False), ("B", "C", "arc", 0.6, True), ("C", "B"
           ("A", "B", "arc", 0.8, False), ("B", "C", "touch", 0.0, False), ("C", "B", "arc", 1.0, True),
           ("B", "A", "bounce", 0.6, False), ("A", "B", "arc", 0.4, True), ("B", "C", "arc", 0.88, False)]
 PASS_S = 21.0
+FLIGHT = {"arc": 0.68, "touch": 0.68, "lob": 1.2, "bounce": 0.8}     # s from the release to the catch
+FAKE_S = 0.72                                                       # a pass fake and the hold after it
 
 
 def chest(who: str) -> tuple[float, float]:
     return SPOTS[who], PASS_CHEST
 
 
-def pass_path() -> tuple[Path2, list[float]]:
+def pass_path(passes: list[tuple] = PASSES) -> tuple[Path2, list[float]]:
     p, releases = Path2(chest("A")), []
-    for passer, receiver, style, hold, fake in PASSES:
+    for passer, receiver, style, hold, fake in passes:
         if style != "touch":
             p.hold(hold, holder=passer)
         if fake:
@@ -286,11 +297,10 @@ def pass_path() -> tuple[Path2, list[float]]:
             mid = ((p.p[0] + to[0]) / 2, PASS_FLOOR - PASS_R)
             p.line(0.4, mid)
             p.line(0.4, to)
-    p.hold(PASS_S - p.t, holder=PASSES[-1][1])
+    p.hold(PASS_S - p.t, holder=passes[-1][1])
     return p, releases
 
 
-PASS_PATH, RELEASES = pass_path()
 DECOY_SPOTS = (250, 480)
 DECOY_CHEST = 196
 
@@ -314,7 +324,8 @@ DEFENDER_X = [(0.0, 240), (1.6, 345), (2.0, 350), (3.3, 350), (4.4, 240), (6.6, 
 PASS_HIDDEN = [3.0, 9.48, 15.84, 17.76]
 
 
-def draw_passes(out: Path) -> Path:
+def draw_passes(out: Path, v: Instance | None = None) -> Path:
+    v = v or DEFAULT_INSTANCE
     world = canvas(WW, WH, "2b3346")
     world[220:] = bgr("9a6a3a")
     world[220:222] = bgr("cfcfcf")
@@ -322,6 +333,7 @@ def draw_passes(out: Path) -> Path:
     for x in range(70, WW, 120):
         world[90:220, x:x + 3] = bgr("3b4560")
     ball, blue, grey, red, skin = bgr("f08a24"), bgr("3355cc"), bgr("8a8a8a"), bgr("c42b2b"), bgr("c89a74")
+    defender = list(v.spec.defender_x)
 
     def draw(img, t, ox, oy):
         for x in DECOY_SPOTS:                                                               # the pair at the back
@@ -332,9 +344,9 @@ def draw_passes(out: Path) -> Path:
         for x in SPOTS.values():
             rect(img, x - 13 - ox, 268 - oy, x + 13 - ox, PASS_FLOOR - oy, blue)
             circle(img, x - ox, 256 - oy, 11, skin)
-        (bx, by), _, _ = PASS_PATH.at(t)
+        (bx, by), _, _ = v.pass_path.at(t)
         circle(img, bx - ox, by - oy, PASS_R, ball)
-        x = lerp_keys(DEFENDER_X, t)                                                       # in front of everyone
+        x = lerp_keys(defender, t)                                                         # in front of everyone
         rect(img, x - 17 - ox, 262 - oy, x + 17 - ox, PASS_FLOOR - oy, red)
         circle(img, x - ox, 249 - oy, 12, skin)
 
@@ -351,6 +363,7 @@ NEAR_Y, FAR_Y = 300, 228             # hull top (water line) of the near and the
 ROW_A = [54, 53, 55, 54, 52, 55]     # frames per stroke before the split (about 27.8 a minute)
 ROW_B = [44, 45, 43, 44, 46, 44]     # after it (about 34 a minute)
 ROW_DECOY = [47, 48, 47, 46, 48]     # the far boat (about 31.9 a minute)
+ROW_FIRST, ROW_DECOY_FIRST = 9, 31   # frame of each boat's first catch
 
 
 def catch_frames(first: int, before: list[int], after: list[int] | None, split: float) -> list[int]:
@@ -364,13 +377,8 @@ def catch_frames(first: int, before: list[int], after: list[int] | None, split: 
     return out
 
 
-CATCHES = catch_frames(9, ROW_A, ROW_B, ROW_SPLIT)
-DECOY_CATCHES = catch_frames(31, ROW_DECOY, None, ROW_SPLIT)
-IN_VIDEO = [f for f in CATCHES if f < frames(ROW_S)]
-
-
-def rate_after(split: float) -> float:
-    fs = [f for f in IN_VIDEO if f >= frames(split)]
+def rate_after(in_video: list[int], split: float) -> float:
+    fs = [f for f in in_video if f >= frames(split)]
     return round(60 * (len(fs) - 1) * FPS / (fs[-1] - fs[0]), 3)
 
 
@@ -401,12 +409,13 @@ def blade(u: float, catch_s: float) -> tuple[float, float]:
     return x, y
 
 
-def draw_rowing(out: Path) -> Path:
+def draw_rowing(out: Path, v: Instance | None = None) -> Path:
+    v = v or DEFAULT_INSTANCE
     world = canvas(WW, WH, "41603f")
     world[:110] = bgr("9cb7c9")
     world[160:] = bgr("1f5f8a")
     hull, body, oar, yellow = bgr("efefef"), bgr("b03030"), bgr("cfcfcf"), bgr("f2c522")
-    boats = [(FAR_Y, DECOY_CATCHES), (NEAR_Y, CATCHES)]
+    boats = [(FAR_Y, v.decoy_catches), (NEAR_Y, v.catches)]
 
     def draw(img, t, ox, oy):
         for k, x0 in enumerate(range(0, 900, 60)):                                 # lane-rope floats, scrolling
@@ -430,49 +439,271 @@ def draw_rowing(out: Path) -> Path:
     return render(out, ROW_S, world, shaky(WW, WH, (30, 30), 8, 6, 3.3), draw, seed=34)
 
 
-TASKS = [
-    Task("juggle-touches", "count",
-         "Two players juggle identical small yellow balls with one foot, side view: the red player on the left and "
-         "the orange-red player on the right. Count the touches of the left (red) player: every time his foot "
-         "touches his ball. A quick double touch (the ball hops a little off the foot and is touched again at once) "
-         "is two touches. A bounce of the ball on the floor is not a touch. The right player's touches do not "
-         "count. The camera is hand-held.",
-         "an integer, e.g. `5`", JUG_S, len(JUG_TOUCHES), draw_juggle),
-    Task("far-hoop-shots", "outcomes",
-         f"A wide shot of a far hoop (small red rim, grey net, white backboard): the blue shooter on the left takes "
-         f"{len(SHOTS3)} shots with a small orange ball. A shot starts when the ball leaves his hands; a pump fake "
-         "(the ball goes up and comes back down without leaving his hands) is not a shot. For each shot in order: "
-         "`made` if the ball goes down through the ring and out of the bottom of the net, else `missed`. Bouncing "
-         "or rolling on the rim and then going down through counts as made; a ball that dips into the ring and pops "
-         "back out, or falls just in front of the rim, is missed. A fan's banner sometimes passes in front of the "
-         "rim: judge those shots by where the ball comes out. The camera is hand-held.",
-         f'a list of {len(SHOTS3)} strings, each "made" or "missed", e.g. `["made", "missed", ...]`', FAR_S,
-         [far_outcome(k) for k in SHOTS3], draw_far),
-    Task("pass-releases", "timestamps",
-         "Three blue players pass an orange ball; a red defender moves around in front of them, and a grey pair "
-         "further back passes an identical ball (not counted). Give the time of every release: the moment the ball "
-         "leaves a blue player on a pass to another blue player. A pass fake (the ball moves toward a teammate and "
-         "comes back without leaving the hands) is not a pass. A one-touch pass (the ball is redirected the moment "
-         "it arrives, without being held) is a pass, released when it arrives. A bounce pass is one pass. When the "
-         "defender hides the ball, judge the release from where the ball goes. The camera is hand-held.",
-         "a list of seconds from the start of the video, in order, e.g. `[1.5, 4.25]`", PASS_S, RELEASES,
-         draw_passes),
-    Task("stroke-rate", "rate",
-         "Two identical single sculls row side by side far from the camera, which follows them; each rower has one "
-         "oar with a small yellow blade. Look at the near boat (the lower one in the picture); its rower changes "
-         "the rate during the video. A catch is the moment its blade drops into the water at the forward end of "
-         "the stroke. Report the stroke rate from 15.0 s to the end: 60 x (the number of catches at or after "
-         "15.0 s, minus 1) / (the time of the last of those catches minus the time of the first), in strokes per "
-         "minute. The far boat does not count. The camera is hand-held.",
-         "a number of strokes per minute, e.g. `30.5`", ROW_S, rate_after(ROW_SPLIT), draw_rowing),
-]
-BY_ID = {t.id: t for t in TASKS}
+# --- one instance of the suite: the published one, or a fresh seed's -------------------------------------------------
+@dataclass(frozen=True)
+class Spec:
+    """The numbers that make the events of one instance of the suite (`seed` None: the published suite)."""
+    juggle: tuple
+    decoy_juggle: tuple
+    jug_first: int
+    decoy_first: int
+    shots: tuple
+    passes: tuple
+    defender_x: tuple
+    pass_hidden: tuple
+    row_a: tuple
+    row_b: tuple
+    row_decoy: tuple
+    row_first: int
+    row_decoy_first: int
+    seed: int | None = None
+
+
+class Instance:
+    """The tasks and truth of one `Spec`, with everything its drawing needs. Raises ValueError when an event would
+    sit too close to a video's edge (a fresh seed then draws again)."""
+
+    def __init__(self, spec: Spec):
+        self.spec, self.seed, self.SUITE = spec, spec.seed, SUITE
+        self.jug_contacts = contacts(list(spec.juggle), spec.jug_first, JUG_N)
+        self.decoy_contacts = contacts(list(spec.decoy_juggle), spec.decoy_first, JUG_N)
+        self.jug_touches = [f for f, k, _ in self.jug_contacts if k == "F" and f < JUG_N]
+        self.far_path, self.far_covered = far_shots(list(spec.shots))
+        self.far_s = math.ceil(self.far_path.t * FPS) / FPS
+        self.pass_path, self.releases = pass_path(list(spec.passes))
+        self.catches = catch_frames(spec.row_first, list(spec.row_a), list(spec.row_b), ROW_SPLIT)
+        self.decoy_catches = catch_frames(spec.row_decoy_first, list(spec.row_decoy), None, ROW_SPLIT)
+        self.in_video = [f for f in self.catches if f < frames(ROW_S)]
+        self.check()
+        self.TASKS = self.tasks()
+        self.BY_ID = {t.id: t for t in self.TASKS}
+
+    def check(self) -> None:
+        """Every in-video event is clear of the video's edges: the first and last counted events are well inside."""
+        s = self.spec
+        after = [f for f, _, _ in self.jug_contacts if f >= JUG_N]
+        ok = [self.jug_touches[0] >= 10 and self.jug_touches[-1] <= JUG_N - 8, after[0] >= JUG_N + 4,
+              all(abs(r * FPS - round(r * FPS)) < 1e-6 for r in self.releases), self.releases[-1] < PASS_S - 1,
+              all(r in self.releases and min(abs(lerp_keys(list(s.defender_x), r) - x) for x in SPOTS.values()) < 4
+                  for r in s.pass_hidden),
+              self.far_path.t <= self.far_s, len(self.far_covered) == 3,
+              self.in_video[-1] <= frames(ROW_S) - 8, self.catches[len(self.in_video)] >= frames(ROW_S) + 4]
+        if not all(ok):
+            raise ValueError(f"svc-bench-3 spec (seed {s.seed}) fails check {ok.index(False)}")
+
+    def tasks(self) -> list[Task]:
+        shots = self.spec.shots
+        return [
+            Task("juggle-touches", "count",
+                 "Two players juggle identical small yellow balls with one foot, side view: the red player on the "
+                 "left and the orange-red player on the right. Count the touches of the left (red) player: every "
+                 "time his foot touches his ball. A quick double touch (the ball hops a little off the foot and is "
+                 "touched again at once) is two touches. A bounce of the ball on the floor is not a touch. The right "
+                 "player's touches do not count. The camera is hand-held.",
+                 "an integer, e.g. `5`", JUG_S, len(self.jug_touches), functools.partial(draw_juggle, v=self)),
+            Task("far-hoop-shots", "outcomes",
+                 f"A wide shot of a far hoop (small red rim, grey net, white backboard): the blue shooter on the left "
+                 f"takes {len(shots)} shots with a small orange ball. A shot starts when the ball leaves his hands; a "
+                 "pump fake (the ball goes up and comes back down without leaving his hands) is not a shot. For each "
+                 "shot in order: `made` if the ball goes down through the ring and out of the bottom of the net, else "
+                 "`missed`. Bouncing or rolling on the rim and then going down through counts as made; a ball that "
+                 "dips into the ring and pops back out, or falls just in front of the rim, is missed. A fan's banner "
+                 "sometimes passes in front of the rim: judge those shots by where the ball comes out. The camera is "
+                 "hand-held.",
+                 f'a list of {len(shots)} strings, each "made" or "missed", e.g. `["made", "missed", ...]`',
+                 self.far_s, [far_outcome(k) for k in shots], functools.partial(draw_far, v=self)),
+            Task("pass-releases", "timestamps",
+                 "Three blue players pass an orange ball; a red defender moves around in front of them, and a grey "
+                 "pair further back passes an identical ball (not counted). Give the time of every release: the "
+                 "moment the ball leaves a blue player on a pass to another blue player. A pass fake (the ball moves "
+                 "toward a teammate and comes back without leaving the hands) is not a pass. A one-touch pass (the "
+                 "ball is redirected the moment it arrives, without being held) is a pass, released when it arrives. "
+                 "A bounce pass is one pass. When the defender hides the ball, judge the release from where the ball "
+                 "goes. The camera is hand-held.",
+                 "a list of seconds from the start of the video, in order, e.g. `[1.5, 4.25]`", PASS_S,
+                 self.releases, functools.partial(draw_passes, v=self)),
+            Task("stroke-rate", "rate",
+                 "Two identical single sculls row side by side far from the camera, which follows them; each rower "
+                 "has one oar with a small yellow blade. Look at the near boat (the lower one in the picture); its "
+                 "rower changes the rate during the video. A catch is the moment its blade drops into the water at "
+                 "the forward end of the stroke. Report the stroke rate from 15.0 s to the end: 60 x (the number of "
+                 "catches at or after 15.0 s, minus 1) / (the time of the last of those catches minus the time of "
+                 "the first), in strokes per minute. The far boat does not count. The camera is hand-held.",
+                 "a number of strokes per minute, e.g. `30.5`", ROW_S, rate_after(self.in_video, ROW_SPLIT),
+                 functools.partial(draw_rowing, v=self)),
+        ]
+
+
+DEFAULT = Spec(tuple(JUGGLE), tuple(DECOY_JUGGLE), JUG_FIRST, DECOY_FIRST, tuple(SHOTS3), tuple(PASSES),
+               tuple(DEFENDER_X), tuple(PASS_HIDDEN), tuple(ROW_A), tuple(ROW_B), tuple(ROW_DECOY), ROW_FIRST,
+               ROW_DECOY_FIRST)
+DEFAULT_INSTANCE = Instance(DEFAULT)
+
+# the published suite's values, by their old names
+JUG_CONTACTS, DECOY_CONTACTS = DEFAULT_INSTANCE.jug_contacts, DEFAULT_INSTANCE.decoy_contacts
+JUG_TOUCHES = DEFAULT_INSTANCE.jug_touches
+FAR_PATH, FAR_COVERED, FAR_S = DEFAULT_INSTANCE.far_path, DEFAULT_INSTANCE.far_covered, DEFAULT_INSTANCE.far_s
+PASS_PATH, RELEASES = DEFAULT_INSTANCE.pass_path, DEFAULT_INSTANCE.releases
+CATCHES, DECOY_CATCHES, IN_VIDEO = DEFAULT_INSTANCE.catches, DEFAULT_INSTANCE.decoy_catches, DEFAULT_INSTANCE.in_video
+TASKS = DEFAULT_INSTANCE.TASKS
+BY_ID = DEFAULT_INSTANCE.BY_ID
 
 assert len(BY_ID) == len(TASKS)
-# every in-video event is clear of the video's edges: the first and last counted events are well inside
-assert JUG_TOUCHES[0] >= 10 and JUG_TOUCHES[-1] <= JUG_N - 8
-assert [f for f, _, _ in JUG_CONTACTS if f >= JUG_N][0] >= JUG_N + 4
-assert all(abs(r * FPS - round(r * FPS)) < 1e-6 for r in RELEASES) and RELEASES[-1] < PASS_S - 1
-assert all(r in RELEASES and min(abs(lerp_keys(DEFENDER_X, r) - x) for x in SPOTS.values()) < 4 for r in PASS_HIDDEN)
-assert FAR_PATH.t <= FAR_S and len(FAR_COVERED) == 3
-assert IN_VIDEO[-1] <= frames(ROW_S) - 8 and CATCHES[len(IN_VIDEO)] >= frames(ROW_S) + 4
+
+
+# --- fresh seeds -----------------------------------------------------------------------------------------------------
+# Each generator keeps the published suite's kinds of traps and their sizes (a double touch is a 6-frame hop of about
+# 10 px, a covered shot's ball reaches the rim behind the banner, a fake is 0.72 s, the far boat rows at least 6 %
+# slower than the near boat after the change) and draws new counts, orders, holds and stroke lengths. Only Python's
+# own `random.Random(seed)` with integer calls is used, so a seed gives the same suite on every machine.
+COVERABLE = ("swish", "back-in", "front-up-in", "front-out", "back-out", "in-out")   # the ball comes out clearly
+SHOT_KINDS = ("swish", "front-out", "back-in", "in-out", "short", "roll-in", "roll-out", "back-out", "front-up-in")
+
+
+def fresh_juggle(rng: random.Random) -> tuple[tuple, int]:
+    """A juggling sequence long enough for the whole video, and the frame of its first contact."""
+    first = rng.randint(16, 26)
+    seq, f = [], first
+    while f <= JUG_N + 30:
+        roll = rng.randrange(100)
+        quick = bool(seq) and seq[-1][1] == 6
+        if roll < 18 and seq and seq[-1][0] == "F" and not (len(seq) >= 2 and seq[-1][1] == seq[-2][1] == 6):
+            entry = ("F", 6, rng.randint(9, 11))                   # a double touch: the next contact is the foot
+        elif roll < 30 and not quick and seq:
+            entry = ("N", rng.randint(11, 14), rng.randint(20, 40))
+        else:
+            gap = rng.randint(13, 19)                               # a higher arc takes longer, as published
+            entry = ("F", gap, rng.randint(max(58, 5 * gap - 14), min(90, 5 * gap + 2)))
+        if quick and entry[0] == "N":
+            entry = ("F",) + entry[1:]
+        seq.append(entry)
+        f += entry[1]
+    return tuple(seq), first
+
+
+def fresh_shots(rng: random.Random) -> tuple:
+    while True:
+        n = rng.randint(10, 13)
+        kinds = [SHOT_KINDS[rng.randrange(len(SHOT_KINDS))] for _ in range(n)]
+        made = sum(far_outcome(k) == "made" for k in kinds)
+        if not 3 <= made <= n - 3:
+            continue
+        can = [i for i, k in enumerate(kinds) if k in COVERABLE]
+        if len(can) < 3:
+            continue
+        hidden: list[int] = []
+        for _ in range(40):
+            i = can[rng.randrange(len(can))]
+            if all(abs(i - j) > 1 for j in hidden):
+                hidden.append(i)
+            if len(hidden) == 3:
+                break
+        if len(hidden) < 3:
+            continue
+        fakes = {rng.randrange(n) for _ in range(rng.randint(1, 2))}
+        return tuple(("fake+" if i in fakes else "") + k + ("*" if i in hidden else "") for i, k in enumerate(kinds))
+
+
+def fresh_passes(rng: random.Random) -> tuple[tuple, tuple, tuple]:
+    """(passes, defender keyframes, the releases the defender hides)."""
+    while True:
+        n, who, t, passes = rng.randint(11, 13), "A", 0.0, []
+        for k in range(n):
+            to = rng.choice([x for x in "ABC" if x != who])
+            roll = rng.randrange(100)
+            again = bool(passes) and passes[-1][2] == "touch"
+            style = ("touch" if k and roll < 18 and not again else "arc" if roll < 60 else "lob" if roll < 78
+                     else "bounce")
+            if {who, to} == {"A", "C"}:            # across the middle player: only a lob, as in the published suite
+                style = "lob"
+            hold = 0.0 if style == "touch" else rng.randint(10, 30) * 0.04
+            fake = style != "touch" and rng.randrange(100) < 33
+            passes.append((who, to, style, round(hold, 2), fake))
+            t += hold + FAKE_S * fake + FLIGHT[style]
+            who = to
+        touches, fakes = sum(p[2] == "touch" for p in passes), sum(p[4] for p in passes)
+        if not (1 <= touches <= 3 and 2 <= fakes <= 5 and 15.0 <= t <= PASS_S - 0.6):
+            continue
+        path, releases = pass_path(passes)
+        if releases[-1] >= PASS_S - 1:
+            continue
+        hidden: list[float] = []
+        caught = {r: r - p[3] - FAKE_S * p[4] for r, p in zip(releases, passes)}   # the ball reached the passer
+        for _ in range(60):
+            i = rng.randrange(1, n)
+            r = releases[i]
+            if (r >= 1.6 and passes[i][2] != "touch" and r - caught[r] >= 0.64
+                    and all(abs(r - h) >= 2.4 for h in hidden)):            # a held ball, seen arriving first
+                hidden.append(r)
+            if len(hidden) == 4:
+                break
+        if len(hidden) < 4:
+            continue
+        hidden.sort()
+        at = {r: SPOTS[passes[releases.index(r)][0]] for r in hidden}
+        keys = [(0.0, rng.choice((240, 300, 430, 470)))]
+        for k, r in enumerate(hidden):
+            arrive = round(max(r - rng.randint(10, 20) * 0.04, caught[r] + 0.24), 2)
+            leave = round(r + rng.randint(8, 14) * 0.04, 2)
+            if k:
+                mid = round((keys[-1][0] + arrive) / 2, 2)
+                keys.append((mid, rng.choice((240, 300, 430, 470))))
+            keys += [(arrive, at[r]), (leave, at[r])]
+        keys.append((PASS_S, rng.choice((240, 300, 430, 470))))
+        shown = True                                    # the ball is in plain sight except while the defender
+        for k in range(int(PASS_S / 0.04)):              # walks up to a hidden release and away again
+            t = k * 0.04
+            (bx, by), _, _ = path.at(t)
+            if by > 228 and abs(bx - lerp_keys(keys, t)) < 34 and not any(
+                    caught[r] - 0.4 <= t <= r + 0.72 for r in hidden):
+                shown = False
+                break
+        if shown and all(b[0] - a[0] >= 0.4 for a, b in zip(keys, keys[1:])):
+            return tuple(passes), tuple(keys), tuple(hidden)
+
+
+def fresh_rowing(rng: random.Random) -> tuple[tuple, tuple, tuple, int, int]:
+    """(frames per stroke before the change, after it, the far boat's, first catch of the near and far boat)."""
+    while True:
+        a, b = rng.randint(50, 58), rng.randint(40, 46)
+        lo, hi = math.ceil(b * 1.07), a - 3                    # the far boat: >= 6 % slower than the near after
+        if lo > hi:
+            continue
+        d = rng.randint(lo, hi)
+        row_a = tuple(a + rng.randint(-2, 2) for _ in range(6))
+        row_b = tuple(b + rng.randint(-2, 2) for _ in range(6))
+        row_d = tuple(d + rng.randint(-1, 1) for _ in range(5))
+        return row_a, row_b, row_d, rng.randint(5, 16), rng.randint(20, 40)
+
+
+def fresh(seed: int) -> Spec:
+    """A new Spec drawn from `seed` (an integer from 0 to 2**63 - 1); the same seed always gives the same Spec."""
+    if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed <= MAX_SEED:
+        raise ValueError(f"seed must be an integer from 0 to {MAX_SEED}, not {seed!r}")
+    rng = random.Random(seed)
+    for _ in range(200):
+        juggle, first = fresh_juggle(rng)
+        decoy_k = rng.randrange(len(DECOY_JUGGLE))
+        shots = fresh_shots(rng)
+        passes, defender, hidden = fresh_passes(rng)
+        row_a, row_b, row_d, row_first, decoy_first = fresh_rowing(rng)
+        spec = Spec(juggle, tuple(DECOY_JUGGLE[decoy_k:] + DECOY_JUGGLE[:decoy_k]), first, rng.randint(22, 32),
+                    shots, passes, defender, hidden, row_a, row_b, row_d, row_first, decoy_first, seed)
+        try:
+            Instance(spec)
+        except ValueError:
+            continue
+        return spec
+    raise RuntimeError(f"no svc-bench-3 spec found for seed {seed}")
+
+
+@functools.lru_cache(maxsize=64)
+def seeded(seed: int) -> Instance:
+    """The suite drawn from a fresh seed: an object with SUITE, TASKS and BY_ID like this module, and `seed`."""
+    return Instance(fresh(seed))
+
+
+def new_seed() -> int:
+    """A random seed for a fresh run (from the OS, not the clock)."""
+    import secrets
+    return secrets.randbelow(10 ** 9)

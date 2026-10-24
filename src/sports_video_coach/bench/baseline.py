@@ -1,6 +1,6 @@
 """The blind baseline: the floor of the benchmark, a guesser that answers every task without seeing any video.
 
-  sports-video-coach bench baseline --suite svc-bench-2 [--track frames] [--date D] [--out FILE]
+  sports-video-coach bench baseline --suite svc-bench-2 [--track frames] [--seed N] [--date D] [--out FILE]
 
 It reads only the text a contender is given (`TASKS.md` for that suite and track, built by `bench.tasks_md`) and
 answers each task from it, with no prior of its own and nothing tuned to the truth:
@@ -11,6 +11,8 @@ answers each task from it, with no prior of its own and nothing tuned to the tru
 It then scores those answers with the normal scorer and writes a normal schema-1 result file whose agent is
 "blind baseline" (`score.BASELINE_AGENT`). The leaderboard reads that file's per-task scores as the floor of the
 "above chance" score. The guesser is deterministic: the same suite and track always give the same answers.
+A fresh seed (`--seed`) changes the counts the task text states (the number of shots), so a run on a fresh seed
+gets its own floor: the leaderboard computes it from the run's seed with `result(..., seed=N)` and never stores it.
 A guesser that knows sport (a typical running cadence, say) can score higher, so this floor is a lower bound on
 what guessing gets.
 """
@@ -60,15 +62,15 @@ def guess(kind: str, text: str):
         return None
 
 
-def answers(suite: str = SUITE, track: str = F.TRACK) -> dict:
-    """{task id: blind answer} for every task of the suite, from that suite and track's TASKS.md text."""
-    by_id = sections(tasks_md(suite, track))
-    return {t.id: guess(*by_id[t.id]) if t.id in by_id else None for t in S.SUITES[suite].TASKS}
+def answers(suite: str = SUITE, track: str = F.TRACK, seed: int | None = None) -> dict:
+    """{task id: blind answer} for every task of the suite (drawn from `seed`), from that TASKS.md text."""
+    by_id = sections(tasks_md(suite, track, seed=seed))
+    return {t.id: guess(*by_id[t.id]) if t.id in by_id else None for t in S.suite_tasks(suite, seed).TASKS}
 
 
-def result(suite: str = SUITE, track: str = F.TRACK, date: str | None = None) -> dict:
-    return S.result(answers(suite, track), S.BASELINE_AGENT, "", settings=SETTINGS, date=date, suite=suite,
-                    track=track)
+def result(suite: str = SUITE, track: str = F.TRACK, date: str | None = None, seed: int | None = None) -> dict:
+    return S.result(answers(suite, track, seed), S.BASELINE_AGENT, "", settings=SETTINGS, date=date, suite=suite,
+                    track=track, seed=seed)
 
 
 def main(argv=None) -> int:
@@ -77,11 +79,16 @@ def main(argv=None) -> int:
                                              "a result file.")
     ap.add_argument("--suite", default=SUITE, choices=sorted(S.SUITES))
     ap.add_argument("--track", default=F.TRACK, choices=F.TRACKS)
+    ap.add_argument("--seed", type=int, default=None, help="the floor of a fresh seed (svc-bench-3 only)")
     ap.add_argument("--date", default=None, help="date in the result file (default today)")
     ap.add_argument("--out", type=Path, default=None,
                     help="result file (default benchmark/results/<date>-blind-baseline[-<suite>][-frames].json)")
     a = ap.parse_args(sys.argv[1:] if argv is None else argv)
-    res = result(a.suite, a.track, a.date)
+    try:
+        S.suite_tasks(a.suite, a.seed)
+    except ValueError as e:
+        ap.error(f"--seed: {e}")
+    res = result(a.suite, a.track, a.date, a.seed)
     out = a.out or S.default_path(res)
     out.parent.mkdir(parents=True, exist_ok=True)
     media.write_json_atomic(out, res)
