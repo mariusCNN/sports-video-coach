@@ -23,6 +23,10 @@ All notable changes to this project are documented here. The format follows [Kee
   leaderboard shows it in its own tables; result files say `"track": "frames"`.
 - First leaderboard rows on `svc-bench-2` (code track: Claude Code with Opus 5.5 and Sonnet 5.5, Codex) and on the
   frames-only track (Opus 5.5, Codex, two Sonnet 5.5 runs), each one real run.
+- A third suite for the frames track, `bench prepare --suite svc-bench-3`, after strong models scored 1.0 on
+  `svc-bench-2` by eye: small balls and blades, double touches, a banner over a far rim, passes behind a defender
+  and pass fakes, a rate change next to a decoy boat. First frames-track rows: Opus 5.5 1.000, Codex 0.862,
+  Sonnet 5.5 0.612.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both
   pages, a schema.org `SoftwareApplication` block and a title that names what it does.
 

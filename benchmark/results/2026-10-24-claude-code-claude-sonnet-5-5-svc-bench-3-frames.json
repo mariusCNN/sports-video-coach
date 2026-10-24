@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-24",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-sonnet-5-5",
+    "settings": "frames track; claude -p --restricted --safe-mode --tools Read; default effort"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 47,
+      "answer": 60,
+      "score": 0.723,
+      "note": "off by 13"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made"
+      ],
+      "answer": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made"
+      ],
+      "score": 0.75,
+      "note": "9 of 12 right, 12 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.0,
+        3.0,
+        4.48,
+        5.28,
+        7.16,
+        9.48,
+        11.48,
+        12.16,
+        14.56,
+        15.84,
+        17.76,
+        19.32
+      ],
+      "answer": [
+        1.0,
+        3.05,
+        4.5,
+        5.3,
+        7.15,
+        9.45,
+        11.5,
+        14.6,
+        17.75,
+        19.4
+      ],
+      "score": 0.833,
+      "note": "10 of 12 within 0.5 s, 10 answered"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 33.92,
+      "answer": 28,
+      "score": 0.142,
+      "note": "17.5% off"
+    }
+  ],
+  "total": 0.612,
+  "wall_seconds": 64.8,
+  "evidence": "",
+  "cost_usd": 0.2257
+}

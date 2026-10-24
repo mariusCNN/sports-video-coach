@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-24",
+  "contender": {
+    "agent": "Codex",
+    "agent_version": "0.159.3",
+    "model": "gpt-6-astra",
+    "settings": "frames track; codex exec -s read-only, shell/exec/code-mode features disabled, sheets attached with -i; reasoning effort xhigh (user config)"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 47,
+      "answer": 47,
+      "score": 1.0,
+      "note": "exact"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made"
+      ],
+      "answer": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made"
+      ],
+      "score": 1.0,
+      "note": "12 of 12 right, 12 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.0,
+        3.0,
+        4.48,
+        5.28,
+        7.16,
+        9.48,
+        11.48,
+        12.16,
+        14.56,
+        15.84,
+        17.76,
+        19.32
+      ],
+      "answer": [
+        1.04,
+        3.04,
+        4.56,
+        5.32,
+        7.2,
+        7.76,
+        9.52,
+        11.52,
+        12.16,
+        14.56,
+        15.84,
+        17.76,
+        19.36
+      ],
+      "score": 0.923,
+      "note": "12 of 12 within 0.5 s, 13 answered"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 33.92,
+      "answer": 37.5,
+      "score": 0.525,
+      "note": "10.6% off"
+    }
+  ],
+  "total": 0.862,
+  "wall_seconds": 765.5,
+  "evidence": "",
+  "cost_usd": null
+}

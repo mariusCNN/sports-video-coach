@@ -20,10 +20,10 @@ import json
 import re
 from pathlib import Path
 
-from . import frames as F, suite as _s1, suite2 as _s2
+from . import frames as F, suite as _s1, suite2 as _s2, suite3 as _s3
 from .suite import BY_ID, KINDS, SUITE, TASKS
 
-SUITES = {m.SUITE: m for m in (_s1, _s2)}     # suite name -> module with TASKS and BY_ID
+SUITES = {m.SUITE: m for m in (_s1, _s2, _s3)}     # suite name -> module with TASKS and BY_ID
 
 SCHEMA = 1
 TOL = 0.0005  # validate: a stored score may differ from the re-score by rounding only
