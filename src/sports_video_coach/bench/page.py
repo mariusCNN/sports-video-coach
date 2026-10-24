@@ -206,7 +206,8 @@ def evidence(url) -> str:
     url = str(url or "")
     if not url.startswith(("https://", "http://")):
         return '<td class="sub">-</td>'
-    return f'<td><a href="{esc(url)}" rel="nofollow noopener">link</a></td>'
+    label = "transcript" if "/benchmark/transcripts/" in url else "link"
+    return f'<td><a href="{esc(url)}" rel="nofollow noopener">{label}</a></td>'
 
 
 def is_baseline(r: dict) -> bool:
@@ -635,8 +636,11 @@ def facts(rows: list[dict]) -> list[str]:
         '<a href="#prompt">the exact prompt</a>.',
         "<strong>Above chance:</strong> measured from a blind guess that copies the example answers in the task "
         f"text, not from random.{guess}",
-        f"<strong>Evidence:</strong> {ev} of {n} runs link a transcript. The no-peeking rule is honour-based: CI "
-        "re-scores the answers but cannot see what the agent read.",
+        f"<strong>Evidence:</strong> {ev} of {n} runs link a transcript"
+        + (" (in its Evidence column): every file the agent opened, every command it ran and its final reply, with "
+           "images, home folders and key-like strings taken out. Anyone can read them; CI re-scores the answers but "
+           "does not read the transcripts." if ev else
+           ". The no-peeking rule is honour-based: CI re-scores the answers but cannot see what the agent read."),
         f"<strong>Time and cost:</strong> in every table; time recorded for {timed} of {n} runs, cost for "
         f"{costed} of {n}.",
     ]

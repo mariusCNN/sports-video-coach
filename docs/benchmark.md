@@ -297,7 +297,7 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 | `--timeout N` | Kill the agent after N seconds (default 1200) |
 | `--by HANDLE` | Your GitHub handle, saved as `submitted_by` |
 | `--settings S` | What you changed from defaults (effort, prompts, tools); empty means defaults |
-| `--evidence URL` | A published transcript or log |
+| `--evidence URL` | A published transcript or log (publish the redacted copy, see below) |
 | `--dry-run` | Print the command it would run; run nothing |
 
 Examples for other agents (check your CLI's own flags for a non-interactive, auto-approve run):
@@ -329,7 +329,13 @@ sports-video-coach bench run --agent cmd --name Aider --cmd "aider --yes-always 
   reports it (Claude Code's result event); otherwise `null`. Without `--model`, the model (and the Claude Code
   version, or the Codex reasoning effort) is read from what the agent itself prints (Claude Code's init event,
   the header of `codex exec`); a value the agent does not print stays empty.
-- The run folder keeps the transcript, `stderr.log` and `run.json` (exit code, timed out or not).
+- The run folder keeps the transcript, `stderr.log` and `run.json` (exit code, timed out or not), and a redacted
+  copy of the transcript to publish (`transcript.redacted.jsonl`, or `.txt` for Codex). Read it before you do.
+- `sports-video-coach bench transcript <src> [<dst>] [--redact WORD ...]` makes that copy from any transcript
+  or log (`.gz` in or out works): images become `[image omitted: <file> <size>]`; home folders, your user name,
+  host name and emails become `<home>`, `<user>`, `<host>`, `<email>`; environment listings, `PATH`, hook
+  output, your skills / plugins / MCP servers and anything that looks like a key or token are dropped. Tool
+  calls, the files read, the commands run and the final reply stay. `--redact` takes out any other word.
 - A missing or broken `answers.json` scores 0; the run still writes a result file.
 - Then submit the file as below. Running in a clone? Copy it to `benchmark/results/` for a pull request.
 - Ran the steps by hand (`bench prepare`, your agent, `bench score`)? `bench score` prints the same issue form link.
@@ -344,7 +350,9 @@ Pick one:
   [benchmark result form](https://github.com/mariusDing/sports-video-coach/issues/new?template=benchmark_result.yml);
   a maintainer adds it.
 
-An evidence link (a gist, a transcript, a log) is optional but makes your row easier to trust.
+An evidence link (a gist, a transcript, a log) is optional but makes your row easier to trust. The maintainer's
+own runs keep their redacted transcripts in `benchmark/transcripts/<result-stem>.jsonl` (gzipped over 300 KB)
+and link them; the page labels such a link "transcript".
 
 ## How rows are checked
 
@@ -380,8 +388,10 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
   which models already saturated it.
 - Settings are not equalized across agents (Codex ran at reasoning effort xhigh, Claude Code at its default);
   each row names its own.
-- The no-peeking rule is honour-based: CI re-scores the answers but cannot see what the agent read. On the frames
-  track the transcript shows which tools existed; no transcript is linked yet.
+- The no-peeking rule is honour-based: CI re-scores the answers but does not read the transcripts. Every
+  maintainer run links its redacted transcript (`benchmark/transcripts/`), so anyone can check which tools
+  existed, which files the agent opened and what it replied. Redaction drops images, home folders, the runner's
+  hook output and config lists; the six blind-guess baselines ran no agent and have none.
 - Most contenders ran once. Two Sonnet 5.5 runs with the same command on `svc-bench-3` frames differed by 0.224
   above chance, so smaller gaps between single runs are within noise.
 - Failed and killed runs stay on the board and count in their contender's mean.

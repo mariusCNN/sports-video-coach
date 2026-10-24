@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `bench transcript` redacts a transcript or log for publishing (images, home folders, user and host names,
+  emails, env dumps, hook output, key-like strings), and `bench run` writes the redacted copy next to the raw one.
+  All 20 maintainer runs now link their redacted transcript in `benchmark/transcripts/` (about 2 MB); the page
+  labels the link "transcript" and its skeptic block counts the runs that link one. No score or answer changed.
 - The benchmark page answers a skeptic's first questions (found by a cold "skeptical Hacker News reader" run: 16
   gaps): a folded "Before you trust this" block counted from the result files (who submitted, own config loaded,
   single runs and run-to-run spread, the blind guess's best task, evidence, time and cost), the exact prompt,
