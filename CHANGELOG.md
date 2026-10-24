@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `bench run --agent codex --track frames`: the Codex frames row in one command (`codex exec -s read-only`, shell
+  and other tool features disabled, web search off, every contact sheet attached with `-i`, prompt on stdin).
+  Beyond those switches tool restriction is by prompt only; `run.json` counts the commands it ran from the
+  transcript, and `settings`, the run banner, `--help` and `docs/benchmark.md` say so.
+- Benchmark: a fresh-seed frames row for Codex 0.159.3 / gpt-6-astra (one run, seed 911623366, 1.000), with its
+  redacted transcript.
 - `sports-video-coach demo indexnow [--dry-run]`: tells IndexNow search engines (Bing, Yandex, Seznam, Naver, ...)
   about the demo site's pages, run by hand after a deploy; the demo site now hosts the IndexNow key file. No
   automatic ping in CI. See CONTRIBUTING.md, "The demo site".

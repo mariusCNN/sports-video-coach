@@ -95,13 +95,25 @@ sports-video-coach bench prepare --out bench-frames --suite svc-bench-2 --track 
 - The leaderboard shows the frames track in its own tables, under the code track.
 
 How the first rows were run (both with stdin closed and a timeout; the transcript proves which tools existed).
-`bench run --track frames --agent claude` runs the Claude Code row's command with the same prompt (see
-[below](#add-your-agent-in-one-command)):
+`bench run --track frames --agent claude` runs the Claude Code row's command with the same prompt, and
+`bench run --track frames --agent codex` the Codex row's (see [below](#add-your-agent-in-one-command)):
 
 | Agent | How "no code" was enforced | Checked in the transcript |
 |---|---|---|
 | Claude Code | `claude -p --restricted --safe-mode --strict-mcp-config --tools Read --permission-prompts none --output-format stream-json --verbose --model M`, run in the prepared folder | The `init` event lists `tools: ["Read"]`, no MCP servers; `--restricted` confines Read to the folder; every `tool_use` is a Read of a file in the folder. |
-| Codex CLI | `codex exec - -s read-only --json` with `--disable` for `shell_tool`, `unified_exec`, `code_mode_host`, `code_mode`, `view_image`, `browser_use`, `computer_use`, `apps`, `plugins`, `multi_agent`, `image_generation`; the prompt (with `TASKS.md`) on stdin and every contact sheet attached with `-i` | No `command_execution` item; the code-mode tool fails closed ("code-mode host is disabled"). Codex cannot open files this way, so it sees the sheets but not the full-size stills. |
+| Codex CLI | `codex exec - -s read-only --json` (`bench run` drops `--json`, see below) with `--disable` for `shell_tool`, `unified_exec`, `code_mode_host`, `code_mode`, `view_image`, `browser_use`, `computer_use`, `apps`, `plugins`, `multi_agent`, `image_generation`; the prompt (with `TASKS.md`) on stdin and every contact sheet attached with `-i` | No `command_execution` item; the code-mode tool fails closed ("code-mode host is disabled"). Codex cannot open files this way, so it sees the sheets but not the full-size stills. |
+
+`bench run --agent codex --track frames` runs `codex exec - -s read-only -c web_search=disabled` with
+`--disable` for `shell_tool`, `unified_exec`, `code_mode_host`, `code_mode`, `browser_use`, `browser_use_external`,
+`computer_use`, `apps`, `plugins`, `multi_agent`, `image_generation`, `view_image`, `goals` and `sleep_tool`, every
+contact sheet attached with `-i`, the prompt on stdin and then stdin closed. That is as far as Codex CLI 0.159.3
+lets a run restrict it: its docs ([config reference](https://developers.openai.com/codex/config-reference), read
+2026-10-25) list switches for single tools but none that removes every tool, and the run still lists a few
+(`functions.exec`, which fails closed, sub-agent and patch tools). **Beyond those switches, tool restriction is by
+prompt only; the transcript shows every command it ran**, and `bench run` counts them (`commands_run` and
+`tool_calls_refused` in `run.json`). It records the plain output (stderr merged in) rather than `--json`, because
+only the plain header names the model and reasoning effort. Codex runs with your own config (see below), so your
+hooks and `AGENTS.md` load too.
 
 First rows (svc-bench-2, 2026-10-24; every run submitted, Sonnet ran twice with the same command):
 
@@ -290,8 +302,9 @@ sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-
   2026, 4242 and 205159368, scores 1.000 on every task of every seed (`bench score` as an agent would). Like on the
   published suite, it shows the answers are in the stills, not that a model will find them.
 
-Fresh-seed rows (frames track, 2026-10-25, clean room, default effort; each run drew its own random seed with
-`bench run --seed`; two runs each for Opus and Sonnet, one for Haiku, each run on its own seed):
+Fresh-seed rows (frames track, 2026-10-25; Claude Code in the clean room at default effort, Codex with the
+runner's own config at reasoning effort xhigh; each run drew its own random seed with `bench run --seed`; two runs
+each for Opus and Sonnet, one each for Haiku and Codex, each run on its own seed):
 
 | Agent | Model | Total | Above chance | Juggle | Shots | Passes | Rate | Wall | Cost |
 |---|---|---|---|---|---|---|---|---|---|
@@ -300,6 +313,7 @@ Fresh-seed rows (frames track, 2026-10-25, clean room, default effort; each run 
 | Claude Code 2.1.310 | claude-sonnet-5-5 (seed 956466926) | 0.504 | 0.413 | 0.905 | 0.308 | 0.804 | 0.000 | 19 s | $0.07 |
 | Claude Code 2.1.310 | claude-sonnet-5-5 (seed 406013493) | 0.583 | 0.426 | 0.933 | 0.583 | 0.816 | 0.000 | 16 s | $0.06 |
 | Claude Code 2.1.310 | claude-haiku-5-5 (seed 166697672) | 0.440 | 0.198 | 0.500 | 0.455 | 0.250 | 0.556 | 96 s | $0.06 |
+| Codex 0.159.3 | gpt-6-astra, xhigh (seed 911623366) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 514 s | not reported |
 
 - **Opus nearly holds its published score on a seed drawn at run time.** It counted 44 touches against 45 (it
   said itself the count "could be off by one or two"), called all 11 shots, found the 11 releases within 0.05 s
@@ -318,6 +332,10 @@ Fresh-seed rows (frames track, 2026-10-25, clean room, default effort; each run 
   touches from a rate (truth 40), 11 shot outcomes of which it read one (5 right), 3 pass releases of 12 (the
   scorer found 4 of the 12 within 0.5 s of them) and a "typical sculling rate" of 30 against 33.333, below that
   seed's blind floor of 0.639.
+- **Codex (one run, seed 911623366, `bench run --agent codex --track frames`) got nothing wrong.** 47 touches
+  exact, all 13 shots, the 11 releases within 0.08 s and a stroke rate of 37.3 against 37.19, from the 73 contact
+  sheets alone (it cannot open the full-size stills), with no command run. It is one run; it says nothing about
+  runs on other seeds. It replied in Chinese: Codex ran with the runner's own `AGENTS.md`.
 - **Spread across seeds.** Above chance, Opus's two runs scored 0.994 and 1.000 (a spread of 0.006) and
   Sonnet's 0.413 and 0.426 (0.013), so the gap between them (about 0.58) is far wider than either model's spread
   over two seeds. That is two runs per model, each on its own seed: it is not a variance estimate, and on the
@@ -327,7 +345,8 @@ Fresh-seed rows (frames track, 2026-10-25, clean room, default effort; each run 
   of the prepared folder; it shows in each result file and on the page. Blind floors (juggle / shots / passes /
   rate): seed 205159368 0.111 / 0.455 / 0.142 / 0.667, seed 613104018 0.122 / 0.364 / 0.146 / 0.375, seed
   956466926 0.119 / 0.462 / 0.182 / 0.212, seed 406013493 0.111 / 0.583 / 0.165 / 0.212, seed 166697672
-  0.125 / 0.273 / 0.153 / 0.639 (published: 0.106 / 0.500 / 0.167 / 0.551).
+  0.125 / 0.273 / 0.153 / 0.639, seed 911623366 0.106 / 0.308 / 0.153 / 0.112 (published: 0.106 / 0.500 /
+  0.167 / 0.551).
 
 ## Rules
 
@@ -363,7 +382,7 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 | `--model M` | Passed to the agent as `--model M` |
 | `--suite` | `svc-bench-1` (default), `svc-bench-2` or `svc-bench-3` |
 | `--seed [N]` | `svc-bench-3` only: draw it from fresh seed N (0 to 2^63 - 1), or a random seed without N; see [Fresh seeds](#fresh-seeds---seed) |
-| `--track frames` | Stills instead of videos, no code. Claude Code runs with Read as its only tool (the command in the [frames table](#frames-only-track-eyes)); the json block that ends the agent's reply becomes `answers.json`. Not for `--agent codex` yet. |
+| `--track frames` | Stills instead of videos, no code. Claude Code runs with Read as its only tool (the command in the [frames table](#frames-only-track-eyes)); the json block that ends the agent's reply becomes `answers.json`. Codex runs read-only with its tool features off and the sheets attached; beyond that, tool restriction is by prompt only (see [frames track](#frames-only-track-eyes)). |
 | `--out DIR` | Run folder, new or empty (default `~/svc-bench-runs/<agent>-<model>-<time>`) |
 | `--timeout N` | Kill the agent after N seconds (default 1200) |
 | `--by HANDLE` | Your GitHub handle, saved as `submitted_by` |
