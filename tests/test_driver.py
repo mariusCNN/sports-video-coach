@@ -388,3 +388,95 @@ def test_qa_is_not_done_while_a_step_before_it_is_not(unit):
     assert [ok for _, _, ok, _ in P.rows(Unit.load(unit), s)] == [True, True]
     tail = {t.name: t for t in P.tail_steps(lambda g: None, "", "", "")}
     assert tail["qa"].needs_all and tail["film"].again == ("--force",)   # film keeps languages that are up to date
+
+
+def test_whitespace_only_edit_does_not_make_a_script_out_of_date(unit, capsys):
+    src, out = unit / "README.md", unit / "script.md"
+    src.write_text("# Report\n\nPass early.\n", encoding="utf8")
+    out.write_text("v1", encoding="utf8")
+    s = [P.Step("script", "agent", lambda g: out.exists(), how="write it", derives=lambda g: [(out, [src])])]
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0
+    src.write_text("# Report \n\n\nPass  early.\r\n", encoding="utf8")    # a space, a blank line, CRLF
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0
+    src.write_text("# Report\n\nPass late.\n", encoding="utf8")          # a real edit still counts
+    capsys.readouterr()
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    said = capsys.readouterr().out
+    assert "script.md: README.md changed after it was written" in said
+    assert "Only a typo or wording fix" in said and "--accept script` keeps them" in said
+
+
+def test_text_signature_ignores_whitespace_only_for_small_text_files(tmp_path):
+    a, b = tmp_path / "a.md", tmp_path / "b.md"
+    a.write_text("这份报告 大约两分钟。\n", encoding="utf8")
+    b.write_text("这份报告大约两分钟。", encoding="utf8")
+    assert P.text_signature(a) == P.text_signature(b) and P.text_signature(a).startswith("text:")
+    clip = tmp_path / "a.mp4"
+    clip.write_bytes(b"\x00 \x01")
+    assert P.text_signature(clip) == P.signature(clip)                     # not text: the raw signature
+    bad = tmp_path / "bad.md"
+    bad.write_bytes(b"\xff\xfe x")
+    assert P.text_signature(bad) == P.signature(bad)                       # not UTF-8: raw
+    assert P.text_signature(tmp_path / "none.md") == "missing"
+
+
+def test_records_from_before_text_signatures_compare_raw_then_are_rewritten(unit):
+    src, out = unit / "README.md", unit / "script.md"
+    src.write_text("# r\n", encoding="utf8")
+    out.write_text("v1", encoding="utf8")
+    s = [P.Step("script", "agent", lambda g: out.exists(), how="write it", derives=lambda g: [(out, [src])])]
+    old = {"version": 1, "steps": {"script": {"outputs": {"script.md": {
+        "sig": P.signature(out), "inputs": {"README.md": P.signature(src)}}}}}}
+    (unit / P.STORE).write_text(json.dumps(old), encoding="utf8")
+    assert P.outdated(s[0], Unit.load(unit), P.Store(unit)) == []           # unchanged: still fresh
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0            # and the record is rewritten
+    rec = json.loads((unit / P.STORE).read_text(encoding="utf8"))["steps"]["script"]["outputs"]["script.md"]
+    assert rec["inputs"]["README.md"].startswith("text:")
+    (unit / P.STORE).write_text(json.dumps(old), encoding="utf8")
+    src.write_text("# r \n", encoding="utf8")                               # old raw record: any byte counts
+    assert P.outdated(s[0], Unit.load(unit), P.Store(unit)) == ["script.md: README.md changed after it was written"]
+
+
+def qa_unit(unit, body="<p>传球要快。</p>"):
+    """A built one-page unit (zh) with a page-check draft qa.md whose stamp is stale."""
+    from sports_video_coach import page_check as PC
+    (unit / "README.md").write_text("# r\n", encoding="utf8")
+    (unit / "index.html").write_text('<html lang="zh-CN"><head><meta name="viewport" content="width=device-width">'
+                                     f'</head><body><article class="report" lang="zh-CN">{body}</article></body>'
+                                     '</html>', encoding="utf8")
+    (unit / "qa.md").write_text(PC.qa_text([(unit, [], [])], "0123456789abcdef"), encoding="utf8")
+    return [t for t in P.tail_steps(lambda g: None, "", "check the page", "") if t.name == "qa"]
+
+
+def test_qa_rewrites_an_untouched_page_check_draft_itself(unit, capsys):
+    s = qa_unit(unit)
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0
+    said = capsys.readouterr().out
+    assert "qa.md is a page-check draft: checked again" in said and "PASS" in said
+    text = (unit / "qa.md").read_text(encoding="utf8")
+    assert text.startswith("PASS") and f"checked: {P.qa_hash(Unit.load(unit))}" in text
+    assert "NOT checked:" in text                                           # still says what was not checked
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit), dry=True) == 0
+
+
+def test_qa_draft_that_finds_problems_stops_the_run(unit, capsys):
+    s = qa_unit(unit)
+    (unit / "listen.zh.md").write_text("Ã© broken\n", encoding="utf8")    # page-check warns: mojibake
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    said = capsys.readouterr().out
+    assert "mojibake" in said and "FAIL" in said and "waiting for the agent: qa" in said
+    assert (unit / "qa.md").read_text(encoding="utf8").startswith("FAIL")
+    assert "\n  it checks links" in said and max(map(len, P.QA_STAMP.split("\n"))) < 110   # short lines
+
+
+def test_qa_draft_with_agent_notes_or_by_hand_is_left_to_the_agent(unit, capsys):
+    s = qa_unit(unit)
+    with (unit / "qa.md").open("a", encoding="utf8") as f:
+        f.write("\n## Agent notes\n\n- layout checked in a browser\n")
+    before = (unit / "qa.md").read_text(encoding="utf8")
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    assert (unit / "qa.md").read_text(encoding="utf8") == before
+    assert "changed after QA" in capsys.readouterr().out
+    (unit / "qa.md").write_text("PASS by hand\nchecked: 0123456789abcdef\n", encoding="utf8")
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    assert (unit / "qa.md").read_text(encoding="utf8") == "PASS by hand\nchecked: 0123456789abcdef\n"

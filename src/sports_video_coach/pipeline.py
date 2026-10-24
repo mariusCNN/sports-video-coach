@@ -17,10 +17,16 @@ on its first walk (`--status` and `--dry` never write).
 Agent steps keep their own checks; one that declares `derives` (each output with the files it is written from)
 is also out of date when one of those inputs changed after the output was last seen and the agent has not
 touched the output since: a corrected review or report waits for the narration and film scripts to follow it.
+Text inputs (.md, .txt, .json ...) are signed there with whitespace left out (`text_signature`), so a space or a
+blank line added to a README is not a change; records written before that (a raw 'sha1:' signature) are compared
+raw until the step is next seen fresh, which rewrites them.
 An agent step may also declare `checks` (e.g. a narration script whose stated length is off its read time): what
 they find keeps the step waiting until the files are fixed. `--accept X [Y ...]` records agent steps as they are
 (the scripts still hold, the findings are fine). A step marked `needs_all` (QA) counts as done only while every
 step before it is done. A stop on agent steps lists every one that waits that way, so one pass fixes them all.
+An agent step may declare `auto`: what the run does itself before it stops for the step (QA: a qa.md that is an
+untouched `page-check --write-qa` draft is written again by the same static check; the run stops only when that
+draft does not pass).
 """
 from __future__ import annotations
 
@@ -43,6 +49,7 @@ WAITING = 3
 LANGS = ("zh", "en")  # the default report languages; langs.CODES lists every one the core knows
 STORE = ".hoop-steps.json"
 SMALL = 1 << 20      # files below this size are signed by content, larger ones by size + mtime
+TEXT = (".md", ".txt", ".json", ".csv", ".yaml", ".yml")  # inputs whose whitespace does not count (agent `derives`)
 
 
 def profile_langs(allowed: tuple = L.CODES) -> tuple:
@@ -195,6 +202,7 @@ class Step:
     checks: Callable[[Unit], list[str]] | None = None   # agent: what to fix in its outputs first (--accept keeps it)
     needs_all: bool = False                     # done only while every step before it is done (QA checks them)
     passed: Callable[[Unit], str] | None = None  # agent: the line a run prints when its output passes the check
+    auto: Callable[[Unit], bool] | None = None  # agent: done by the run itself if it can (True: it tried; then rechecked)
 
 
 def newer(out: Path, *inputs: Path, slack: float = 2.0) -> bool:
@@ -218,6 +226,29 @@ def signature(p: Path) -> str:
     if st.st_size < SMALL:
         return "sha1:" + hashlib.sha1(p.read_bytes()).hexdigest()[:16]
     return f"{st.st_size}:{st.st_mtime_ns}"
+
+
+def text_signature(p: Path) -> str:
+    """'text:<hash>' of a small UTF-8 text file (TEXT) with all whitespace left out, so a space, a blank line or a
+    line-ending change is not an edit; any other file (or one that is not UTF-8): its `signature`."""
+    p = Path(p)
+    if p.suffix.lower() not in TEXT:
+        return signature(p)
+    try:
+        if not p.is_file() or p.stat().st_size >= SMALL:
+            return signature(p)
+        text = p.read_bytes().decode("utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return signature(p)
+    return "text:" + hashlib.sha1(re.sub(r"\s+", "", text).encode("utf8")).hexdigest()[:16]
+
+
+def same_text(old: str | None, p: Path) -> bool:
+    """A recorded signature still matches the file: a raw one (a record from before `text_signature`) compared raw,
+    else whitespace left out."""
+    if old is None:
+        return False
+    return old == (text_signature(p) if old.startswith("text:") else signature(p))
 
 
 def input_key(g: Unit, p: Path) -> str:
@@ -262,15 +293,15 @@ def language_drift(g: Unit, store: Store) -> list[str]:
     old = store.notes.get("readmes") or {}
     was_owed = set(store.notes.get("readmes_owed") or ())  # READMEs a warning asked to bring in line
     owed = set(was_owed)
-    now = {input_key(g, d / readme(l)): signature(d / readme(l))
+    now = {input_key(g, d / readme(l)): text_signature(d / readme(l))
            for d in g.reports() for l in g.langs if (d / readme(l)).exists()}
     out = []
     for d in g.reports():
         keys = {l: input_key(g, d / readme(l)) for l in g.langs}
-        changed = [l for l, k in keys.items() if k in old and k in now and old[k] != now[k]]
+        changed = [l for l, k in keys.items() if k in old and k in now and not same_text(old[k], d / readme(l))]
         owed -= {keys[l] for l in changed}
         edited = [l for l in changed if keys[l] not in was_owed]
-        kept = [l for l, k in keys.items() if k in old and old[k] == now.get(k)]
+        kept = [l for l, k in keys.items() if k in old and k in now and same_text(old[k], d / readme(l))]
         if not edited or not kept:
             continue
         owed |= {keys[l] for l in kept}
@@ -280,7 +311,7 @@ def language_drift(g: Unit, store: Store) -> list[str]:
         out.append(f"{' and '.join(keys[l] for l in edited)} changed since the last run; the other languages' "
                    f"files may no longer match it: {names} (bring them in line if the facts changed; nothing "
                    f"waits on this)")
-    if now != old:
+    if now != old:  # also turns raw signatures of older stores into text ones
         store.notes["readmes"] = now
     if owed != was_owed:
         store.notes["readmes_owed"] = sorted(owed)
@@ -321,8 +352,9 @@ def record(step: Step, g: Unit, store: Store) -> bool:
 
 
 def derived(step: Step, g: Unit) -> dict:
-    """An agent step's record of its outputs: per output, its signature and those of the files it is written from."""
-    return {input_key(g, o): dict(sig=signature(o), inputs={input_key(g, p): signature(p) for p in ins})
+    """An agent step's record of its outputs: per output, its signature and the whitespace-blind signatures of the
+    files it is written from (a space added to a README does not make its scripts out of date)."""
+    return {input_key(g, o): dict(sig=signature(o), inputs={input_key(g, p): text_signature(p) for p in ins})
             for o, ins in step.derives(g)}
 
 
@@ -337,7 +369,7 @@ def outdated(step: Step, g: Unit, store: Store) -> list[str]:
         r = rec.get(input_key(g, o))
         if not r or r.get("sig") != signature(o):
             continue
-        moved = [input_key(g, p) for p in ins if (r.get("inputs") or {}).get(input_key(g, p)) != signature(p)]
+        moved = [input_key(g, p) for p in ins if not same_text((r.get("inputs") or {}).get(input_key(g, p)), p)]
         if moved:
             out.append(f"{input_key(g, o)}: {', '.join(moved)} changed after it was written")
     return out
@@ -427,13 +459,43 @@ def qa_done(g: Unit) -> bool:
     return (g.folder / "qa.md").exists() and not qa_errors(g)
 
 
-QA_STAMP = (" No browser? `sports-video-coach page-check --strict --write-qa {pages}` checks links, media and the "
-            "text of the page and scripts (not layout or playback) and writes a qa.md draft that says what was not "
-            "checked; read it, add what you checked yourself."
-            " Then make sure qa.md has the line `checked: {qa}` (the stamp of the files you checked; an edit after "
-            "QA changes it and the run asks for QA again). The run also waits on page-check's text warnings "
-            "(leftover English, mojibake, French straight quotes) until they are fixed or `--accept qa` keeps "
-            "them.")
+QA_STAMP = ("\nNo browser? Run `sports-video-coach page-check --strict --write-qa {pages}`:"
+            "\n  it checks links, media and the text of the page and scripts (not layout or playback),"
+            "\n  and writes a qa.md draft that says what was not checked. Read it."
+            "\n  Checked more yourself? Add it under a `## Agent notes` heading at the end of qa.md."
+            "\n  After a later edit, the run checks an untouched draft (no notes) again by itself."
+            "\nqa.md must have the line `checked: {qa}` (the stamp of the files checked; an edit changes it)."
+            "\nThe run also waits on page-check's text warnings (leftover English, mojibake, French straight quotes)"
+            "\n  until they are fixed or `--accept qa` keeps them.")
+
+
+def qa_auto(g: Unit) -> bool:
+    """When qa.md is a `page-check --write-qa` draft with no agent notes, write it again with the same static check
+    (page-check --strict --write-qa) and the stamp of the files as they are now; True when it did. The draft says
+    PASS only when page-check found no problem and no warning, so QA never passes here over what it finds. A
+    qa.md written by hand, or a draft with `## Agent notes` (those may describe a page that has changed since), is
+    left to the agent."""
+    from . import page_check as PC
+    qa = g.folder / "qa.md"
+    if not qa.exists():
+        return False
+    old = qa.read_text(encoding="utf8")
+    if PC.QA_MARK not in old or PC.agent_notes(old):
+        return False
+    results = []
+    for d in g.reports():
+        errs, warns = PC.problems(d), PC.warnings(d)
+        where = d.relative_to(g.folder).as_posix() if d != g.folder else "."
+        for e in errs:
+            print(f"[run]   page-check {where}: {e}")
+        for w in warns:
+            print(f"[run]   page-check {where}: warning: {w}")
+        results.append((d, errs, warns))
+    media.write_text_atomic(qa, PC.qa_text(results, qa_hash(g)))
+    verdict = qa.read_text(encoding="utf8").split()[0]
+    print(f"[run] qa: qa.md is a page-check draft: checked again (page-check --strict --write-qa): {verdict}"
+          + ("" if verdict == "PASS" else " (see the lines above)"))
+    return True
 
 
 def qa_checks(g: Unit) -> list[str]:
@@ -481,15 +543,29 @@ def listen_done(g: Unit) -> bool:
     return all(newer(d / f"listen.{l}.mp3", d / f"listen.{l}.md") for d in g.reports() for l in g.langs)
 
 
+def page_inputs(d: Path) -> list[Path]:
+    """Files the owning plugin's page hooks read for report folder `d` (`PageHooks.inputs`); [] when none."""
+    from . import plugin
+    try:
+        own = plugin.owner(d)
+    except SystemExit:  # a broken unit json: the html stage itself says why
+        return []
+    fn = getattr(own[0].page, "inputs", None) if own else None
+    return [Path(p) for p in fn(d) or []] if fn else []
+
+
+def page_files(g: Unit, d: Path) -> list[Path]:
+    """What the page of report folder `d` is built from: READMEs, the unit json, audio, clips, plugin hook inputs."""
+    return [*(d / readme(l) for l in g.langs), g.gj, *sorted(d.glob("listen.*.mp3")), *sorted(d.glob("clips/*.mp4")),
+            *page_inputs(d)]
+
+
 def html_inputs(g: Unit) -> list[Path]:
-    return [x for d in g.reports() for x in (*(d / readme(l) for l in g.langs), g.gj, *sorted(d.glob("listen.*.mp3")),
-                                             *sorted(d.glob("clips/*.mp4")))]
+    return [x for d in g.reports() for x in page_files(g, d)]
 
 
 def html_done(g: Unit) -> bool:
-    def inputs(d: Path) -> list[Path]:
-        return [*(d / readme(l) for l in g.langs), g.gj, *d.glob("listen.*.mp3"), *d.glob("clips/*.mp4")]
-    return all(newer(d / "index.html", *inputs(d)) for d in g.reports())
+    return all(newer(d / "index.html", *page_files(g, d)) for d in g.reports())
 
 
 def missing(paths: list[Path], g: Unit) -> list[str]:
@@ -529,7 +605,7 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
         Step("html", "cmd", html_done, lambda g: [["html", str(d)] for d in g.reports()], inputs=html_inputs,
              artifact="html"),
         Step("qa", "agent", qa_done, how=qa_how + QA_STAMP, errors=qa_errors, artifact="qa", needs_all=True,
-             checks=qa_checks),
+             checks=qa_checks, auto=qa_auto),
         Step("publish", "cmd", published, lambda g: [["publish", *map(str, g.reports()), "--deploy"]],
              artifact="publish"),
         Step("film-script", "agent", lambda g: all((g.folder / f"film.{l}.md").exists() for l in g.langs),
@@ -659,6 +735,8 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
                 return 0
             continue
         own = s.done(g)
+        if not own and s.kind == "agent" and s.auto and not dry and s.auto(g):
+            own = s.done(g)  # the run did the step itself (QA: an untouched page-check draft written again)
         why = changes(s, g, store) if own else []
         stale = pending(s, g, store) if own and s.kind == "agent" else []
         if stale and s.name in accept and not dry:
@@ -688,9 +766,10 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
                     for e in w[:12]:
                         print(f"[run]   {slash(e)}")
                 names = [t.name for t, _ in waits]
-                print(f"[run] Fix those files (bring them in line with what changed), then run again. They hold as "
-                      f"they are? `{run_hint(g, '--accept', *names)}`.\n"
-                      + slash(f"[run] The step, for reference: {g.fill(s.how)}"))
+                print("[run] Fix those files (bring them in line with what changed), then run again.")
+                print(f"[run] Only a typo or wording fix, or they still hold as they are? "
+                      f"`{run_hint(g, '--accept', *names)}` keeps them.")
+                print(slash(f"[run] The step, for reference: {g.fill(s.how)}"))
                 return WAITING
             print(slash(f"[run] waiting for the agent: {s.name}\n{g.fill(s.how)}"))
             errs = s.errors(g) if s.errors else []

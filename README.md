@@ -103,7 +103,9 @@ how the pipeline fits together is in [docs/architecture.md](https://github.com/m
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md).
 - **The CLI alone:** `uv tool install git+https://github.com/mariusDing/sports-video-coach` (about 60 MB, no torch;
   ffmpeg on PATH), then `sports-video-coach plugins` and `sports-video-coach run <video> --sport <sport>`.
-- **Fork, write a plugin, basketball tracking:** `git clone` and `uv sync` (Python 3.11, CUDA torch), then prefix
+- **Fork or write a plugin:** `git clone`, then `uv sync --no-group basketball` (Python 3.11, no torch), and prefix
+  commands with `uv run`. `uv run pytest -q` works with it.
+- **Basketball tracking from a clone:** `git clone` and `uv sync` (Python 3.11, CUDA torch, several GB), then prefix
   commands with `uv run`.
 - No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip`.
 - `command not found`: `uv tool update-shell` and a new terminal; in Git Bash, write `C:/...` PATH entries as `/c/...` (e.g. `/c/Users/<you>/.local/bin`).

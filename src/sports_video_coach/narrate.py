@@ -146,6 +146,31 @@ def size_text(paras: list[str], lang: str) -> str:
             f"reads in about {estimate_s(paras, lang):.0f} s")
 
 
+# What to write for a stated length, per language: whole minutes, minutes and a half, under a minute. Each form
+# is one the language's `minutes` pattern reads back (a test round-trips them).
+_SAY = {
+    "zh": ("约 {n} 分钟", "约 {n} 分半", "不到一分钟"),
+    "en": ("about {n} minutes", "about {n} and a half minutes", "under a minute"),
+    "ja": ("約{n}分", "約{n}分半", "1分以内"),
+    "ko": ("약 {n}분", "약 {n}분 반", "1분 이내"),
+    "es": ("unos {n} minutos", "unos {n} minutos y medio", "menos de un minuto"),
+    "fr": ("environ {n} minutes", "environ {n} minutes et demie", "moins d'une minute"),
+    "de": ("etwa {n} Minuten", "etwa {n},5 Minuten", "unter einer Minute"),
+    "pt": ("cerca de {n} minutos", "cerca de {n} minutos e meio", "menos de um minuto"),
+}
+
+
+def suggest_length(est: float, lang: str) -> str:
+    """The wording to write for a read time of `est` seconds, in the script's language: the nearest half minute, or
+    "under a minute" up to 60 s. check_length accepts it (within min(30 s, a quarter of it) of the estimate)."""
+    whole, half, under = _SAY.get(lang) or _SAY["en"]
+    if est <= 60:
+        return under
+    halves = int(est / 30 + 0.5)  # nearest half minute, at least 2 halves = one minute
+    n, odd = divmod(halves, 2)
+    return (half if odd else whole).format(n=n)
+
+
 def check_length(paras: list[str], lang: str) -> str | None:
     """A warning when the stated length is off the estimated read time by more than 30 s, or a quarter of a short
     length ("一分钟" for 78 s), else None."""
@@ -155,7 +180,7 @@ def check_length(paras: list[str], lang: str) -> str | None:
     if abs(est - said) <= min(30, said / 4) or under and est <= said:  # "under a minute" fits any shorter length
         return None
     return (f"[narrate] warning: the {lang} script says {'under' if under else 'about'} {said / 60:g} min but reads in about {est:.0f} s; "
-            "fix that sentence (the real length prints when the mp3 is written)")
+            f"fix that sentence, e.g. write \"{suggest_length(est, lang)}\" (the real length prints when the mp3 is written)")
 
 
 def length_problem(script: Path, lang: str) -> str | None:
@@ -165,7 +190,7 @@ def length_problem(script: Path, lang: str) -> str | None:
         return None
     (said, under), est = stated(paras, lang), estimate_s(paras, lang)
     return (f"{script.name} says {'under' if under else 'about'} {said / 60:g} min but reads in about {est:.0f} s: "
-            f"fix the sentence \"{stated_sentence(paras, lang)}\"")
+            f"fix the sentence \"{stated_sentence(paras, lang)}\" (write \"{suggest_length(est, lang)}\" for the length)")
 
 
 def silence(seconds: float, out: Path) -> Path:

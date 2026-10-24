@@ -28,6 +28,9 @@ between two tiles faster than they can move, zoom in on those seconds before coa
    A drill repeated many times: zoom 2-3 reps (one early, one in the middle, one late) at 0.2-0.3 s for technique;
    at 2 s a tile per stride or turn is too coarse to see it. Use the regular sheets for counting reps, rest and
    fatigue.
+   Never count or time fast repeated motion (strokes, steps, jumps, swings per minute) from the regular sheets: a tile
+   every 0.5 s or more aliases a short cycle (a 1.3 s stroke cycle looks like one every 4 s). Take the rate from a
+   measuring step of the plugin, or from zoom sheets at `--every 0.2` or finer, and say in `what` where it came from.
    Fast objects (a shuttle, a ball, a swing) cross the frame between two regular tiles: before coaching contact or
    flight, make a zoom sheet around the moment with
    `sports-video-coach frames <video> --out run/frames-zoom --start <t> --end <t> --every 0.2`.

@@ -192,6 +192,38 @@ def test_length_warning_when_the_script_is_off_by_more_than_30_s():
     assert N.check_length(["Under a minute. " + "word " * 300], "en").startswith("[narrate] warning")
 
 
+def test_length_warning_suggests_wording_in_the_scripts_language():
+    """The cold test got "says about 1.5 min but reads in about 124 s" and had to guess what to write."""
+    zh = ["这份报告约一分半。" + "练" * 477]
+    est = N.estimate_s(zh, "zh")
+    assert 120 <= est <= 128
+    assert '约 2 分钟' in N.check_length(zh, "zh")
+    assert N.suggest_length(124, "zh") == "约 2 分钟" and N.suggest_length(95, "zh") == "约 1 分半"
+    assert N.suggest_length(124, "en") == "about 2 minutes" and N.suggest_length(95, "en") == "about 1 and a half minutes"
+    assert N.suggest_length(40, "en") == "under a minute"
+    assert N.suggest_length(124, "xx") == "about 2 minutes"      # an unknown code reads like English
+
+
+def test_suggested_length_wording_passes_the_check_in_every_language():
+    """estimate -> suggested wording -> stated() -> within tolerance, for every language with a length parser."""
+    import re
+    from sports_video_coach import langs as L
+    for lang in L.LANGS:
+        assert L.LANGS[lang].minutes and lang in N._SAY, lang
+        for est in range(1, 1200):
+            said, under = N.stated([N.suggest_length(est, lang) + "。"], lang)
+            assert under and est <= said or abs(est - said) <= min(30, said / 4), (lang, est, said)
+        # end to end: a script that says 9 minutes over a read time of about 2 minutes
+        filler = "练" if L.cjk(lang) else "word "
+        body = filler * int(124 / 60 * L.LANGS[lang].per_min / len(filler))
+        paras = [N._SAY[lang][0].format(n=9) + ". " + body]
+        warn = N.check_length(paras, lang)
+        assert warn, lang
+        wording = re.search(r'write "(.+?)"', warn).group(1)
+        fixed = [paras[0].replace(N._SAY[lang][0].format(n=9), wording)]
+        assert N.check_length(fixed, lang) is None, (lang, wording, N.estimate_s(fixed, lang))
+
+
 def test_read_time_uses_the_measured_rates():
     """Measured with the default voices: 887 characters / 6 paragraphs read in 58 s, 201 Chinese characters in 55 s;
     English words a minute vary with word length, characters do not."""

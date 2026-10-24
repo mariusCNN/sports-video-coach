@@ -135,6 +135,8 @@ def main(argv=None):
     out = scaffold(a.name, Path(a.dir) if a.dir else workspace.root() / "plugins", a.sport or a.name,
                    a.summary, a.use_when)
     print(f"wrote {out.as_posix()}")
+    print(f"sport:  {a.sport or a.name}" + ("" if a.sport else f"  (the plugin name; for another: --sport <sport>, or "
+          f"change SPORT in {(out / '__init__.py').as_posix()})"))
     print(f"check:  sports-video-coach plugins      (lists {a.name}; from another folder: set SVC_WORKSPACE, or "
           f"SVC_PLUGIN_PATH={out.parent.as_posix()})")
     print(f"use:    sports-video-coach run <video> --plugin {a.name}")

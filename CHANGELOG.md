@@ -5,6 +5,15 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- A plugin's page re-renders when a file its page hooks read changes (declare them in `PageHooks.inputs`); before,
+  `run` ended with exit 0 and the page still showed the old number (found by a cold plugin-author test).
+- Fewer needless agent stops: a whitespace-only edit (a space, a blank line) to a README no longer makes the
+  narration and film scripts out of date; an untouched `page-check --write-qa` QA draft is checked again by the run
+  itself and stops only on problems or warnings; the out-of-date message says `--accept` keeps a typo fix.
+- The narration length warning prints the wording to write (`write "约 2 分钟"`, `about 2 min`) in all 8 languages.
+- Plugin authors get a light install (`uv sync --no-group basketball`, no CUDA torch); the review guide and
+  docs/plugins.md warn that 0.5 s contact sheets alias fast repeated motion (rates must come from a measuring step or
+  `frames --every 0.2`); `new-plugin` prints the sport it set and how to change it.
 - A one-language page no longer shows an empty language switch outline; `review-check --help` prints its usage
   instead of treating `--help` as a folder; `frames --help` says `--end` is exclusive (found by a cold Codex run).
 

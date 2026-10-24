@@ -16,8 +16,10 @@ sports-video-coach plugins                      # lists tennis
 sports-video-coach run serve.mp4 --plugin tennis
 ```
 
-`<workspace>` is `$SVC_WORKSPACE`, else `./workspace`; `--dir <folder>` writes elsewhere. In a clone, prefix each
-command with `uv run`. `new-plugin` also prints the command for the tests it wrote (see [Test it](#test-it)).
+`<workspace>` is `$SVC_WORKSPACE`, else `./workspace`; `--dir <folder>` writes elsewhere. In a clone, install with
+`uv sync --no-group basketball` (no torch; plain `uv sync` adds CUDA torch, several GB, that only basketball tracking
+needs) and prefix each command with `uv run`. `new-plugin` sets the plugin's sport to its name; pass `--sport swimming`
+for another (the command says which it set; `SPORT` in `__init__.py` holds it). `new-plugin` also prints the command for the tests it wrote (see [Test it](#test-it)).
 
 The copy gets its own name everywhere: `summary` and `use_when`, the stage names in its texts
 (`tennis:review-check`) and its agent steps, which say `sports-video-coach guide review --unit <folder>` so the agent
@@ -32,6 +34,9 @@ are joined into the unit's own `video.mp4`), so keep the video in place, or upda
 The copy runs as it is. Make it yours in this order:
 
 1. `prompts/review.md`: what the agent looks for on the contact sheets, in the words of a coach of that sport.
+   Sheets are one tile per 0.5 s or more, so they alias fast repeated motion: a 1.3 s stroke cycle can look like one
+   every 4 s. Cycle rates and counts of fast motions (strokes, steps, jumps) must come from a measuring step of yours,
+   or from zoomed sheets (`frames --every 0.2` or finer), never from the regular sheets. Say so in your `review.md`.
 2. `prompts/report.md`: the report's sections (what to work on, drills, a checkable target).
 3. Stages for your own measurements, added to the step table before the review.
 
@@ -168,13 +173,21 @@ The page shows it through the `page` hook (`render_html.PageHooks`, see [Hooks](
 above the report:
 
 ```python
-def pose_box(folder, band, langs):      # page.py; band data and langs as render_html passes them
+def pose_file(folder):
     from .unit import Analysis
-    p = Analysis.load(folder).run / "pose" / "pose.json"
+    return Analysis.load(folder).run / "pose" / "pose.json"
+
+def pose_box(folder, band, langs):      # page.py; band data and langs as render_html passes them
+    p = pose_file(folder)
     return f"<p>{len(json.loads(p.read_text(encoding='utf8'))['frames'])} frames measured</p>" if p.exists() else ""
 
-PLUGIN = Plugin(..., page=PageHooks(before=pose_box))   # in __init__.py: from .page import pose_box
+# in __init__.py: from .page import pose_box, pose_file
+PLUGIN = Plugin(..., page=PageHooks(before=pose_box, inputs=lambda folder: [pose_file(folder)]))
 ```
+
+`inputs` names the files your page hooks read. The run's html step then re-renders the page when one of them
+changes, as it does for READMEs, audio and clips. Without it, a re-measured number stays old on the page and the
+run still ends with exit 0.
 
 Rules that keep agents honest: every agent step has a validator (`errors`), every number the agent writes comes from
 a file a command step made, and the review format says "unclear" is a valid answer.
@@ -187,7 +200,7 @@ Each field of each hook object falls back to the default on its own, so set only
 
 | Hook | Fields | Use it for |
 |---|---|---|
-| `page` (`render_html.PageHooks`) | `ui`, `board`, `band`, `before`, `sections` | page labels, the top band (a score, a summary), HTML above or after the report |
+| `page` (`render_html.PageHooks`) | `ui`, `board`, `band`, `before`, `sections`, `inputs` | page labels, the top band (a score, a summary), HTML above or after the report, the files those read |
 | `scenes` (`{"court": film.SceneKind}`) | `prefix`, `noun`, `parse`, `render`, `problems`, `steps` | new scene kinds in `film.<lang>.md`, e.g. `![...](court:play.json)` |
 | `film` (`film.FilmHooks`) | `title`, `colours`, `parse_ref`, `tracks`, `mark_help` | the title card, colours, freeze marks that follow a tracked player |
 | `site` (`publish.SiteHooks`) | `hidden`, `group`, `groups`, `titles`, `ui`, `is_app`, `app_page` | how your units appear on the publish hub, app pages at `/p/<token>/` |
@@ -208,7 +221,7 @@ project), so it runs in a throwaway environment:
 uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach pytest workspace/plugins/tennis
 ```
 
-In a clone: `uv run pytest workspace/plugins/tennis` (or the folder you gave `--dir`).
+In a clone: `uv run pytest workspace/plugins/tennis` (or the folder you gave `--dir`); `uv sync --no-group basketball` is enough.
 
 It checks three things, and is the pattern for your own tests:
 

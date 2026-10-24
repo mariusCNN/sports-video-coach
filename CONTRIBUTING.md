@@ -20,11 +20,14 @@ You need [uv](https://docs.astral.sh/uv/), Python 3.11 and `ffmpeg`. Basketball 
 ```bash
 git clone https://github.com/<you>/sports-video-coach.git
 cd sports-video-coach
-uv sync
+uv sync --no-group basketball
 uv run pytest -q
 ```
 
-Without a CUDA GPU, install CPU torch instead of running `uv sync`, as CI does:
+That is the light install: the core, the generic plugin, your own plugin and the whole test suite, with no torch.
+Plain `uv sync` also installs the `basketball` group (CUDA torch, several GB); only basketball tracking needs it.
+
+Without a CUDA GPU, to work on the basketball plugin, install CPU torch instead of running `uv sync`, as CI does:
 
 ```bash
 uv venv --python 3.11

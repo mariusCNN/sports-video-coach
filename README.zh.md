@@ -97,7 +97,8 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md)。
 - **只装命令行：**`uv tool install git+https://github.com/mariusDing/sports-video-coach`（约 60 MB，不含 torch；
   PATH 上要有 ffmpeg），然后 `sports-video-coach plugins` 和 `sports-video-coach run <视频> --sport <运动>`。
-- **改代码、写插件、篮球跟踪：**`git clone` 后 `uv sync`（Python 3.11，CUDA torch），命令前加 `uv run`。
+- **改代码、写插件：**`git clone` 后 `uv sync --no-group basketball`（Python 3.11，不装 torch），命令前加 `uv run`。`uv run pytest -q` 照常能跑。
+- **从克隆做篮球跟踪：**`git clone` 后 `uv sync`（Python 3.11，CUDA torch，几 GB），命令前加 `uv run`。
 - 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/refs/heads/master.zip` 安装。
 - 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里 PATH 中的 `C:/...` 要写成 `/c/...`（例如 `/c/Users/<you>/.local/bin`）。
 
