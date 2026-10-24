@@ -26,8 +26,7 @@ uv run sports-video-coach run swim.mp4 --plugin swim-stroke-rate
 - The run measures the rate, cuts the frame sheets and stops with **exit 3** at the film review.
 - From there it is the normal loop (`AGENTS.md`): your agent writes the review and the report, you run again.
 - Measure only: `uv run sports-video-coach swim-stroke-rate:stroke swim.mp4 --out out/`.
-- Tests: `uv run pytest examples/plugins/swim-stroke-rate`. A hyphen in a plugin folder name needs
-  `examples/plugins/conftest.py` beside it when you copy it (pytest would import the folder as a package).
+- Tests: `uv run pytest examples/plugins/swim-stroke-rate`.
 
 ## Which file does what
 

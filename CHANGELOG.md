@@ -149,6 +149,10 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- A plugin from `new-plugin` with a hyphen in its name (`swim-rate`) and a relative import in its
+  `__init__.py` failed collection of its own scaffolded tests: pytest imported the folder's `__init__.py` as a lone
+  module. The core now ships a pytest plugin (entry point `pytest11`) that collects such a folder as a plain folder,
+  so its tests pass with no conftest; the worked example dropped its `examples/plugins/conftest.py`.
 - The seven `bench run --agent` presets were checked against each real CLI's `--help` (Gemini CLI 0.65.0, Qwen
   Code 0.26.1, Aider 0.86.2, OpenCode 1.19.4, Cursor CLI 2026.10.22, GitHub Copilot CLI 1.0.103, Goose 1.56.0);
   `--agent qwen` now passes the prompt as a positional argument, since Qwen Code deprecated `-p`. No preset has

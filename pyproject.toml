@@ -66,6 +66,9 @@ hoop-tape-miner = "hoop_tape_miner.cli:main"
 [project.entry-points."sports_video_coach.plugins"]
 basketball = "hoop_tape_miner.plugin:PLUGIN"
 
+[project.entry-points.pytest11]
+sports_video_coach = "sports_video_coach.pytest_plugin"
+
 [tool.uv.sources]
 torch = [{ index = "pytorch-cu124" }]
 torchvision = [{ index = "pytorch-cu124" }]

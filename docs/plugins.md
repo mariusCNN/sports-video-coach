@@ -239,6 +239,10 @@ It checks three things, and is the pattern for your own tests:
 - Its step table (`PLUGIN.kinds[0].step_table()`) runs frames before review before report and ends with film, so a
   step you add before the review keeps it passing.
 
+A hyphen in the name (`swim-rate`) is fine, also with relative imports in `__init__.py` (`from .page import ...`):
+pytest would import such a folder's `__init__.py` as a lone module, so sports-video-coach installs a small pytest
+plugin that collects it as a plain folder. Nothing to add to your plugin for it.
+
 A commented example at the end runs one of your stages on a 3-second ffmpeg test video in `tmp_path`: uncomment it
 and name your stage once you have one.
 
