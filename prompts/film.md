@@ -41,17 +41,18 @@ The chart shows where the game turned.
 ```
 
 - Every visual line starts a new scene:
-  - `## Title`: a chapter card over blurred game footage. ` · ` splits a long title into lines, e.g. three cues for the sign-off card.
+  - `## Title`: a chapter card over blurred game footage, left-aligned under an accent bar. ` · ` splits a long title into lines that come in one after another, e.g. three cues for the sign-off card. `## 第一件事：…` shows the part before the colon as a small kicker above the title.
   - `![caption](clip:mm:ss-mm:ss)`: our video, in video time; the caption is a banner at the top.
-  - `![caption](stat:12)`: a big number with its caption, over blurred footage. Use it for the two or three numbers that matter.
+  - `![caption](stat:12)`: a big number that counts up, its caption below, over blurred footage. Use it for the two or three numbers that matter. A goal `stat:≤4` / `stat:≥8` shows "at most" / "at least" in words over the number.
   - `![caption](court:plays/x.json)`: an animated court diagram.
   - `![caption](picture.png)`: a figure from the folder, fitted to the frame. An empty caption shows no banner.
 - The paragraphs after a visual line are read over it. Blank lines separate paragraphs (short pause). Paragraphs before the first visual go over the title card.
 - **Freeze lines** (`> mm:ss marks "label"`, only after a clip line): the clip plays up to that moment and stops. The paragraphs after the `>` line are read over the frozen frame, then the clip plays on.
-  - The frame is dimmed except for the marked players. Each marked player gets a yellow ring at the feet, and the label shows above the first one.
+  - A hold of 1.5 s or more punches in on the marked players (up to 1.4x) and eases back out before the play runs on.
+  - The rest of the frame is dimmed around a soft spotlight. Each marked player gets a ring on the floor (blue for us, red for them, white for a bare spot); arrows draw on, then the label comes up in a dark pill next to the first player, one beat at a time.
   - Marks: `我#7` / `对#11` (or `us#7` / `them#11`) are looked up in the CV tracks (`run/tracks.pkl`; `--run` if it is not next to the report or the video).
-  - `0.42,0.61` is a spot on the frame, as fractions of width and height: where a player's feet are. Use it when the tracks do not know the player (`--dry` warns), e.g. a jersey number the CV pass never read.
-  - `A->B` draws an arrow, e.g. `我#30->我#21` for a pass, or `我#3->0.30,0.55` for where help should come from.
+  - `0.42,0.61` is a spot on the frame, as fractions of width and height: where a player's feet are. Use it when the tracks do not know the player (`--dry` warns), e.g. a jersey number the CV pass never read. Put the team in front when you know it, `对0.42,0.61` / `我0.42,0.61` (or `them:` / `us:`), so the ring is red / blue instead of white.
+  - `A->B` draws an arrow, e.g. `我#30->我#21` for a pass, or `我#3->0.30,0.55` for where help should come from. The rings take a bite out of both ends, so keep an arrow at least a tenth of the frame long (`--dry` warns); for two players standing close, ring both instead. Ring the arrow's ends too (`我#30 我#21 我#30->我#21`), or they stay in the dimmed part of the frame.
   - A `>` line on its own resumes the clip at once; the paragraphs after it are read over the running play. Use it for "watch what happens next", so the words do not run over a frame that is still frozen.
   - Several freezes per clip are fine, in time order. A freeze without a paragraph holds two seconds.
 - **Court diagrams** (`plays/<name>.json`, format in `src/hoop_tape_miner/film_court.py`).

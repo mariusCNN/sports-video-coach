@@ -178,35 +178,35 @@ SPORT_PT = _sports("Tênis", "Basquete", "Futebol", "Futebol", "Badminton", "Tê
 # report script; ko 245: a 442-character report script that read in 112 s).
 LANGS: dict[str, Lang] = {l.code: l for l in (
     Lang("zh", "zh-CN", "Chinese", "中文", "zh-CN-YunjianNeural", "zh-CN-XiaoxiaoNeural", 235, cjk=True, sub_chars=30,
-         fonts=CJK_SC_FONTS, ui=UI_ZH, film=dict(slow="慢放", freeze="定格"), date="{y}年{m}月{d}日",
+         fonts=CJK_SC_FONTS, ui=UI_ZH, film=dict(slow="慢放", freeze="定格", at_most="最多", at_least="至少"), date="{y}年{m}月{d}日",
          minutes=MIN_ZH, sports=SPORT_ZH),
     Lang("en", "en", "English", "English", "en-US-AndrewNeural", "en-US-AvaNeural", 960,
-         ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused"), date="{d} {mon} {y}",
+         ui=UI_EN, film=dict(slow="Slow motion", freeze="Paused", at_most="At most", at_least="At least"), date="{d} {mon} {y}",
          months=("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
          minutes=MIN_EN, numbers=NUM_EN),
     Lang("ja", "ja", "Japanese", "日本語", "ja-JP-KeitaNeural", "ja-JP-NanamiNeural", 285, cjk=True, sub_chars=30,
          fonts={"win32": "Yu Gothic", "darwin": "Hiragino Sans", "other": "Noto Sans CJK JP"},
          page_font='"Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif',
-         ui=UI_JA, film=dict(slow="スロー", freeze="一時停止"), date="{y}年{m}月{d}日",
+         ui=UI_JA, film=dict(slow="スロー", freeze="一時停止", at_most="多くても", at_least="最低"), date="{y}年{m}月{d}日",
          minutes=MIN_JA, sports=SPORT_JA),
     Lang("ko", "ko", "Korean", "한국어", "ko-KR-InJoonNeural", "ko-KR-SunHiNeural", 245, cjk=True, sub_chars=34,
          fonts={"win32": "Malgun Gothic", "darwin": "Apple SD Gothic Neo", "other": "Noto Sans CJK KR"},
          page_font='"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif',
-         ui=UI_KO, film=dict(slow="슬로모션", freeze="일시정지"), date="{y}년 {m}월 {d}일",
+         ui=UI_KO, film=dict(slow="슬로모션", freeze="일시정지", at_most="최대", at_least="최소"), date="{y}년 {m}월 {d}일",
          minutes=MIN_KO, numbers=NUM_KO, sports=SPORT_KO),
     Lang("es", "es", "Spanish", "Español", "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 850,
-         ui=UI_ES, film=dict(slow="Cámara lenta", freeze="Pausa"), date="{d} {mon} {y}",
+         ui=UI_ES, film=dict(slow="Cámara lenta", freeze="Pausa", at_most="Como máximo", at_least="Como mínimo"), date="{d} {mon} {y}",
          months=("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"),
          minutes=MIN_ES, numbers=NUM_ES, sports=SPORT_ES),
     Lang("fr", "fr", "French", "Français", "fr-FR-HenriNeural", "fr-FR-DeniseNeural", 950,
-         ui=UI_FR, film=dict(slow="Ralenti", freeze="Pause"), date="{d} {mon} {y}",
+         ui=UI_FR, film=dict(slow="Ralenti", freeze="Pause", at_most="Au plus", at_least="Au moins"), date="{d} {mon} {y}",
          months=("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."),
          minutes=MIN_FR, numbers=NUM_FR, sports=SPORT_FR),
     Lang("de", "de", "German", "Deutsch", "de-DE-ConradNeural", "de-DE-KatjaNeural", 950,
-         ui=UI_DE, film=dict(slow="Zeitlupe", freeze="Standbild"), date="{dd}.{mm}.{y}",
+         ui=UI_DE, film=dict(slow="Zeitlupe", freeze="Standbild", at_most="Höchstens", at_least="Mindestens"), date="{dd}.{mm}.{y}",
          minutes=MIN_DE, numbers=NUM_DE, sports=SPORT_DE),
     Lang("pt", "pt-BR", "Portuguese", "Português", "pt-BR-AntonioNeural", "pt-BR-FranciscaNeural", 800,
-         ui=UI_PT, film=dict(slow="Câmera lenta", freeze="Pausa"), date="{dd}/{mm}/{y}",
+         ui=UI_PT, film=dict(slow="Câmera lenta", freeze="Pausa", at_most="No máximo", at_least="No mínimo"), date="{dd}/{mm}/{y}",
          minutes=MIN_PT, numbers=NUM_PT, sports=SPORT_PT),
 )}
 CODES = tuple(LANGS)
@@ -259,7 +259,7 @@ def date(iso: str, code: str) -> str:
 
 
 def film_tag(code: str, key: str) -> str:
-    """A film tag ("slow", "freeze") in the language, else in English."""
+    """A film tag ("slow", "freeze", "at_most", "at_least") in the language, else in English."""
     own = LANGS[code].film if code in LANGS else {}
     return own.get(key) or LANGS["en"].film[key]
 

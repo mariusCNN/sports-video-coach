@@ -105,6 +105,12 @@ All notable changes to this project are documented here. The format follows [Kee
   plugin's HTML inside each language's report, before section 1; `before` still puts HTML above the report.
 - The report guides ask for an analyst's voice: number first, its baseline, then the order; no stock AI phrasing
   (checked by `sports-video-coach humanize`).
+- The explained video looks like a film-room breakdown: a long freeze punches in on the marked players and eases
+  back out; floor rings in team colours (blue us, red them) under a soft spotlight; tapered white arrows that draw on;
+  the label in a dark pill with a leader line; a pause badge. Chapter cards are left-aligned with a kicker and come
+  in line by line; stats count up; goal cards say "at most" / "at least" in words; subtitles lose their box;
+  the clip banner fades after six seconds, or at the first freeze. A spot can carry its team (`对0.42,0.61`), so
+  its ring is red or blue; `--dry` warns about an arrow too short to read.
 - The page's language switch names every language in its own words (English, Español, Français, Deutsch,
   Português, beside 中文, 日本語, 한국어), not a mix of names and codes (EN).
 

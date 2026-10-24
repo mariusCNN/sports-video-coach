@@ -20,7 +20,8 @@ clip shorter than its narration plays once, then replays at half speed, then hol
 turned down under the voice. A scene without narration lasts CARD_S / IMAGE_S, or the clip's own length.
 
 Freeze lines: the clip plays up to that moment, stops, and the paragraphs after the `>` line are narrated over the
-frozen frame, which is dimmed except for the marked spots (a ring at their feet, arrows, a label); then the clip
+frozen frame (a punch-in zoom on a long hold, the rest dimmed around the marked spots: a floor ring in the team colour,
+arrows that draw on, a label pill, one beat at a time); then the clip
 plays on. A `>` line on its own resumes the clip at once: the paragraphs after it are read over the running play.
 x,y fractions of the frame always work; a plugin may add marks found in its tracking (FilmHooks.parse_ref / tracks;
 basketball: 我#7 / 对#11 from run/tracks.pkl, --run). In a plugin scene with steps (a court diagram) the first
@@ -74,6 +75,11 @@ SLOW = 0.5                       # replay speed when the narration outlasts a cl
 DUCK = 0.2                       # game sound volume under the voice
 MAX_CHARS = {c: l.sub_chars for c, l in L.LANGS.items()}  # one subtitle at most (about two lines at 720p)
 FREEZE_S = 2.0                   # a freeze without narration
+MIN_ZOOM_HOLD = 1.5              # a shorter freeze is not zoomed (in and out would be all it does)
+BANNER_S = 6.0                  # a clip's caption shows this long, at its start
+MIN_ARROW = 0.1                  # --dry warns about a spot-to-spot arrow shorter than this (frame fractions)
+COUNT_S, COUNT_STEPS = 0.6, 12   # a stat card's number counts up in this long, in so many steps
+KICKER_RE = re.compile(r"^([^：:]{1,12})[：:]\s*(.+)$")  # "第一件事：有压力" -> kicker "第一件事", title "有压力"
 SLOW_TAG = {c: L.film_tag(c, "slow") for c in L.CODES}
 FREEZE_TAG = {c: L.film_tag(c, "freeze") for c in L.CODES}
 TARGET_S = (120, 240)  # film length the guides ask for (2-4 min)
@@ -312,6 +318,12 @@ def freeze_warnings(scenes: list[Scene], tracks) -> list[str]:
             if m and fz.line[m.end():].strip():
                 out.append(f"scene {i}: freeze {t}: `{fz.line[m.end():].strip()}` comes after the label; put the "
                            "label last: > mm:ss.s x,y x,y \"label\"")
+            for mk in marks:  # the rings take a bite out of each end: a short arrow is left as a stub
+                if mk[0] == "arrow" and all(p[0] == "point" for p in mk[1:]):
+                    if math.hypot(mk[1][1] - mk[2][1], mk[1][2] - mk[2][2]) < MIN_ARROW:
+                        out.append(f"scene {i}: freeze {t}: the arrow {fd.mark_text(mk[1])}->{fd.mark_text(mk[2])} "
+                                   f"is too short to read; aim it further (at least {MIN_ARROW:g} of the frame) or "
+                                   "ring the players instead")
             if tracks is None or not TIME_RE.match(t):
                 continue
             for m in dict.fromkeys(m for mk in marks for m in points(mk)):
@@ -491,6 +503,12 @@ def ass_colour(hex_: str, alpha: int = 0) -> str:
     return f"&H{alpha:02X}{b:02X}{g:02X}{r:02X}"
 
 
+def lighten(hex_: str, k: float = 0.45) -> str:
+    """hex_ mixed k of the way to white: a team colour as text on a dark card stays readable (a deep purple is
+    about 2.7:1 on near-black)."""
+    return "#" + "".join(f"{round(c + (255 - c) * k):02x}" for c in units.hex_to_rgb(hex_))
+
+
 def ass_escape(t: str) -> str:
     return t.replace("\\", "/").replace("{", "(").replace("}", ")").replace("\n", " ")
 
@@ -501,15 +519,20 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
     u = min(w, h)
     m = round(u * 0.04)
     side = round(w * 0.08)  # banner keeps clear of broadcast logos in the top corners
-    white, box = "&H00FFFFFF", "&H40000000"
-    styles = {  # size, primary, outline/box, border style, outline, alignment, margin l/r, margin v, bold
-        "Sub": (round(u * 0.057), white, box, 3, round(u * 0.012), 2, m, round(u * 0.05), 0),
-        "Banner": (round(u * 0.036), white, ass_colour(accent, 0x30), 3, round(u * 0.012), 8, side, m, 1),
-        "Title": (round(u * 0.075), white, "&H00000000", 1, 0, 5, m, 0, 1),
-        "Tag": (round(u * 0.04), "&H0000D7FF", box, 3, round(u * 0.01), 9, m, m, 1),
-        "Draw": (20, white, "&H00000000", 1, 0, 7, 0, 0, 0),  # telestration shapes (ASS drawings)
-        "Mark": (round(u * 0.045), "&H00101010", ass_colour(fd.MARK_HEX), 3, round(u * 0.01), 2, m, 0, 1),
-        "Big": (round(u * 0.2), ass_colour(fd.MARK_HEX), "&H00000000", 1, round(u * 0.004), 5, m, 0, 1),
+    white, ink, shade = "&H00FFFFFF", "&H00000000", "&H80000000"
+    styles = {  # size, primary, outline/box, back (shadow), border style, outline, shadow, alignment, margin l/r,
+        # margin v, bold. One system: white type, a thin dark outline and a soft shadow instead of boxes
+        "Sub": (round(u * 0.055), white, ink, shade, 1, max(2, round(u * 0.004)), max(1, round(u * 0.003)), 2, m,
+                round(u * 0.045), 1),
+        "Banner": (round(u * 0.034), white, ass_colour(fd.INK_HEX, 0x40), ass_colour(fd.INK_HEX, 0x40), 3,
+                   round(u * 0.014), 0, 8, side, m, 1),
+        "Title": (round(u * 0.075), white, ink, shade, 1, 0, max(1, round(u * 0.004)), 5, m, 0, 1),
+        "Kicker": (round(u * 0.036), ass_colour(lighten(accent)), ink, shade, 1, 0, max(1, round(u * 0.003)), 1, m, 0, 1),
+        "Tag": (round(u * 0.032), white, ink, ink, 1, 0, 0, 4, m, m, 1),  # the badge text (film_draw.badge)
+        "Draw": (20, white, ink, ink, 1, 0, 0, 7, 0, 0, 0),  # telestration shapes (ASS drawings)
+        "Mark": (round(u * 0.04), white, ink, ink, 1, 0, 0, 5, m, 0, 1),  # a freeze label, in its pill
+        "Big": (round(u * 0.2), white, ink, shade, 1, 0, max(2, round(u * 0.006)), 2, m, 0, 1),
+        "Caption": (round(u * 0.045), "&H00E2DBD8", ink, shade, 1, 0, max(1, round(u * 0.003)), 8, m, 0, 0),
     }
     layer = {"Draw": 0, "Mark": 1}
     lines = ["[Script Info]", "ScriptType: v4.00+", f"PlayResX: {w}", f"PlayResY: {h}", "WrapStyle: 0",
@@ -517,9 +540,9 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
              "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, "
              "Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, "
              "MarginL, MarginR, MarginV, Encoding"]
-    for name, (size, prim, outl, bs, ol, al, ml, mv, bold) in styles.items():
-        lines.append(f"Style: {name},{font},{size},{prim},{prim},{outl},{outl},{-bold},0,0,0,100,100,0,0,"
-                     f"{bs},{ol},0,{al},{ml},{ml},{mv},1")
+    for name, (size, prim, outl, back, bs, ol, sh, al, ml, mv, bold) in styles.items():
+        lines.append(f"Style: {name},{font},{size},{prim},{prim},{outl},{back},{-bold},0,0,0,100,100,0,0,"
+                     f"{bs},{ol},{sh},{al},{ml},{ml},{mv},1")
     lines += ["", "[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"]
     lines += [f"Dialogue: {layer.get(st, 2)},{ass_time(s)},{ass_time(e)},{st},,0,0,0,,{t}"
               for s, e, st, t in events if e > s]
@@ -527,9 +550,10 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
 
 
 def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lang: str, title: str, h: int,
-                 extra=(), frame: tuple[int, int] | None = None):
+                 extra=(), frame: tuple[int, int] | None = None, banner_to: float | None = None):
     """Subtitle events for one scene; cue times count from the start of the voice (LEAD). extra: more events.
-    h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h."""
+    h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h; banner_to: the clip's
+    first freeze, where its banner goes so the label is the only text on the frozen frame."""
     fw, fh = frame or (round(h * 16 / 9), h)
     m, side = round(h * 0.04), round(fw * 0.08)  # the margins and font sizes ass_doc gives Sub, Banner, Title
     sub_fs, small, big = round(h * 0.057), round(h * 0.036), round(h * 0.075)
@@ -538,17 +562,15 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
     def wrap(text: str, cap: float) -> str:
         return "\\N".join(ass_escape(y) for y in fit(text, cap, lang))
     if sc.kind == "title":
-        ev.append((0, length, "Title", title))
-    elif sc.kind == "card":  # " · " separates lines; the text grows upwards from just above the accent bar
-        lines = "\\N".join(wrap(x.strip(), (fw - 2 * m) / big) for x in sc.text.split(" · "))
-        ev.append((0, length, "Title", f"{{\\an2\\pos({round(fw / 2)},{round(fh / 2 + h * 0.055)})}}" + lines))
+        ev.append((0, length, "Title", "{\\fad(400,300)}" + title))
+    elif sc.kind == "card":
+        ev += card_events(sc.text, length, lang, h, fw, fh)
     elif sc.kind == "stat":
-        ev.append((0, length, "Big", f"{ass_escape(sc.src)}\\N{{\\fs{round(h * 0.055)}\\c&HFFFFFF&\\bord0}}"
-                   f"{ass_escape(sc.text)}"))
-    elif sc.text:
-        ev.append((0, length, "Banner", wrap(sc.text, (fw - 2.5 * side) / small)))
+        ev += stat_events(sc.src, sc.text, length, lang, h, fw, fh)
+    elif sc.text:  # what the clip is about, while it starts; then the picture is the players'
+        ev.append((0, min(length, BANNER_S, banner_to or BANNER_S), "Banner", "{\\fad(250,300)}" + wrap(sc.text, (fw - 2.5 * side) / small)))
     if slow:
-        ev.append((clip_s, clip_s + slow, "Tag", SLOW_TAG.get(lang, SLOW_TAG["en"])))
+        ev += fd.badge(SLOW_TAG.get(lang, SLOW_TAG["en"]), clip_s, clip_s + slow, fw, fh, icon="play")
     subs = sorted((LEAD + s, LEAD + e, t) for s, e, t in cues)
     for i, (s, e, t) in enumerate(subs):
         if i + 1 < len(subs) and subs[i + 1][0] - e < 0.6:  # no flicker between close subtitles
@@ -557,10 +579,73 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
     return ev + list(extra)
 
 
+def card_events(text: str, length: float, lang: str, h: int, fw: int, fh: int) -> list[tuple]:
+    """A chapter card, left-aligned as in a broadcast: an accent bar, the kicker (what comes before the first "："
+    / ":", e.g. "第一件事") in the accent colour, then the title; " · " splits it into lines that come in one after
+    another (a sign-off). Each slides in a little and fades."""
+    big, x0 = round(h * 0.088), round(fw * 0.1)
+    parts = [x.strip() for x in text.split(" · ") if x.strip()]
+    kicker = ""
+    km = KICKER_RE.match(parts[0]) if len(parts) == 1 else None
+    if km:
+        kicker, parts = km[1].strip(), [km[2].strip()]
+    rows = [fit(p, (fw - 2 * x0) / big, lang) for p in parts]
+    lh = big * 1.3
+    top = fh / 2 - sum(len(r) for r in rows) * lh / 2 + (h * 0.03 if kicker else 0)
+    slide = round(h * 0.03)
+
+    def move(y: float, fs: int = big) -> str:
+        return f"{{\\an7\\move({x0 - slide},{round(y)},{x0},{round(y)},0,350)\\fad(300,250)\\fs{fs}}}"
+
+    bar_y = top - h * (0.105 if kicker else 0.045)
+    ev = [(0.0, length, "Kicker", f"{{\\an7\\pos({x0},{round(bar_y)})\\p1\\fad(250,250)\\shad0}}"
+           f"m 0 0 l {round(h * 0.07)} 0 l {round(h * 0.07)} {max(3, round(h * 0.007))} l 0 {max(3, round(h * 0.007))}")]
+    if kicker:
+        ev.append((0.1, length, "Kicker", move(top - h * 0.075, round(h * 0.044)) + ass_escape(kicker)))
+    y = top
+    for i, r in enumerate(rows):
+        ev.append((0.25 + i * 0.5, length, "Title", move(y) + "\\N".join(ass_escape(x) for x in r)))
+        y += len(r) * lh
+    return ev
+
+
+def stat_events(src: str, text: str, length: float, lang: str, h: int, fw: int, fh: int) -> list[tuple]:
+    """A number card: the number in white counting up from zero, its caption muted under it. A target ("≤4",
+    "≥8": what to aim for next game, not what happened) says it in words ("最多" / "at most") over the number,
+    both in the accent colour, so a goal never looks like a stat."""
+    src = src.strip()
+    goal = next((k for k, sym in (("at_most", ("≤", "<=")), ("at_least", ("≥", ">="))) if src.startswith(sym)), None)
+    if goal:
+        src = src.lstrip("≤≥<>=").strip()
+    cx, cy = round(fw / 2), round(fh / 2 + h * 0.06)
+    style, extra = ("Kicker", f"\\fs{round(h * 0.2)}\\shad{max(2, round(h * 0.006))}") if goal else ("Big", "")
+    ev = []
+    if goal:
+        ev.append((0.0, length, "Kicker", f"{{\\an2\\pos({cx},{round(cy - h * 0.2)})\\fs{round(h * 0.05)}"
+                   f"\\fad(250,250)}}" + L.film_tag(lang, goal)))
+    head = f"{{\\an2\\pos({cx},{cy}){extra}"
+    nums = [int(x) for x in re.findall(r"\d+", src)]
+    if nums and max(nums) <= 999:  # counts up over COUNT_S in steps, then holds
+        n, t0 = COUNT_STEPS, 0.15
+        for k in range(n + 1):
+            p = 1 - (1 - k / n) ** 3  # ease out: fast, then settles
+            shown = re.sub(r"\d+", lambda mm: str(round(int(mm[0]) * p)), src)
+            s = 0.0 if k == 0 else t0 + (k - 1) * COUNT_S / n
+            e = length if k == n else t0 + k * COUNT_S / n
+            ev.append((s, e, style, head + ("\\fad(150,0)}" if k == 0 else "\\fad(0,250)}" if k == n else "}")
+                       + ass_escape(shown)))
+    else:
+        ev.append((0.0, length, style, head + "\\fad(250,250)}" + ass_escape(src)))
+    if text:
+        cap = "\\N".join(ass_escape(y) for y in fit(text, (fw - 2 * round(h * 0.08)) / round(h * 0.045), lang))
+        ev.append((0.3, length, "Caption", f"{{\\an8\\pos({cx},{round(cy + h * 0.035)})\\fad(300,250)}}" + cap))
+    return ev
+
+
 def title_lines(head: str, sub: str, h: int) -> str:
-    """ASS title card text: the head, then `sub` (date, score) smaller on a second line after a thin gap."""
+    """ASS title card text: the head, then `sub` (date, score) on a second line after a thin gap."""
     gap = f"\\N{{\\fs{round(h * 0.02)}}} "  # a thin blank line between the title and the date
-    return ass_escape(head) + (f"{gap}\\N{{\\fs{round(h * 0.045)}\\b0}}{ass_escape(sub)}" if sub else "")
+    return ass_escape(head) + (f"{gap}\\N{{\\fs{round(h * 0.066)}\\b0\\c&HF0F0F0&}}{ass_escape(sub)}" if sub else "")
 
 
 def folder_date(folder: Path) -> str:
@@ -657,10 +742,12 @@ def voice_track(paras: list[str], voice: str, rate: str, cache: Path, out: Path,
 
 def scene_cmd(sc: Scene, length: float, slow: float, w: int, h: int, folder: Path, video: Path | None,
               game_audio: bool, voices: list[tuple[Path, float]], ass_name: str, accent: str, out: str, *,
-              segs=None, bg: float | None = None, frames: str | None = None, crf: int = CRF) -> list[str]:
+              segs=None, bg: float | None = None, frames: str | None = None, crf: int = CRF,
+              zooms=None) -> list[str]:
     """ffmpeg arguments for one scene. voices: (wav, start s) per narration group; segs: a clip's play / hold
     segments (clip_plan); bg: video time of the blurred footage behind a card; frames: a plugin scene's ffconcat
-    list (a court diagram)."""
+    list (a court diagram); zooms: the punch-in of each hold, in order (film_draw.freeze_zoom, None for none)."""
+    zooms = list(zooms or [])
     fit = f"scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2"
     hold = f"tpad=stop_mode=clone:stop_duration={length:.3f},trim=duration={length:.3f}"
     args, graph, game = [], [], []
@@ -682,6 +769,9 @@ def scene_cmd(sc: Scene, length: float, slow: float, w: int, h: int, folder: Pat
                 args += ["-ss", f"{max(t0, min(a, t1 - 0.2)):.3f}", "-t", "0.2", "-i", str(video)]
                 v = (f"[{i}:v]{fit},setsar=1,fps={FPS},setpts=PTS-STARTPTS,trim=end_frame=1,"
                      f"tpad=stop_mode=clone:stop_duration={b:.3f},trim=duration={b:.3f}")
+                z = zooms.pop(0) if zooms else None
+                if z:
+                    v += "," + zoom_filter(z, b, w, h)
                 if game_audio:
                     graph.append(f"aevalsrc=0:c=mono:s=48000:d={b:.3f}[g{i}]")
             graph.append(v + f"[y{i}]")
@@ -702,12 +792,13 @@ def scene_cmd(sc: Scene, length: float, slow: float, w: int, h: int, folder: Pat
     else:  # title, card, stat: over the game itself, blurred and darkened, when there is footage to use
         if bg is not None and video:
             args = ["-ss", f"{bg:.3f}", "-t", f"{length:.3f}", "-i", str(video)]
-            v = (f"[0:v]{fit},setsar=1,fps={FPS},setpts=PTS-STARTPTS,boxblur=20:2,"
-                 f"colorlevels=romax=0.4:gomax=0.4:bomax=0.4,{hold}")
+            # heavily blurred and dark, so the card reads calm (no blobs of the venue's logos showing through)
+            v = (f"[0:v]{fit},setsar=1,fps={FPS},setpts=PTS-STARTPTS,boxblur=30:3,eq=saturation=0.6,"
+                 f"colorlevels=romax=0.28:gomax=0.28:bomax=0.3,{hold}")
         else:
             args = ["-f", "lavfi", "-i", f"color=c=0x{BG[1:]}:s={w}x{h}:r={FPS}:d={length:.3f}"]
             v = "[0:v]null"
-        if sc.kind != "stat":
+        if sc.kind == "title":  # a chapter card draws its own accent bar (card_events)
             u = min(w, h)  # under the text, which sits mid-frame at the short side's size
             v += (f",drawbox=x={w // 2 - w // 16}:y={int(h / 2 + u * (0.14 if sc.kind == 'title' else 0.08))}:"
                   f"w={w // 8}:h={max(4, u // 120)}:color=0x{accent[1:]}:t=fill")
@@ -730,6 +821,20 @@ def scene_cmd(sc: Scene, length: float, slow: float, w: int, h: int, folder: Pat
     return [*args, "-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]", "-t", f"{length:.3f}",
             "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", str(crf), "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "96k", "-ar", "48000", "-ac", "1", out]
+
+
+def zoom_filter(zoom: tuple[float, float, float], length: float, w: int, h: int) -> str:
+    """ffmpeg filter for the punch-in on a frozen frame: eases into the (zoom, x, y) window of film_draw.freeze_zoom
+    over ZOOM_S and back out over the last OUT_S, so the play runs on from the full frame. The frame is doubled
+    first so zoompan's whole-pixel steps do not shake."""
+    z, x, y = zoom
+    t = f"(in/{FPS})"
+    # e: 0 -> 1 -> 0 with smoothstep ease; the window's size is linear in e (zoom = 1 / (1 - e (1 - 1/z)))
+    a = f"clip({t}/{fd.ZOOM_S},0,1)"
+    b = f"clip(({length:.3f}-{t})/{fd.OUT_S},0,1)"
+    e = f"min({a}*{a}*(3-2*{a}),{b}*{b}*(3-2*{b}))"
+    return (f"scale={2 * w}:{2 * h},zoompan=z='1/(1-{e}*{1 - 1 / z:.4f})':x='{2 * x:.1f}*{e}':y='{2 * y:.1f}*{e}'"
+            f":d=1:s={w}x{h}:fps={FPS},setsar=1")
 
 
 def backdrop(scenes: list[Scene], i: int) -> float | None:
@@ -864,17 +969,21 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
                                                               steps.get(i, 0), anim.get(i, 1.0))
             voiced = [(v, st) for v, st in zip(tracks_, starts) if v[0] and st is not None]
             cues = [(a + st - LEAD, b + st - LEAD, txt) for v, st in voiced for a, b, txt in v[2]]
-            extra = []
+            extra, zooms = [], []
+            first_hold = min((sp[0] for sp in spans if sp), default=None)
             for fz, span in zip(sc.freezes, spans):
                 if span is None:
                     continue
                 fs, fe = span
                 tt, marks, label, _ = fz.parts()
-                extra += fd.freeze_events(marks, ass_escape(label), seconds(tt), tracks, w, h, fit, fs, fe)
-                extra.append((fs, fe, "Tag", FREEZE_TAG.get(lang, FREEZE_TAG["en"])))
+                zoom = fd.freeze_zoom(marks, seconds(tt), tracks, w, h, fit) if fe - fs >= MIN_ZOOM_HOLD else None
+                zooms.append(zoom)
+                extra += fd.freeze_events(marks, ass_escape(label), seconds(tt), tracks, w, h, fit, fs, fe,
+                                          zoom=zoom, animate=True)
+                extra += fd.badge(FREEZE_TAG.get(lang, FREEZE_TAG["en"]), fs, fe, w, h, icon="pause")
             ass_name = f"s{i:03d}.ass"
             (tmp / ass_name).write_text(ass_doc(w, h, font, accent, scene_events(sc, length, slow, sc.clip_s(), cues,
-                                                                                 lang, title, height, extra, (w, h))),
+                                                                                 lang, title, height, extra, (w, h), first_hold)),
                                         encoding="utf8")
             frames = None
             if i in objs:
@@ -883,7 +992,8 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
             bg = backdrop(scenes, i - 1) if sc.kind in ("title", "card", "stat") and has_video else None
             seg = f"s{i:03d}.mp4"
             ffmpeg(*scene_cmd(sc, length, slow, w, h, folder, video, game_audio, [(v[0], st) for v, st in voiced],
-                              ass_name, accent, seg, segs=segs, bg=bg, frames=frames, crf=crf), cwd=tmp)
+                              ass_name, accent, seg, segs=segs, bg=bg, frames=frames, crf=crf, zooms=zooms),
+                   cwd=tmp)
             rendered.append(seg)
             print(f"scene {i}/{len(scenes)} {sc.kind} {length:.1f} s", flush=True)
         with media.partial(out) as part:  # a stopped render never leaves a short film.<lang>.mp4 that counts as done
