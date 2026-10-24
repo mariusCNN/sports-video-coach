@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "seed": 613104018,
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-25",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-opus-5-5",
+    "settings": "frames track; claude -p --restricted --safe-mode --tools Read; default effort"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 41,
+      "answer": 41,
+      "score": 1.0,
+      "note": "exact"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "answer": [
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "score": 1.0,
+      "note": "11 of 11 right, 11 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.4,
+        3.16,
+        5.64,
+        6.84,
+        8.88,
+        9.56,
+        11.4,
+        13.24,
+        15.56,
+        17.56,
+        19.24
+      ],
+      "answer": [
+        1.48,
+        3.14,
+        5.62,
+        6.92,
+        8.91,
+        9.6,
+        11.42,
+        13.22,
+        15.56,
+        17.58,
+        19.24
+      ],
+      "score": 1.0,
+      "note": "11 of 11 within 0.5 s, 11 answered"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 35.156,
+      "answer": 35.1,
+      "score": 1.0,
+      "note": "0.2% off"
+    }
+  ],
+  "total": 1.0,
+  "wall_seconds": 377.8,
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-25-claude-code-claude-opus-5-5-svc-bench-3-frames-seed613104018.jsonl.gz",
+  "cost_usd": 2.7689
+}

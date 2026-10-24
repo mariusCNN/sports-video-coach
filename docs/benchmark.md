@@ -291,12 +291,14 @@ sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-
   published suite, it shows the answers are in the stills, not that a model will find them.
 
 Fresh-seed rows (frames track, 2026-10-25, clean room, default effort; each run drew its own random seed with
-`bench run --seed`, one run per model per seed):
+`bench run --seed`; two runs each for Opus and Sonnet, one for Haiku, each run on its own seed):
 
 | Agent | Model | Total | Above chance | Juggle | Shots | Passes | Rate | Wall | Cost |
 |---|---|---|---|---|---|---|---|---|---|
 | Claude Code 2.1.310 | claude-opus-5-5 (seed 205159368) | 0.994 | 0.994 | 0.978 | 1.000 | 1.000 | 1.000 | 317 s | $2.32 |
+| Claude Code 2.1.310 | claude-opus-5-5 (seed 613104018) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 378 s | $2.77 |
 | Claude Code 2.1.310 | claude-sonnet-5-5 (seed 956466926) | 0.504 | 0.413 | 0.905 | 0.308 | 0.804 | 0.000 | 19 s | $0.07 |
+| Claude Code 2.1.310 | claude-sonnet-5-5 (seed 406013493) | 0.583 | 0.426 | 0.933 | 0.583 | 0.816 | 0.000 | 16 s | $0.06 |
 | Claude Code 2.1.310 | claude-haiku-5-5 (seed 166697672) | 0.440 | 0.198 | 0.500 | 0.455 | 0.250 | 0.556 | 96 s | $0.06 |
 
 - **Opus nearly holds its published score on a seed drawn at run time.** It counted 44 touches against 45 (it
@@ -306,15 +308,25 @@ Fresh-seed rows (frames track, 2026-10-25, clean room, default effort; each run 
   38 touches from a rate scaled over the clip (truth 42), a guessed list of 13 shot outcomes (4 right, below the
   blind floor of 0.462), the first release at 0.8 s and then an assumed steady 1.8 s spacing (4 of 11 within 0.5 s)
   and a stroke rate of 28 against 36.388 (23 % off). On the published svc-bench-3 it opened 17 of 69.
+- **Opus's second run (seed 613104018) got every task right.** 41 touches exact, all 11 shots, the 11 releases
+  within 0.08 s and a stroke rate of 35.1 against 35.156, in 150 Reads (56 of 68 sheets, 92 full-size frames).
+- **Sonnet's second run (seed 406013493) estimated the same way.** It opened 4 of 68 sheets and said so: 48
+  touches from a rate (truth 45), an alternating made / missed guess for the 12 shots (7 right, exactly that seed's
+  blind floor of 0.583), a release every 2 s from 0.4 s (5 of 11 within 0.5 s) and a "typical" stroke rate of 28
+  against 36.388 (both seeds happened to draw that rate).
 - **Haiku opened 60 of 67 sheets but did not resolve them.** It said the stills were too small to track: 60
   touches from a rate (truth 40), 11 shot outcomes of which it read one (5 right), 3 pass releases of 12 (the
   scorer found 4 of the 12 within 0.5 s of them) and a "typical sculling rate" of 30 against 33.333, below that
   seed's blind floor of 0.639.
-- **One run per model per seed.** These rows show the fixed-suite order (Opus well ahead of Sonnet and Haiku) on
-  three seeds no run had drawn before; they say nothing about what was in any model's training data, and nothing
-  about how much each model's score varies from run to run. The truth is kept out of the prepared folder; it
-  shows in each result file and on the page. Blind floors (juggle / shots / passes / rate): seed 205159368
-  0.111 / 0.455 / 0.142 / 0.667, seed 956466926 0.119 / 0.462 / 0.182 / 0.212, seed 166697672
+- **Spread across seeds.** Above chance, Opus's two runs scored 0.994 and 1.000 (a spread of 0.006) and
+  Sonnet's 0.413 and 0.426 (0.013), so the gap between them (about 0.58) is far wider than either model's spread
+  over two seeds. That is two runs per model, each on its own seed: it is not a variance estimate, and on the
+  fixed suite two Sonnet runs differed by 0.224.
+- **What these rows say.** They show the fixed-suite order (Opus well ahead of Sonnet and Haiku) on five seeds
+  no run had drawn before; they say nothing about what was in any model's training data. The truth is kept out
+  of the prepared folder; it shows in each result file and on the page. Blind floors (juggle / shots / passes /
+  rate): seed 205159368 0.111 / 0.455 / 0.142 / 0.667, seed 613104018 0.122 / 0.364 / 0.146 / 0.375, seed
+  956466926 0.119 / 0.462 / 0.182 / 0.212, seed 406013493 0.111 / 0.583 / 0.165 / 0.212, seed 166697672
   0.125 / 0.273 / 0.153 / 0.639 (published: 0.106 / 0.500 / 0.167 / 0.551).
 
 ## Rules

@@ -169,3 +169,22 @@ def test_page_lists_seeded_runs_on_their_own_board_with_their_own_floor(tmp_path
     juggle = next(t for t in tasks if t["id"] == "juggle-touches")
     assert {x["truth"] for x in juggle["runs"]} == {suite3.seeded(11).BY_ID["juggle-touches"].truth,
                                                     suite3.seeded(12).BY_ID["juggle-touches"].truth}
+
+
+def test_fresh_board_summary_pools_one_contender_s_runs_across_seeds(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    (results / "a.json").write_text(json.dumps(seeded_row(11, "m1", 4)), encoding="utf8")
+    (results / "b.json").write_text(json.dumps(seeded_row(12, "m1", 2)), encoding="utf8")
+    (results / "c.json").write_text(json.dumps(seeded_row(13, "m2", 3)), encoding="utf8")
+    rows = page.load(results)[0]
+    summary = page.summarize(rows, page.floor_of(rows))        # no blind row: each run on its own seed's floor
+    m1 = next(s for s in summary if s["key"][1] == "m1")
+    a, b = (page.above_value(r, None) for r in rows if r["contender"]["model"] == "m1")
+    assert m1["n"] == 2 and m1["lo"] == min(a, b) and m1["hi"] == max(a, b) and m1["above"] == (a + b) / 2
+    assert page.main([str(results), str(tmp_path / "site")]) == 0
+    html = (tmp_path / "site" / "index.html").read_text(encoding="utf8")
+    board = html[html.index('id="frames-svc-bench-3-fresh"'):]
+    board = board[:board.index("<h4>Every run</h4>")]
+    assert f'{min(a, b):.3f}&ndash;{max(a, b):.3f}' in board    # the two-seed range in the summary row
+    assert "1 of 2 contenders" in html                          # m2 ran once
