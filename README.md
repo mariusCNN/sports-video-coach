@@ -29,8 +29,9 @@ its model provider, like anything else you show it. Free and MIT.
 Drawn drills, scored against the exact truth the tool drew in. No judge model.
 
 - **Fresh-seed board** (frames only, a new unseen seed per run, mean score above a blind guess, 1 = perfect):
-  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 · Claude Sonnet 5.5 0.419 · qwen3-vl 4B on a local GPU 0.000.
-  All runs so far are the author's.
+  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 (0.778 at low effort) · Claude Sonnet 5.5 0.419 at default effort,
+  0.994 at high (max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
+  One run per effort setting; all runs so far are the author's.
 - [Leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariusding.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)
 - Rerun the frames-only board in one command:
 

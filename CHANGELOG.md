@@ -186,7 +186,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - `page-check --strict` prints `FAIL (n warnings, --strict)` for a folder with warnings, not `OK`, as it exits 1.
 
 ### Changed
-- README (English and Chinese): the benchmark block is now a short section with the fresh-seed board's numbers,
+- README (English and Chinese): the benchmark block is now a short section with the fresh-seed board's numbers (with the effort level where it changed the score),
   links to the leaderboard and "count it yourself", and the rerun command in its own code block; the other agents
   and the OpenAI-compatible path moved into a fold. Fixes the Chinese "基准测试" label that GitHub showed with
   literal asterisks.
