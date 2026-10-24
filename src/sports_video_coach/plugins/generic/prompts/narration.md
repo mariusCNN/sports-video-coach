@@ -17,3 +17,4 @@ A spoken version of the report, rendered to MP3 by `sports-video-coach narrate <
   before it renders, warns when the sentence is clearly off, and prints the real length after.
 - Write each script wholly in its own language, numbers and the length sentence too (Japanese: 「約三分」, Korean: 「약 이 분」), with no
   other language's words left in: the voice reads them with the wrong accent.
+- Last, the humanize pass (`sports-video-coach guide humanize`): it must sound like a coach talking, not a chatbot. The run flags stock AI phrasing (not-X-but-Y, "moreover"/"此外", hype words, self-asked questions, slide labels read aloud, dashes) and waits until it is fixed; keep every fact while you rewrite.

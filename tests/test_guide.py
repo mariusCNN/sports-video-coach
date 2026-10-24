@@ -13,7 +13,7 @@ def test_guide_lists_prints_and_names_unknown_ones(capsys):
     assert capsys.readouterr().out.strip().endswith("prompts/film.md")
     with pytest.raises(SystemExit) as e:
         guide.main(["nope"])
-    assert "its guides: film, narration, report, review" in str(e.value.code)
+    assert "its guides: film, humanize, narration, report, review" in str(e.value.code)
 
 
 def test_guide_says_where_a_plugins_missing_guides_live(monkeypatch, tmp_path):

@@ -144,7 +144,7 @@ MOVE_STEPS = [
                "{folder} --repick` (writes who_<id>.more.jpg), have a subagent fill each box (-1 when the player has no box of his own in that tile), run `move-scan --repick` "
                "and `move-sheets --force` again and review that group again."),
     P.Step("summary", "cmd", summary_done, lambda g: [["move-summary", str(g.folder)]], inputs=summary_inputs),
-    P.Step("report", "agent", report_done,
+    P.Step("report", "agent", report_done, checks=P.report_checks,
            errors=lambda g: P.missing([g.folder / n for n in (*(P.readme(l) for l in g.langs), "plan.json")], g),
            how="Write the movement report (playbook, movement step 7, prompts/movement_report.md): {readmes} "
                "in {folder}, from {folder}/facts.md, the memos in {review}, the figures and "

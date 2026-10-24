@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- A humanize step for everything the agent writes. `sports-video-coach humanize <folder or file>` flags stock AI
+  phrasing in reports, narration and film scripts (zh and en lists: not-X-but-Y contrasts, written connectives
+  such as "moreover" / "此外", hype words, self-asked questions, summary openers, slide labels such as "练习：" read
+  aloud, dense dashes; other languages get the dash check). The driven run keeps the report, listen-script and
+  film-script steps waiting until the findings are fixed or kept with `--accept`. The new guide `sports-video-coach
+  guide humanize` (shared by every plugin) says how to rewrite them in a coach's voice without changing a fact.
 - A sports film review benchmark scored against measured truth only: `sports-video-coach bench prepare / score /
   validate`, suite `svc-bench-1` with synthetic drawn videos and exact truth (counts, rates, timestamps, outcomes).
 - `sports-video-coach bench page` builds the public leaderboard from `benchmark/results/` (ranked by total, a "no

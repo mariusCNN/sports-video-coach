@@ -107,3 +107,7 @@ The chart shows where the game turned.
    - Chinese glyphs render (else pass `--font` with an installed CJK font);
    - each clip shows the play its caption describes.
 5. The video shows real players: same consent rules as clips (`docs/privacy.md`); send it to the team only.
+
+## Humanize pass
+
+Before rendering, do the humanize pass (`uv run hoop-tape-miner guide humanize`, or `sports-video-coach guide humanize`): the script must sound like a coach talking. The run flags stock AI phrasing (not-X-but-Y, "moreover"/"此外", hype words, self-asked questions, slide labels such as "练习：" read aloud, dashes) and keeps this step waiting until it is fixed. Keep every fact, number and clip marker.
