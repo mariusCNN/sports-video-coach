@@ -1,8 +1,9 @@
 """`sports-video-coach bench`: a reproducible benchmark of agents and models as sports film reviewers.
 
-Suite `svc-bench-1`: short drawn videos whose truth is exact (we drew them). Run it with any agent:
+Suites: `svc-bench-1` (four short drawn videos) and `svc-bench-2` ("hard": five drawn videos with a hand-held
+camera, look-alike decoys and rule-defined events). The truth is exact (we drew them). Run one with any agent:
 
-  sports-video-coach bench prepare --out <dir>     videos, TASKS.md and an answers.json to fill
+  sports-video-coach bench prepare --out <dir> [--suite svc-bench-2]   videos, TASKS.md and an answers.json to fill
   (your agent watches the videos and fills <dir>/answers.json; it must not read the package source or any truth)
   sports-video-coach bench score <dir> --agent A --model M [--agent-version V] [--settings S] [--by HANDLE]
                                 [--wall-seconds N] [--evidence URL] [--out FILE]
@@ -19,7 +20,7 @@ from pathlib import Path
 
 from .. import media
 from . import score as S
-from .suite import SUITE, TASKS
+from .suite import SUITE
 
 TASKS_MD = """# {suite}: sports film review benchmark
 
@@ -54,37 +55,42 @@ When done, the person running the benchmark scores it:
 """
 
 
-def tasks_md() -> str:
+def tasks_md(suite: str = SUITE) -> str:
     parts = []
-    for i, t in enumerate(TASKS, 1):
+    for i, t in enumerate(S.SUITES[suite].TASKS, 1):
         parts.append(f"### {i}. `{t.id}` ({t.kind}) - video `{t.video}`, {t.seconds:g} s\n\n{t.question}\n\n"
                      f"Answer: {t.answer_format}.")
-    return TASKS_MD.format(suite=SUITE, tasks="\n\n".join(parts))
+    return TASKS_MD.format(suite=suite, tasks="\n\n".join(parts))
 
 
-def prepare(out: Path, ids: list[str] | None = None, force: bool = False) -> list[Path]:
-    """Draw the videos and write TASKS.md and an answers.json template into `out`. No truth is written.
-    An answers.json that already holds an answer is kept unless `force`."""
+def prepare(out: Path, ids: list[str] | None = None, force: bool = False, suite: str = SUITE) -> list[Path]:
+    """Draw the suite's videos and write TASKS.md and an answers.json template into `out`. No truth is written.
+    An answers.json that already holds an answer is kept unless `force` (one of another suite is an error)."""
     out = Path(out)
+    tasks = S.SUITES[suite].TASKS
+    ans = out / "answers.json"
+    old, old_suite = {}, suite
+    if ans.exists() and not force:
+        try:
+            data = json.loads(ans.read_text(encoding="utf8"))
+            old, old_suite = data.get("answers", {}) or {}, data.get("suite", SUITE)
+        except (ValueError, AttributeError):
+            old = {}
+    answered = any(v is not None for v in old.values())
+    if answered and old_suite != suite:
+        raise SystemExit(f"{ans} already has answers for suite {old_suite!r}; use another folder or --force")
     out.mkdir(parents=True, exist_ok=True)
-    todo = [t for t in TASKS if ids is None or t.id in ids]
+    todo = [t for t in tasks if ids is None or t.id in ids]
     videos = []
     for t in todo:
         t0 = time.monotonic()
         videos.append(t.draw(out / t.video))
         print(f"  drew {t.video} ({t.seconds:g} s) in {time.monotonic() - t0:.1f} s")
-    media.write_text_atomic(out / "TASKS.md", tasks_md())
-    ans = out / "answers.json"
-    old = {}
-    if ans.exists() and not force:
-        try:
-            old = json.loads(ans.read_text(encoding="utf8")).get("answers", {}) or {}
-        except (ValueError, AttributeError):
-            old = {}
-    if any(v is not None for v in old.values()):
+    media.write_text_atomic(out / "TASKS.md", tasks_md(suite))
+    if answered:
         print(f"  kept {ans} (it already has answers; --force writes a blank one)")
     else:
-        media.write_json_atomic(ans, {"suite": SUITE, "answers": {t.id: None for t in TASKS}})
+        media.write_json_atomic(ans, {"suite": suite, "answers": {t.id: None for t in tasks}})
     return videos
 
 
@@ -92,11 +98,13 @@ def cmd_prepare(argv) -> int:
     ap = argparse.ArgumentParser(prog="sports-video-coach bench prepare",
                                  description="Draw the suite's videos and write TASKS.md and answers.json.")
     ap.add_argument("--out", required=True, type=Path, help="folder to write (created if missing)")
+    ap.add_argument("--suite", default=SUITE, choices=sorted(S.SUITES),
+                    help=f"which suite to draw (default {SUITE}; svc-bench-2 is the hard one)")
     ap.add_argument("--force", action="store_true", help="overwrite an answers.json that already has answers")
     a = ap.parse_args(argv)
     t0 = time.monotonic()
-    print(f"{SUITE}: drawing {len(TASKS)} videos into {a.out.resolve()}")
-    prepare(a.out, force=a.force)
+    print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} videos into {a.out.resolve()}")
+    prepare(a.out, force=a.force, suite=a.suite)
     print(f"done in {time.monotonic() - t0:.1f} s. Next: let the agent read {a.out / 'TASKS.md'} and fill "
           f"{a.out / 'answers.json'}, then `sports-video-coach bench score {a.out} --agent ... --model ...`")
     return 0
@@ -114,14 +122,15 @@ def cmd_score(argv) -> int:
     ap.add_argument("--wall-seconds", type=float, default=None, help="how long the agent took")
     ap.add_argument("--evidence", default="", help="URL of a transcript, gist or PR")
     ap.add_argument("--out", type=Path, default=None,
-                    help="result file (default benchmark/results/<date>-<agent>-<model>.json)")
+                    help="result file (default benchmark/results/<date>-<agent>-<model>[-<suite>].json; "
+                         "svc-bench-1 files have no suite suffix)")
     a = ap.parse_args(argv)
     if not a.agent.strip():
         ap.error("--agent must not be empty")
     ws = a.wall_seconds
     res = S.result(S.read_answers(a.dir), a.agent.strip(), a.model.strip(), a.agent_version.strip(),
                    a.settings.strip(), a.by.strip(), int(ws) if ws is not None and ws == int(ws) else ws,
-                   a.evidence.strip())
+                   a.evidence.strip(), suite=S.answers_suite(a.dir))
     out = a.out or S.default_path(res)
     out.parent.mkdir(parents=True, exist_ok=True)
     media.write_json_atomic(out, res)

@@ -1,4 +1,4 @@
-# Sports film review benchmark (svc-bench-1)
+# Sports film review benchmark (svc-bench-1, svc-bench-2)
 
 Which coding agent and vision model reviews sports film best? This benchmark scores each run against ground truth,
 so every number is measured, not judged.
@@ -6,6 +6,17 @@ so every number is measured, not judged.
 - **Leaderboard:** <https://mariusding.github.io/sports-video-coach/benchmark/>
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
 - **Commands:** `sports-video-coach bench prepare | score | validate | page`
+
+## Suites
+
+| Suite | Videos | What it tests |
+|---|---|---|
+| `svc-bench-2` (hard) | 5, 28 to 56 s | A hand-held camera, look-alike decoys, rule-defined events, noise. See [below](#suite-svc-bench-2-hard). |
+| `svc-bench-1` | 4, 20 to 31 s | Still camera, flat colours. Saturated: every agent tried wrote a pixel tracker and scored 1.0. |
+
+`bench prepare --out <dir>` draws `svc-bench-1`; add `--suite svc-bench-2` for the hard suite. `answers.json` names
+its suite, and `bench score` and `bench validate` score each file against the suite it names. The leaderboard shows
+one table per suite.
 
 ## How it works
 
@@ -30,6 +41,31 @@ Every task scores from 0 to 1.
 - Dividing timestamps by the longer list means extra, invented events cost as much as missed ones.
 - A missing answer scores 0.
 
+## Suite svc-bench-2 (hard)
+
+Built after suite 1 saturated. Every task defeats a naive colour-blob tracker (one colour mask, fixed pixel rows,
+one event per blob), while a careful reviewer who reads the rule and checks the film still gets it exactly right.
+
+- **The camera moves.** Hand-held shake on every video, a slow tilt on the squat video and a lagged follow camera on
+  the cone run, so fixed pixel positions mean nothing. Every rule is relative to something in the scene.
+- **Look-alike decoys.** A second dribbler with an identical ball, two identical feet, a rebounder under the hoop.
+- **Rule-defined events.** Shallow squats and a double dip, a pump fake, a ball that dips into the ring and pops
+  out, a run past a cone, a stop between cones.
+- **Harder pictures.** Sensor noise, a 6 % brightness flicker, a short motion blur and stronger compression.
+- The frames are drawn with numpy and OpenCV and piped to ffmpeg. The truth is computed from the same numbers that
+  drive the drawing, with a fixed noise seed, so every `bench prepare` draws the same videos.
+
+| Task | Kind | The rule (exact text in `TASKS.md`) | What a naive tracker gets wrong |
+|---|---|---|---|
+| `dribble-count` | count | Count the blue player's bounces only, however low. He carries his ball behind a pillar: no bounce while it is hidden. | Counts the green player's identical ball, loses the ball when the two cross, misses 16 to 22 px dribbles. |
+| `squat-reps` | count | A rep is good when the plate centre goes below the lower white line and then back above the upper one. A double dip is one rep; a squat that never locks out does not count. | Counts every dip (13 attempts, 8 good); fixed pixel rows drift with the camera tilt. |
+| `cadence-change` | rate | Foot strikes per minute from 20.0 s to the end. Either foot counts; arm swings do not. | Averages the whole video (about 8 % off) or counts both feet as one. |
+| `cone-touches-pan` | timestamps | The time the runner arrives at a cone where he stops or turns back. A pass-by, a pace change at a cone and a stop between cones are not touches. | Measures the runner in screen pixels, which the follow camera keeps near the centre; reports every cone arrival. |
+| `shot-outcomes-hard` | outcomes | Made only if the ball goes down through the ring and out of the net before anyone else touches it. A pump fake is not a shot; dip-in-pop-out and a rebounder's tip-in are misses. | Counts a pump fake as a shot; calls any ball near the ring a make. |
+
+The truth of every task was also read back from the drawn pixels by a careful scripted reader before the suite was
+published, so a reviewer who follows the rules can reach it from the film alone.
+
 ## Rules
 
 - **No peeking.** The agent must not read the truth files or the package source (`src/sports_video_coach/bench/`).
@@ -45,7 +81,7 @@ Every task scores from 0 to 1.
 Pick one:
 
 - **Pull request:** add your file to `benchmark/results/` as `<date>-<agent>-<model>.json` (lower case, `-` for
-  spaces) and fill the benchmark part of the PR template.
+  spaces; `bench score` adds `-svc-bench-2` for the hard suite) and fill the benchmark part of the PR template.
 - **Issue form:** paste the file into the
   [benchmark result form](https://github.com/mariusDing/sports-video-coach/issues/new?template=benchmark_result.yml);
   a maintainer adds it.
@@ -80,4 +116,4 @@ An evidence link (a gist, a transcript, a log) is optional but makes your row ea
 }
 ```
 
-Unknown fields are kept.
+`suite` is `svc-bench-1` or `svc-bench-2`; the task ids must be that suite's. Unknown fields are kept.

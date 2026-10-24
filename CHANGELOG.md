@@ -10,6 +10,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - `sports-video-coach bench page` builds the public leaderboard from `benchmark/results/` (ranked by total, a "no
   runs yet" state, unreadable files listed as skipped); the demo site publishes it at `/benchmark/` and links it
   from the landing page and the sitemap. Method, rules and how to submit: `docs/benchmark.md`.
+- A hard benchmark suite, `bench prepare --suite svc-bench-2`, after every agent scored 1.0 on `svc-bench-1`: five
+  drawn videos with a hand-held or follow camera, look-alike decoys (a second ball, two identical feet, a
+  rebounder), rule-defined events (partial reps, a pump fake, a dip-in-pop-out, a run past a cone), noise and
+  flicker. `score`, `validate` and the leaderboard handle both suites (one table each); suite 1 files are unchanged.
 - Outside runs can be submitted as a pull request (CI runs `bench validate` on every result file) or through the
   new benchmark result issue form.
 - The demo site is easier for search engines to find: `sitemap.xml` and `robots.txt`, a canonical link on both

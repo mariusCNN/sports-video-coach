@@ -1,4 +1,4 @@
-"""Scoring and validation of benchmark result files (schema 1, suite `svc-bench-1`).
+"""Scoring and validation of benchmark result files (schema 1, suites `svc-bench-1` and `svc-bench-2`).
 
 Per-task score, 0..1, rounded to 3 decimals:
 - count: max(0, 1 - |answer - truth| / truth).
@@ -9,6 +9,7 @@ Per-task score, 0..1, rounded to 3 decimals:
   events.
 - outcomes: the fraction of positions where the answer equals the truth, over max(len(truth), len(answer)).
 A missing (null) or malformed answer scores 0. total = mean task score, rounded to 3 decimals.
+Both suites use the same kinds and rules; a result file names its suite and is re-scored against that suite.
 """
 from __future__ import annotations
 
@@ -17,7 +18,10 @@ import json
 import re
 from pathlib import Path
 
+from . import suite as _s1, suite2 as _s2
 from .suite import BY_ID, KINDS, SUITE, TASKS
+
+SUITES = {m.SUITE: m for m in (_s1, _s2)}     # suite name -> module with TASKS and BY_ID
 
 SCHEMA = 1
 TOL = 0.0005  # validate: a stored score may differ from the re-score by rounding only
@@ -74,9 +78,9 @@ SCORERS = {"count": score_count, "rate": score_rate, "timestamps": score_timesta
 assert set(SCORERS) == set(KINDS)
 
 
-def score_task(task_id: str, answer) -> dict:
+def score_task(task_id: str, answer, suite: str = SUITE) -> dict:
     """One task row of a result file."""
-    t = BY_ID[task_id]
+    t = SUITES[suite].BY_ID[task_id]
     if answer is None:
         s, note = 0.0, "missing answer"
     else:
@@ -100,27 +104,38 @@ def tool_version() -> str:
         return ""
 
 
-def read_answers(folder: Path) -> dict:
-    """{task id: answer} from <folder>/answers.json (unknown ids are an error, missing ones are null)."""
+def answers_suite(folder: Path) -> str:
+    """The suite named in <folder>/answers.json (svc-bench-1 when it names none)."""
     p = Path(folder) / "answers.json"
     if not p.exists():
         raise SystemExit(f"{p} not found: run `sports-video-coach bench prepare --out {folder}` first")
+    name = json.loads(p.read_text(encoding="utf8")).get("suite", SUITE)
+    if name not in SUITES:
+        raise SystemExit(f"{p} is for suite {name!r}, this tool scores {sorted(SUITES)}")
+    return name
+
+
+def read_answers(folder: Path) -> dict:
+    """{task id: answer} from <folder>/answers.json, for the suite it names (unknown ids are an error, missing ones
+    are null)."""
+    p = Path(folder) / "answers.json"
+    name = answers_suite(folder)
     data = json.loads(p.read_text(encoding="utf8"))
-    if data.get("suite", SUITE) != SUITE:
-        raise SystemExit(f"{p} is for suite {data.get('suite')!r}, this tool scores {SUITE!r}")
     answers = data.get("answers", {})
     if not isinstance(answers, dict):
         raise SystemExit(f"{p}: `answers` must be an object of task id -> answer")
-    unknown = sorted(set(answers) - set(BY_ID))
+    by_id = SUITES[name].BY_ID
+    unknown = sorted(set(answers) - set(by_id))
     if unknown:
-        raise SystemExit(f"{p}: unknown task ids {unknown}; the suite has {list(BY_ID)}")
-    return {t.id: answers.get(t.id) for t in TASKS}
+        raise SystemExit(f"{p}: unknown task ids {unknown}; the suite has {list(by_id)}")
+    return {t.id: answers.get(t.id) for t in SUITES[name].TASKS}
 
 
 def result(answers: dict, agent: str, model: str, agent_version: str = "", settings: str = "", by: str = "",
-           wall_seconds: float | None = None, evidence: str = "", date: str | None = None) -> dict:
-    rows = [score_task(t.id, answers.get(t.id)) for t in TASKS]
-    return {"schema": SCHEMA, "suite": SUITE, "tool_version": tool_version(),
+           wall_seconds: float | None = None, evidence: str = "", date: str | None = None,
+           suite: str = SUITE) -> dict:
+    rows = [score_task(t.id, answers.get(t.id), suite) for t in SUITES[suite].TASKS]
+    return {"schema": SCHEMA, "suite": suite, "tool_version": tool_version(),
             "date": date or dt.date.today().isoformat(),
             "contender": {"agent": agent, "agent_version": agent_version, "model": model, "settings": settings},
             "submitted_by": by, "tasks": rows, "total": total(rows),
@@ -129,7 +144,10 @@ def result(answers: dict, agent: str, model: str, agent_version: str = "", setti
 
 def default_path(res: dict) -> Path:
     c = res["contender"]
-    name = "-".join(x for x in (res["date"], slug(c["agent"]), slug(c["model"])) if x)
+    # suite 1 files keep their original names; later suites add the suite name
+    suite = res.get("suite", SUITE)
+    name = "-".join(x for x in (res["date"], slug(c["agent"]), slug(c["model"]), "" if suite == SUITE else suite)
+                    if x)
     return Path("benchmark") / "results" / f"{name}.json"
 
 
@@ -138,7 +156,7 @@ def table(res: dict) -> str:
     head = f"{c['agent']}" + (f" {c['agent_version']}" if c["agent_version"] else "") + \
            (f" / {c['model']}" if c["model"] else "") + (f" ({c['settings']})" if c["settings"] else "")
     w = max(len(r["id"]) for r in res["tasks"])
-    lines = [f"{SUITE}: {head}", ""]
+    lines = [f"{res.get('suite', SUITE)}: {head}", ""]
     lines += [f"  {r['id']:{w}s}  {r['kind']:10s}  {r['score']:.3f}  {r['note']}" for r in res["tasks"]]
     lines += ["", f"  {'total':{w}s}  {'':10s}  {res['total']:.3f}"]
     return "\n".join(lines)
@@ -151,8 +169,11 @@ def problems(res) -> list[str]:
     out = []
     if res.get("schema") != SCHEMA:
         out.append(f"schema is {res.get('schema')!r}, expected {SCHEMA}")
-    if res.get("suite") != SUITE:
-        out.append(f"suite is {res.get('suite')!r}, expected {SUITE!r}")
+    name = res.get("suite")
+    if name not in SUITES:
+        out.append(f"suite is {name!r}, expected one of {sorted(SUITES)}")
+        name = SUITE
+    by_id = SUITES[name].BY_ID
     try:
         dt.date.fromisoformat(str(res.get("date")))
     except ValueError:
@@ -176,19 +197,19 @@ def problems(res) -> list[str]:
     if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
         return out + ["tasks must be a list of objects"]
     ids = [r.get("id") for r in rows]
-    if sorted(map(str, ids)) != sorted(BY_ID):
-        out.append(f"tasks {ids} do not match the suite's {list(BY_ID)}")
+    if sorted(map(str, ids)) != sorted(by_id):
+        out.append(f"tasks {ids} do not match the suite's {list(by_id)}")
     for r in rows:
-        if r.get("id") not in BY_ID:
+        if r.get("id") not in by_id:
             continue
-        want = score_task(r["id"], r.get("answer"))
+        want = score_task(r["id"], r.get("answer"), name)
         for k in ("kind", "truth"):
             if r.get(k) != want[k]:
                 out.append(f"{r['id']}: {k} is {r.get(k)!r}, the suite says {want[k]!r}")
         if not is_num(r.get("score")) or abs(r["score"] - want["score"]) > TOL:
             out.append(f"{r['id']}: score is {r.get('score')!r}, re-scoring the answer gives {want['score']}")
-    if len(ids) == len(BY_ID) and not out:
-        want_total = total([score_task(r["id"], r.get("answer")) for r in rows])
+    if len(ids) == len(by_id) and not out:
+        want_total = total([score_task(r["id"], r.get("answer"), name) for r in rows])
         if not is_num(res.get("total")) or abs(res["total"] - want_total) > TOL:
             out.append(f"total is {res.get('total')!r}, re-scoring gives {want_total}")
     elif not is_num(res.get("total")):

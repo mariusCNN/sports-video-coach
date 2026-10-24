@@ -2,7 +2,7 @@
 
 Reads every `*.json` result file in `<results_dir>` (schema 1, written by `bench score`) and writes
 `<out_dir>/index.html`: a self-contained static page (inline CSS, light and dark, readable at 390 px) with the
-leaderboard ranked by total, the method, how to run it yourself, how to submit a run and honesty notes. With no
+leaderboard ranked by total (one table per suite, the hard suite first), the method, how to run it yourself, how to submit a run and honesty notes. With no
 results it shows a "no runs yet" state; a file that does not parse is skipped and named in a visible note. The page
 never invents a row: every number on it comes from a result file.
 """
@@ -17,7 +17,12 @@ REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
-SUITE = "svc-bench-1"
+SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
+SUITES = (                     # (name, what it is), shown in this order; unknown suites follow by name
+    ("svc-bench-2", "Hard: five drawn videos with a hand-held camera, look-alike decoys (a second ball, two "
+                    "identical feet, a rebounder), rule-defined events and noise."),
+    ("svc-bench-1", "Four short drawn videos on a still camera. Saturated: every agent tried scored 1.0."),
+)
 TITLE = "Sports film review benchmark"
 WHAT = ("Which coding agent and vision model reviews sports film best? Each run is scored against ground truth "
         "drawn into synthetic videos, so every number is measured, not judged.")
@@ -32,7 +37,8 @@ KINDS = (
 )
 COMMANDS = (
     ("Install (needs ffmpeg on PATH)", f"uv tool install git+{REPO_URL}"),
-    ("Make the tasks: videos and an empty answers.json", "sports-video-coach bench prepare --out bench-run"),
+    ("Make the tasks: videos and an empty answers.json (the hard suite; leave out --suite for svc-bench-1)",
+     "sports-video-coach bench prepare --out bench-run --suite svc-bench-2"),
     ("Let your agent watch the videos and fill bench-run/answers.json, then score it",
      'sports-video-coach bench score bench-run --agent "Your agent" --model "your-model"'),
 )
@@ -177,13 +183,31 @@ def table(rows: list[dict]) -> str:
             f'Ranked by total, then earlier date. Raw files: <a href="{RESULTS_URL}">benchmark/results</a>.</p>')
 
 
+def suite_of(r: dict) -> str:
+    return str(r.get("suite") or SUITE)
+
+
+def boards(rows: list[dict]) -> str:
+    """One leaderboard table per suite, in SUITES order (a suite with no runs says so)."""
+    known = [n for n, _ in SUITES]
+    names = known + sorted({suite_of(r) for r in rows} - set(known))
+    what = dict(SUITES)
+    out = []
+    for n in names:
+        mine = [r for r in rows if suite_of(r) == n]
+        body = table(mine) if mine else '<p class="sub" style="color:var(--muted)">No runs on this suite yet.</p>'
+        desc = f"<p>{esc(what[n])}</p>" if n in what else ""
+        out.append(f'<h3 id="{esc(n)}" style="margin-top:1.4rem">{esc(n)}</h3>{desc}{body}')
+    return "\n".join(out)
+
+
 def empty() -> str:
     return ('<div class="empty"><p><strong>No runs yet — be the first.</strong></p>'
             "<p>Run the suite with your agent (below), then open a pull request with your result file.</p></div>")
 
 
 def render(rows: list[dict], notes: list[str]) -> str:
-    board = table(rows) if rows else empty()
+    board = boards(rows) if rows else empty()
     skipped = ""
     if notes:
         items = "".join(f"<li>{esc(n)}</li>" for n in notes)
@@ -206,7 +230,7 @@ def render(rows: list[dict], notes: list[str]) -> str:
 <p class="name"><a href="../">sports-video-coach</a></p>
 <h1>{TITLE}</h1>
 <p class="lead">{esc(WHAT)}</p>
-<ul class="chips"><li>Suite {SUITE}</li><li>{len(rows)} run{"s" * (len(rows) != 1)}</li>
+<ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{len(rows)} run{"s" * (len(rows) != 1)}</li>
 <li>Measured truth only</li></ul>
 
 <h2 id="leaderboard">Leaderboard</h2>
