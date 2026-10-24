@@ -97,6 +97,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - `docs/benchmark.md` names `svc-bench-3` wherever it listed the suites, says how to install, and lists the
   `--by`, `--settings` and `--evidence` options of `bench run`; `bench --help` and the issue form name
   `svc-bench-3` too.
+- Explained film: a short freeze quickens the mark beat so the last arrow and the label still show; a clock
+  time in a chapter title (`03:10`) is no longer split as a kicker; a stat count-up keeps leading zeros
+  (`0.05`, `4:05`); a freeze on a clip first frame ends the caption banner at once.
 - Report pages: web fonts load without blocking the first paint, so a slow or blocked font host shows the page
   in system fonts instead of a blank screen. `:::` blocks no longer drop the line after an unclosed block, end
   at a blank line inside a list item, or close on a `:::` inside a code fence; `## 3.5 …` is no longer split as
