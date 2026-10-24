@@ -2,13 +2,14 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "sports-video-coach: agent-first sports video analysis and coaching"
-abstract: "An agent-first framework that turns a person's own game or training video into a coach's film review, a coaching page with narration and clips, and an explained video. A sport-agnostic core with a step driver for coding agents, a generic plugin for any sport and a basketball plugin with computer-vision tracking."
+abstract: "An agent-first framework that turns a person's own game or training video into a coach's film review, a coaching page with narration and clips, and an explained video. A sport-agnostic core with a step driver for coding agents, a generic plugin for any sport and a basketball plugin with computer-vision tracking. It also ships a public, reproducible benchmark of coding agents as sports film reviewers."
 authors:
   - alias: mariusDing
-version: 0.1.0
-date-released: 2026-10-16
+version: 0.3.0
+date-released: 2026-10-23
 license: MIT
 repository-code: "https://github.com/mariusDing/sports-video-coach"
+url: "https://mariusding.github.io/sports-video-coach/"
 keywords:
   - sports video analysis
   - basketball
@@ -18,3 +19,6 @@ keywords:
   - video analysis
   - coaching
   - AI agents
+  - coding agents
+  - benchmark
+  - video understanding

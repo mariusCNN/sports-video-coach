@@ -1397,10 +1397,13 @@ def main(argv: list[str]) -> int:
     (out / "zh" / "index.html").write_text(render(rows, notes, *shown, "zh", count is not None, effort), encoding="utf8")
     from . import findings   # imports this module, so not at the top
     findings.write(rows, out, card, effort)
+    from . import export     # imports this module, so not at the top
+    export.write(rows, out, notes)
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))
-    print(f"[bench page] {(out / 'index.html').as_posix()}, zh/index.html and findings/: {runs} run{'s' * (runs != 1)}, "
+    print(f"[bench page] {(out / 'index.html').as_posix()}, zh/index.html, findings/ and leaderboard.json: "
+          f"{runs} run{'s' * (runs != 1)}, "
           f"{len(notes)} skipped")
     return 0
 

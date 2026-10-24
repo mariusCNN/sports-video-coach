@@ -53,6 +53,7 @@ jobs:
           test -s _site/benchmark/card.png && test -s _site/benchmark/clip.mp4 && test -s _site/benchmark/clip.gif
           test -s _site/benchmark/count.mp4 && test -s _site/benchmark/count.jpg
           test -s _site/benchmark/effort.png && test -s _site/benchmark/effort-zh.png && test -s _site/benchmark/card-zh.png
+          test -s _site/benchmark/leaderboard.json
       - name: Page check
         run: sports-video-coach page-check _site _site/demo _site/benchmark _site/benchmark/zh _site/benchmark/findings _site/benchmark/zh/findings
       - uses: actions/upload-pages-artifact@v4

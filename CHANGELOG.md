@@ -21,6 +21,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - The game `periods` step cuts its stills with `sports-video-coach frames` instead of a raw ffmpeg command.
 
 ### Added
+- `bench page` also writes `leaderboard.json` next to the leaderboard (`/benchmark/leaderboard.json`,
+  `bench/export.py`): the same boards, ranks and numbers as the page, for scripts and lists of leaderboards.
 - A findings article next to the leaderboard (`/benchmark/findings/`, Chinese at `/benchmark/zh/findings/`,
   `bench/findings.py`, written by `bench page`): what effort changed, why raw scores mislead (the blind floor),
   the code track vs the frames track, a 4B local model, cost per near-perfect run and the hardest task, each
