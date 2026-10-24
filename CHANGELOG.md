@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 - The benchmark leaderboard has a summary table above each suite's runs: one line per agent, model and settings
   with the number of runs, mean total, mean above chance and its range, ranked by mean above chance.
+- Four more `svc-bench-3` frames-only runs on the leaderboard: second runs of Opus 5.5 and Sonnet 5.5, Haiku 5.5,
+  and Fable 5.1 (killed at the 1700 s limit before it answered, so it scores 0).
 - A humanize step for everything the agent writes. `sports-video-coach humanize <folder or file>` flags stock AI
   phrasing in reports, narration and film scripts (zh and en lists: not-X-but-Y contrasts, written connectives
   such as "moreover" / "此外", hype words, self-asked questions, summary openers, slide labels such as "练习：" read

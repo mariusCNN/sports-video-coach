@@ -181,8 +181,12 @@ Above-chance totals of the rows on 2026-10-24:
 | Suite, track | Agent / model | Raw | Above chance |
 |---|---|---|---|
 | svc-bench-3, frames | Claude Code / claude-opus-5-5 | 1.000 | 1.000 |
+| svc-bench-3, frames | Claude Code / claude-opus-5-5 (second run) | 1.000 | 1.000 |
 | svc-bench-3, frames | Codex / gpt-6-astra | 0.862 | 0.727 |
 | svc-bench-3, frames | Claude Code / claude-sonnet-5-5 | 0.612 | 0.497 |
+| svc-bench-3, frames | Claude Code / claude-haiku-5-5 | 0.585 | 0.333 |
+| svc-bench-3, frames | Claude Code / claude-sonnet-5-5 (second run) | 0.441 | 0.273 |
+| svc-bench-3, frames | Claude Code / claude-fable-5-1 (killed at the 1700 s limit before answering) | 0.000 | 0.000 |
 | svc-bench-2, frames | Claude Code / claude-opus-5-5 | 1.000 | 1.000 |
 | svc-bench-2, frames | Codex / gpt-6-astra | 1.000 | 1.000 |
 | svc-bench-2, frames | Claude Code / claude-sonnet-5-5 | 0.755 | 0.564 |
