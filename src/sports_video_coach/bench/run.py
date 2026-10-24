@@ -58,6 +58,20 @@ CLAUDE_FRAMES = ["claude", "-p", "--restricted", "--safe-mode", "--strict-mcp-co
                  "--permission-prompts", "none", "--output-format", "stream-json", "--verbose"]
 CLAUDE_FRAMES_SETTINGS = "frames track; claude -p --restricted --safe-mode --tools Read; default effort"
 
+# Clean room (the default): the contender runs without the runner's own agent config, so rows from different
+# machines compare like for like. Claude Code: --safe-mode drops CLAUDE.md, skills, plugins, hooks, MCP servers,
+# custom agents and commands; --setting-sources project skips the user settings file (its model, effort, language,
+# env); --strict-mcp-config skips every MCP config not given on the command line. The login still works.
+# Codex: CODEX_HOME is a temporary folder holding only a copy of auth.json, so ~/.codex AGENTS.md, config.toml,
+# skills, hooks, rules and memories are not read; the copy is deleted after the run.
+CLAUDE_CLEAN = ["--safe-mode", "--setting-sources", "project", "--strict-mcp-config"]
+CLEAN_ROOM = "clean-room: no user config"
+MY_CONFIG = "runner's own agent config (--use-my-config)"
+# The calling session's identity, never passed to the contender: an outsider's shell has none of it, and a nested
+# Claude Code that inherits ORCA_* / CLAUDE_CODE_SESSION_ID reports the *caller's* session as ended when it exits.
+SESSION_ENV = re.compile(r"^(ORCA_.*|CLAUDECODE|CLAUDE_PID|CLAUDE_CODE_(SESSION_ID|ENTRYPOINT|EXECPATH|CHILD_SESSION|"
+                         r"SESSION_ATTENDED|MESSAGING_SOCKET|MESSAGING_TOKEN|SSE_PORT))$", re.I)
+
 
 def prompt(suite: str, track: str = F.TRACK, agent: str = "") -> str:
     n = len(S.SUITES[suite].TASKS)
@@ -77,11 +91,15 @@ def split_template(template: str) -> list[str]:
 
 
 def command(agent: str, text: str, prompt_file: Path, model: str = "", template: str = "",
-            track: str = F.TRACK) -> list[str]:
-    """The argv that runs `agent` headless on the prompt `text` (also saved in `prompt_file`)."""
+            track: str = F.TRACK, my_config: bool = False) -> list[str]:
+    """The argv that runs `agent` headless on the prompt `text` (also saved in `prompt_file`). Claude Code runs
+    clean-room unless `my_config` (Codex's clean room is its environment, see `agent_env`)."""
     if agent == "claude":
-        argv = (CLAUDE_FRAMES if track != F.TRACK else
-                ["claude", "-p", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"])
+        if track != F.TRACK:   # --restricted already ignores every settings file; --safe-mode drops the rest
+            argv = [a for a in CLAUDE_FRAMES if not (my_config and a == "--safe-mode")]
+        else:
+            argv = (["claude", "-p"] + ([] if my_config else CLAUDE_CLEAN) +
+                    ["--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"])
         return argv + (["--model", model] if model else []) + [text]
     if agent == "codex" and track != F.TRACK:
         raise SystemExit("bench run --track frames runs Claude Code or --agent cmd; for Codex see the frames track "
@@ -125,12 +143,52 @@ def kill_tree(proc: subprocess.Popen) -> None:
         proc.kill()
 
 
-def execute(argv: list[str], cwd: Path, transcript: Path, stderr: Path, timeout: float) -> tuple[int | None, float]:
+def agent_env(base: dict | None = None, codex_home: Path | None = None) -> dict:
+    """The contender's environment: `base` (default os.environ) without the calling session's identity
+    (SESSION_ENV), with CODEX_HOME set when a clean-room Codex home is given."""
+    env = {k: v for k, v in (os.environ if base is None else base).items() if not SESSION_ENV.match(k)}
+    if env.get("TERM_PROGRAM") == "Orca":
+        del env["TERM_PROGRAM"]
+    if codex_home is not None:
+        env["CODEX_HOME"] = str(codex_home)
+    return env
+
+
+def user_codex_home(env: dict | None = None) -> Path:
+    env = os.environ if env is None else env
+    return Path(env["CODEX_HOME"]) if env.get("CODEX_HOME") else Path.home() / ".codex"
+
+
+def clean_codex_home(user_home: Path) -> Path:
+    """A new temporary CODEX_HOME (outside the run folder) holding only a copy of the login, auth.json."""
+    import tempfile
+    home = Path(tempfile.mkdtemp(prefix="svc-bench-codex-home-"))
+    auth = user_home / "auth.json"
+    if auth.is_file():
+        shutil.copy2(auth, home / "auth.json")
+    return home
+
+
+def drop_codex_home(home: Path, user_home: Path) -> None:
+    """Delete the temporary CODEX_HOME. If Codex refreshed the login during the run, keep the new tokens first:
+    a refresh can retire the old refresh token, which would log the runner out."""
+    tmp, auth = home / "auth.json", user_home / "auth.json"
+    try:
+        if tmp.is_file() and auth.is_file() and tmp.read_bytes() != auth.read_bytes() \
+                and tmp.stat().st_mtime > auth.stat().st_mtime:
+            shutil.copy2(tmp, auth)
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+
+def execute(argv: list[str], cwd: Path, transcript: Path, stderr: Path, timeout: float,
+            env: dict | None = None) -> tuple[int | None, float]:
     """Run argv in cwd with stdin closed; (exit code, or None if killed at the timeout; wall seconds)."""
     kw = {"start_new_session": True} if os.name != "nt" else {}
     t0 = time.monotonic()
     with open(transcript, "wb") as out, open(stderr, "wb") as err:
-        proc = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=err, **kw)
+        proc = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
+                                env=agent_env() if env is None else env, **kw)
         try:
             code = proc.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -244,6 +302,22 @@ def issue_url(res: dict) -> str:
     return full if len(full) <= MAX_URL else url
 
 
+def settings_text(agent: str, track: str, my_config: bool, given: str = "", stats: dict | None = None) -> str:
+    """The result's `settings`: how the runner's own config was handled, then what was changed from defaults
+    (`given`, else what the run itself states: the Codex reasoning effort, the frames track command)."""
+    stats = stats or {}
+    frames = agent == "claude" and track != F.TRACK
+    if agent == "cmd":
+        iso = ""            # a custom command runs as given: isolating it from the runner's config is the runner's job
+    elif my_config:
+        iso = MY_CONFIG
+    else:
+        iso = "" if frames else CLEAN_ROOM   # the frames command line already says --restricted --safe-mode
+    auto = (f"reasoning effort {stats['effort']}" if "effort" in stats else
+            CLAUDE_FRAMES_SETTINGS.replace(" --safe-mode", "" if my_config else " --safe-mode") if frames else "")
+    return "; ".join(x for x in (iso, given.strip() or auto) if x)
+
+
 def default_out(agent: str, model: str) -> Path:
     stamp = dt.datetime.now().strftime("%Y%m%dT%H%M%S")
     name = "-".join(x for x in (S.slug(agent), S.slug(model), stamp) if x)
@@ -273,6 +347,10 @@ def main(argv=None) -> int:
     ap.add_argument("--settings", default="", help='what you changed from defaults, e.g. "effort high"')
     ap.add_argument("--by", default="", help="your GitHub handle")
     ap.add_argument("--evidence", default="", help="URL of the transcript, if you publish it")
+    ap.add_argument("--use-my-config", action="store_true",
+                    help="run the agent with your own agent config (CLAUDE.md, skills, plugins, hooks, MCP servers, "
+                         "user settings; ~/.codex AGENTS.md and config). Default: clean room, none of it; the result's "
+                         "settings say which")
     ap.add_argument("--dry-run", action="store_true", help="print the command it would run; run nothing")
     a = ap.parse_args(argv)
     if a.timeout <= 0:
@@ -283,10 +361,18 @@ def main(argv=None) -> int:
     out = (a.out or default_out(a.name or a.agent, a.model)).resolve()
     text = prompt(a.suite, a.track, a.agent)
     prompt_file = out / "PROMPT.txt"
-    argv_ = command(a.agent, text, prompt_file, a.model, a.cmd, a.track)
+    argv_ = command(a.agent, text, prompt_file, a.model, a.cmd, a.track, a.use_my_config)
+    codex_clean = a.agent == "codex" and not a.use_my_config
+    if a.agent == "cmd":
+        room = "custom command: it runs as given, so keeping your own agent config out is up to you"
+    elif a.use_my_config:
+        room = "your own agent config is loaded (--use-my-config)"
+    else:
+        room = "clean room: no user agent config" + (" (CODEX_HOME = a temporary copy of your login only)"
+                                                     if codex_clean else "")
     transcript = out / ("transcript.jsonl" if a.agent == "claude" else "transcript.txt")
     if a.dry_run:
-        print(f"suite {a.suite}, track {a.track}, folder {out}, timeout {a.timeout:g} s, stdin closed")
+        print(f"suite {a.suite}, track {a.track}, folder {out}, timeout {a.timeout:g} s, stdin closed; {room}")
         print(subprocess.list2cmdline(argv_) if os.name == "nt" else shlex.join(argv_))
         return 0
     if out.exists() and any(out.iterdir()):
@@ -299,16 +385,20 @@ def main(argv=None) -> int:
     from . import prepare
     prepare(out, suite=a.suite, track=a.track)
     media.write_text_atomic(prompt_file, text + "\n")
-    print(f"running {name} (timeout {a.timeout:g} s) ...", flush=True)
-    code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout)
+    print(f"running {name} (timeout {a.timeout:g} s; {room}) ...", flush=True)
+    home = clean_codex_home(user_codex_home()) if codex_clean else None
+    try:
+        code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env(codex_home=home))
+    finally:
+        if home is not None:
+            drop_codex_home(home, user_codex_home())
     status = f"killed at the {a.timeout:g} s timeout" if code is None else f"exit code {code}"
     print(f"agent finished in {wall:g} s, {status}; transcript {transcript}")
 
     stats = (claude_stats(transcript) if a.agent == "claude"
              else codex_stats(out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
-    settings = a.settings.strip() or (f"reasoning effort {stats['effort']}" if "effort" in stats else
-                                      CLAUDE_FRAMES_SETTINGS if a.agent == "claude" and a.track != F.TRACK else "")
+    settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats)
     if a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track):
         print("answers.json: saved from the json block at the end of the agent's reply")
     version = stats.get("version") or (agent_version(exe[0]) if a.agent != "cmd" else "")

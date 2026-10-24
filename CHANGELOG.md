@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `bench run` runs Claude Code and Codex clean-room by default: none of the runner's own agent config (CLAUDE.md,
+  skills, plugins, hooks, MCP servers, user settings; `~/.codex` AGENTS.md, config, skills) reaches the contender,
+  and `settings` says `clean-room: no user config`. `--use-my-config` opts out. A calling agent's session variables
+  (`ORCA_*`, `CLAUDE_CODE_SESSION_ID`, ...) are never passed on. One A/B pair on `svc-bench-3` (Sonnet 5.5, code
+  track): clean room 0.958, own config 0.995; both on the leaderboard.
 - A second Fable 5.1 run on `svc-bench-3` frames with a 3600 s limit: it answered in 1645 s and scored 0.989
   (0.988 above chance), juggle count off by 2, the other three tasks exact.
 - A share card for the benchmark page: `bench page` draws `card.png` (1200x630) from the Summary numbers, and
