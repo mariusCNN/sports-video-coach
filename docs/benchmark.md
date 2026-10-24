@@ -494,8 +494,9 @@ file.
   default as drawn, 1280 x 820), `--timeout` (for the whole run; a task not sent by then stays `null`).
 - **Context.** Ollama scales every image itself (a sheet costs about 1,070 prompt tokens with qwen3-vl) and loads a
   model with a 4096-token context by default, too small for 27 sheets. Start the server with a bigger one, e.g.
-  `OLLAMA_CONTEXT_LENGTH=32768 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KV_CACHE_TYPE=q8_0 ollama serve`, and say so with
-  `--settings`.
+  `OLLAMA_CONTEXT_LENGTH=40960 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KV_CACHE_TYPE=q8_0 ollama serve`, and say so with
+  `--settings`. A fresh seed can draw more sheets (30 for one task, about 33,200 tokens), so 32768 is not always
+  enough; a request over the context fails with HTTP 400 and its task stays `null`.
 - **What the result records.** `settings` always says how the model was asked: the endpoint kind, the number of
   requests and images per request, the image size, temperature and max_tokens; anything in `--settings` is added
   after it. An Ollama server also names itself: the agent is `Ollama` with its version, and the weights'

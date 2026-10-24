@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "seed": 792092586,
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-25",
+  "contender": {
+    "agent": "Ollama",
+    "agent_version": "0.40.10",
+    "model": "qwen3-vl:4b-instruct-q4_K_M",
+    "settings": "frames track; OpenAI-compatible chat completions on Ollama 0.40.10, weights Q4_K_M, 4.0B; one request per task (4 requests, 11-30 contact sheets each as base64 JPEG, sheets as drawn (1280 px on the longer side)), the task's section of TASKS.md and the rules in the prompt, no full-size stills, no tools; temperature 0, max_tokens 4096; server: OLLAMA_CONTEXT_LENGTH=40960, flash attention, KV cache q8_0; RTX 3070 8 GB"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 50,
+      "answer": 100,
+      "score": 0.0,
+      "note": "off by 50"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "made",
+        "made",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made"
+      ],
+      "answer": [
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made"
+      ],
+      "score": 0.308,
+      "note": "4 of 13 right, 13 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.52,
+        3.6,
+        4.28,
+        6.0,
+        6.68,
+        7.8,
+        9.28,
+        11.28,
+        12.56,
+        13.76,
+        15.92
+      ],
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 35.433,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    }
+  ],
+  "total": 0.077,
+  "wall_seconds": 620.9,
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-25-ollama-qwen3-vl-4b-instruct-q4-k-m-svc-bench-3-frames-seed792092586.jsonl",
+  "cost_usd": null
+}
