@@ -304,8 +304,8 @@ sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-
 
 Fresh-seed rows (frames track, 2026-10-25; Claude Code in the clean room at default effort unless the row names an
 effort set with `bench run --effort`, Codex with the runner's own config at reasoning effort xhigh; each run drew
-its own random seed with `bench run --seed`; two runs each for Opus and Sonnet at default effort, one each for
-Haiku, Codex and every `--effort` setting, each run on its own seed):
+its own random seed with `bench run --seed`; two runs each for Opus and Sonnet at default effort and for
+Sonnet at effort max, one each for Haiku, Codex and the other `--effort` settings, each run on its own seed):
 
 | Agent | Model | Total | Above chance | Juggle | Shots | Passes | Rate | Wall | Cost |
 |---|---|---|---|---|---|---|---|---|---|
@@ -317,6 +317,7 @@ Haiku, Codex and every `--effort` setting, each run on its own seed):
 | Codex 0.159.3 | gpt-6-astra, xhigh (seed 911623366) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 514 s | not reported |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 208632171) | 0.995 | 0.994 | 0.980 | 1.000 | 1.000 | 1.000 | 256 s | $0.94 |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort max (seed 280902796) | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 1200 s (killed at the timeout) | not reported |
+| Claude Code 2.1.310 | claude-sonnet-5-5, effort max (seed 604284533) | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 2401 s (killed at the timeout) | not reported |
 | Claude Code 2.1.310 | claude-opus-5-5, effort low (seed 959964891) | 0.879 | 0.778 | 0.976 | 0.538 | 1.000 | 1.000 | 70 s | $0.45 |
 
 - **Opus nearly holds its published score on a seed drawn at run time.** It counted 44 touches against 45 (it
@@ -352,8 +353,8 @@ Haiku, Codex and every `--effort` setting, each run on its own seed):
   0.125 / 0.273 / 0.153 / 0.639, seed 911623366 0.106 / 0.308 / 0.153 / 0.112 (published: 0.106 / 0.500 /
   0.167 / 0.551).
 
-**What effort changed** (`bench run --effort`; one run per setting, each on its own seed, so this is not a variance
-estimate):
+**What effort changed** (`bench run --effort`; one run per setting, two for Sonnet at max, each on its own seed, so
+this is not a variance estimate):
 
 - **Sonnet at effort high looked and scored like Opus.** It opened 54 of 72 sheets and 32 full-size frames in 87
   Reads and scored 0.995 (0.994 above chance) in 256 s for $0.94, against 0.413 and 0.426 above chance, 4 sheets,
@@ -362,12 +363,18 @@ estimate):
   frames, 628 Reads), was on the third task when the 1200 s timeout killed it, and never wrote its answer block,
   so every task scores 0.000. Its last status message listed the 13 shot outcomes as they are in the truth, but an
   answer the run did not give does not count.
+- **A second Sonnet max run, with twice the time, also ran out of it.** On seed 604284533 with `--timeout 2400`
+  it opened 66 of 70 sheets and 542 full-size frames in 629 Reads. Its status messages gave 12 shot outcomes that match the
+  truth and 12 release times within 0.05 s of it, then it went back to the juggling and was still counting when the
+  2400 s timeout killed it, so it also scores 0.000. Two runs, one seed each: at max effort Sonnet did not answer within
+  40 minutes on this suite; that is all these two rows show.
 - **Opus at effort low opened fewer sheets and lost the shots.** 19 of 72 sheets in 21 Reads, no full-size frame:
   the juggling off by 1, all 12 releases and the stroke rate right, but 7 of 13 shots (0.538, that seed's blind
   floor is 0.462), so 0.879 (0.778 above chance) in 70 s for $0.45, against 0.994 and 1.000 above chance,
   317-378 s and $2.32-2.77 at its default.
 - Blind floors of these seeds (juggle / shots / passes / rate): seed 208632171 0.102 / 0.538 / 0.182 / 0.695,
-  seed 280902796 0.102 / 0.615 / 0.141 / 0.413, seed 959964891 0.122 / 0.462 / 0.167 / 0.738.
+  seed 280902796 0.102 / 0.615 / 0.141 / 0.413, seed 604284533 0.104 / 0.417 / 0.153 / 0.313, seed 959964891
+  0.122 / 0.462 / 0.167 / 0.738.
 
 ## Rules
 
