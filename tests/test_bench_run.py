@@ -1,6 +1,7 @@
 import json
 import sys
 import time
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -99,8 +100,9 @@ def test_run_refuses_a_used_folder_and_dry_run_runs_nothing(tmp_path, fake, caps
     assert bench.main(["run", "--agent", "claude", "--model", "claude-haiku-5-5", "--out", str(dry),
                        "--dry-run"]) == 0
     printed = capsys.readouterr().out
-    assert "claude -p --output-format stream-json --verbose --dangerously-skip-permissions" in printed
-    assert "--model claude-haiku-5-5" in printed and not dry.exists()
+    assert ("claude -p --safe-mode --setting-sources project --strict-mcp-config --output-format stream-json "
+            "--verbose --dangerously-skip-permissions") in printed
+    assert "--model claude-haiku-5-5" in printed and "clean room" in printed and not dry.exists()
 
 
 def test_commands_for_each_agent(tmp_path):
@@ -116,6 +118,100 @@ def test_commands_for_each_agent(tmp_path):
         R.command("cmd", "P", pf, template="gemini -y")
     with pytest.raises(SystemExit):
         R.command("cmd", "P", pf)
+
+
+def test_claude_runs_clean_room_by_default_and_with_my_config_on_request(tmp_path):
+    pf = tmp_path / "PROMPT.txt"
+    clean = R.command("claude", "P", pf, "claude-sonnet-5-5")
+    assert clean[2:6] == ["--safe-mode", "--setting-sources", "project", "--strict-mcp-config"]
+    mine = R.command("claude", "P", pf, "claude-sonnet-5-5", my_config=True)
+    assert not set(R.CLAUDE_CLEAN) & set(mine) and "--dangerously-skip-permissions" in mine
+    frames_mine = R.command("claude", "P", pf, track="frames", my_config=True)
+    assert "--safe-mode" not in frames_mine and "--restricted" in frames_mine      # still no code on frames
+    assert "--safe-mode" in R.command("claude", "P", pf, track="frames")
+    # Codex is never isolated: --use-my-config changes nothing for it
+    assert R.command("codex", "P", pf, my_config=True) == R.command("codex", "P", pf)
+
+
+def test_settings_say_how_the_runner_config_was_handled():
+    assert R.settings_text("claude", "code", False) == "clean-room: no user config"
+    assert R.settings_text("claude", "code", False, "effort high") == "clean-room: no user config; effort high"
+    assert R.settings_text("claude", "code", True) == "runner's own agent config (--use-my-config)"
+    assert R.settings_text("codex", "code", False, stats={"effort": "high"}) == \
+        "Codex: runner's own config; not isolated, so credentials stay where they are; reasoning effort high"
+    assert R.settings_text("codex", "code", True) == R.CODEX_OWN
+    assert R.settings_text("claude", "frames", False) == R.CLAUDE_FRAMES_SETTINGS     # leaderboard rows unchanged
+    assert "--safe-mode" not in R.settings_text("claude", "frames", True)
+    assert R.settings_text("cmd", "code", False) == "" and R.settings_text("cmd", "code", False, "x") == "x"
+
+
+def test_agent_env_drops_the_calling_session_identity(tmp_path):
+    base = {"PATH": "p", "HOME": "h", "ANTHROPIC_API_KEY": "k", "CLAUDE_CONFIG_DIR": "c", "ORCA_AGENT_PANE": "1",
+            "orca_pane_key": "2", "CLAUDECODE": "1", "CLAUDE_PID": "9", "CLAUDE_CODE_SESSION_ID": "s",
+            "CLAUDE_CODE_ENTRYPOINT": "cli", "CLAUDE_CODE_EXECPATH": "x", "CLAUDE_CODE_MESSAGING_SOCKET": "m",
+            "CLAUDE_CODE_USE_BEDROCK": "1", "TERM_PROGRAM": "Orca"}
+    env = R.agent_env(base)
+    assert env == {"PATH": "p", "HOME": "h", "ANTHROPIC_API_KEY": "k", "CLAUDE_CONFIG_DIR": "c",
+                   "CLAUDE_CODE_USE_BEDROCK": "1"}                   # login and provider settings stay
+    assert R.agent_env({"CODEX_HOME": str(tmp_path)}) == {"CODEX_HOME": str(tmp_path)}   # passed on, never replaced
+    assert R.agent_env({"TERM_PROGRAM": "vscode"}) == {"TERM_PROGRAM": "vscode"}
+
+
+def test_run_does_not_pass_the_session_identity_to_the_agent(tmp_path, fake, monkeypatch):
+    monkeypatch.setenv("ORCA_AGENT_PANE", "pane-1")
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "sess-1")
+    monkeypatch.setenv("SVC_KEEP_ME", "kept")
+    dump = tmp_path / "env.py"
+    dump.write_text("import json, os, sys\njson.dump(dict(os.environ), open('env.json', 'w'))\n", encoding="utf8")
+    code, out = run(tmp_path, f'"{sys.executable}" "{dump}" {{prompt_file}}')
+    seen = json.loads((out / "env.json").read_text(encoding="utf8"))
+    assert code == 0 and seen["SVC_KEEP_ME"] == "kept"
+    assert "ORCA_AGENT_PANE" not in seen and "CLAUDE_CODE_SESSION_ID" not in seen
+
+
+def test_codex_run_gets_the_runner_codex_home_and_never_touches_it(tmp_path, monkeypatch):
+    """No temporary CODEX_HOME, and bench run itself opens, copies or writes nothing in the runner's codex folder."""
+    import builtins
+    import io
+    import os
+    import shutil
+    user = tmp_path / "home" / ".codex"
+    user.mkdir(parents=True)
+    for name in ("auth.json", "AGENTS.md", "config.toml"):
+        (user / name).write_text(name, encoding="utf8")
+    before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in user.iterdir()}
+    monkeypatch.setattr(R, "resolve", lambda argv: argv)
+    monkeypatch.setattr(R, "agent_version", lambda exe: "")
+    touched = []
+
+    def watch(fn):
+        def wrapped(*args, **kw):
+            touched.extend(str(x) for x in args[:2] if isinstance(x, (str, os.PathLike)) and
+                           Path(x).resolve().is_relative_to(user.resolve()))
+            return fn(*args, **kw)
+        return wrapped
+    for mod, name in ((builtins, "open"), (io, "open"), (os, "open"), (shutil, "copy2"), (shutil, "copyfile"),
+                      (shutil, "rmtree"), (os, "replace"), (os, "rename"), (os, "remove"), (os, "unlink")):
+        monkeypatch.setattr(mod, name, watch(getattr(mod, name)))
+    seen = []
+    monkeypatch.setattr(R, "execute", lambda argv, cwd, tr, err, timeout, env: (seen.append(env), (0, 1.0))[1])
+    for home_env in (None, str(user)):          # CODEX_HOME unset (Codex uses ~/.codex), or set by the runner
+        if home_env is None:
+            monkeypatch.delenv("CODEX_HOME", raising=False)
+        else:
+            monkeypatch.setenv("CODEX_HOME", home_env)
+        monkeypatch.setenv("HOME", str(user.parent))
+        monkeypatch.setenv("USERPROFILE", str(user.parent))
+        for extra in ([], ["--use-my-config"]):
+            out = tmp_path / f"run-{len(seen)}"
+            assert bench.main(["run", "--agent", "codex", "--out", str(out)] + extra) == 0
+            assert seen[-1].get("CODEX_HOME") == home_env        # never overridden
+            settings = json.loads(next(out.glob("*codex*.json")).read_text())["contender"]["settings"]
+            assert settings == "Codex: runner's own config; not isolated, so credentials stay where they are"
+    monkeypatch.undo()
+    assert touched == []
+    assert {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in user.iterdir()} == before
+    assert not hasattr(R, "clean_codex_home") and not hasattr(R, "drop_codex_home")
 
 
 @pytest.mark.parametrize("name", ["svc-bench-1", "svc-bench-2"])

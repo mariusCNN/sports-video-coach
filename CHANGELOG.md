@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows [Kee
 - The benchmark page shows where each contender fails: under every suite's table, a folded block per task with
   the truth, each run's answer, its recomputed score and what was missed (e.g. "missed 2 of 12 (at 12.16 s,
   15.84 s)", "3 of 12 wrong (#5 said made, ...)"). Derived from the stored answers and the suite's truth at build time.
+- `bench run` runs Claude Code clean-room by default: none of the runner's own agent config (CLAUDE.md, skills,
+  plugins, hooks, MCP servers, user settings) reaches the contender, and `settings` says `clean-room: no user
+  config`; `--use-my-config` opts out. Codex is not isolated: it runs with the runner's own `~/.codex`, and
+  `settings` says so, because isolating it would mean copying its login; `bench run` never touches credential files.
+  A calling agent's session variables (`ORCA_*`, `CLAUDE_CODE_SESSION_ID`, ...) are never passed on. One A/B pair on
+  `svc-bench-3` (Sonnet 5.5, code track): clean room 0.958, own config 0.995; both on the leaderboard.
 - A second Fable 5.1 run on `svc-bench-3` frames with a 3600 s limit: it answered in 1645 s and scored 0.989
   (0.988 above chance), juggle count off by 2, the other three tasks exact.
 - A share card for the benchmark page: `bench page` draws `card.png` (1200x630) from the Summary numbers, and

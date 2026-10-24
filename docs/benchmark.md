@@ -193,6 +193,8 @@ Above-chance totals of the rows on 2026-10-24:
 | svc-bench-3, frames | Claude Code / claude-haiku-5-5 | 0.585 | 0.333 |
 | svc-bench-3, frames | Claude Code / claude-sonnet-5-5 (second run) | 0.441 | 0.273 |
 | svc-bench-3, frames | Claude Code / claude-fable-5-1 (killed at the 1700 s limit before answering) | 0.000 | 0.000 |
+| svc-bench-3, code | Claude Code / claude-sonnet-5-5 (runner's own agent config, `--use-my-config`) | 0.995 | 0.994 |
+| svc-bench-3, code | Claude Code / claude-sonnet-5-5 (clean room) | 0.958 | 0.951 |
 | svc-bench-2, frames | Claude Code / claude-opus-5-5 | 1.000 | 1.000 |
 | svc-bench-2, frames | Codex / gpt-6-astra | 1.000 | 1.000 |
 | svc-bench-2, frames | Claude Code / claude-sonnet-5-5 | 0.755 | 0.564 |
@@ -284,9 +286,10 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 
 | Option | What it does |
 |---|---|
-| `--agent claude` | Claude Code: `claude -p --output-format stream-json --verbose --dangerously-skip-permissions` |
-| `--agent codex` | Codex CLI: `codex exec --skip-git-repo-check -s workspace-write` |
-| `--agent cmd --cmd "..."` | Any other CLI. `{prompt}` becomes the prompt text, `{prompt_file}` a file holding it, `{model}` the model. |
+| `--agent claude` | Claude Code: `claude -p --safe-mode --setting-sources project --strict-mcp-config --output-format stream-json --verbose --dangerously-skip-permissions` |
+| `--agent codex` | Codex CLI: `codex exec --skip-git-repo-check -s workspace-write`, with your own Codex config (not isolated, see below) |
+| `--agent cmd --cmd "..."` | Any other CLI. `{prompt}` becomes the prompt text, `{prompt_file}` a file holding it, `{model}` the model. It runs as given: keeping your own agent config out is up to you. |
+| `--use-my-config` | Run Claude Code with your own agent config instead of the clean room (see below); `settings` then says so. Codex always runs with yours. |
 | `--model M` | Passed to the agent as `--model M` |
 | `--suite` | `svc-bench-1` (default), `svc-bench-2` or `svc-bench-3` |
 | `--track frames` | Stills instead of videos, no code. Claude Code runs with Read as its only tool (the command in the [frames table](#frames-only-track-eyes)); the json block that ends the agent's reply becomes `answers.json`. Not for `--agent codex` yet. |
@@ -305,6 +308,23 @@ sports-video-coach bench run --agent cmd --name Aider --cmd "aider --yes-always 
 ```
 
 - The agent gets the same prompt as every other row (`PROMPT.txt` in the run folder), with stdin closed.
+- **Clean room by default for Claude Code.** Your own agent config would make your row different from everyone
+  else's, so `bench run` leaves it out and writes `clean-room: no user config` in `settings`:
+  - Claude Code: `--safe-mode` drops CLAUDE.md, skills, plugins, hooks, MCP servers and custom agents;
+    `--setting-sources project` skips your user settings file (model, effort, language, env); `--strict-mcp-config`
+    skips other MCP configs. Your login still works; no file is copied or written.
+  - Codex is not isolated: it runs with your own `CODEX_HOME` (`~/.codex`: AGENTS.md, `config.toml`, skills,
+    hooks, rules, memories). Isolating it would mean copying your login file somewhere else, and `bench run` never
+    copies, moves or writes credential files. `settings` says `Codex: runner's own config; not isolated, so
+    credentials stay where they are`. For a clean Codex row, run it from a Codex setup without your own config.
+  - The frames track was already clean (`--restricted --safe-mode`); its `settings` stay as before.
+  - Session variables of a calling agent (`ORCA_*`, `CLAUDECODE`, `CLAUDE_PID`, `CLAUDE_CODE_SESSION_ID` and the
+    like) are never passed on, with or without `--use-my-config`.
+  - `--use-my-config` loads your Claude Code config instead; `settings` then says `runner's own agent config
+    (--use-my-config)`. It changes nothing for Codex.
+  - Does it matter? One measured pair (2026-10-24, Claude Code 2.1.310, claude-sonnet-5-5, `svc-bench-3` code
+    track, run at the same time): clean room 0.958 in 264 s for $0.67; the maintainer's own config (198 skills,
+    85 MCP servers, hooks) 0.995 in 214 s for $0.61. One pair is not enough to say either way: unclear.
 - **Measured, not claimed:** `wall_seconds` is timed by `bench run`. `cost_usd` is filled only when the agent
   reports it (Claude Code's result event); otherwise `null`. Without `--model`, the model (and the Claude Code
   version, or the Codex reasoning effort) is read from what the agent itself prints (Claude Code's init event,
