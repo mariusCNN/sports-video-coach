@@ -82,8 +82,8 @@ class Game(Unit):
 
     def fill_values(self) -> dict:
         return dict(super().fill_values(), gj=self.gj, focus=self.focus or "<N>", times=calib_times(self),
-                    us_label=game_config.team(self.game, "us").get("label", "?"),
-                    them_label=game_config.team(self.game, "them").get("label", "?"))
+                    us_label=pipeline.quoted(game_config.team(self.game, "us").get("label", "?")),
+                    them_label=pipeline.quoted(game_config.team(self.game, "them").get("label", "?")))
 
     def note(self, step: str, errors: list[str]) -> str | None:
         """Finished games whose reports predate the stricter coach gates get the LEGACY note."""
@@ -277,9 +277,10 @@ STEPS = [
              "from the league; without league data, read them from the video and ask the user what you cannot see."),
     Step("periods", "agent", lambda g: g.game.get("periods_checked") is not False,
          how="Periods (playbook step 2): the league's periods in {gj} split the whole league video (pre-game "
-             "footage and the break included). Grab stills around each boundary (`ffmpeg -ss T -i {video} -frames:v 1 x.jpg`), set `periods` to the "
-             "seconds of our video where play starts and ends in each period (with our own video, shift them by "
-             "the alignment in {run}/official.json), then set \"periods_checked\": true."),
+             "footage and the break included). Cut a sheet around each boundary (`sports-video-coach frames "
+             "{video} --out {run}/periods --start <t0> --end <t1> --every 1`), set `periods` to the seconds "
+             "of our video where play starts and ends in each period (with our own video, shift them by the "
+             "alignment in {run}/official.json), then set \"periods_checked\": true."),
     Step("calib-grid", "cmd",
          lambda g: any((g.run / "calib").glob("grid_*.jpg")) or _exists("calib/keyframes.json")(g) or extracted(g),
          lambda g: [["calibrate", "--video", _v(g), "--times", calib_times(g), "--out", str(g.run / "calib"),

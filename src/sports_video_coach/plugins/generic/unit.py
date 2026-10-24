@@ -33,8 +33,9 @@ class Analysis(P.Session):
         sport = self.game.get("sport")
         if isinstance(sport, dict):  # {"zh": .., "en": ..}: names per page language
             sport = sport.get("en") or next(iter(sport.values()), "")
-        return dict(super().fill_values(), prompts=PROMPTS, plugin=NAME, sport=sport or "the sport in the video",
-                    focus=self.game.get("focus") or "the main athlete in the video")
+        return dict(super().fill_values(), prompts=PROMPTS, plugin=NAME,
+                    sport=P.quoted(sport) if sport else "the sport in the video",
+                    focus=P.quoted(self.game["focus"]) if self.game.get("focus") else "the main athlete in the video")
 
     def finished(self):
         clips = sorted((self.folder / "clips").glob("*.mp4"))
@@ -130,9 +131,9 @@ def review_errors(g: Analysis) -> list[str]:
             errs.append(f"moment {i}: `start` and `end` must be mm:ss")
             continue
         if t1 <= t0:
-            errs.append(f"moment {i}: end {m['end']} is not after start {m['start']}")
+            errs.append(f"moment {i}: end {P.quoted(m['end'])} is not after start {P.quoted(m['start'])}")
         if dur is not None and t1 > dur + 1:
-            errs.append(f"moment {i}: end {m['end']} is after the video ends ({dur:.0f} s)")
+            errs.append(f"moment {i}: end {P.quoted(m['end'])} is after the video ends ({dur:.0f} s)")
         for k in ("what", "why"):
             if not str(m.get(k) or "").strip():
                 errs.append(f"moment {i}: `{k}` is empty")
