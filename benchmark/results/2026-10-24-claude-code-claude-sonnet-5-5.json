@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-1",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-24",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-sonnet-5-5",
+    "settings": "claude -p, default effort, user CLAUDE.md loaded; cost 0.33 USD"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "jump-count",
+      "kind": "count",
+      "truth": 13,
+      "answer": 13,
+      "score": 1.0,
+      "note": "exact"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 42.0,
+      "answer": 42.0,
+      "score": 1.0,
+      "note": "0.0% off"
+    },
+    {
+      "id": "cone-touches",
+      "kind": "timestamps",
+      "truth": [
+        3.2,
+        5.4,
+        6.8,
+        10.4,
+        12.2,
+        14.8,
+        17.4
+      ],
+      "answer": [
+        3.24,
+        5.4,
+        6.84,
+        10.44,
+        12.24,
+        14.84,
+        17.44
+      ],
+      "score": 1.0,
+      "note": "7 of 7 within 0.5 s, 7 answered"
+    },
+    {
+      "id": "shot-outcomes",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "answer": [
+        "made",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "score": 1.0,
+      "note": "10 of 10 right, 10 answered"
+    }
+  ],
+  "total": 1.0,
+  "wall_seconds": 55,
+  "evidence": ""
+}
