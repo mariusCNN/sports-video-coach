@@ -26,6 +26,8 @@
 **基准测试：**哪个编程 agent 看运动录像最准，按精确的真值打分：
 [排行榜](https://mariusding.github.io/sports-video-coach/benchmark/) · 一条命令跑分：`sports-video-coach bench run --agent claude` · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）。
 
+<a href="https://mariusding.github.io/sports-video-coach/benchmark/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="基准测试短片：程序画的颠球视频，agent 看到的一次快速连续两触的静帧，再对比真实触球数（47）和各个模型的回答"></a>
+
 ## 试一下
 
 **1. 先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
