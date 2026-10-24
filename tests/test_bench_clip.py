@@ -11,11 +11,12 @@ RESULTS = Path(__file__).resolve().parents[1] / "benchmark" / "results"
 
 
 def task_runs() -> list[tuple[str, dict, dict]]:
-    """(file name, result, juggle-touches task) for every svc-bench-3 frames result file in the repo."""
+    """(file name, result, juggle-touches task) for every svc-bench-3 frames result file in the repo (not on a fresh
+    seed: the clip shows the published suite)."""
     out = []
     for f in sorted(RESULTS.glob("*.json")):
         r = json.loads(f.read_text(encoding="utf8"))
-        if r.get("suite") == clip.SUITE and r.get("track") == clip.TRACK:
+        if r.get("suite") == clip.SUITE and r.get("track") == clip.TRACK and r.get("seed") is None:
             out.append((f.name, r, next(t for t in r["tasks"] if t["id"] == clip.TASK)))
     return out
 

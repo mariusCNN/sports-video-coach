@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- Fresh seeds for `svc-bench-3` (`bench prepare --seed [N]`, `bench run --seed [N]`): the same scenes and traps
+  drawn anew, with new counts, outcomes, times and rates, so a model cannot have seen the truth in training. The
+  truth is never written; `bench score` and `bench validate` rebuild it from the `seed` in the result file. Seeded
+  runs get their own board (`svc-bench-3-fresh`) and their own blind floor on the page. A pixel read-back scores
+  1.000 on six seeds. Without `--seed` the published suite is unchanged.
 - `bench transcript` redacts a transcript or log for publishing (images, home folders, user and host names,
   emails, env dumps, hook output, key-like strings), and `bench run` writes the redacted copy next to the raw one.
   All 20 maintainer runs now link their redacted transcript in `benchmark/transcripts/` (about 2 MB); the page
