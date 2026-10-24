@@ -298,7 +298,7 @@ def final_text(transcript: Path, agent: str) -> str:
     return final
 
 
-def answers_from_reply(out: Path, text: str, suite: str, track: str) -> bool:
+def answers_from_reply(out: Path, text: str, suite: str, track: str, seed: int | None = None) -> bool:
     """Save the last json block of the agent's reply as <out>/answers.json when the agent left that file empty
     (an agent with no file-writing tool ends with it, as TASKS.md asks). True if it was saved."""
     try:
@@ -314,9 +314,10 @@ def answers_from_reply(out: Path, text: str, suite: str, track: str) -> bool:
     answers = data.get("answers", data) if isinstance(data, dict) else None
     if not isinstance(answers, dict):
         return False
-    ids = [t.id for t in S.SUITES[suite].TASKS]
+    ids = [t.id for t in S.suite_tasks(suite, seed).TASKS]
+    fresh = {} if seed is None else {"seed": seed}
     media.write_json_atomic(out / "answers.json",
-                            {"suite": suite, "track": track, "answers": {i: answers.get(i) for i in ids}})
+                            {"suite": suite, "track": track, **fresh, "answers": {i: answers.get(i) for i in ids}})
     return True
 
 
@@ -403,6 +404,8 @@ def main(argv=None) -> int:
     ap.add_argument("--track", default=F.TRACK, choices=F.TRACKS,
                     help="code (default): videos, any tool; frames: still images only, no code (Claude Code runs "
                          "with Read as its only tool)")
+    from . import add_seed, pick_seed
+    add_seed(ap)
     ap.add_argument("--agent", required=True, choices=["claude", "codex", *PRESETS, "cmd"],
                     help="claude (Claude Code), codex (Codex CLI), a preset for another CLI (" +
                          ", ".join(f"{k}: {p.name}" for k, p in PRESETS.items()) + "; built from each CLI's docs "
@@ -431,6 +434,8 @@ def main(argv=None) -> int:
         ap.error("--timeout must be positive")
     if a.agent != "cmd" and a.cmd:
         ap.error("--cmd is only for --agent cmd")
+    seed = pick_seed(ap, a)
+    fresh = "" if seed is None else f" from fresh seed {seed}"
 
     out = (a.out or default_out(a.name or a.agent, a.model)).resolve()
     text = prompt(a.suite, a.track, a.agent)
@@ -450,7 +455,8 @@ def main(argv=None) -> int:
         room = "clean room: no user agent config"
     transcript = out / ("transcript.jsonl" if a.agent == "claude" else "transcript.txt")
     if a.dry_run:
-        print(f"suite {a.suite}, track {a.track}, folder {out}, timeout {a.timeout:g} s, stdin closed; {room}")
+        print(f"suite {a.suite}{fresh}, track {a.track}, folder {out}, timeout {a.timeout:g} s, stdin closed; "
+              f"{room}")
         print(subprocess.list2cmdline(argv_) if os.name == "nt" else shlex.join(argv_))
         return 0
     if out.exists() and any(out.iterdir()):
@@ -460,9 +466,9 @@ def main(argv=None) -> int:
                                              Path(argv_[0]).stem)
 
     what = "videos" if a.track == F.TRACK else "videos as stills"
-    print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} {what} into {out}")
+    print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} {what}{fresh} into {out}")
     from . import prepare
-    prepare(out, suite=a.suite, track=a.track)
+    prepare(out, suite=a.suite, track=a.track, seed=seed)
     media.write_text_atomic(prompt_file, text + "\n")
     print(f"running {name} (timeout {a.timeout:g} s; {room}) ...", flush=True)
     code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env())
@@ -479,7 +485,7 @@ def main(argv=None) -> int:
              else codex_stats(out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
     settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats)
-    if a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track):
+    if a.track != F.TRACK and answers_from_reply(out, final_text(transcript, a.agent), a.suite, a.track, seed):
         print("answers.json: saved from the json block at the end of the agent's reply")
     version = stats.get("version") or ("" if a.agent == "cmd" else
                                        agent_version(exe[0], PRESETS[a.agent].version[1:]) if a.agent in PRESETS
@@ -490,7 +496,8 @@ def main(argv=None) -> int:
         print(f"answers.json could not be read ({e}); every task scores 0")
         answers = {}
     res = S.result(answers, name, model, version, settings, a.by.strip(),
-                   int(wall) if wall == int(wall) else wall, a.evidence.strip(), suite=a.suite, track=a.track)
+                   int(wall) if wall == int(wall) else wall, a.evidence.strip(), suite=a.suite, track=a.track,
+                   seed=seed)
     res["cost_usd"] = stats.get("cost_usd")
     run_info = {"exit_code": code, "timed_out": code is None, "timeout_seconds": a.timeout}
     media.write_json_atomic(out / "run.json", run_info)

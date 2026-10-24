@@ -14,6 +14,8 @@ to 0..1, where the floor is the blind baseline's score on that task (`baseline`)
 Both suites use the same kinds and rules; a result file names its suite and is re-scored against that suite.
 Tracks (see `frames`): a result on the `frames` track (still images, no code) says `"track": "frames"`; a file
 without a track is on the `code` track. Both are scored the same way against the same truth.
+Fresh seeds (`svc-bench-3` only, see `suite3.seeded`): a result drawn from a seed says `"seed": N`; its truth is
+rebuilt from the seed whenever it is scored or validated, and is never stored anywhere but in the result file.
 """
 from __future__ import annotations
 
@@ -26,6 +28,17 @@ from . import frames as F, suite as _s1, suite2 as _s2, suite3 as _s3
 from .suite import BY_ID, KINDS, SUITE, TASKS
 
 SUITES = {m.SUITE: m for m in (_s1, _s2, _s3)}     # suite name -> module with TASKS and BY_ID
+SEEDED = sorted(n for n, m in SUITES.items() if hasattr(m, "seeded"))   # suites that can be drawn from a fresh seed
+
+
+def suite_tasks(suite: str = SUITE, seed: int | None = None):
+    """The object with TASKS and BY_ID for a suite, drawn from `seed` when one is given (ValueError when the suite
+    has no fresh seeds or the seed is not a valid one)."""
+    if seed is None:
+        return SUITES[suite]
+    if suite not in SEEDED:
+        raise ValueError(f"suite {suite} has no fresh seeds (only {', '.join(SEEDED)})")
+    return SUITES[suite].seeded(seed)
 
 SCHEMA = 1
 TOL = 0.0005  # validate: a stored score may differ from the re-score by rounding only
@@ -82,9 +95,9 @@ SCORERS = {"count": score_count, "rate": score_rate, "timestamps": score_timesta
 assert set(SCORERS) == set(KINDS)
 
 
-def score_task(task_id: str, answer, suite: str = SUITE) -> dict:
+def score_task(task_id: str, answer, suite: str = SUITE, seed: int | None = None) -> dict:
     """One task row of a result file."""
-    t = SUITES[suite].BY_ID[task_id]
+    t = suite_tasks(suite, seed).BY_ID[task_id]
     if answer is None:
         s, note = 0.0, "missing answer"
     else:
@@ -146,6 +159,17 @@ def answers_track(folder: Path) -> str:
     return name
 
 
+def answers_seed(folder: Path) -> int | None:
+    """The fresh seed named in <folder>/answers.json (None: the published suite)."""
+    p = Path(folder) / "answers.json"
+    seed = json.loads(p.read_text(encoding="utf8")).get("seed")
+    try:
+        suite_tasks(answers_suite(folder), seed)
+    except ValueError as e:
+        raise SystemExit(f"{p}: {e}")
+    return seed
+
+
 def read_answers(folder: Path) -> dict:
     """{task id: answer} from <folder>/answers.json, for the suite it names (unknown ids are an error, missing ones
     are null)."""
@@ -155,18 +179,20 @@ def read_answers(folder: Path) -> dict:
     answers = data.get("answers", {})
     if not isinstance(answers, dict):
         raise SystemExit(f"{p}: `answers` must be an object of task id -> answer")
-    by_id = SUITES[name].BY_ID
-    unknown = sorted(set(answers) - set(by_id))
+    tasks = suite_tasks(name, answers_seed(folder))
+    unknown = sorted(set(answers) - set(tasks.BY_ID))
     if unknown:
-        raise SystemExit(f"{p}: unknown task ids {unknown}; the suite has {list(by_id)}")
-    return {t.id: answers.get(t.id) for t in SUITES[name].TASKS}
+        raise SystemExit(f"{p}: unknown task ids {unknown}; the suite has {list(tasks.BY_ID)}")
+    return {t.id: answers.get(t.id) for t in tasks.TASKS}
 
 
 def result(answers: dict, agent: str, model: str, agent_version: str = "", settings: str = "", by: str = "",
            wall_seconds: float | None = None, evidence: str = "", date: str | None = None,
-           suite: str = SUITE, track: str = F.TRACK) -> dict:
-    rows = [score_task(t.id, answers.get(t.id), suite) for t in SUITES[suite].TASKS]
+           suite: str = SUITE, track: str = F.TRACK, seed: int | None = None) -> dict:
+    rows = [score_task(t.id, answers.get(t.id), suite, seed) for t in suite_tasks(suite, seed).TASKS]
     on = {} if track == F.TRACK else {"track": track}     # a code-track file stays as it always was
+    if seed is not None:
+        on["seed"] = seed
     return {"schema": SCHEMA, "suite": suite, **on, "tool_version": tool_version(),
             "date": date or dt.date.today().isoformat(),
             "contender": {"agent": agent, "agent_version": agent_version, "model": model, "settings": settings},
@@ -176,10 +202,11 @@ def result(answers: dict, agent: str, model: str, agent_version: str = "", setti
 
 def default_path(res: dict) -> Path:
     c = res["contender"]
-    # suite 1 files keep their original names; later suites add the suite name, the frames track adds "frames"
-    suite, track = res.get("suite", SUITE), res.get("track", F.TRACK)
+    # suite 1 files keep their original names; later suites add the suite name, the frames track adds "frames",
+    # a fresh seed adds "seed<N>"
+    suite, track, seed = res.get("suite", SUITE), res.get("track", F.TRACK), res.get("seed")
     name = "-".join(x for x in (res["date"], slug(c["agent"]), slug(c["model"]), "" if suite == SUITE else suite,
-                                "" if track == F.TRACK else track) if x)
+                                "" if track == F.TRACK else track, "" if seed is None else f"seed{seed}") if x)
     return Path("benchmark") / "results" / f"{name}.json"
 
 
@@ -189,7 +216,8 @@ def table(res: dict) -> str:
            (f" / {c['model']}" if c["model"] else "") + (f" ({c['settings']})" if c["settings"] else "")
     w = max(len(r["id"]) for r in res["tasks"])
     track = res.get("track", F.TRACK)
-    lines = [f"{res.get('suite', SUITE)}{'' if track == F.TRACK else f' ({track} track)'}: {head}", ""]
+    seed = "" if res.get("seed") is None else f", fresh seed {res['seed']}"
+    lines = [f"{res.get('suite', SUITE)}{'' if track == F.TRACK else f' ({track} track)'}{seed}: {head}", ""]
     lines += [f"  {r['id']:{w}s}  {r['kind']:10s}  {r['score']:.3f}  {r['note']}" for r in res["tasks"]]
     lines += ["", f"  {'total':{w}s}  {'':10s}  {res['total']:.3f}"]
     return "\n".join(lines)
@@ -206,7 +234,12 @@ def problems(res) -> list[str]:
     if name not in SUITES:
         out.append(f"suite is {name!r}, expected one of {sorted(SUITES)}")
         name = SUITE
-    by_id = SUITES[name].BY_ID
+    seed = res.get("seed")
+    try:
+        by_id = suite_tasks(name, seed).BY_ID
+    except ValueError as e:
+        out.append(f"seed: {e}")
+        seed, by_id = None, SUITES[name].BY_ID
     if res.get("track", F.TRACK) not in F.TRACKS:
         out.append(f"track is {res.get('track')!r}, expected one of {list(F.TRACKS)} (or none, for code)")
     try:
@@ -237,14 +270,14 @@ def problems(res) -> list[str]:
     for r in rows:
         if r.get("id") not in by_id:
             continue
-        want = score_task(r["id"], r.get("answer"), name)
+        want = score_task(r["id"], r.get("answer"), name, seed)
         for k in ("kind", "truth"):
             if r.get(k) != want[k]:
                 out.append(f"{r['id']}: {k} is {r.get(k)!r}, the suite says {want[k]!r}")
         if not is_num(r.get("score")) or abs(r["score"] - want["score"]) > TOL:
             out.append(f"{r['id']}: score is {r.get('score')!r}, re-scoring the answer gives {want['score']}")
     if len(ids) == len(by_id) and not out:
-        want_total = total([score_task(r["id"], r.get("answer"), name) for r in rows])
+        want_total = total([score_task(r["id"], r.get("answer"), name, seed) for r in rows])
         if not is_num(res.get("total")) or abs(res["total"] - want_total) > TOL:
             out.append(f"total is {res.get('total')!r}, re-scoring gives {want_total}")
     elif not is_num(res.get("total")):

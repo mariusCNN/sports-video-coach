@@ -6,13 +6,14 @@ the frames track). The truth is exact (we drew them). Run one with any agent:
 
   sports-video-coach bench prepare --out <dir> [--suite svc-bench-2]   videos, TASKS.md and an answers.json to fill
                                 [--track frames]       still images instead of videos, for an agent that runs no code
+                                [--seed [N]]           svc-bench-3 drawn from a fresh seed (no N: a random one)
   (your agent watches the videos and fills <dir>/answers.json; it must not read the package source or any truth)
   sports-video-coach bench score <dir> --agent A --model M [--agent-version V] [--settings S] [--by HANDLE]
                                 [--wall-seconds N] [--evidence URL] [--out FILE]
   sports-video-coach bench validate <result.json...>   re-score a result file; exit 1 if it was edited or broken
   sports-video-coach bench page ...                     the leaderboard page from benchmark/results/
-  sports-video-coach bench run --agent claude|codex|cmd [--model M] [--suite S] [--track frames] [--cmd "..."]
-                                [--dry-run]
+  sports-video-coach bench run --agent claude|codex|cmd [--model M] [--suite S] [--track frames] [--seed [N]]
+                                [--cmd "..."] [--dry-run]
                                 all of it in one command: prepare, run the agent headless, score, issue link
   sports-video-coach bench transcript <src> [<dst>] [--redact WORD]
                                 a copy of a transcript that is safe to publish (bench run writes one itself)
@@ -102,10 +103,17 @@ When done, the person running the benchmark scores it:
 """
 
 
-def tasks_md(suite: str = SUITE, track: str = F.TRACK, out: Path | None = None) -> str:
-    """TASKS.md for a suite and track; on the frames track with `out`, each task lists its contact sheets."""
+FRESH_NOTE = """
+These videos were drawn from a fresh seed: their counts, outcomes, times and rates are new, so no answer published
+for {suite} applies to them.
+"""
+
+
+def tasks_md(suite: str = SUITE, track: str = F.TRACK, out: Path | None = None, seed: int | None = None) -> str:
+    """TASKS.md for a suite and track (drawn from `seed` when one is given); on the frames track with `out`, each
+    task lists its contact sheets."""
     parts = []
-    for i, t in enumerate(S.SUITES[suite].TASKS, 1):
+    for i, t in enumerate(S.suite_tasks(suite, seed).TASKS, 1):
         if track == "frames":
             where = (f"stills in `frames/{t.id}/` and `sheets/{t.id}/`, one every {F.step(t.id) / F.FPS:g} s "
                      f"of a {t.seconds:g} s video")
@@ -116,31 +124,39 @@ def tasks_md(suite: str = SUITE, track: str = F.TRACK, out: Path | None = None) 
             part += "\n\nContact sheets:\n\n" + "\n".join(f"- `{p}`" for p in F.sheets(out, t.id))
         parts.append(part)
     md = TASKS_MD_FRAMES if track == "frames" else TASKS_MD
+    if seed is not None:
+        head, rest = md.split("\n", 1)
+        md = head + "\n" + FRESH_NOTE + rest
     return md.format(suite=suite, tasks="\n\n".join(parts))
 
 
 def prepare(out: Path, ids: list[str] | None = None, force: bool = False, suite: str = SUITE,
-            track: str = F.TRACK) -> list[Path]:
-    """Draw the suite's videos and write TASKS.md and an answers.json template into `out`. No truth is written.
+            track: str = F.TRACK, seed: int | None = None) -> list[Path]:
+    """Draw the suite's videos (from a fresh `seed` when one is given; answers.json records it) and write TASKS.md
+    and an answers.json template into `out`. No truth is written.
     An answers.json that already holds an answer is kept unless `force` (one of another suite or track is an error).
     On the frames track each video becomes stills and contact sheets (see `frames`), no video stays in `out`, and
     the return value is the list of sheet folders."""
     if track not in F.TRACKS:
         raise SystemExit(f"unknown track {track!r}; one of {list(F.TRACKS)}")
     out = Path(out)
-    tasks = S.SUITES[suite].TASKS
+    try:
+        tasks = S.suite_tasks(suite, seed).TASKS
+    except ValueError as e:
+        raise SystemExit(str(e))
     ans = out / "answers.json"
-    old, old_suite, old_track = {}, suite, track
+    old, old_suite, old_track, old_seed = {}, suite, track, seed
     if ans.exists() and not force:
         try:
             data = json.loads(ans.read_text(encoding="utf8"))
             old, old_suite = data.get("answers", {}) or {}, data.get("suite", SUITE)
-            old_track = data.get("track", F.TRACK)
+            old_track, old_seed = data.get("track", F.TRACK), data.get("seed")
         except (ValueError, AttributeError):
             old = {}
     answered = any(v is not None for v in old.values())
-    if answered and (old_suite, old_track) != (suite, track):
-        raise SystemExit(f"{ans} already has answers for suite {old_suite!r}, track {old_track!r}; use another "
+    if answered and (old_suite, old_track, old_seed) != (suite, track, seed):
+        was = "" if old_seed is None else f", seed {old_seed}"
+        raise SystemExit(f"{ans} already has answers for suite {old_suite!r}, track {old_track!r}{was}; use another "
                          f"folder or --force")
     out.mkdir(parents=True, exist_ok=True)
     todo = [t for t in tasks if ids is None or t.id in ids]
@@ -156,15 +172,39 @@ def prepare(out: Path, ids: list[str] | None = None, force: bool = False, suite:
             print(f"  drew {t.video} ({t.seconds:g} s) in {time.monotonic() - t0:.1f} s")
     if track == "frames":
         shutil.rmtree(out / ".partial", ignore_errors=True)
-    media.write_text_atomic(out / "TASKS.md", tasks_md(suite, track, out))
+    media.write_text_atomic(out / "TASKS.md", tasks_md(suite, track, out, seed))
     if answered:
         print(f"  kept {ans} (it already has answers; --force writes a blank one)")
     else:
         blank = {"suite": suite, "track": track, "answers": {t.id: None for t in tasks}}
         if track == F.TRACK:
             del blank["track"]          # a code-track answers.json stays as it always was
+        if seed is not None:
+            blank["seed"] = seed
         media.write_json_atomic(ans, blank)
     return made
+
+
+def add_seed(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument("--seed", nargs="?", const="random", default=None, metavar="N",
+                    help="draw the suite from a fresh seed N (svc-bench-3 only): new counts, outcomes, times and "
+                         "rates whose truth was never published; --seed alone picks a random one")
+
+
+def pick_seed(ap: argparse.ArgumentParser, a) -> int | None:
+    """The seed of --seed (a random one for a bare --seed), checked against the suite; None without --seed."""
+    if a.seed is None:
+        return None
+    if a.suite not in S.SEEDED:
+        ap.error(f"--seed: suite {a.suite} has no fresh seeds (only {', '.join(S.SEEDED)})")
+    if a.seed == "random":
+        return S.SUITES[a.suite].new_seed()
+    try:
+        seed = int(a.seed)
+        S.suite_tasks(a.suite, seed)
+    except ValueError as e:
+        ap.error(f"--seed: {e}")
+    return seed
 
 
 def cmd_prepare(argv) -> int:
@@ -175,12 +215,15 @@ def cmd_prepare(argv) -> int:
                     help=f"which suite to draw (default {SUITE}; svc-bench-2 is the hard one)")
     ap.add_argument("--track", default=F.TRACK, choices=F.TRACKS,
                     help="code (default): videos, any tool; frames: still images only, for review by eye")
+    add_seed(ap)
     ap.add_argument("--force", action="store_true", help="overwrite an answers.json that already has answers")
     a = ap.parse_args(argv)
+    seed = pick_seed(ap, a)
     t0 = time.monotonic()
     what = "videos" if a.track == F.TRACK else "videos as stills"
-    print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} {what} into {a.out.resolve()}")
-    prepare(a.out, force=a.force, suite=a.suite, track=a.track)
+    fresh = "" if seed is None else f" from fresh seed {seed}"
+    print(f"{a.suite}: drawing {len(S.SUITES[a.suite].TASKS)} {what}{fresh} into {a.out.resolve()}")
+    prepare(a.out, force=a.force, suite=a.suite, track=a.track, seed=seed)
     print(f"done in {time.monotonic() - t0:.1f} s. Next: let the agent read {a.out / 'TASKS.md'} and fill "
           f"{a.out / 'answers.json'}, then `sports-video-coach bench score {a.out} --agent ... --model ...`")
     return 0
@@ -206,7 +249,8 @@ def cmd_score(argv) -> int:
     ws = a.wall_seconds
     res = S.result(S.read_answers(a.dir), a.agent.strip(), a.model.strip(), a.agent_version.strip(),
                    a.settings.strip(), a.by.strip(), int(ws) if ws is not None and ws == int(ws) else ws,
-                   a.evidence.strip(), suite=S.answers_suite(a.dir), track=S.answers_track(a.dir))
+                   a.evidence.strip(), suite=S.answers_suite(a.dir), track=S.answers_track(a.dir),
+                   seed=S.answers_seed(a.dir))
     out = a.out or S.default_path(res)
     out.parent.mkdir(parents=True, exist_ok=True)
     media.write_json_atomic(out, res)

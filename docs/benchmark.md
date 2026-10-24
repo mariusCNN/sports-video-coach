@@ -260,6 +260,46 @@ First rows (frames track, 2026-10-24, one run each, every run submitted; run as 
 - **Sonnet** opened 17 of 69 sheets: all 11 pass sheets, 4 rowing sheets, 1 juggling and 1 shot sheet. It said it
   estimated the juggling count from one sheet and guessed the shot outcomes; the guess scored 0.75.
 
+### Fresh seeds (`--seed`)
+
+The published suites and their truth ship in the open package, so a model may have seen them in training.
+`svc-bench-3` can also be drawn anew from an integer seed: the same four scenes and kinds of traps, with new counts,
+shot outcomes, release times and stroke rates.
+
+```bash
+sports-video-coach bench prepare --out bench-fresh --suite svc-bench-3 --track frames --seed        # a random seed
+sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-bench-3 --track frames --seed 4242
+```
+
+- **Truth is never written.** Not to the run folder, not to the repo: `bench score` and `bench validate` rebuild
+  it from the `seed` in `answers.json` and in the result file. The seed is in the run folder; turning it into the
+  truth means running the package's generator, which the no-peeking rule already forbids.
+- **Same task text, new numbers.** `TASKS.md` says the videos were drawn from a fresh seed and gives that seed's
+  shot count (10 to 13) and video lengths; the rules are word for word the same.
+- **Without `--seed`** nothing changes: the published suite is byte-identical (same videos, same truth).
+- **Own board and floor.** Seeded runs are listed on the page under `svc-bench-3-fresh`. Each run's floor is the
+  blind baseline on its own seed, computed at build time, never stored; above chance is measured against it.
+- **Seeds that stay readable.** A random draw could hide an answer: a fast arc blurs the ball, the defender can
+  stand in front of a catch. The generator keeps every seed within what the published suite asks of the eyes:
+  a juggle's height grows with the time it takes, a pass across the middle player is a lob, no two one-touch passes
+  follow each other, and the defender hides only a ball that is held, never a one-touch pass, a catch or a flight.
+- **Read-back on seeds.** The scripted pixel reader above, run on the frames-track stills of seeds 5, 11, 77,
+  2026, 4242 and 205159368, scores 1.000 on every task of every seed (`bench score` as an agent would). Like on the
+  published suite, it shows the answers are in the stills, not that a model will find them.
+
+First fresh-seed row (frames track, 2026-10-25, seed 205159368 drawn at random by `bench run --seed`, one run):
+
+| Agent | Model | Total | Above chance | Juggle | Shots | Passes | Rate | Wall | Cost |
+|---|---|---|---|---|---|---|---|---|---|
+| Claude Code 2.1.310 | claude-opus-5-5 | 0.994 | 0.994 | 0.978 | 1.000 | 1.000 | 1.000 | 317 s | $2.32 |
+
+- **Opus nearly holds its published score on numbers it cannot have seen.** It counted 44 touches against 45 (it
+  said itself the count "could be off by one or two"), called all 11 shots, found the 11 releases within 0.05 s
+  and gave a stroke rate of 33.1 against 33.149, in 121 Reads.
+- **One run, one seed.** It fits the published 1.000 not coming from memory; it does not say how often Opus scores
+  1.0 on a fresh seed. The blind floor on this seed is 0.111 / 0.455 / 0.142 / 0.667 (published: 0.106 / 0.500 /
+  0.167 / 0.551).
+
 ## Rules
 
 - **No peeking.** The agent must not read the truth files or the package source (`src/sports_video_coach/bench/`).
@@ -293,6 +333,7 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 | `--use-my-config` | Run Claude Code with your own agent config instead of the clean room (see below); `settings` then says so. Codex always runs with yours. |
 | `--model M` | Passed to the agent as `--model M` |
 | `--suite` | `svc-bench-1` (default), `svc-bench-2` or `svc-bench-3` |
+| `--seed [N]` | `svc-bench-3` only: draw it from fresh seed N (0 to 2^63 - 1), or a random seed without N; see [Fresh seeds](#fresh-seeds---seed) |
 | `--track frames` | Stills instead of videos, no code. Claude Code runs with Read as its only tool (the command in the [frames table](#frames-only-track-eyes)); the json block that ends the agent's reply becomes `answers.json`. Not for `--agent codex` yet. |
 | `--out DIR` | Run folder, new or empty (default `~/svc-bench-runs/<agent>-<model>-<time>`) |
 | `--timeout N` | Kill the agent after N seconds (default 1200) |
@@ -392,6 +433,8 @@ and link them; the page labels such a link "transcript".
   scores differ.
 - The leaderboard page is rebuilt from the folder by `bench page` on every push to master. A file that does not
   parse is listed on the page as skipped, never silently dropped.
+- A result file with a `seed` is re-scored against the truth rebuilt from that seed; the published truth or another
+  seed's does not pass.
 - Under each suite's table of runs, a folded "Where each contender fails" block lists, per task, the truth (from
   the suite, not from the result file), each run's stored answer, its score recomputed from the two, and a short
   line of what was missed: off by how much for counts and rates, which events were missed or extra (with their
@@ -428,6 +471,8 @@ and link them; the page labels such a link "transcript".
   maintainer run links its redacted transcript (`benchmark/transcripts/`), so anyone can check which tools
   existed, which files the agent opened and what it replied. Redaction drops images, home folders, the runner's
   hook output and config lists; the six blind-guess baselines ran no agent and have none.
+- Fresh seeds (`--seed`) answer "the model saw the truth in training" for `svc-bench-3` only; `svc-bench-1` and
+  `-2` have none.
 - Most contenders ran once. Two Sonnet 5.5 runs with the same command on `svc-bench-3` frames differed by 0.224
   above chance, so smaller gaps between single runs are within noise.
 - Failed and killed runs stay on the board and count in their contender's mean.
@@ -447,4 +492,5 @@ and link them; the page labels such a link "transcript".
 ```
 
 `suite` is `svc-bench-1`, `svc-bench-2` or `svc-bench-3`; the task ids must be that suite's. `track` is `"frames"` for a
-frames-only run and absent for the code track. Unknown fields are kept.
+frames-only run and absent for the code track. `seed` (an integer) marks a run drawn from a fresh seed of
+`svc-bench-3`; absent for the published suite. Unknown fields are kept.
