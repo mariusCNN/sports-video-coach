@@ -20,7 +20,8 @@ clip shorter than its narration plays once, then replays at half speed, then hol
 turned down under the voice. A scene without narration lasts CARD_S / IMAGE_S, or the clip's own length.
 
 Freeze lines: the clip plays up to that moment, stops, and the paragraphs after the `>` line are narrated over the
-frozen frame, which is dimmed except for the marked spots (a ring at their feet, arrows, a label); then the clip
+frozen frame (a punch-in zoom on a long hold, the rest dimmed around the marked spots: a floor ring in the team colour,
+arrows that draw on, a label pill, one beat at a time); then the clip
 plays on. A `>` line on its own resumes the clip at once: the paragraphs after it are read over the running play.
 x,y fractions of the frame always work; a plugin may add marks found in its tracking (FilmHooks.parse_ref / tracks;
 basketball: 我#7 / 对#11 from run/tracks.pkl, --run). In a plugin scene with steps (a court diagram) the first
