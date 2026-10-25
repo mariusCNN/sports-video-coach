@@ -9,6 +9,9 @@ All notable changes to this project are documented here. The format follows [Kee
   first PR's checks start only after a maintainer approves them (GitHub holds workflow runs from a first-time
   contributor's fork), and that we reply within a day; the docs promised a score "within minutes", so a first
   outside submitter would have waited on checks that never started.
+- The benchmark clip's answers scene (`clip.mp4` / `clip.gif`) now fits every contender: with seven rows the
+  blind guess was cut off at the bottom, and a long model name (the Ollama run) ran into its answer. Rows shrink
+  to fit and a name too long for its row ends in "…".
 - Every install line (`INSTALL_REF`: README, AGENTS.md, SKILL.md, the docs and the benchmark page) now pins
   ac27030 instead of dcda37e: the old pin predated the OpenCode preset's `--dir` / `--print-logs` fixes and its
   stop at the free usage limit, so an OpenCode run from the pinned install worked in the wrong folder and could

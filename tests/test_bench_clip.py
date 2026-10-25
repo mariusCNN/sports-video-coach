@@ -78,6 +78,25 @@ def test_model_label():
     assert clip.model_label("aider", "") == "aider"
 
 
+@pytest.mark.parametrize("extra", [0, 3])
+def test_every_answer_row_fits_the_frame_and_no_label_runs_into_its_answers(extra):
+    pytest.importorskip("PIL")
+    from PIL import Image, ImageDraw
+    rows = clip.scenes(clip.clip_data(page.load(RESULTS)[0]))["answers"]["rows"]
+    rows = rows + [{"label": f"Ollama · some-very-long-local-model-name:{i}b-instruct-q4_K_M", "answers": ["100", "7"],
+                    "exact": [False, False], "note": "2 runs · off by 53 / 40"} for i in range(extra)]
+    assert any(len(r["label"]) > 30 for r in rows)          # the repo's files already have a long model name
+    p = clip.Painter()
+    d = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    layout = clip.answer_layout(p, rows)
+    assert len(layout) == len(rows) and layout[-1]["card"][3] <= clip.SIZE - 12
+    for r, box in zip(rows, layout):
+        label_end = box["label_xy"][0] + d.textlength(box["label"], font=box["label_font"])
+        assert label_end < box["answer_xy"][0][0] and box["answer_xy"][-1][0] < clip.SIZE - 24
+        assert box["label"] == r["label"] or (box["label"].endswith("…") and r["label"].startswith(box["label"][:-1]))
+    assert layout[0]["label"] == rows[0]["label"]           # a short name is drawn whole
+
+
 def test_page_shows_the_clip_only_when_drawn():
     rows, notes = page.load(RESULTS)
     with_clip = page.render(rows, notes, clip=True)

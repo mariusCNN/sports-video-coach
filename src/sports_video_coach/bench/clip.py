@@ -197,6 +197,35 @@ class Painter:
         d.text(xy, text, fill=BG, font=f)
 
 
+ROWS_TOP, ROWS_BOTTOM, ROW_STEP = 150, SIZE - 16, 88   # the answers list: first card's top, last card's bottom limit
+
+
+def answer_layout(p: Painter, rows: list[dict]) -> list[dict]:
+    """Where each answers-scene row goes: {"card" box, "label" (cut with '…' to end before the answers),
+    "label_xy", "note_xy", "answer_xy" (one per run), and the fonts}. Rows shrink together so the last card ends
+    above ROWS_BOTTOM however many contenders there are."""
+    from PIL import Image, ImageDraw
+    d = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    s = min(1.0, (ROWS_BOTTOM - ROWS_TOP) / (len(rows) * ROW_STEP)) if rows else 1.0
+    step = int(ROW_STEP * s)
+    label_f, note_f, answer_f = p.font(round(30 * s), True), p.font(round(23 * s)), p.font(round(34 * s), True)
+    out = []
+    for j, r in enumerate(rows):
+        y = ROWS_TOP + j * step
+        x, xy = SIZE - 44, []
+        for ans in reversed(r["answers"]):
+            x -= d.textlength(ans, font=answer_f)
+            xy.insert(0, (x, y + round(12 * s)))
+            x -= round(26 * s)
+        label, room = r["label"], x - 44 - round(16 * s)
+        while d.textlength(label, font=label_f) > room and len(label) > 1:
+            label = label[:-2].rstrip() + "…"
+        out.append({"card": (24, y, SIZE - 24, y + step - round(12 * s)), "label": label,
+                    "label_xy": (44, y + round(10 * s)), "note_xy": (44, y + round(47 * s)), "answer_xy": xy,
+                    "label_font": label_f, "note_font": note_f, "answer_font": answer_f})
+    return out
+
+
 def video_frames(video: Path, upto: int) -> list:
     """The first `upto` frames of the drawn video as RGB arrays."""
     import cv2
@@ -249,24 +278,18 @@ def frames_of(data: dict, video: list):
         for _ in range(hold):
             yield img
     rows = text["answers"]["rows"]                                        # 3. truth vs answers
+    layout = answer_layout(p, rows)
     for k in range(round((ROW_GAP_S * len(rows) + ANSWERS_HOLD_S) * FPS)):
         shown = min(len(rows), int(k / (ROW_GAP_S * FPS)) + 1)
         img = p.blank()
         p.header(img, text["answers"]["kicker"], text["answers"]["title"])
         d = ImageDraw.Draw(img)
-        top, step = 170, 88
-        for j, r in enumerate(rows[:shown]):
-            y = top + j * step
-            d.rounded_rectangle((24, y, SIZE - 24, y + step - 12), radius=12, fill=CARD)
-            d.text((44, y + 10), r["label"], fill=MUTED if r["label"] == "Blind guess" else INK, font=p.font(30, True))
-            d.text((44, y + 47), r["note"], fill=MUTED, font=p.font(23))
-            x = SIZE - 44
-            for ans, ok in reversed(list(zip(r["answers"], r["exact"]))):
-                f = p.font(34, True)
-                tw = d.textlength(ans, font=f)
-                x -= tw
-                d.text((x, y + 12), ans, fill=GOOD if ok else OFF, font=f)
-                x -= 26
+        for r, box in zip(rows[:shown], layout[:shown]):
+            d.rounded_rectangle(box["card"], radius=12, fill=CARD)
+            d.text(box["label_xy"], box["label"], fill=MUTED if r["label"] == "Blind guess" else INK, font=box["label_font"])
+            d.text(box["note_xy"], r["note"], fill=MUTED, font=box["note_font"])
+            for (ans, ok), xy in zip(zip(r["answers"], r["exact"]), box["answer_xy"]):
+                d.text(xy, ans, fill=GOOD if ok else OFF, font=box["answer_font"])
         yield img
     end = text["end"]                                                     # 4. where to look
     for _ in range(round(END_S * FPS)):
