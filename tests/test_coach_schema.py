@@ -144,3 +144,18 @@ def test_coach_check_cli_and_migrate(tmp_path, capsys):
     assert (out / "part1.json").exists() and (out / "manifest.json").exists()
     S.main(["--review", str(out)])
     assert "ok" in capsys.readouterr().out.lower()
+
+
+def test_migrate_brings_the_sheets_the_manifest_lists(tmp_path):
+    # the critic re-opens sheets by their manifest path inside the review folder, so a migrated folder needs them;
+    # older manifests list paths relative to the game folder ("run1/review_v1/p001_0.jpg") with the file next to it
+    src, out = tmp_path / "review_v1", tmp_path / "review_v2m"
+    write_review(src, [{"pid": 1, "offence": "us", "result": "missed"}])
+    (src / "manifest.json").write_text(json.dumps([{"pid": 1, "start": 5, "end": 9, "sheets": [
+        "p001_0.jpg", "run1/review_v1/p001_1.jpg", "p001_9.jpg"]}]), encoding="utf8")
+    (src / "p001_0.jpg").write_bytes(b"a")
+    (src / "p001_1.jpg").write_bytes(b"b")
+    assert S.migrate_dir(src, out) == []
+    assert (out / "p001_0.jpg").read_bytes() == b"a"
+    assert (out / "run1" / "review_v1" / "p001_1.jpg").read_bytes() == b"b"
+    assert not (out / "p001_9.jpg").exists()  # a sheet missing from the source is left out, not an error

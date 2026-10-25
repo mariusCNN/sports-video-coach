@@ -2,8 +2,8 @@
 
 usage: hoop-tape-miner coach-check --review <run>/review_v1 [--migrate <run>/review_v2m]
 Validates every coach_part*.json in --review and exits 1 with the error list when a trip is invalid. With --migrate,
-writes v1 parts as v2 into the new folder (part*.json, manifest.json, lineup_intervals.json, briefs, memos and notes
-are copied along; trip times missing in v1 are taken from part*.json), then validates the new folder.
+writes v1 parts as v2 into the new folder (part*.json, manifest.json, the sheets it lists, lineup_intervals.json, briefs,
+memos and notes are copied along; trip times missing in v1 are taken from part*.json), then validates the new folder.
 
 v2 trip = the v1 checklist fields, plus `schema: 2`, `t0`/`t1`, `result` from RESULTS, and
   shot:  null | {t, shooter, made: bool|null, points: 2|3|null, zone, type, contested}
@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import re
 import shutil
 import sys
@@ -330,12 +331,41 @@ def _possession_times(review: Path) -> dict:
     return poss
 
 
+def copy_sheets(src: Path, out: Path) -> int:
+    """Copy the sheets src/manifest.json lists into out at the same listed path, so the critic can re-open them
+    inside the migrated folder. A listed path that does not resolve in src (older manifests list paths relative to
+    the game folder) is looked up by file name in src; a sheet found nowhere is skipped. Returns the count copied."""
+    try:
+        manifest = json.loads((src / "manifest.json").read_text(encoding="utf8"))
+    except (OSError, ValueError):
+        return 0
+    n = 0
+    for x in manifest if isinstance(manifest, list) else []:
+        for s in (x.get("sheets") or []) if isinstance(x, dict) else []:
+            rel = Path(str(s))
+            if rel.is_absolute() or ".." in rel.parts:
+                continue
+            have = next((p for p in (src / rel, src / rel.name) if p.is_file()), None)
+            dst = out / rel
+            if have is None or dst.exists():
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                os.link(have, dst)  # sheets are large and never edited: a hard link when the disk allows it
+            except OSError:
+                shutil.copy2(have, dst)
+            n += 1
+    return n
+
+
 def migrate_dir(src: Path, out: Path) -> list[str]:
-    """Write v2 coach_part*.json (and the files next to them) from src into out; returns read errors."""
+    """Write v2 coach_part*.json (and the files next to them, sheets included) from src into out; returns read
+    errors."""
     out.mkdir(parents=True, exist_ok=True)
     for pat in COPY:
         for p in src.glob(pat):
             shutil.copy2(p, out / p.name)
+    copy_sheets(src, out)
     poss = _possession_times(src)
     errs = []
     for p in sorted(src.glob("coach_part*.json")):
