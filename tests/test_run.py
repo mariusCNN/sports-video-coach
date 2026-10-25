@@ -573,3 +573,4 @@ def test_summary_hint_names_the_official_json_that_exists(game):
     (game / "official.json").unlink()
     hint = R.Game.load(game).fill(step.how)
     assert "no official.json" in hint and "--official" not in hint
+    assert "Four Factors come from the reviewed trips alone" in hint

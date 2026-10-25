@@ -90,7 +90,7 @@ class Game(Unit):
         """{coach_summary}: the coach-summary call with the official.json the run reads (run/ or next to game.json),
         or without it, saying so, when the game has none."""
         cmd = ("`coach-summary --official {official}` (with Four Factors)" if self.official.exists() else
-               "`coach-summary` (no official.json in {run} or {folder}: the Four Factors without official makes)")
+               "`coach-summary` (no official.json in {run} or {folder}, so the Four Factors come from the reviewed trips alone)")
         return super().fill(how.replace("{coach_summary}", cmd))
 
     def note(self, step: str, errors: list[str]) -> str | None:
