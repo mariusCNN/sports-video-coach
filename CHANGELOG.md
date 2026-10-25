@@ -156,6 +156,9 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- Basketball: a game whose review `summary.json` predates the Four Factors (no `all.four_factors`) no longer
+  counts as summarised, so its team page silently had no Four Factors panel: the `summary` step waits and says
+  to re-run `coach-summary --official`, and the page now re-renders when `summary.json` changes.
 - `narrate` (and every stage that writes through `media.partial`) no longer crashes when `listen.<lang>.mp3` is
   locked on Windows (a media player or OneDrive sync holds it): the move retries 5 times with a short doubling
   wait, then fails with a message naming the file; no temp file is left behind.

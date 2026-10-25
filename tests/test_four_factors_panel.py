@@ -55,3 +55,10 @@ def test_panel_sits_in_each_report_before_section_one(tmp_path):
         art = art[:art.index("</article>")]
         assert art.count('class="factors"') == 1 and art.index('class="factors"') < art.index(f'id="{lang}-s1"')
     assert 'class="ff-bars"' in page and '<details class="more">' in page  # bars up front, the table in a fold
+
+
+def test_page_inputs_name_the_review_summary(tmp_path):
+    # a summary.json rewritten later (Four Factors added) must make the run's html step re-render the page
+    folder = _team_folder(tmp_path, {"all": {}})
+    assert tmp_path / "run" / "review_v1" / "summary.json" in page_hooks.PAGE.inputs(folder)
+    assert page_hooks.PAGE.inputs(tmp_path / "no-game-here") == []

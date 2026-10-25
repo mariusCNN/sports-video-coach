@@ -46,6 +46,7 @@ def touch(folder: Path, *rel: str):
         body = (json.dumps([VALID_TRIP]) if p.name.startswith("coach_part") else
                 json.dumps([VALID_INSIGHT]) if p.name == "insights.json" else
                 json.dumps({"facts": {}, "gate": {"pass": True}}) if p.parent.name == "eval" else
+                json.dumps({"all": {"four_factors": {}}}) if p.name == "summary.json" else
                 "{}" if p.suffix == ".json" else "x")
         p.write_text(body, encoding="utf8")
 
@@ -118,6 +119,18 @@ def test_insights_step_order(game):
     assert not R.insights_errors(g)
     how = next(s.how for s in R.STEPS if s.name == "insights")
     assert "coach_insights.md" in how and "--no-critic" in how and "coach_critic.md" not in how
+
+
+def test_summary_written_before_four_factors_is_not_done(game):
+    # an older coach-summary wrote no `all.four_factors`: the team page then has no Four Factors panel
+    touch(game, "run/review_v1/coach_part1.json")
+    g = R.Game.load(game)
+    step = next(s for s in R.STEPS if s.name == "summary")
+    (g.review / "summary.json").write_text(json.dumps({"all": {"us": {}, "them": {}, "fouls": {}}}), encoding="utf8")
+    assert not step.done(g)
+    assert any("four_factors" in e and "coach-summary" in e for e in step.errors(g))
+    (g.review / "summary.json").write_text(json.dumps({"all": {"four_factors": {"us": {}}}}), encoding="utf8")
+    assert step.done(g) and not step.errors(g)
 
 
 def test_insight_evidence_without_its_trip_fails_the_writer_step(game):

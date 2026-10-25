@@ -172,6 +172,22 @@ def critic_errors(g: Game) -> list[str]:
     return check_review(g.review, KB, official=_official(g))
 
 
+def summary_errors(g: Game) -> list[str]:
+    """review/summary.json missing, or written before the Four Factors (no `all.four_factors`: the team page then
+    has no Four Factors panel)."""
+    p = g.review / "summary.json"
+    if not p.exists():
+        return [f"missing: {p.as_posix()}"]
+    try:
+        allv = json.loads(p.read_text(encoding="utf8")).get("all")
+    except (OSError, ValueError, AttributeError) as e:
+        return [f"{p.as_posix()} unreadable: {e}"]
+    if not isinstance(allv, dict) or not isinstance(allv.get("four_factors"), dict):
+        return [f"{p.as_posix()} has no all.four_factors (written before the Four Factors): re-run coach-summary "
+                "--official with the same --segments"]
+    return []
+
+
 def eval_result(g: Game) -> dict | None:
     """review/eval/run.json written by the coach-eval step (None if missing or unreadable)."""
     try:
@@ -370,11 +386,11 @@ STEPS = [
          lambda g: [["coach-eval", "--review", str(g.review), "--official", str(g.official), "--label", "run",
                      "--gate"]],
          inputs=lambda g: [g.official, *sorted(g.review.glob("coach_part*.json"))] if g.official.exists() else None),
-    Step("summary", "agent",
-         lambda g: (g.review / "summary.json").exists(),
+    Step("summary", "agent", lambda g: not summary_errors(g),
          how="Choose the game's stretches from the score flow, then run `coach-summary --official "
              "{run}/official.json` (with Four Factors) and `plusminus` into {review}/summary.json and "
-             "{review}/plusminus.json (playbook step 7.4)."),
+             "{review}/plusminus.json (playbook step 7.4).",
+         errors=summary_errors),
     Step("insights", "agent", lambda g: not insights_errors(g),
          how="Coaching insights (playbook step 7.5): launch the writer subagent with prompts/coach_insights.md "
              "(review folder {review}; it also uses {review}/features.json when present); it writes "

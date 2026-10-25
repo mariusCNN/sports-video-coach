@@ -183,15 +183,21 @@ def _ff_pct(v) -> str:
     return "–" if v is None else f"{v:.1f}%"
 
 
-def four_factors_summary(folder: Path) -> dict | None:
-    """summary.json `all` block with `four_factors` for a team report folder (game.json in the folder itself):
-    the folder's own summary.json, else <run>/<review_dir or review_v1>/summary.json; None when there is none."""
+def summary_paths(folder: Path) -> list[Path]:
+    """Where a team report folder's summary.json may be (game.json in the folder itself): the folder's own, then
+    <run>/<review_dir or review_v1>/summary.json; [] without game.json. Also the page's html inputs."""
     gj = folder / "game.json"
     if not gj.exists():
-        return None
+        return []
     game = json.loads(gj.read_text(encoding="utf8"))
     run = Path(game["run"]) if game.get("run") else folder / "run"
-    for p in (folder / "summary.json", run / (game.get("review_dir") or "review_v1") / "summary.json"):
+    return [folder / "summary.json", run / (game.get("review_dir") or "review_v1") / "summary.json"]
+
+
+def four_factors_summary(folder: Path) -> dict | None:
+    """summary.json `all` block with `four_factors` for a team report folder (`summary_paths`, first one that has
+    it); None when there is none."""
+    for p in summary_paths(folder):
         if p.exists():
             try:
                 allv = json.loads(p.read_text(encoding="utf8")).get("all") or {}
@@ -365,5 +371,6 @@ def intro(folder: Path, sb: dict, langs: list[tuple]) -> str:
     return "" if sb.get("training") or sb.get("season") else four_factors_panel(folder, sb, langs)
 
 
-PAGE = render_html.PageHooks(ui=UI, board=scoreboard, band=band, intro=intro, sections=sections)
+PAGE = render_html.PageHooks(ui=UI, board=scoreboard, band=band, intro=intro, sections=sections,
+                             inputs=summary_paths)
 
