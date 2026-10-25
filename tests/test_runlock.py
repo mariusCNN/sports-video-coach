@@ -104,7 +104,8 @@ def test_compare_uses_git_ancestry(repo):
     assert runlock.compare(code(repo["side"]), code(repo["newer"]), root)[0] == "differs"
     assert runlock.compare(code("e" * 40), code(repo["newer"]), root) == (
         "differs", "commit eeeeeeeeeeee is not in this checkout (git fetch, then run again)")
-    assert runlock.compare(code(repo["newer"]), code(repo["base"]), None)[0] == "differs"   # no git to tell
+    assert runlock.compare(code(repo["newer"]), code(repo["base"]), None) == (                # no git to tell
+        "unknown", "no git checkout here to tell which commit is newer")
     assert runlock.compare(code(repo["base"]), code(repo["base"]), root)[0] == "same"
     assert runlock.compare(None, code(repo["base"]), root)[0] == "same"                     # never stamped
     assert runlock.compare(code(""), code(repo["base"]), root)[0] == "unknown"
@@ -159,6 +160,50 @@ def test_newer_code_goes_on_and_restamps(unit, repo, monkeypatch):  # noqa: F811
     assert P.Store(unit).code["commit"] == repo["newer"]
 
 
+def dirty(sha, source):
+    return {**code(sha), "source": source, "dirty": True}
+
+
+def test_uncommitted_code_holds_the_folder_against_other_checkouts_and_heads(repo):
+    root = repo["root"]
+    stamp = dirty(repo["base"], "/checkouts/main")
+    assert runlock.compare(stamp, {**code(repo["newer"]), "source": "/checkouts/sprint"}, root) == (
+        "differs", "the folder was last written by uncommitted code in /checkouts/main")
+    assert runlock.compare(stamp, {**code(repo["newer"]), "source": "/checkouts/main"}, root)[0] == "differs"
+    assert runlock.compare(stamp, dirty(repo["base"], "/checkouts/main"), root)[0] == "same"   # still editing
+    assert runlock.compare(stamp, {**code(repo["base"]), "source": "/checkouts/main"}, root)[0] == "same"
+
+
+def test_the_incident_a_newer_commit_elsewhere_cannot_overwrite_uncommitted_work(unit, repo, monkeypatch):  # noqa: F811
+    """The owner's checkout at an older HEAD with uncommitted features wrote the folder; a sprint worktree at a
+    descendant commit ran on it."""
+    store = P.Store(unit)
+    store.code = {**dirty(repo["base"], "/checkouts/main"), "at": "2026-10-25T09:00:00", "host": "box"}
+    store.save()
+    monkeypatch.setattr(runlock, "code_version", lambda: {**code(repo["newer"]), "source": "/checkouts/sprint",
+                                                          "dirty": False})
+    monkeypatch.setattr(runlock, "checkout", lambda: repo["root"])
+    r = Runner(unit)
+    with pytest.raises(SystemExit) as e:
+        P.drive(Unit.load(unit), steps(), runner=r)
+    msg = str(e.value.code)
+    assert "refusing to rewrite outputs last written by other code" in msg
+    assert f"@ {repo['base'][:12]} with uncommitted changes, written 2026-10-25T09:00:00" in msg
+    assert "(the folder was last written by uncommitted code in /checkouts/main)" in msg
+    assert r.calls == [] and P.Store(unit).code["dirty"]
+
+
+def test_an_installed_tool_on_another_commit_warns_and_restamps(unit, monkeypatch, capsys):  # noqa: F811
+    """No git checkout (an upgraded `uv tool install`): two known commits it cannot order do not block."""
+    stamped(unit, "b" * 40)
+    monkeypatch.setattr(runlock, "code_version", lambda: code("c" * 40))
+    monkeypatch.setattr(runlock, "checkout", lambda: None)
+    r = Runner(unit)
+    assert P.drive(Unit.load(unit), steps(), runner=r) == 0 and len(r.calls) == 4
+    assert "no git checkout here to tell which commit is newer); going on" in capsys.readouterr().out
+    assert P.Store(unit).code["commit"] == "c" * 40
+
+
 def test_unknown_versions_warn_and_go_on(unit, monkeypatch, capsys):  # noqa: F811
     stamped(unit, "b" * 40)
     monkeypatch.setattr(runlock, "code_version", lambda: code(""))
@@ -173,7 +218,16 @@ def test_every_driver_takes_allow_older_code():
     assert ap.parse_args(["--allow-older-code"]).allow_older_code and not ap.parse_args([]).allow_older_code
 
 
-def test_code_version_reads_the_checkout_or_the_install_record(monkeypatch):
+def test_code_version_reads_the_checkout_or_the_install_record(repo, monkeypatch):
+    root = repo["root"]
+    monkeypatch.setattr(runlock, "checkout", lambda: root)
+    v = runlock.code_version()
+    assert v["commit"] == repo["side"] and v["source"] == str(root.resolve()) and v["dirty"] is False
+    (root / "notes.txt").write_text("x", encoding="utf8")          # outside src/: not a code change
+    assert runlock.code_version()["dirty"] is False
+    (root / "src").mkdir()
+    (root / "src" / "new.py").write_text("x = 1", encoding="utf8")   # an uncommitted module
+    assert runlock.code_version()["dirty"] is True
     monkeypatch.setattr(runlock, "checkout", lambda: None)
     monkeypatch.setattr(runlock, "installed_commit", lambda: "c" * 40)
     assert runlock.code_version()["commit"] == "c" * 40

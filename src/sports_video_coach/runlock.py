@@ -4,9 +4,12 @@
   second run exits 1 naming the holder; a lock whose process is gone (same host) is taken over with a warning. A
   lock from another host cannot be checked: it holds until that run ends or someone deletes the file.
 - Code stamp: the run state (`.hoop-steps.json` "code") names the code that last wrote the folder: the package
-  version and the commit (a git checkout's HEAD, else the commit uv recorded at install). A run whose commit is an
-  ancestor of the stamped one (older), or differs and cannot be shown newer (diverged, not in this checkout, no git
-  to compare), exits 1 unless `--allow-older-code`. Unknown commits on either side: a warning, no stop.
+  version and the commit (a git checkout's HEAD, else the commit uv recorded at install); a checkout also adds its
+  path (`source`) and whether src/ has uncommitted changes (`dirty`). A run exits 1 unless `--allow-older-code` when
+  its commit is an ancestor of the stamped one (older), when the two diverged or the stamped commit is not in this
+  checkout, or when uncommitted code wrote the folder and this run is another checkout or another HEAD (newer
+  commits do not hold those changes). Unknown commits on either side, or two commits an installed tool (no git)
+  cannot order: a warning, no stop.
 """
 from __future__ import annotations
 
@@ -46,17 +49,21 @@ def checkout() -> Path | None:
 
 
 def code_version() -> dict:
-    """{"version": the package version, "commit": the running commit}; '' for what is not known."""
+    """{"version": the package version, "commit": the running commit}; '' for what is not known. From a checkout
+    also "source" (its path) and "dirty" (src/ has uncommitted changes, untracked files included)."""
     from importlib import metadata
     try:
         version = metadata.version("sports-video-coach")
     except metadata.PackageNotFoundError:
         version = ""
-    root, commit = checkout(), ""
-    if root:
-        r = git(root, "rev-parse", "HEAD")
-        commit = r.stdout.strip() if r and not r.returncode else ""
-    return {"version": version, "commit": commit or installed_commit()}
+    root = checkout()
+    if not root:
+        return {"version": version, "commit": installed_commit()}
+    r = git(root, "rev-parse", "HEAD")
+    commit = r.stdout.strip() if r and not r.returncode else ""
+    st = git(root, "status", "--porcelain", "--", "src")
+    dirty = bool(st and not st.returncode and st.stdout.strip())
+    return {"version": version, "commit": commit, "source": str(root.resolve()), "dirty": dirty}
 
 
 def shown(code: dict | None) -> str:
@@ -64,6 +71,7 @@ def shown(code: dict | None) -> str:
     code = code or {}
     text = f"sports-video-coach {code.get('version') or '(version unknown)'}"
     text += f" @ {code['commit'][:12]}" if code.get("commit") else " (commit unknown)"
+    text += " with uncommitted changes" if code.get("dirty") else ""
     if code.get("at"):
         text += f", written {code['at']}" + (f" on {code['host']}" if code.get("host") else "")
     return text
@@ -77,10 +85,14 @@ def compare(stamp: dict | None, now: dict, root: Path | None = None) -> tuple[st
         return "same", ""
     if not old or not new:
         return "unknown", "a commit is not known"
+    if stamp.get("dirty"):   # uncommitted changes live only in that checkout, at that HEAD
+        if stamp.get("source") != now.get("source") or old != new:
+            return "differs", f"the folder was last written by uncommitted code in {stamp.get('source') or '?'}"
+        return "same", ""
     if old == new:
         return "same", ""
     if root is None:
-        return "differs", "no git checkout here to tell which commit is newer"
+        return "unknown", "no git checkout here to tell which commit is newer"
     r = git(root, "cat-file", "-e", f"{old}^{{commit}}")
     if not r or r.returncode:
         return "differs", f"commit {old[:12]} is not in this checkout (git fetch, then run again)"
