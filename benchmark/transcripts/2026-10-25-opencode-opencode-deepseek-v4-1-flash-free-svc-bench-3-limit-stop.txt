@@ -1,0 +1,12 @@
+# OpenCode run, svc-bench-3 rerun (2026-10-25 07:30 UTC). With --dir <run folder> and --print-logs --log-level ERROR. A one-line probe got a reply 73 s before and 25 s after this run.
+## stdout (what bench run saves as transcript.txt)
+
+## stderr (OpenCode prints its tool calls and, with --print-logs, its ERROR lines here)
+> build · deepseek-v4.1-flash-free
+
+timestamp=2026-10-25T07:30:20.207Z level=ERROR run=91610e86 message="stream error" providerID=opencode modelID=deepseek-v4.1-flash-free session.id=ses_e8e086eb1ffefZelXR7iCexvZJ small=false agent=build mode=primary error.error="AI_APICallError: Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go"
+## OpenCode's own log, errors in this run
+timestamp=2026-10-25T07:30:20.207Z level=ERROR run=91610e86 message="stream error" providerID=opencode modelID=deepseek-v4.1-flash-free session.id=ses_e8e086eb1ffefZelXR7iCexvZJ small=false agent=build mode=primary error.error="AI_APICallError: Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go"
+## bench run (what it printed when OpenCode was started and stopped)
+stopping opencode: the provider's usage limit was reached ("Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go")
+agent finished in 10.7 s, stopped at the provider's usage limit; transcript <run folder>\transcript.txt
