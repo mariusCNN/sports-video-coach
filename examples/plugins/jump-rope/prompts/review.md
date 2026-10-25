@@ -29,14 +29,16 @@ What a jump-rope coach looks for (common cues; check each against the zoom sheet
 
 1. Read `analysis.json`: `sport`, `focus` (who to coach), `languages`.
 2. Open every sheet in order. Do not skip; a skipped sheet is a missed moment.
-   With helpers (subagents), if your tool has them: at most 3 at once, one contiguous range of sheets each (about 10 sheets per helper; the run
+   More than 10 sheets and helpers (subagents), if your tool has them: at most 3 at once, one contiguous range of sheets each (about 10 sheets per helper; the run
    message suggests the ranges); each writes its moments to `run/review/part<N>.json` (same format) and replies in
    a few lines. Then `sports-video-coach jump-rope:review-check <folder>` merges the parts into `review.json` (in
    time order); rewrite its `summary` as one line for the whole video.
 3. When a tile is unclear, cut a closer look: `sports-video-coach clips` needs a report, so instead open the video
    at that time, or cut a dense sheet of just that moment:
-   `sports-video-coach frames <video> --out run/frames-zoom --start 0:12 --end 0:15 --every 0.2` (tiles 0.2 s apart,
-   labelled in tenths).
+   `sports-video-coach frames <video> --out run/frames-zoom-0m12s --start 0:12 --end 0:14.4 --every 0.2` (12 tiles
+   0.2 s apart, labelled in tenths: one full sheet, as `--end` is exclusive; end = start + 12 x every).
+   Give each zoom its own `--out` folder (`frames-zoom-<start>`): a second zoom into the same folder replaces the
+   first.
    A drill repeated many times: zoom 2-3 reps (one early, one in the middle, one late) at 0.2-0.3 s for technique;
    at 2 s a tile per stride or turn is too coarse to see it. Use the regular sheets for counting reps, rest and
    fatigue.
@@ -45,7 +47,7 @@ What a jump-rope coach looks for (common cues; check each against the zoom sheet
    measuring step of the plugin, or from zoom sheets at `--every 0.2` or finer, and say in `what` where it came from.
    Fast objects (a shuttle, a ball, a swing) cross the frame between two regular tiles: before coaching contact or
    flight, make a zoom sheet around the moment with
-   `sports-video-coach frames <video> --out run/frames-zoom --start <t> --end <t> --every 0.2`.
+   `sports-video-coach frames <video> --out run/frames-zoom-<t> --start <t> --end <t + 2.4 s> --every 0.2`.
 4. Write `run/review/review.json`.
 
 ## review.json

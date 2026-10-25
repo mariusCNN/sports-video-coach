@@ -30,6 +30,21 @@ def auto_every(duration_s: float) -> float:
     return 0.5 if duration_s <= 30 else 1.0 if duration_s <= 180 else 2.0
 
 
+def unit_date(given: str | None, tagged: str | None) -> tuple[str, str]:
+    """(date, the rest of the line naming where it came from): --date, else the video's creation_time tag, else
+    today. An unset tag (before 1990, or after tomorrow: the tag is UTC) does not count."""
+    today = dt.date.today()
+    if given:
+        return given, " from --date"
+    if tagged and "1990-01-01" <= tagged <= (today + dt.timedelta(days=1)).isoformat():
+        return tagged, (" from the video's creation_time tag (a downloaded or re-encoded copy carries the date it was "
+                        "encoded; --date YYYY-MM-DD sets it)")
+    if tagged:
+        return today.isoformat(), (f": today, the video's creation_time tag {tagged} looks unset (--date YYYY-MM-DD "
+                                   "sets it)")
+    return today.isoformat(), ": today, the video has no recording date (--date YYYY-MM-DD sets it)"
+
+
 def folder_inputs(folder: Path) -> list[str] | None:
     """The video paths the analysis in `folder` was started from; None when there is none yet."""
     p = folder / "analysis.json"
@@ -77,7 +92,7 @@ def main(argv=None) -> Path:
     if missing:
         raise SystemExit(f"video not found: {', '.join(missing)}")
     info = media.video_info(videos[0])
-    date = a.date or info.get("date") or dt.date.today().isoformat()
+    date, came = unit_date(a.date, info.get("date"))
     name = workspace.slug(a.name or a.sport or videos[0].stem)
     folder = Path(a.out) if a.out else workspace.root() / "analysis" / name / date
     base, n = folder, 1
@@ -115,6 +130,7 @@ def main(argv=None) -> Path:
         print(f"[new] sport {sport!r} has no Japanese name for the ja page: start again with --sport-name, e.g. "
               f'`--sport "{sport.replace("-", " ")}" --sport-name ja=シャトルラン`, or set "sport": {{"ja": '
               f'"<name>", "en": "{sport.replace("-", " ")}"}} in analysis.json')
+    print(f"[new] date {date}{came}")
     print(pipeline.slash(folder))
     return folder
 

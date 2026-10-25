@@ -16,7 +16,10 @@ tenths).
 An agent opens the sheets in order, notes what happens and when, then cuts closer looks with `clips`. Sheets that
 already exist for the same settings are kept (frames.json `every_s`, `cols`, `rows`, `width`, `labels`, `gap_px`,
 `label_at` and the video size).
-A close look at one moment: `--start 0:12 --end 0:14 --every 0.1 --out run/frames-zoom` (tenths in the labels).
+A close look at one moment:
+`sports-video-coach frames <video> --out run/frames-zoom-0m12s --start 0:12 --end 0:13.2 --every 0.1` (tenths in
+the labels; `--end` is exclusive, so 12 x `--every` seconds fill one 4 x 3 sheet). One folder holds one cut: a later
+window into the same `--out` replaces it (and says so), so give each zoom its own folder.
 """
 from __future__ import annotations
 
@@ -125,6 +128,7 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
         settings["parts"] = [dict(file=Path(s["file"]).name, start=mmss(s["start"], 1),
                                   end=mmss(s["start"] + s["duration"], 1)) for s in sources]
     index = out / "frames.json"
+    old = None
     if index.exists():
         old = json.loads(index.read_text(encoding="utf8"))
         if {k: old.get(k) for k in settings} == settings and all((out / s["file"]).exists() for s in old["sheets"]):
@@ -166,7 +170,18 @@ def build(video: Path, out: Path, every: float = 2.0, cols: int = 4, rows: int =
                                    tiles=[mmss(t, dec) for t, _ in tiles]))
     cap.release()
     media.write_json_atomic(index, data, indent=1)
+    kept = {s["file"] for s in data["sheets"]}
+    for s in (old or {}).get("sheets") or []:  # an earlier cut's extra sheets would pass for this one's
+        if s["file"] not in kept:
+            (out / s["file"]).unlink(missing_ok=True)
     print(f"frames: {len(data['sheets'])} sheets ({every:g} s per tile) in {out.as_posix()}")
+    if old and old.get("sheets") and ("start_s" in old or "start_s" in settings):
+        print(f"frames: replaced the sheets of {old['sheets'][0]['start']}-{old['sheets'][-1]['end']} in "
+              f"{out.as_posix()} (another --out keeps both)")
+    per = cols * rows
+    if "start_s" in settings and len(ts) > per and len(ts) % per:
+        print(f"frames: the last sheet holds {len(ts) % per} of {per} tiles (--end is exclusive): --end "
+              f"{mmss(ts[len(ts) // per * per], dec)} fills whole sheets")
     if sources:
         print(f"frames: {len(sources)} joined files, times are on the joined timeline: {media.parts_line(sources)}; "
               'each label also names the file and the time in it; the first tile of each later file is marked '

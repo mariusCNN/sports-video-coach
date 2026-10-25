@@ -11,6 +11,14 @@ All notable changes to this project are documented here. The format follows [Kee
   swim example measures a rate), tested on drawn video against the exact count.
 
 ### Fixed
+- Zoom sheets: the zoom command in the generic review step, its guide and `frames --help` now fills one whole
+  sheet (`--end` is exclusive: `--start 0:12 --end 0:14.4 --every 0.2` is 12 tiles; the old `--end 0:15` gave 15,
+  a second sheet of 3 tiles and 9 black cells) and names one `--out` folder per zoom. `frames` says when a window
+  spills onto a part-filled sheet (and which `--end` fills whole ones), says when it replaces an earlier window in
+  the same folder, and removes that cut's extra sheets, which used to stay behind unlisted in `frames.json`.
+- `generic:new` (and `run <video>`) prints where the unit date came from: `--date`, the video's `creation_time`
+  tag (a downloaded or re-encoded copy carries the encode date) or today; a tag before 1990 or after tomorrow
+  counts as unset. The generic review step advises delegating the sheets to helpers only for more than 10 sheets.
 - A run could rewrite a unit folder while another run worked on it, or from an older checkout than the code that
   last wrote it, overwriting newer outputs. Every driver (`run`, `train`, `move`) now holds
   an OS lock on `<folder>/.run-lock` while it writes (a second run exits 1 naming the holder from

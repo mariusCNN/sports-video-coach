@@ -165,12 +165,14 @@ STEPS = [
     P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors, passed=review_ok,
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
                "{review}/review.json as the review guide says (`sports-video-coach guide review --unit {folder}` "
-               "prints it; sport: {sport}; focus: {focus}). Delegate the sheets to helpers (subagents), if your "
-               "tool has them, at "
+               "prints it; sport: {sport}; focus: {focus}). More than 10 sheets: delegate them to helpers "
+               "(subagents), if your tool has them, at "
                "most 3 at once, one contiguous range each, writing {review}/part<N>.json; `sports-video-coach "
                "{plugin}:review-check {folder}` merges them. An unclear moment, or a fast object (shuttle, ball, a "
-               "swing) between two tiles: `sports-video-coach frames {video} --out {run}/frames-zoom --start 0:12 "
-               "--end 0:15 --every 0.2` cuts a dense sheet of just that. "
+               "swing) between two tiles: `sports-video-coach frames {video} --out {run}/frames-zoom-0m12s --start "
+               "0:12 --end 0:14.4 --every 0.2` cuts one full sheet of just that (12 tiles; --end is exclusive, so "
+               "end = start + 12 x every). Give each zoom its own --out folder: a second zoom into one folder "
+               "replaces the first. "
                "The skip count is measured in {skip} (total, per minute, the time of each skip): quote it from "
                "there, never count skips on the sheets."),
     P.Step("report", "agent", reports_written, checks=P.report_checks,

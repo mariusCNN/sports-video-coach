@@ -34,8 +34,8 @@ deliverables. It stops with exit code 3 whenever it needs you to watch or write,
      your output still lacks. Then run again.
    - `1`: read the stage log it names (or the error just above it), fix the cause, run again.
    - `0`: done. Give the user the page (`index.html`) and the explained video (`film.<lang>.mp4`) paths.
-5. Film review: the sheets in `run/frames/` are contact sheets with mm:ss labels. Delegate sheet ranges to helpers
-   if you have them, at most 3 at once. Every moment needs what happened and why; "unclear" is a valid answer.
+5. Film review: the sheets in `run/frames/` are contact sheets with mm:ss labels. More than 10 sheets: delegate sheet
+   ranges to helpers if you have them, at most 3 at once. Every moment needs what happened and why; "unclear" is a valid answer.
 
 Deliverables: `"artifacts": ["html", "film"]` in the unit json limits what is built (default: all). Publishing
 private links needs a Cloudflare account and runs only with `--publish`, when the user asks.

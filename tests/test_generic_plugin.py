@@ -1,12 +1,17 @@
+import datetime as dt
 import json
+import re
+import shlex
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
 from sports_video_coach import frames, media, pipeline as P, plugin, run, scaffold
 from sports_video_coach.plugins.generic import new, unit as U
+from sports_video_coach.timefmt import seconds
 
 
 @pytest.fixture(scope="module")
@@ -517,3 +522,83 @@ def test_review_check_help_prints_usage(capsys):
     with pytest.raises(SystemExit) as e:
         unit.main(["--help"])
     assert e.value.code == 0 and "usage: review-check <analysis folder>" in capsys.readouterr().out
+
+
+@pytest.fixture(scope="module")
+def long_video(tmp_path_factory):
+    if not (shutil.which("ffmpeg") and shutil.which("ffprobe")):
+        pytest.skip("needs ffmpeg")
+    out = tmp_path_factory.mktemp("v") / "long.mp4"
+    media.ffmpeg("-f", "lavfi", "-i", "testsrc=duration=16:size=160x120:rate=10", "-pix_fmt", "yuv420p", out)
+    return out
+
+
+def zoom_commands(text: str) -> list[str]:
+    """Every `sports-video-coach frames ... --start ... --end ...` command quoted in a text."""
+    return re.findall(r"`(sports-video-coach frames [^`]*--start [^`]*--end [^`]*)`", text)
+
+
+def test_the_zoom_hint_fills_whole_sheets_in_a_folder_of_its_own(analysis, long_video, capsys):
+    review = next(s for s in U.STEPS if s.name == "review")
+    [cmd] = zoom_commands(analysis.fill(review.how))
+    argv = shlex.split(cmd)[2:]
+    argv[0] = str(long_video)  # the hint's window lies past the 6 s test video's end
+    out = Path(argv[argv.index("--out") + 1])
+    assert out.name != "frames-zoom" and out.parent == analysis.run  # one folder per zoom, not one shared folder
+    frames.main(argv)
+    data = json.loads((out / "frames.json").read_text(encoding="utf8"))
+    assert [len(s["tiles"]) for s in data["sheets"]] == [12]  # one full 4 x 3 sheet, no spill sheet of black cells
+
+
+def test_every_documented_zoom_window_fills_whole_sheets():
+    """--end is exclusive: a window of 12 x --every seconds is one full default 4 x 3 sheet."""
+    root = Path(__file__).resolve().parents[1]
+    texts = [frames.__doc__, " ".join(s.how for s in U.STEPS if s.how),
+             *(p.read_text(encoding="utf8") for p in [root / "src/sports_video_coach/plugins/generic/prompts/review.md",
+                                                      *root.glob("examples/plugins/*/prompts/review.md"),
+                                                      *root.glob("examples/plugins/*/unit.py")])]
+    cmds = [c for t in texts for c in zoom_commands(t) if "<t>" not in c]
+    assert len(cmds) >= 4
+    for c in cmds:
+        a = shlex.split(c)
+        start, end, every = (seconds(a[a.index(k) + 1]) for k in ("--start", "--end", "--every"))
+        assert len(frames.times(end, every, start)) % 12 == 0, c
+
+
+def test_a_second_zoom_into_the_same_folder_says_it_replaces_the_first(long_video, tmp_path, capsys):
+    z = tmp_path / "zoom"
+    frames.main([str(long_video), "--out", str(z), "--start", "0:05.4", "--end", "0:07.0", "--every", "0.1"])
+    assert "--end 00:06.6 fills whole sheets" in capsys.readouterr().out  # 16 tiles: 12 + a sheet with 4
+    assert (z / "sheet_002.jpg").exists()
+    frames.main([str(long_video), "--out", str(z), "--start", "0:10", "--end", "0:11.2", "--every", "0.1"])
+    out = capsys.readouterr().out
+    assert "replaced the sheets of 00:05.4-00:06.9" in out and "another --out keeps both" in out
+    assert sorted(p.name for p in z.glob("sheet_*.jpg")) == ["sheet_001.jpg"]  # no stale sheet of the first zoom
+
+
+def test_new_says_where_the_unit_date_came_from(video, tmp_path, monkeypatch, capsys):
+    today = dt.date.today().isoformat()
+    real = media.video_info
+
+    def tagged(date):
+        monkeypatch.setattr(new.media, "video_info", lambda p: {**real(p), "date": date})
+
+    def date_of(folder):
+        return json.loads((folder / "analysis.json").read_text(encoding="utf8"))["date"]
+    tagged("2017-08-17")
+    assert date_of(new.main([str(video), "--out", str(tmp_path / "a")])) == "2017-08-17"
+    out = capsys.readouterr().out
+    assert "date 2017-08-17 from the video's creation_time tag" in out and "--date YYYY-MM-DD" in out
+    assert date_of(new.main([str(video), "--out", str(tmp_path / "b"), "--date", "2026-01-02"])) == "2026-01-02"
+    assert "date 2026-01-02 from --date" in capsys.readouterr().out
+    tagged(None)
+    assert date_of(new.main([str(video), "--out", str(tmp_path / "c")])) == today
+    assert f"date {today}: today, the video has no recording date" in capsys.readouterr().out
+    tagged("1970-01-01")  # an unset tag (the epoch) is not a recording date
+    assert date_of(new.main([str(video), "--out", str(tmp_path / "d")])) == today
+    assert "creation_time tag 1970-01-01 looks unset" in capsys.readouterr().out
+
+
+def test_delegating_the_review_is_advised_only_for_more_than_10_sheets(analysis):
+    review = next(s for s in U.STEPS if s.name == "review")
+    assert "More than 10 sheets: delegate" in analysis.fill(review.how)
