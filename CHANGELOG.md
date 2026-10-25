@@ -7,9 +7,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Fixed
 - A run could rewrite a unit folder while another run worked on it, or from an older checkout than the code that
   last wrote it, overwriting newer outputs. Every driver (`run`, `train`, `move`) now holds
-  `<folder>/.run-lock.json` while it writes (a second run exits 1 naming the holder; a dead run's lock is taken
-  over with a warning by exactly one run; the lock is made with its content in one step, and one that cannot be
-  read holds for 60 s), stamps the code version in `.hoop-steps.json` (commit, and for a checkout its path and
+  an OS lock on `<folder>/.run-lock` while it writes (a second run exits 1 naming the holder from
+  `.run-lock.json`; the lock goes when its process ends, even killed, so nothing stale is left to clean), stamps the code version in `.hoop-steps.json` (commit, and for a checkout its path and
   whether `src/` had uncommitted changes), and exits 1 with both versions when its commit is older than the
   stamp, diverged from it, or missing from the checkout, or when uncommitted code in another checkout (or in
   this one at an older or diverged HEAD) wrote the folder; `--allow-older-code` rewrites anyway. An installed tool that cannot order two

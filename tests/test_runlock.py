@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -51,63 +52,21 @@ def dead_pid():
 
 
 def lock(folder, pid, host=None):
+    """A leftover `.run-lock.json` naming `pid` (what a run killed hard leaves)."""
     info = {"pid": pid, "host": host or socket.gethostname(), "started": "2026-10-25T10:05:00", "code": code("f" * 40)}
-    (folder / runlock.LOCK).write_text(json.dumps(info), encoding="utf8")
+    (folder / runlock.INFO).write_text(json.dumps(info), encoding="utf8")
 
 
-def test_alive_tells_a_running_process_from_a_gone_one():
-    assert runlock.alive(os.getpid()) and not runlock.alive(dead_pid()) and not runlock.alive(0)
-
-
-def test_a_run_holds_the_lock_while_it_works_and_removes_it_after(unit):  # noqa: F811
-    seen = []
-
-    class Watch(Runner):
-        def __call__(self, cmd, **kw):
-            seen.append(json.loads((unit / runlock.LOCK).read_text(encoding="utf8")))
-            return super().__call__(cmd, **kw)
-
-    assert P.drive(Unit.load(unit), steps()[:1], runner=Watch(unit)) == 0
-    assert seen[0]["pid"] == os.getpid() and seen[0]["host"] == socket.gethostname() and "commit" in seen[0]["code"]
-    assert not (unit / runlock.LOCK).exists()
-
-
-def test_a_second_run_on_a_held_folder_exits_1_naming_the_holder(unit):  # noqa: F811
-    lock(unit, os.getpid())                                   # a live process on this host
-    r = Runner(unit)
-    with pytest.raises(SystemExit) as e:
-        P.drive(Unit.load(unit), steps(), runner=r)
-    msg = str(e.value.code)
-    assert "another run is working on this folder" in msg and f"pid {os.getpid()}" in msg and "ffffffffffff" in msg
-    assert r.calls == [] and (unit / runlock.LOCK).exists()   # the holder's lock stays
-    assert P.drive(Unit.load(unit), steps(), dry=True, runner=r) == 0   # --dry writes nothing, takes no lock
-
-
-def test_a_lock_from_another_host_holds(unit):  # noqa: F811
-    lock(unit, dead_pid(), host="other-machine")
-    with pytest.raises(SystemExit, match="other-machine"):
-        P.drive(Unit.load(unit), steps(), runner=Runner(unit))
-
-
-def test_a_stale_lock_is_taken_over_with_a_warning(unit, capsys):  # noqa: F811
-    pid = dead_pid()
-    lock(unit, pid)
-    r = Runner(unit)
-    assert P.drive(Unit.load(unit), steps(), runner=r) == 0 and len(r.calls) == 4
-    assert f"taking over a stale lock (pid {pid}" in capsys.readouterr().out
-    assert not (unit / runlock.LOCK).exists()
-
-
-RACER = """
-import sys, time
+HOLDER = """
+import os, sys, time
 from pathlib import Path
 from sports_video_coach import runlock
 folder, go, out = Path(sys.argv[1]), float(sys.argv[2]), Path(sys.argv[3])
 while time.time() < go:
     pass
 try:
-    with runlock.hold(folder, {"version": "t", "commit": ""}):
-        out.write_text("WON")
+    with runlock.hold(folder, {"version": "t", "commit": "f" * 40}):
+        out.write_text(f"WON {os.getpid()}")
         while not (folder / "stop").exists():
             time.sleep(0.05)
 except SystemExit:
@@ -115,72 +74,118 @@ except SystemExit:
 """
 
 
-def race(folder, n=6):
-    """n processes start runlock.hold on `folder` at the same instant; their outcomes ('WON' / 'HELD')."""
-    outs = [folder / f"out{i}" for i in range(n)]
-    go = time.time() + 3
-    procs = [subprocess.Popen([sys.executable, "-c", RACER, str(folder), str(go), str(o)],
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) for o in outs]
+def start(folder, out, go=0.0):
+    return subprocess.Popen([sys.executable, "-c", HOLDER, str(folder), str(go), str(out)],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def kill(out, p):
+    """Kill the holder hard (SIGKILL / TerminateProcess: no cleanup runs), by the pid it reported: on Windows
+    `p` can be a venv launcher whose child runs the code."""
+    words = out.read_text().split() if out.exists() else []
+    if len(words) == 2 and p.poll() is None:   # still running (so its pid is not reused yet)
+        try:
+            os.kill(int(words[1]), getattr(signal, "SIGKILL", signal.SIGTERM))
+        except OSError:
+            pass
+    p.kill()
+    p.wait(timeout=60)
+
+
+def wait_for(*outs, timeout=60):
+    end = time.time() + timeout
+    while not all(o.exists() and o.read_text() for o in outs):
+        assert time.time() < end, "the holder processes did not report"
+        time.sleep(0.05)
+
+
+@pytest.fixture
+def held(tmp_path):
+    """A folder whose lock another process holds (until the test ends); yields (folder, its pid, kill it)."""
+    folder, out = tmp_path / "held", tmp_path / "out"
+    folder.mkdir()
+    p = start(folder, out)
     try:
-        end = time.time() + 60
-        while not all(o.exists() and o.read_text() for o in outs) and time.time() < end:
-            time.sleep(0.1)
-        (folder / "stop").write_text("")
-        for p in procs:
-            p.wait(timeout=60)
+        wait_for(out)
+        assert out.read_text().startswith("WON ")
+        yield folder, int(out.read_text().split()[1]), lambda: kill(out, p)
     finally:
-        for p in procs:
-            p.kill()
-    return [o.read_text() if o.exists() else "?" for o in outs]
+        kill(out, p)
 
 
-def test_runs_racing_for_a_fresh_folder_one_wins(tmp_path):
-    for _ in range(3):
-        folder = tmp_path / f"f{_}"
-        folder.mkdir()
-        got = race(folder)
-        assert got.count("WON") == 1 and got.count("HELD") == len(got) - 1, got
-        assert not (folder / runlock.LOCK).exists() and not list(folder.glob("*.tmp"))
-
-
-def test_runs_racing_to_take_over_one_stale_lock_one_wins(tmp_path):
-    for _ in range(3):
-        folder = tmp_path / f"f{_}"
-        folder.mkdir()
-        lock(folder, dead_pid())
-        got = race(folder)
-        assert got.count("WON") == 1 and got.count("HELD") == len(got) - 1, got
-        assert not (folder / runlock.LOCK).exists() and not (folder / (runlock.LOCK + ".takeover")).exists()
-
-
-def test_an_unreadable_lock_holds_until_it_is_old(tmp_path, capsys):
-    for content in ("", '{"pid": 12'):                       # empty, or half written
-        (tmp_path / runlock.LOCK).write_text(content, encoding="utf8")
-        with pytest.raises(SystemExit, match="cannot be read"):
-            with runlock.hold(tmp_path, {}):
-                pass
-        assert (tmp_path / runlock.LOCK).read_text(encoding="utf8") == content   # never deleted
-    old = time.time() - runlock.UNREADABLE_GRACE - 5
-    os.utime(tmp_path / runlock.LOCK, (old, old))
-    with runlock.hold(tmp_path, {}):
-        assert json.loads((tmp_path / runlock.LOCK).read_text(encoding="utf8"))["pid"] == os.getpid()
-    assert "taking over a stale lock (unreadable)" in capsys.readouterr().out
-    assert not (tmp_path / runlock.LOCK).exists()
-
-
-def test_the_lock_is_created_with_its_content(tmp_path, monkeypatch):
+def test_a_run_holds_the_lock_while_it_works_and_lets_go_after(unit):  # noqa: F811
     seen = []
-    link = os.link
 
-    def watch(src, dst):
-        seen.append(json.loads(open(src, encoding="utf8").read()))   # complete before the lock name exists
-        return link(src, dst)
+    class Watch(Runner):
+        def __call__(self, cmd, **kw):
+            seen.append(json.loads((unit / runlock.INFO).read_text(encoding="utf8")))
+            with pytest.raises(SystemExit, match="another run is working on this folder"):
+                with runlock.hold(unit, {}):                 # a second open of the lock file cannot take it
+                    pass
+            return super().__call__(cmd, **kw)
 
-    monkeypatch.setattr(runlock.os, "link", watch)
-    with runlock.hold(tmp_path, {"commit": "c"}):
-        assert seen and seen[0]["pid"] == os.getpid() and seen[0]["code"] == {"commit": "c"}
-        assert json.loads((tmp_path / runlock.LOCK).read_text(encoding="utf8"))["token"] == seen[0]["token"]
-    assert not list(tmp_path.iterdir())
+    assert P.drive(Unit.load(unit), steps()[:1], runner=Watch(unit)) == 0
+    assert seen[0]["pid"] == os.getpid() and seen[0]["host"] == socket.gethostname() and "commit" in seen[0]["code"]
+    assert not (unit / runlock.INFO).exists() and not list(unit.glob("*.tmp"))
+    with runlock.hold(unit, {}):                              # let go: the next run takes it
+        pass
+
+
+def test_a_second_run_on_a_held_folder_exits_1_naming_the_holder(held, unit):  # noqa: F811
+    folder, pid, _ = held
+    with pytest.raises(SystemExit) as e:
+        with runlock.hold(folder, {}):
+            pass
+    msg = str(e.value.code)
+    assert "another run is working on this folder" in msg and f"pid {pid}" in msg and "ffffffffffff" in msg
+    assert json.loads((folder / runlock.INFO).read_text(encoding="utf8"))["pid"] == pid   # the holder's stays
+    (folder / runlock.INFO).write_text("{", encoding="utf8")                                # unreadable info
+    with pytest.raises(SystemExit, match="another run holds the lock"):
+        with runlock.hold(folder, {}):
+            pass
+    r = Runner(unit)
+    assert P.drive(Unit.load(unit), steps(), dry=True, runner=r) == 0 and r.calls == []   # --dry takes no lock
+
+
+def test_a_holder_killed_hard_lets_the_next_run_in_at_once(held):
+    folder, pid, kill_it = held
+    kill_it()
+    assert read_pid(folder) == pid                            # it left its info behind
+    with runlock.hold(folder, {}):
+        assert read_pid(folder) == os.getpid()
+
+
+def read_pid(folder):
+    return json.loads((folder / runlock.INFO).read_text(encoding="utf8"))["pid"]
+
+
+def test_leftover_holder_info_from_a_dead_run_does_not_block(unit):  # noqa: F811
+    lock(unit, dead_pid())
+    r = Runner(unit)
+    assert P.drive(Unit.load(unit), steps(), runner=r) == 0 and len(r.calls) == 4
+    assert not (unit / runlock.INFO).exists()
+
+
+def test_runs_racing_for_one_folder_one_wins(tmp_path):
+    for round_ in range(3):
+        folder = tmp_path / f"f{round_}"
+        folder.mkdir()
+        if round_:
+            lock(folder, dead_pid())                          # with and without a dead run's info
+        outs = [folder / f"out{i}" for i in range(6)]
+        go = time.time() + 3
+        procs = [start(folder, o, go) for o in outs]
+        try:
+            wait_for(*outs)
+            got = [o.read_text().split()[0] for o in outs]
+            (folder / "stop").write_text("")
+            for p in procs:
+                p.wait(timeout=60)
+        finally:
+            for o, p in zip(outs, procs):
+                kill(o, p)
+        assert got.count("WON") == 1 and got.count("HELD") == 5, got
+        assert not (folder / runlock.INFO).exists() and not list(folder.glob("*.tmp"))
 
 
 def test_compare_uses_git_ancestry(repo):
@@ -223,7 +228,7 @@ def test_older_code_refuses_to_rewrite_the_folder(unit, repo, monkeypatch):  # n
     assert f"folder:   sports-video-coach 0.3.1 @ {repo['newer'][:12]}, written 2026-10-25T10:05:00 on box" in msg
     assert f"this run: sports-video-coach 0.3.1 @ {repo['base'][:12]} (" in msg and "is an ancestor of" in msg
     assert "--allow-older-code`" in msg
-    assert r.calls == [] and P.Store(unit).code["commit"] == repo["newer"] and not (unit / runlock.LOCK).exists()
+    assert r.calls == [] and P.Store(unit).code["commit"] == repo["newer"] and not (unit / runlock.INFO).exists()
 
 
 def test_diverged_code_refuses_too_and_the_flag_overrides(unit, repo, monkeypatch, capsys):  # noqa: F811

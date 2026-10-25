@@ -1,17 +1,16 @@
 """One writer per unit folder, and no rewrite by older code: what `pipeline.drive` holds around a run that writes.
 
-- Lock: `<folder>/.run-lock.json` (pid, host, start time, code version) exists while a run works on the folder. A
-  second run exits 1 naming the holder; a lock whose process is gone (same host) is taken over with a warning, by
-  exactly one run. A lock from another host cannot be checked: it holds until that run ends or someone deletes
-  the file. The lock is made with its content in one step (hard link), and one that cannot be read counts as
-  held for UNREADABLE_GRACE seconds.
+- Lock: a run holds an OS advisory lock (flock; Windows: msvcrt.locking) on `<folder>/.run-lock` while it works
+  on the folder; the OS drops it when the run's process ends, however it ends, so there is no stale lock to clean
+  up. Once it holds the lock the run names itself (pid, host, start time, code version) in `.run-lock.json`, which
+  serves only the message of a second run: that one exits 1 naming the holder.
 - Code stamp: the run state (`.hoop-steps.json` "code") names the code that last wrote the folder: the package
   version and the commit (a git checkout's HEAD, else the commit uv recorded at install); a checkout also adds its
   path (`source`) and whether src/ has uncommitted changes (`dirty`). A run exits 1 unless `--allow-older-code` when
   its commit is an ancestor of the stamped one (older), when the two diverged or the stamped commit is not in this
   checkout, or when uncommitted code wrote the folder and this run is another checkout (newer commits do not hold
-  those changes) or that checkout at a HEAD that is not a descendant (it committed and moved on: newer). Unknown commits on either side, or two commits an installed tool (no git)
-  cannot order: a warning, no stop.
+  those changes) or that checkout at a HEAD that is not a descendant (a descendant committed them: newer). Unknown
+  commits on either side, or two commits an installed tool (no git) cannot order: a warning, no stop.
 """
 from __future__ import annotations
 
@@ -22,15 +21,14 @@ import socket
 import subprocess
 import sys
 import time
-import uuid
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 
 from . import installed_commit
 
-LOCK = ".run-lock.json"
-UNREADABLE_GRACE = 60   # seconds an unreadable lock counts as held (a run may be writing it)
+LOCK = ".run-lock"        # the file the OS lock is on; never deleted
+INFO = ".run-lock.json"   # who holds it
 PKG = Path(__file__).resolve().parent
 
 
@@ -144,52 +142,30 @@ def stamp_for(old: dict | None, now: dict) -> dict:
     return {**now, "at": dt.datetime.now().isoformat(timespec="seconds"), "host": socket.gethostname()}
 
 
-def alive(pid: int) -> bool:
-    """Whether process `pid` runs on this host (Windows: OpenProcess, since os.kill there would end it)."""
-    if pid <= 0:
-        return False
-    if os.name == "nt":
-        import ctypes
-        from ctypes import wintypes
-        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        k32.OpenProcess.restype = wintypes.HANDLE
-        h = k32.OpenProcess(0x1000, False, pid)   # PROCESS_QUERY_LIMITED_INFORMATION
-        if not h:
-            return ctypes.get_last_error() == 5   # access denied: it exists
-        try:
-            code = wintypes.DWORD()
-            return bool(k32.GetExitCodeProcess(h, ctypes.byref(code))) and code.value == 259   # STILL_ACTIVE
-        finally:
-            k32.CloseHandle(h)
+def locked(fd: int) -> bool:
+    """Take a non-blocking exclusive OS lock on open file `fd` (POSIX flock; Windows: byte 0); False when another
+    process holds it. The OS drops the lock when its process ends, however it ends."""
     try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
+        if os.name == "nt":
+            import msvcrt
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         return True
-    return True
-
-
-def read(path: Path) -> dict | None:
-    """The lock's JSON: None when there is no file, {} when it cannot be read or parsed (empty, partial)."""
-    raw = snapshot(path)
-    if raw is None:
-        return None
-    try:
-        data = json.loads(raw.decode("utf8"))
-        return data if isinstance(data, dict) else {}
-    except ValueError:
-        return {}
-
-
-def snapshot(path: Path) -> bytes | None:
-    """The file's bytes; None when it is missing, b'' when it cannot be read."""
-    try:
-        return retried(path.read_bytes)
-    except FileNotFoundError:
-        return None
     except OSError:
-        return b""
+        return False
+
+
+def unlock(fd: int) -> None:
+    if os.name == "nt":
+        import msvcrt
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(fd, fcntl.LOCK_UN)
 
 
 def retried(fn, *args):
@@ -202,33 +178,13 @@ def retried(fn, *args):
     return fn(*args)
 
 
-def create(path: Path, info: dict) -> bool:
-    """Make `path` holding `info` in one step, only if it does not exist: the JSON goes to a unique temp file that
-    is then hard-linked to `path` (atomic on NTFS and POSIX), so no reader ever sees it empty or half written."""
-    tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
-    tmp.write_text(json.dumps(info, indent=1), encoding="utf8")
+def read(path: Path) -> dict:
+    """The holder info at `path`, or {} when it is missing or cannot be read."""
     try:
-        os.link(tmp, path)
-        return True
-    except FileExistsError:
-        return False
-    except OSError:   # no hard links here (some network or FAT drives): create, then write; a reader that sees it
-        try:          # empty meanwhile counts it as held (UNREADABLE_GRACE)
-            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
-            return False
-        with os.fdopen(fd, "w", encoding="utf8") as f:
-            json.dump(info, f, indent=1)
-        return True
-    finally:
-        retried(tmp.unlink, True)
-
-
-def age(path: Path) -> float:
-    try:
-        return time.time() - path.stat().st_mtime
-    except OSError:
-        return 0.0
+        data = json.loads(retried(path.read_text, "utf8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 def holder(info: dict) -> str:
@@ -236,62 +192,27 @@ def holder(info: dict) -> str:
             f"{shown(info.get('code'))}")
 
 
-def take_over(path: Path, raw: bytes, me: dict) -> bool:
-    """Replace the stale lock whose bytes were `raw` with ours; one taker wins. The takers race for a guard file
-    (made like the lock); the winner re-reads the lock and replaces it only when it is still those bytes, with
-    os.replace, so the lock never goes missing for a fresh run to slip in."""
-    guard = path.with_name(path.name + ".takeover")
-    if not create(guard, me):
-        if age(guard) > UNREADABLE_GRACE:   # a taker died inside the guard
-            retried(guard.unlink, True)
-        return False
-    try:
-        if snapshot(path) != raw:
-            return False   # another taker won, or the lock changed
-        tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
-        tmp.write_text(json.dumps(me, indent=1), encoding="utf8")
-        try:
-            retried(os.replace, tmp, path)
-        except OSError:
-            retried(tmp.unlink, True)
-            raise
-        return True
-    finally:
-        retried(guard.unlink, True)
-
-
 @contextmanager
 def hold(folder: Path, code: dict):
-    """Hold `<folder>/.run-lock.json` for the block; exit 1 when a live run holds it (a dead one's is taken over by
-    exactly one run; one that cannot be read counts as held until it is UNREADABLE_GRACE seconds old)."""
-    path = Path(folder) / LOCK
-    me = {"pid": os.getpid(), "host": socket.gethostname(),
-          "started": dt.datetime.now().isoformat(timespec="seconds"), "code": code, "token": uuid.uuid4().hex}
-    for _ in range(200):
-        if create(path, me):
-            break
-        raw = snapshot(path)
-        if raw is None:
-            continue   # it ended just now
-        other = read(path)
-        if not other:
-            if age(path) <= UNREADABLE_GRACE:
-                sys.exit(f"[run] {folder}: another run may be starting on this folder: {path.name} cannot be read "
-                         f"({age(path):.0f} s old).\n[run] Run again in a minute; a lock still unreadable after "
-                         f"{UNREADABLE_GRACE} s is taken over.")
-        elif other.get("host") != me["host"] or alive(int(other.get("pid") or 0)):
-            sys.exit(f"[run] {folder}: another run is working on this folder ({holder(other)}).\n"
-                     f"[run] Wait for it to end, then run again. If that run is gone (it crashed, or ran on "
-                     f"another machine), delete {path} and run again.")
-        if take_over(path, raw, me):
-            print(f"[run] warning: taking over a stale lock ({holder(other) if other else 'unreadable'}): "
-                  "that run is gone")
-            break
-        time.sleep(0.05)   # another run is taking it over: look again
-    else:
-        sys.exit(f"[run] {folder}: could not take {path}; run again")
+    """Hold the OS lock on `<folder>/.run-lock` for the block and name this run in `<folder>/.run-lock.json`; exit 1
+    naming the holder when another run holds the lock."""
+    folder = Path(folder)
+    fd = os.open(folder / LOCK, os.O_CREAT | os.O_RDWR)
+    if not locked(fd):
+        os.close(fd)
+        other = read(folder / INFO)
+        who = f"another run is working on this folder ({holder(other)})" if other else "another run holds the lock"
+        sys.exit(f"[run] {folder}: {who}.\n[run] Wait for it to end, then run again.")
     try:
-        yield
+        me = {"pid": os.getpid(), "host": socket.gethostname(),
+              "started": dt.datetime.now().isoformat(timespec="seconds"), "code": code}
+        tmp = folder / f"{INFO}.{os.getpid()}.tmp"
+        tmp.write_text(json.dumps(me, indent=1), encoding="utf8")
+        retried(os.replace, tmp, folder / INFO)
+        try:
+            yield
+        finally:
+            retried((folder / INFO).unlink, True)   # while the lock is still ours, so no one else's info goes
     finally:
-        if (read(path) or {}).get("token") == me["token"]:
-            retried(path.unlink, True)
+        unlock(fd)
+        os.close(fd)

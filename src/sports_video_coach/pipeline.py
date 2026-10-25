@@ -28,9 +28,9 @@ An agent step may declare `auto`: what the run does itself before it stops for t
 untouched `page-check --write-qa` draft is written again by the same static check; the run stops only when that
 draft does not pass).
 
-A run that writes holds `<folder>/.run-lock.json`, so a second run on the folder exits 1, and stamps the store with
-the code that wrote it ("code"); a later run from older code (or code it cannot show newer) exits 1 before it
-writes, unless `--allow-older-code` (runlock.py).
+A run that writes holds an OS lock on `<folder>/.run-lock`, so a second run on the folder exits 1, and stamps the
+store with the code that wrote it ("code"); a later run from older code (or code it cannot show newer) exits 1
+before it writes, unless `--allow-older-code` (runlock.py).
 """
 from __future__ import annotations
 
