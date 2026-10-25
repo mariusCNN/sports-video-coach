@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- The team report and player deep dive guides cap the small-print `::: note` block at two short sentences
+  (<= 220 characters; Chinese <= 110) and send the rest to a `::: more` fold after it: an uncapped data note
+  grew into a six-sentence paragraph on the first screen.
 - `bench run --agent opencode` stops as soon as OpenCode reports its free usage limit (`Free usage limit
   reached`) instead of hanging to the 1200 s timeout: the preset adds `--print-logs --log-level ERROR` (OpenCode
   wrote the error only to its own log), and the output is watched for each preset's usage-limit lines. The result
