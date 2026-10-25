@@ -143,6 +143,16 @@ def half_of(t: float | None, periods) -> int | None:
     return 1 if i < max(1, len(spans) // 2) else 2
 
 
+def _half(t: float | None, periods, *spans) -> int | None:
+    """half_of(t); with no time for the event, of the middle of the first span ({t0, t1}: the v1 key_clip, then
+    the trip itself) that has one."""
+    for sp in spans if t is None else ():
+        if isinstance(sp, dict) and _num(sp.get("t0")) and _num(sp.get("t1")):
+            t = (sp["t0"] + sp["t1"]) / 2
+            break
+    return half_of(t, periods)
+
+
 def _jersey(v) -> str | None:
     return str(v) if v is not None and re.fullmatch(r"\d{1,2}", str(v)) else None
 
@@ -174,24 +184,24 @@ def events(trips: list[dict], periods=None) -> list[Event]:
         shot = x.get("shot") if isinstance(x.get("shot"), dict) else None
         if shot and off in gc.SIDES:
             t = _first(shot.get("t"), ev.get("shot"))
-            out.append(Event("shot", off, _jersey(shot.get("shooter")), t, half_of(t, periods), _window(t, "shot", kc),
+            out.append(Event("shot", off, _jersey(shot.get("shooter")), t, _half(t, periods, kc, x), _window(t, "shot", kc),
                              zone=shot.get("zone") if shot.get("zone") in ZONES else None,
                              made=shot.get("made") if shot.get("made") in (True, False) else None,
                              points=shot.get("points") if shot.get("points") in (2, 3) else None,
                              type=shot.get("type"), contested=shot.get("contested"), tags=set(tags), pid=x.get("pid"),
                              xy=spot(shot.get("xy"))))
             if "oreb" in tags:
-                out.append(Event("oreb", off, None, t, half_of(t, periods), _window(t, "oreb", kc), pid=x.get("pid")))
+                out.append(Event("oreb", off, None, t, _half(t, periods, kc, x), _window(t, "oreb", kc), pid=x.get("pid")))
         if x.get("result") == "turnover" and off in gc.SIDES:
             t = _first(ev.get("result"))
             if x.get("turnover_kind") in ("live", "dead"):
                 tags.add(x["turnover_kind"])
-            out.append(Event("turnover", off, _jersey(x.get("turnover_by")), t, half_of(t, periods),
+            out.append(Event("turnover", off, _jersey(x.get("turnover_by")), t, _half(t, periods, kc, x),
                              _window(t, "turnover", kc), tags=set(tags), pid=x.get("pid")))
         foul = x.get("foul") if isinstance(x.get("foul"), dict) else None
         if foul and foul.get("by_team") in gc.SIDES:
             t = _first(foul.get("t"), ev.get("foul"))
-            out.append(Event("foul", foul["by_team"], _jersey(foul.get("by")), t, half_of(t, periods),
+            out.append(Event("foul", foul["by_team"], _jersey(foul.get("by")), t, _half(t, periods, None if shot else kc, x),
                              _window(t, "foul", None if shot else kc), type=foul.get("type"),
                              on=_jersey(foul.get("on")), tags=set(tags), pid=x.get("pid")))
     return sorted(out, key=lambda e: (e.t is None, e.t or 0))

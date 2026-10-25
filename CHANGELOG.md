@@ -160,6 +160,8 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- The shot chart's half filter no longer hides shots, turnovers and fouls the trip gives no time for (reviews
+  migrated from v1): their half now comes from the middle of the trip's `key_clip`, else of the trip itself.
 - `page-check` no longer reads a `<style>` or `<script>` block inside a report part as report text, so the
   basketball Four Factors panel's CSS no longer counts as English left in the Chinese report (a `--strict` FAIL).
 - Basketball: `coach-check --migrate` also brings the sheets `manifest.json` lists (hard-linked when the disk

@@ -61,16 +61,23 @@ def test_events_take_times_from_the_trip_and_never_guess_outcomes():
     evs = film_index.events(TRIPS, [[0, 600], [700, 1300]])
     shots = [e for e in evs if e.kind == "shot"]
     assert [(e.player, e.t, e.half, e.made) for e in shots] == [
-        ("4", 30.0, 1, True), ("7", 61.5, 1, False), ("11", 750.0, 2, True), (None, 1100.0, 2, False), ("4", None, None, None)]
+        ("4", 30.0, 1, True), ("7", 61.5, 1, False), ("11", 750.0, 2, True), (None, 1100.0, 2, False), ("4", None, 1, None)]
     first = shots[0]
     assert first.window == ("00:24", "00:32") and first.pts == 2
     assert shots[-1].window == ("01:29", "01:37")  # no time: the v1 key_clip window, padded by 1 s
+    # ... and its half from that window, so the half filter does not hide it
     assert shots[2].tags == {"transition"} and shots[2].pts == 3
     tos = [e for e in evs if e.kind == "turnover"]
     assert [sorted(e.tags) for e in tos] == [["live"], ["dead"]]
     foul = next(e for e in evs if e.kind == "foul")
     assert (foul.team, foul.player, foul.on, foul.window) == ("us", "7", "11", ("16:36", "16:42"))
     assert [e.t for e in evs if e.kind == "oreb"] == [1100.0]
+
+
+def test_an_untimed_event_takes_its_half_from_the_trip_span():
+    # no shot time, no evidence, no key_clip: the trip's own t0-t1 still says which half it was in
+    evs = film_index.events([trip(40, "them", "missed", shot=shot(None, None, False, "rim"))], [[0, 600], [700, 1300]])
+    assert [(e.kind, e.t, e.window, e.half) for e in evs] == [("shot", None, None, 2)]
 
 
 def test_events_tolerate_trips_without_the_optional_fields():
