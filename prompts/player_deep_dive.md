@@ -72,7 +72,9 @@ Data note: <what the official sheet does and does not record; which official eve
 
 The blocks (`verdict`, `keys`, `do`, `more`, `note`) are described in `prompts/coach_report.md`; the first screen is
 the verdict and the three calls, with three or four stat tiles under them. Keep the verdict to two short
-sentences and each call to one line, so both fit under the score board on a phone.
+sentences and each call to one line, so both fit under the score board on a phone. Keep the data note to at most
+two short sentences (<= 220 characters; Chinese <= 110): the one limit that changes how to read the page. The
+rest (which events the film cannot confirm, what is off-video) goes in a `::: more Data details` fold right after it.
 
 ## Writing rules
 

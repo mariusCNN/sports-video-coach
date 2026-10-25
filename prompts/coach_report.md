@@ -51,7 +51,8 @@ yellow "what to do" box, `note` is small print. Two more blocks work anywhere: `
 long evidence (a full scoring table, the play-by-play of a run) behind one line, and `> **Rule:** …` (a
 blockquote) marks the one rule of a section. Keep the order verdict, orders, keys: the score board already fills
 half a phone screen, so the verdict and the three orders must fit under it (verdict two short sentences, each
-order one line). Everything else is below section 1.
+order one line). Everything else is below section 1. Keep the `note` to at most two short sentences (<= 220
+characters; Chinese <= 110); the source details that do not fit go in a `::: more Sources` fold right after it.
 
 ```
 
