@@ -104,7 +104,8 @@ def scaffold(name: str, dest: Path, sport: str = "", summary: str = "", use_when
         f.write_text(t.replace("sports-video-coach generic:", f"sports-video-coach {name}:")
                      .replace("(generic plugin)", f"({name} plugin)"), encoding="utf8")
     (out / "tests").mkdir()
-    (out / "tests" / f"test_{name.replace('-', '_')}.py").write_text(TEST.format(name=name, repo=pinned()), encoding="utf8")
+    test = out / "tests" / f"test_{name.replace('-', '_')}.py"
+    test.write_text(TEST.format(name=name, repo=pinned()), encoding="utf8")
     return out
 
 
@@ -120,7 +121,8 @@ def pinned() -> str:
     from importlib import metadata
     commit = ""
     try:
-        commit = json.loads(metadata.distribution("sports-video-coach").read_text("direct_url.json") or "{}")             .get("vcs_info", {}).get("commit_id", "")
+        raw = metadata.distribution("sports-video-coach").read_text("direct_url.json") or "{}"
+        commit = json.loads(raw).get("vcs_info", {}).get("commit_id", "")
     except (metadata.PackageNotFoundError, ValueError, AttributeError):
         pass
     return f"git+{REPO_URL}@{commit if re.fullmatch(r'[0-9a-f]{40}', commit or '') else INSTALL_REF}"
