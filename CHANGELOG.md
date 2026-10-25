@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- `bench run --dry-run` for a preset no maintainer ran no longer prints an empty "(;" in its description, and the
+  plugin docs and CONTRIBUTING point plugin pull requests at `examples/plugins/` (there is no top-level `plugins/`).
 - The README (both languages) puts a benchmark line (the fresh-seed scores, what they mean, the leaderboard) and a
   try-it line (demo page, Codespaces, the rerun command) right under the tagline: on the repo page the file list
   pushes the README down, so readers sent from a benchmark post saw only the title and badges and found no number

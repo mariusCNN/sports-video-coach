@@ -255,4 +255,5 @@ More:
 ## Share it
 
 Publish it as its own repo or package with the GitHub topic `sports-video-coach-plugin`, or open a pull request
-here to add it under `plugins/`. Never put real players' video, frames or names in a plugin repo or its tests.
+here to add it under `examples/plugins/`, modelled on
+[`examples/plugins/swim-stroke-rate/`](../examples/plugins/swim-stroke-rate/). Never put real players' video, frames or names in a plugin repo or its tests.

@@ -161,6 +161,15 @@ def test_dry_run_prints_the_preset_command_and_says_untested(tmp_path, capsys):
     assert not dry.exists()
 
 
+@pytest.mark.parametrize("agent", ["gemini", "opencode"])
+def test_dry_run_preset_line_has_no_empty_parenthesis(tmp_path, capsys, agent):
+    assert bench.main(["run", "--agent", agent, "--out", str(tmp_path / "dry"), "--dry-run"]) == 0
+    line = next(ln for ln in capsys.readouterr().out.splitlines() if "by the maintainer on a task" in ln)
+    assert "(;" not in line and "()" not in line
+    assert line.count("(") == line.count(")")
+    assert f"; flags from {R.PRESETS[agent].docs}, checked against the --help of version" in line
+
+
 def test_help_says_presets_are_untested(capsys):
     with pytest.raises(SystemExit):
         R.main(["--help"])
