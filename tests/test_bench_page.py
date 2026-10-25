@@ -120,6 +120,7 @@ def test_no_external_urls_but_repo_and_evidence(tmp_path):
     results.mkdir()
     write(results, "r.json", row("A", "m", 0.5, [0.5, 0.5, 0.5], evidence="https://example.org/ev"))
     _, html = render(tmp_path, results)
+    html = re.sub(r'<script type="application/ld\+json">.*?</script>', "", html, flags=re.S)  # data, not fetched
     urls = set(re.findall(r"""(?:https?:)?//[^\s"'<>)]+""", html))
     allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL, page.DEMO_URL)
     assert urls and all(u.startswith(allowed) for u in urls), urls
@@ -471,3 +472,92 @@ def test_chinese_diff_lines():
         "2 个中错 1 个（第 1 个答成 missed）"
     assert page.show_value("outcomes", ["made", "missed", "made"], "zh") == "进 2，不进 1"
     assert page.diff_answer("count", 10, {}, "zh") == "未记录回答"
+
+
+def dataset_blocks(html: str) -> list[dict]:
+    return [json.loads(b) for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)]
+
+
+def test_dataset_structured_data_and_sitemap_lastmod(tmp_path):
+    import xml.etree.ElementTree as ET
+    from sports_video_coach import demo
+    from sports_video_coach.bench import export
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "a.json", row("A", "m1", 0.9, [0.9, 0.9, 0.9], date="2026-10-22"))
+    write(results, "b.json", row("B", "m2", 0.6, [0.6, 0.6, 0.6], date="2026-10-23"))
+    write(results, "c.json", row("C", "m3", 0.5, [0.5, 0.5, 0.5], suite="x</script><!--", date="2026-10-21"))
+    write(results, "floor.json", row(page.BASELINE_AGENT, "", 0.2, [0.2, 0.2, 0.2], date="2026-10-20"))
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "sitemap.xml").write_text(demo.sitemap_xml(), encoding="utf8")   # as `demo --site` leaves it
+    out = site / "benchmark"
+    assert page.main([str(results), str(out)]) == 0
+    board = json.loads((out / export.NAME).read_text(encoding="utf8"))
+    contenders = sum(len(b["contenders"]) for b in board["boards"])
+    assert (board["runs"], contenders, len(board["boards"])) == (3, 3, 2)
+    for lang, path in (("en", out / "index.html"), ("zh", out / "zh" / "index.html")):
+        html = path.read_text(encoding="utf8")
+        assert "x</script><!--" not in html.split("</head>")[0]          # the hostile suite name is escaped
+        (ld,) = dataset_blocks(html)                                    # exactly one, and it parses
+        assert ld["@context"] == "https://schema.org" and ld["@type"] == "Dataset"
+        assert ld["url"] == page.URLS[lang] and ld["inLanguage"] == page.TAGS[lang]
+        assert ld["name"] and 50 <= len(ld["description"]) <= 5000
+        assert ld["sameAs"] == page.REPO_URL and ld["license"] == page.LICENSE_URL
+        assert ld["creator"] == {"@type": "Person", "name": "mariusDing", "url": "https://github.com/mariusDing"}
+        assert ld["dateModified"] == "2026-10-23"                       # the newest result file, not the build
+        assert ld["keywords"] and ld["measurementTechnique"]
+        assert {v["name"] for v in ld["variableMeasured"]} == {k for k, _, _ in page.KINDS} | {"total", "above chance"}
+        assert [(d["@type"], d["contentUrl"], d["encodingFormat"]) for d in ld["distribution"]] == [
+            ("DataDownload", f"{page.PAGE_URL}leaderboard.json", "application/json"),
+            ("DataDownload", page.RESULTS_URL, "application/json")]
+        assert "x</script><!--" in ld["description"]                    # escaped in the page, intact once parsed
+        numbers = (f"{board['runs']} scored runs", f"{contenders} contenders", f"{len(board['boards'])} boards",
+                   "4 result files", "1 blind baselines") if lang == "en" else (
+                   f"{board['runs']} 次计分运行", f"{contenders} 个参赛者", f"{len(board['boards'])} 张", "4 个结果文件")
+        assert all(n in ld["description"] for n in numbers), ld["description"]
+    ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    urls = ET.fromstring((site / "sitemap.xml").read_bytes()).findall("s:url", ns)
+    lastmod = {u.find("s:loc", ns).text: getattr(u.find("s:lastmod", ns), "text", None) for u in urls}
+    assert list(lastmod) == list(demo.SITE_PAGES)
+    assert {u: d for u, d in lastmod.items() if d} == {u: "2026-10-23" for u in demo.SITE_PAGES
+                                                        if u.startswith(page.PAGE_URL)}
+    assert page_check.problems(out) == [] and page_check.problems(out / "zh") == []
+
+
+def test_dataset_date_counts_baselines_and_skips_bad_dates():
+    rows = [row("A", "m", 0.5, [0.5] * 3, date="2026-10-22"), row(page.BASELINE_AGENT, "", 0.1, [0.1] * 3,
+                                                                    date="2026-10-24"),
+            row("B", "m", 0.5, [0.5] * 3, date="someday")]
+    assert page.newest_date(rows) == "2026-10-24"
+    assert page.newest_date([row("A", "m", 0.5, [0.5] * 3, date="")]) is None
+
+
+def test_no_runs_no_dataset_and_sitemap_untouched(tmp_path):
+    from sports_video_coach import demo
+    results = tmp_path / "results"
+    results.mkdir()
+    write(results, "floor.json", row(page.BASELINE_AGENT, "", 0.2, [0.2, 0.2, 0.2]))
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "sitemap.xml").write_text(demo.sitemap_xml(), encoding="utf8")
+    assert page.main([str(results), str(site / "benchmark")]) == 0
+    assert dataset_blocks((site / "benchmark" / "index.html").read_text(encoding="utf8")) == []
+    assert page.sitemap([], site / "benchmark") is False
+    assert "<lastmod>" in (site / "sitemap.xml").read_text(encoding="utf8")   # the floor file has a date
+    other = tmp_path / "elsewhere"                                             # not the demo site: left alone
+    other.mkdir()
+    (other / "sitemap.xml").write_text("<urlset/>", encoding="utf8")
+    assert page.sitemap([row("A", "m", 0.5, [0.5] * 3)], other / "benchmark") is False
+    assert (other / "sitemap.xml").read_text(encoding="utf8") == "<urlset/>"
+
+
+def test_dataset_numbers_on_the_published_results():
+    from pathlib import Path
+    from sports_video_coach.bench import export
+    rows, notes = page.load(Path(__file__).resolve().parent.parent / "benchmark" / "results")
+    (ld,) = dataset_blocks(page.dataset_ld(rows))
+    board = export.leaderboard(rows, notes)
+    assert f"{board['runs']} scored runs" in ld["description"] and board["runs"] > 0
+    assert f"{sum(len(b['contenders']) for b in board['boards'])} contenders" in ld["description"]
+    assert ld["dateModified"] == page.newest_date(rows) and 50 <= len(ld["description"]) <= 5000

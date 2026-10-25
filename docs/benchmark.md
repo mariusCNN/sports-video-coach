@@ -605,6 +605,8 @@ and link them; the page labels such a link "transcript".
   number comes from the result files through the page's own functions; skipped files are listed under `skipped`.
   It holds no build time, so it only changes when the results do; `latest_run` is the newest run's date. A fresh-seed
   board has no floor file: each of its runs is measured against its own seed's blind floor, as on the page.
+- Both leaderboard pages hold one schema.org `Dataset` block (`page.dataset_ld`, for Google Dataset Search): counts
+  as `leaderboard.json` counts them, `dateModified` and the sitemap's `<lastmod>` = the newest result file's date.
 - A result file with a `seed` is re-scored against the truth rebuilt from that seed; the published truth or another
   seed's does not pass.
 - Under each suite's table of runs, a folded "Where each contender fails" block lists, per task, the truth (from
