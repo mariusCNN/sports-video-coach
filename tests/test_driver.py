@@ -496,3 +496,19 @@ def test_qa_draft_with_agent_notes_or_by_hand_is_left_to_the_agent(unit, capsys)
     (unit / "qa.md").write_text("PASS by hand\nchecked: 0123456789abcdef\n", encoding="utf8")
     assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
     assert (unit / "qa.md").read_text(encoding="utf8") == "PASS by hand\nchecked: 0123456789abcdef\n"
+
+
+def test_film_script_with_an_unknown_scene_prefix_waits_before_the_film_render(unit, capsys):
+    """The prefix check the film render stops on (film.prefix_problem) runs in the film-script step: the run waits
+    naming the file, the line and the prefix; a script with known prefixes passes."""
+    step = next(s for s in P.tail_steps(lambda g: g.folder / "v.mp4", "listen", "qa", "write {folder}/film.zh.md")
+                if s.name == "film-script")
+    script = unit / "film.zh.md"
+    script.write_text("开场。\n\n![罚球](stats:9 12)\n犯规太多。\n\n![快攻](clip:0:01-0:04)\n跑起来。\n", encoding="utf8")
+    assert P.drive(Unit.load(unit), [step]) == P.WAITING
+    out = capsys.readouterr().out
+    assert "[run] waiting for the agent: film-script" in out
+    assert f"{script.as_posix()}: line 3: unknown scene prefix 'stats:' (known here: clip:, stat:" in out
+    script.write_text(script.read_text(encoding="utf8").replace("stats:9 12", "stat:9"), encoding="utf8")
+    assert P.drive(Unit.load(unit), [step]) == 0
+    assert "unknown scene prefix" not in capsys.readouterr().out

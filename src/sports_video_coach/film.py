@@ -186,6 +186,7 @@ class Scene:
     src: str = ""  # image path, "mm:ss-mm:ss" for a clip, the number for a stat, the file of a plugin scene
     paras: list[str] = field(default_factory=list)
     freezes: list[Freeze] = field(default_factory=list)
+    line: int = field(default=0, compare=False)  # the script line a visual starts on (0: the title card)
 
     def window(self) -> tuple[float, float]:
         m = CLIP_RE.match(self.src)
@@ -213,7 +214,7 @@ def parse_script(text: str, hooks: FilmHooks | None = None) -> list[Scene]:
             (sc.freezes[-1].paras if sc.freezes else sc.paras).append(" ".join(" ".join(para).split()))
             para.clear()
 
-    for raw in text.splitlines():
+    for n, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
         m = VISUAL_RE.match(line)
         if line.startswith("## ") or m:
@@ -222,9 +223,9 @@ def parse_script(text: str, hooks: FilmHooks | None = None) -> list[Scene]:
                 cap, target = m[1].strip(), m[2].strip()
                 pm = PREFIX_RE.match(target)
                 kind = pm[1] if pm else "image"
-                scenes.append(Scene(kind, cap, target[len(kind) + 1:].strip() if kind != "image" else target))
+                scenes.append(Scene(kind, cap, target[len(kind) + 1:].strip() if kind != "image" else target, line=n))
             else:
-                scenes.append(Scene("card", line[3:].strip()))
+                scenes.append(Scene("card", line[3:].strip(), line=n))
         elif line.startswith(">"):
             end_para()
             if not scenes:
@@ -240,6 +241,25 @@ def parse_script(text: str, hooks: FilmHooks | None = None) -> list[Scene]:
     return scenes
 
 
+def prefix_problem(sc: Scene, kinds: dict[str, SceneKind]) -> str | None:
+    """`unknown scene prefix 'stats:' (known here: ...)` for a scene whose prefix neither the core nor the folder's
+    plugin knows, else None: check() stops the render on it, the run's film-script step waits on it."""
+    if sc.kind in ("title", "card", "image", *BUILTIN, *kinds):
+        return None
+    known = ", ".join(f"{k}:" for k in (*BUILTIN, *kinds))
+    return f"unknown scene prefix {sc.kind + ':'!r} (known here: {known}; a plugin adds more)"
+
+
+def script_prefix_problems(path: Path) -> list[str]:
+    """`<file>: line N: unknown scene prefix ...` per scene of the film script at `path` (when written) whose prefix
+    the folder's plugin does not know (prefix_problem)."""
+    if not path.is_file():
+        return []
+    kinds = hooks_for(path.parent)[1]
+    return [f"{path.as_posix()}: line {sc.line}: {bad}" for sc in parse_script(path.read_text(encoding="utf8"))
+            if (bad := prefix_problem(sc, kinds))]
+
+
 def check(scenes: list[Scene], folder: Path, video: Path | None, video_s: float | None, tracks=None,
           kinds: dict[str, SceneKind] | None = None, hooks: FilmHooks = GENERIC) -> list[str]:
     """Problems that would stop the render (missing pictures, bad clip windows, no video, unreadable freezes,
@@ -252,9 +272,8 @@ def check(scenes: list[Scene], folder: Path, video: Path | None, video_s: float 
                 out.append(f"scene {i}: {p!r} has nothing to say (TTS gets no speech from it); write words or drop it")
         if sc.kind == "image" and not (folder / sc.src).is_file():
             out.append(f"scene {i}: picture not found: {folder / sc.src}")
-        if sc.kind not in ("title", "card", "image", *BUILTIN, *kinds):
-            known = ", ".join(f"{k}:" for k in (*BUILTIN, *kinds))
-            out.append(f"scene {i}: unknown scene prefix {sc.kind + ':'!r} (known here: {known}; a plugin adds more)")
+        if bad := prefix_problem(sc, kinds):
+            out.append(f"scene {i}: {bad}")
         if sc.kind in kinds:
             sk, f = kinds[sc.kind], folder / sc.src
             if not f.is_file():

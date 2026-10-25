@@ -591,6 +591,14 @@ def listen_checks(g: Unit) -> list[str]:
     return [p for p in found if p] + humanize.checks([d / f"listen.{l}.md" for d in g.reports() for l in g.langs])
 
 
+def film_script_errors(g: Unit) -> list[str]:
+    """Film scripts not written yet, then scene prefixes the film render would stop on (film.prefix_problem), so the
+    run waits on the script instead of failing in the film step."""
+    from . import film
+    scripts = [g.folder / f"film.{l}.md" for l in g.langs]
+    return missing(scripts, g) + [p for f in scripts for p in film.script_prefix_problems(f)]
+
+
 def film_checks(g: Unit) -> list[str]:
     """Stock AI phrasing in the film scripts (humanize)."""
     return humanize.checks([g.folder / f"film.{l}.md" for l in g.langs])
@@ -624,9 +632,8 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              checks=qa_checks, auto=qa_auto),
         Step("publish", "cmd", published, lambda g: [["publish", *map(str, g.reports()), "--deploy"]],
              artifact="publish"),
-        Step("film-script", "agent", lambda g: all((g.folder / f"film.{l}.md").exists() for l in g.langs),
-             how=film_script_how, artifact="film",
-             errors=lambda g: missing([g.folder / f"film.{l}.md" for l in g.langs], g),
+        Step("film-script", "agent", lambda g: not film_script_errors(g), how=film_script_how, artifact="film",
+             errors=film_script_errors,
              derives=lambda g: [(g.folder / f"film.{l}.md", [d / readme(l) for d in g.reports()]) for l in g.langs],
              checks=film_checks),
         Step("film", "cmd", film_done, film_args, long=True,

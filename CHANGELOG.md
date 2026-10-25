@@ -160,6 +160,9 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- A film script with a scene prefix the folder's plugin does not know (`stats:` for `stat:`) now keeps the run's
+  `film-script` step waiting (exit 3) with the file, line and prefix, instead of passing it and stopping later in
+  the film render; the step reuses the film render's own prefix check.
 - The shot chart's half filter no longer hides shots, turnovers and fouls the trip gives no time for (reviews
   migrated from v1): their half now comes from the middle of the trip's `key_clip`, else of the trip itself.
 - `page-check` no longer reads a `<style>` or `<script>` block inside a report part as report text, so the

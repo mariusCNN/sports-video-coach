@@ -471,6 +471,8 @@ def test_unknown_scene_prefix_names_the_known_ones(tmp_path):
     probs = film.check(film.parse_script("![p](court:plays/p.json)\n![x](reel:a.mp4)\n"), tmp_path, None, None,
                        kinds=SCENES)
     assert probs == ["scene 2: unknown scene prefix 'reel:' (known here: clip:, stat:, court:; a plugin adds more)"]
+    sc = film.parse_script("Intro.\n\n![x](reel:a.mp4)\n")[1]
+    assert sc.line == 3 and film.prefix_problem(sc, SCENES) == probs[0].removeprefix("scene 2: ")
 
 
 def test_film_keeps_a_language_newer_than_its_script_and_what_it_shows(tmp_path, monkeypatch, capsys):
