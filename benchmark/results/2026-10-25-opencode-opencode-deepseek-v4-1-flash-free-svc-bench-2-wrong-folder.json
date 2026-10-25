@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-2",
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-25",
+  "contender": {
+    "agent": "OpenCode",
+    "agent_version": "1.19.4",
+    "model": "opencode/deepseek-v4.1-flash-free",
+    "settings": "preset, not run by the maintainer (--agent opencode); runner's own config; fresh OpenCode install, empty config, no account (free OpenCode Zen model); run before the --dir fix: OpenCode worked in the folder bench run was started from, and searched the machine for TASKS.md before it found the run folder (it listed result file names, read none)"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "dribble-count",
+      "kind": "count",
+      "truth": 56,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "squat-reps",
+      "kind": "count",
+      "truth": 8,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "cadence-change",
+      "kind": "rate",
+      "truth": 182.186,
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "cone-touches-pan",
+      "kind": "timestamps",
+      "truth": [
+        3.6,
+        7.6,
+        10.6,
+        11.0,
+        11.4,
+        14.8,
+        19.6,
+        22.0,
+        23.2,
+        26.6
+      ],
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    },
+    {
+      "id": "shot-outcomes-hard",
+      "kind": "outcomes",
+      "truth": [
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "answer": null,
+      "score": 0.0,
+      "note": "missing answer"
+    }
+  ],
+  "total": 0.0,
+  "wall_seconds": 1200.5,
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-2-wrong-folder.txt",
+  "cost_usd": null
+}

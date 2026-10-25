@@ -1,0 +1,2928 @@
+# OpenCode run, b2-fixed. With --dir <run folder>.
+## stdout (what bench run saves as transcript.txt)
+I'll start by reading the task files.
+Task 1 analysis done (56). Now task 2 (squats).
+## stderr (OpenCode prints its tool calls here)
+
+> build · deepseek-v4.1-flash-free
+
+→ Read TASKS.md
+→ Read answers.json
+
+$ ls -la; which ffmpeg ffprobe python python3; python -c "import cv2, numpy; print(cv2.__version__, numpy.__version__)"
+total 3071
+drwxr-xr-x 1 <user> 197609       0 Oct 25 15:59 .
+drwxr-xr-x 1 <user> 197609       0 Oct 25 15:59 ..
+-rw-r--r-- 1 <user> 197609     717 Oct 25 15:59 PROMPT.txt
+-rw-r--r-- 1 <user> 197609    4679 Oct 25 15:59 TASKS.md
+-rw-r--r-- 1 <user> 197609     199 Oct 25 15:59 answers.json
+-rw-r--r-- 1 <user> 197609 1069236 Oct 25 15:59 cadence-change.mp4
+-rw-r--r-- 1 <user> 197609  372366 Oct 25 15:59 cone-touches-pan.mp4
+-rw-r--r-- 1 <user> 197609  681409 Oct 25 15:59 dribble-count.mp4
+-rw-r--r-- 1 <user> 197609  618237 Oct 25 15:59 shot-outcomes-hard.mp4
+-rw-r--r-- 1 <user> 197609  376572 Oct 25 15:59 squat-reps.mp4
+-rw-r--r-- 1 <user> 197609     107 Oct 25 15:59 stderr.log
+-rw-r--r-- 1 <user> 197609      39 Oct 25 15:59 transcript.txt
+<home>/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/ffmpeg
+<home>/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/ffprobe
+<repo>/.venv/Scripts/python
+<home>/AppData/Local/Microsoft/WindowsApps/python3
+5.0.0 2.4.6
+
+$ for f in *.mp4; do echo "== $f"; ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate,nb_frames,duration -of default=nw=1 "$f"; done
+== cadence-change.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=40.000000
+nb_frames=1000
+== cone-touches-pan.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=28.000000
+nb_frames=700
+== dribble-count.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=38.000000
+nb_frames=950
+== shot-outcomes-hard.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=56.400000
+nb_frames=1410
+== squat-reps.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=40.000000
+nb_frames=1000
+
+$ mkdir -p work/frames && python - <<'EOF'
+import cv2, os
+vids = ["dribble-count","squat-reps","cadence-change","cone-touches-pan","shot-outcomes-hard"]
+for v in vids:
+    cap = cv2.VideoCapture(v+".mp4")
+    n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    for i in range(6):
+        f = int(i*(n-1)/5)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, f)
+        ok, img = cap.read()
+        if ok:
+            cv2.imwrite(f"work/frames/{v}_f{f}.png", img)
+    cap.release()
+print("done")
+EOF
+ls work/frames
+done
+cadence-change_f0.png
+cadence-change_f199.png
+cadence-change_f399.png
+cadence-change_f599.png
+cadence-change_f799.png
+cadence-change_f999.png
+cone-touches-pan_f0.png
+cone-touches-pan_f139.png
+cone-touches-pan_f279.png
+cone-touches-pan_f419.png
+cone-touches-pan_f559.png
+cone-touches-pan_f699.png
+dribble-count_f0.png
+dribble-count_f189.png
+dribble-count_f379.png
+dribble-count_f569.png
+dribble-count_f759.png
+dribble-count_f949.png
+shot-outcomes-hard_f0.png
+shot-outcomes-hard_f1127.png
+shot-outcomes-hard_f1409.png
+shot-outcomes-hard_f281.png
+shot-outcomes-hard_f563.png
+shot-outcomes-hard_f845.png
+squat-reps_f0.png
+squat-reps_f199.png
+squat-reps_f399.png
+squat-reps_f599.png
+squat-reps_f799.png
+squat-reps_f999.png
+
+→ Read work/frames/dribble-count_f0.png
+→ Read work/frames/dribble-count_f189.png
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("dribble-count.mp4")
+for fi in [0,50,100,150,200,300,400]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES, fi); ok,img=cap.read()
+    hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    # orange: hue ~ 10-25
+    mask=cv2.inRange(hsv,(5,100,100),(30,255,255))
+    ys,xs=np.nonzero(mask)
+    print(fi, mask.sum()//255, list(zip(xs[:20],ys[:20])))
+cap.release()
+EOF
+0 37471 [(np.int64(118), np.int64(208)), (np.int64(119), np.int64(208)), (np.int64(120), np.int64(208)), (np.int64(121), np.int64(208)), (np.int64(122), np.int64(208)), (np.int64(123), np.int64(208)), (np.int64(124), np.int64(208)), (np.int64(125), np.int64(208)), (np.int64(126), np.int64(208)), (np.int64(127), np.int64(208)), (np.int64(128), np.int64(208)), (np.int64(129), np.int64(208)), (np.int64(118), np.int64(209)), (np.int64(119), np.int64(209)), (np.int64(120), np.int64(209)), (np.int64(121), np.int64(209)), (np.int64(122), np.int64(209)), (np.int64(123), np.int64(209)), (np.int64(124), np.int64(209)), (np.int64(125), np.int64(209))]
+50 33619 [(np.int64(122), np.int64(234)), (np.int64(123), np.int64(234)), (np.int64(124), np.int64(234)), (np.int64(125), np.int64(234)), (np.int64(126), np.int64(234)), (np.int64(127), np.int64(234)), (np.int64(128), np.int64(234)), (np.int64(129), np.int64(234)), (np.int64(130), np.int64(234)), (np.int64(131), np.int64(234)), (np.int64(122), np.int64(235)), (np.int64(123), np.int64(235)), (np.int64(124), np.int64(235)), (np.int64(125), np.int64(235)), (np.int64(126), np.int64(235)), (np.int64(127), np.int64(235)), (np.int64(128), np.int64(235)), (np.int64(129), np.int64(235)), (np.int64(130), np.int64(235)), (np.int64(131), np.int64(235))]
+100 33721 [(np.int64(356), np.int64(246)), (np.int64(357), np.int64(246)), (np.int64(358), np.int64(246)), (np.int64(359), np.int64(246)), (np.int64(360), np.int64(246)), (np.int64(361), np.int64(246)), (np.int64(362), np.int64(246)), (np.int64(363), np.int64(246)), (np.int64(364), np.int64(246)), (np.int64(365), np.int64(246)), (np.int64(367), np.int64(246)), (np.int64(356), np.int64(247)), (np.int64(357), np.int64(247)), (np.int64(358), np.int64(247)), (np.int64(359), np.int64(247)), (np.int64(360), np.int64(247)), (np.int64(361), np.int64(247)), (np.int64(362), np.int64(247)), (np.int64(363), np.int64(247)), (np.int64(364), np.int64(247))]
+150 33557 [(np.int64(347), np.int64(208)), (np.int64(348), np.int64(208)), (np.int64(349), np.int64(208)), (np.int64(346), np.int64(209)), (np.int64(342), np.int64(210)), (np.int64(343), np.int64(210)), (np.int64(344), np.int64(210)), (np.int64(345), np.int64(210)), (np.int64(346), np.int64(210)), (np.int64(347), np.int64(210)), (np.int64(348), np.int64(210)), (np.int64(349), np.int64(210)), (np.int64(350), np.int64(210)), (np.int64(351), np.int64(210)), (np.int64(352), np.int64(210)), (np.int64(353), np.int64(210)), (np.int64(342), np.int64(211)), (np.int64(343), np.int64(211)), (np.int64(344), np.int64(211)), (np.int64(345), np.int64(211))]
+200 30288 [(np.int64(352), np.int64(226)), (np.int64(353), np.int64(226)), (np.int64(354), np.int64(226)), (np.int64(355), np.int64(226)), (np.int64(356), np.int64(226)), (np.int64(357), np.int64(226)), (np.int64(359), np.int64(226)), (np.int64(352), np.int64(227)), (np.int64(353), np.int64(227)), (np.int64(354), np.int64(227)), (np.int64(356), np.int64(227)), (np.int64(357), np.int64(227)), (np.int64(359), np.int64(227)), (np.int64(348), np.int64(228)), (np.int64(350), np.int64(228)), (np.int64(351), np.int64(228)), (np.int64(352), np.int64(228)), (np.int64(353), np.int64(228)), (np.int64(354), np.int64(228)), (np.int64(355), np.int64(228))]
+300 33650 [(np.int64(313), np.int64(216)), (np.int64(314), np.int64(216)), (np.int64(315), np.int64(216)), (np.int64(316), np.int64(216)), (np.int64(317), np.int64(216)), (np.int64(318), np.int64(216)), (np.int64(319), np.int64(216)), (np.int64(320), np.int64(216)), (np.int64(321), np.int64(216)), (np.int64(322), np.int64(216)), (np.int64(323), np.int64(216)), (np.int64(324), np.int64(216)), (np.int64(325), np.int64(216)), (np.int64(312), np.int64(217)), (np.int64(313), np.int64(217)), (np.int64(314), np.int64(217)), (np.int64(315), np.int64(217)), (np.int64(316), np.int64(217)), (np.int64(317), np.int64(217)), (np.int64(318), np.int64(217))]
+400 34080 [(np.int64(78), np.int64(214)), (np.int64(79), np.int64(214)), (np.int64(80), np.int64(214)), (np.int64(81), np.int64(214)), (np.int64(82), np.int64(214)), (np.int64(83), np.int64(214)), (np.int64(84), np.int64(214)), (np.int64(85), np.int64(214)), (np.int64(86), np.int64(214)), (np.int64(87), np.int64(214)), (np.int64(78), np.int64(215)), (np.int64(79), np.int64(215)), (np.int64(80), np.int64(215)), (np.int64(81), np.int64(215)), (np.int64(82), np.int64(215)), (np.int64(83), np.int64(215)), (np.int64(84), np.int64(215)), (np.int64(85), np.int64(215)), (np.int64(86), np.int64(215)), (np.int64(87), np.int64(215))]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("dribble-count.mp4")
+cap.set(cv2.CAP_PROP_POS_FRAMES,0); ok,img=cap.read()
+for p in [(120,210),(125,215),(350,260),(240,330),(100,340),(300,340)]:
+    x,y=p; print(p, img[y,x])
+cap.release()
+EOF
+(120, 210) [ 28 132 212]
+(125, 215) [ 43 136 242]
+(350, 260) [83 51 43]
+(240, 330) [ 44  93 142]
+(100, 340) [ 44  93 142]
+(300, 340) [ 44  93 142]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("dribble-count.mp4")
+for fi in [0,10,20,30,40,50,60]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    mask=((r>195)&(g>105)&(b<95)).astype(np.uint8)
+    n,lab,stats,cent=cv2.connectedComponentsWithStats(mask,8)
+    comps=[(int(stats[i,4]),tuple(np.round(cent[i],1))) for i in range(1,n) if stats[i,4]>20]
+    print(fi,comps)
+cap.release()
+EOF
+0 [(292, (np.float64(123.3), np.float64(217.9))), (245, (np.float64(342.9), np.float64(237.4)))]
+10 [(113, (np.float64(134.8), np.float64(249.9))), (165, (np.float64(355.8), np.float64(283.4)))]
+20 [(249, (np.float64(348.7), np.float64(225.9))), (127, (np.float64(129.1), np.float64(263.4)))]
+30 [(303, (np.float64(348.1), np.float64(223.3))), (258, (np.float64(128.0), np.float64(233.3)))]
+40 [(238, (np.float64(356.3), np.float64(232.5))), (292, (np.float64(136.2), np.float64(274.1)))]
+50 [(83, (np.float64(127.3), np.float64(247.3))), (176, (np.float64(347.3), np.float64(275.1)))]
+60 [(241, (np.float64(346.9), np.float64(245.3))), (130, (np.float64(127.1), np.float64(276.4)))]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("dribble-count.mp4")
+for fi in [0,100,300,600,900]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    white=((r>200)&(g>200)&(b>200)).astype(np.uint8)
+    rows=white.sum(axis=1)
+    print(fi,[(y,int(rows[y])) for y in range(len(rows)) if rows[y]>300])
+cap.release()
+EOF
+0 [(294, 585), (295, 585), (296, 531)]
+100 [(300, 585), (301, 585), (302, 459)]
+300 [(300, 579), (301, 573)]
+600 [(300, 584), (301, 584), (302, 549)]
+900 [(300, 585), (301, 585), (302, 564)]
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+cap=cv2.VideoCapture("dribble-count.mp4")
+n=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+rows=[]
+for fi in range(n):
+    ok,img=cap.read()
+    if not ok: break
+    b,g,r=cv2.split(img.astype(int))
+    ball=((r>195)&(g>105)&(b<95)).astype(np.uint8)
+    blue=((b>150)&(r<120)&(g<140)).astype(np.uint8)
+    green=((g>140)&(r<110)&(b<110)).astype(np.uint8)
+    def cents(m,minarea=20):
+        nn,lab,st,ce=cv2.connectedComponentsWithStats(m,8)
+        return [(float(ce[i,0]),float(ce[i,1]),int(st[i,4])) for i in range(1,nn) if st[i,4]>=minarea]
+    bl=cents(ball,15)
+    # merge blobs within 18 px
+    merged=[]
+    for c in bl:
+        for m in merged:
+            if abs(c[0]-m[0])<18 and abs(c[1]-m[1])<18:
+                m[0]=(m[0]*m[2]+c[0]*c[2])/(m[2]+c[2]); m[1]=(m[1]*m[2]+c[1]*c[2])/(m[2]+c[2]); m[2]+=c[2]
+                break
+        else:
+            merged.append([c[0],c[1],c[2]])
+    bl=cent_b=[(m[0],m[1],m[2]) for m in merged]
+    bpl=cents(blue,200); gpl=cents(green,200)
+    # main player comp largest
+    bx = max(bpl,key=lambda t:t[2]) if bpl else None
+    gx = max(gpl,key=lambda t:t[2]) if gpl else None
+    white=((r>200)&(g>200)&(b>200)).astype(np.uint8)
+    wr=white.sum(axis=1)
+    ys=[y for y in range(len(wr)) if wr[y]>300]
+    liney = float(np.mean(ys)) if ys else None
+    rows.append(dict(f=fi, balls=bl, blue=bx, green=gx, line=liney))
+json.dump(rows,open("work/dribble_raw.json","w"))
+print(n, rows[0], rows[100])
+EOF
+950 {'f': 0, 'balls': [(123.31849315068493, 217.87328767123287, 292), (342.8857142857143, 237.44489795918366, 245)], 'blue': (92.08519388954171, 247.644535840188, 3404), 'green': (372.8576850094877, 247.2919038583175, 3162), 'line': 295.0} {'f': 100, 'balls': [(362.475, 257.3041666666667, 240), (142.15740740740742, 274.43518518518516, 216)], 'blue': (111.52049395691014, 245.76931161324225, 3806), 'green': (391.42329978652026, 253.05032021957913, 3279), 'line': 301.0}
+
+$ python - <<'EOF'
+import json,numpy as np
+rows=json.load(open("work/dribble_raw.json"))
+from collections import Counter
+print(Counter(len(r["balls"]) for r in rows))
+# show frames with !=2
+bad=[(r["f"],len(r["balls"])) for r in rows if len(r["balls"])!=2]
+print(bad[:80], len(bad))
+print("line range", min(r["line"] for r in rows if r["line"]), max(r["line"] for r in rows if r["line"]))
+EOF
+Counter({2: 909, 1: 41})
+[(266, 1), (267, 1), (271, 1), (272, 1), (273, 1), (274, 1), (275, 1), (508, 1), (509, 1), (510, 1), (511, 1), (512, 1), (513, 1), (514, 1), (515, 1), (516, 1), (517, 1), (518, 1), (519, 1), (552, 1), (553, 1), (554, 1), (568, 1), (569, 1), (570, 1), (584, 1), (585, 1), (618, 1), (619, 1), (620, 1), (621, 1), (622, 1), (623, 1), (624, 1), (625, 1), (626, 1), (627, 1), (628, 1), (629, 1), (630, 1), (631, 1)] 41
+line range 291.5 310.5
+
+$ python - <<'EOF'
+import json,numpy as np
+rows=json.load(open("work/dribble_raw.json"))
+series=[]
+for r in rows:
+    b=r["blue"]; g=r["green"]
+    if not r["balls"]: series.append(None); continue
+    # assign each ball to nearest player x
+    cands=[]
+    for ball in r["balls"]:
+        db=abs(ball[0]-b[0]) if b else 1e9
+        dg=abs(ball[0]-g[0]) if g else 1e9
+        cands.append((db,dg,ball))
+    blue_ball=None; green_ball=None
+    for db,dg,ball in cands:
+        if db<dg:
+            if blue_ball is None or db<blue_ball[0]: blue_ball=(db,ball)
+        else:
+            if green_ball is None or dg<green_ball[0]: green_ball=(dg,ball)
+    if blue_ball is None and green_ball:
+        # only green's visible: the other one is blue? if ball is near green player -> green
+        pass
+    series.append(dict(f=r["f"],line=r["line"],blue=blue_ball[1] if blue_ball else None,green=green_ball[1] if green_ball else None))
+json.dump(series,open("work/dribble_series.json","w"))
+for s in series[::10]:
+    bb=s["blue"]; 
+    print(s["f"], s["line"], None if not bb else (round(bb[0],1),round(bb[1],1),int(bb[2])))
+EOF
+0 295.0 (123.3, 217.9, 292)
+10 299.0 (134.8, 249.9, 113)
+20 296.0 (129.1, 263.4, 127)
+30 294.0 (128.0, 233.3, 258)
+40 303.0 (136.2, 274.1, 292)
+50 300.5 (127.3, 247.3, 83)
+60 306.0 (127.1, 276.4, 130)
+70 302.0 (136.8, 244.3, 253)
+80 310.0 (125.2, 278.0, 289)
+90 304.0 (122.5, 234.4, 197)
+100 301.0 (142.2, 274.4, 216)
+110 302.0 (134.4, 227.3, 242)
+120 298.0 (118.4, 223.6, 255)
+130 298.0 (130.3, 272.5, 274)
+140 292.0 (135.5, 261.1, 156)
+150 301.0 (127.1, 253.2, 154)
+160 297.0 (133.1, 224.2, 226)
+170 300.0 (131.0, 217.4, 253)
+180 303.0 (122.8, 270.3, 115)
+190 307.0 (134.7, 293.1, 163)
+200 306.5 (135.0, 281.3, 289)
+210 301.0 (120.8, 218.0, 289)
+220 308.0 (132.3, 244.8, 202)
+230 300.0 (153.8, 258.5, 193)
+240 300.0 (160.8, 268.2, 295)
+250 295.0 (187.0, 216.8, 298)
+260 298.5 (229.0, 226.9, 211)
+270 296.0 (240.4, 227.4, 70)
+280 294.0 (270.6, 237.4, 235)
+290 302.5 (302.3, 276.5, 288)
+300 300.5 (319.1, 226.1, 205)
+310 306.0 (348.1, 290.6, 208)
+320 302.0 (387.1, 267.8, 94)
+330 310.0 (388.2, 231.1, 261)
+340 304.0 (382.0, 229.3, 223)
+350 301.0 (399.0, 278.9, 276)
+360 302.0 (392.0, 280.2, 298)
+370 298.0 (378.9, 215.7, 247)
+380 298.0 (392.8, 222.7, 210)
+390 292.0 (397.8, 266.2, 305)
+400 301.0 (386.1, 284.3, 279)
+410 297.0 (389.2, 228.2, 231)
+420 300.0 (389.1, 214.1, 310)
+430 303.0 (384.1, 242.2, 212)
+440 306.5 (397.4, 279.5, 163)
+450 307.0 (397.0, 286.6, 294)
+460 301.0 (379.0, 238.5, 284)
+470 308.0 (389.2, 245.2, 312)
+480 300.0 (415.7, 237.1, 258)
+490 300.0 (434.0, 237.1, 284)
+500 295.0 (468.3, 231.8, 303)
+510 299.0 None
+520 296.0 None
+530 294.0 (568.4, 231.1, 297)
+540 303.0 (608.6, 239.9, 290)
+550 301.0 (634.2, 237.8, 194)
+560 306.0 (635.5, 242.8, 135)
+570 302.0 None
+580 310.0 (633.4, 247.4, 237)
+590 304.0 (620.4, 240.8, 265)
+600 301.0 (607.3, 237.9, 311)
+610 302.0 (570.0, 239.3, 291)
+620 298.0 None
+630 298.0 None
+640 292.0 (470.2, 229.3, 298)
+650 301.0 (426.1, 238.3, 278)
+660 296.5 (398.0, 234.2, 283)
+670 300.0 (392.5, 263.1, 254)
+680 303.0 (386.0, 236.4, 274)
+690 306.5 (396.2, 221.9, 269)
+700 307.0 (392.4, 247.0, 167)
+710 301.0 (376.6, 285.9, 291)
+720 308.0 (390.1, 281.4, 305)
+730 299.5 (403.0, 220.6, 200)
+740 300.0 (386.1, 247.2, 117)
+750 295.0 (384.3, 278.6, 275)
+760 298.5 (395.9, 273.0, 282)
+770 296.0 (388.1, 217.1, 255)
+780 294.0 (387.0, 216.3, 228)
+790 303.0 (394.7, 262.8, 200)
+800 300.5 (387.9, 248.9, 225)
+810 306.0 (387.8, 280.0, 301)
+820 302.0 (397.0, 220.6, 271)
+830 310.0 (383.5, 260.6, 100)
+840 304.0 (381.8, 289.0, 179)
+850 301.0 (402.1, 220.5, 263)
+860 302.0 (394.8, 234.7, 219)
+870 298.0 (379.2, 281.2, 232)
+880 298.0 (390.5, 283.8, 213)
+890 292.0 (394.7, 222.2, 278)
+900 301.0 (386.1, 220.2, 256)
+910 297.0 (393.0, 269.5, 273)
+920 300.0 (392.2, 271.4, 192)
+930 303.0 (382.8, 238.7, 270)
+940 307.0 (392.9, 247.1, 233)
+
+$ python - <<'EOF'
+import json
+rows=json.load(open("work/dribble_raw.json")); ser=json.load(open("work/dribble_series.json"))
+for i in range(200,560,10):
+    r=rows[i]; s=ser[i]
+    print(i, "bx", None if not r["blue"] else round(r["blue"][0],1), "gx", None if not r["green"] else round(r["green"][0],1),
+          "| blueball", None if not s["blue"] else (round(s["blue"][0],1),round(s["blue"][1],1)),
+          "greenball", None if not s["green"] else (round(s["green"][0],1),round(s["green"][1],1)), "balls", [(round(b[0],1),round(b[1],1)) for b in r["balls"]])
+EOF
+200 bx 103.8 gx 384.5 | blueball (135.0, 281.3) greenball (356.0, 238.1) balls [(356.0, 238.1), (135.0, 281.3)]
+210 bx 90.0 gx 370.6 | blueball (120.8, 218.0) greenball (341.5, 255.1) balls [(120.8, 218.0), (341.5, 255.1)]
+220 bx 101.5 gx 381.7 | blueball (132.3, 244.8) greenball (352.4, 262.1) balls [(132.3, 244.8), (352.4, 262.1)]
+230 bx 122.9 gx 377.9 | blueball (153.8, 258.5) greenball (348.0, 235.7) balls [(348.0, 235.7), (153.8, 258.5)]
+240 bx 130.2 gx 332.5 | blueball (160.8, 268.2) greenball (303.2, 219.6) balls [(303.2, 219.6), (160.8, 268.2)]
+250 bx 156.6 gx 306.5 | blueball (187.0, 216.8) greenball (276.9, 243.3) balls [(187.0, 216.8), (276.9, 243.3)]
+260 bx 198.5 gx 296.8 | blueball (229.0, 226.9) greenball (267.0, 258.6) balls [(229.0, 226.9), (267.0, 258.6)]
+270 bx 218.5 gx 265.5 | blueball (240.4, 227.4) greenball (249.0, 281.2) balls [(240.4, 227.4), (249.0, 281.2)]
+280 bx 241.4 gx 219.5 | blueball (270.6, 237.4) greenball (204.8, 212.7) balls [(204.8, 212.7), (270.6, 237.4)]
+290 bx 271.6 gx 213.9 | blueball (302.3, 276.5) greenball (183.6, 259.1) balls [(183.6, 259.1), (302.3, 276.5)]
+300 bx 288.6 gx 178.8 | blueball (319.1, 226.1) greenball (149.3, 285.8) balls [(319.1, 226.1), (149.3, 285.8)]
+310 bx 317.5 gx 155.6 | blueball (348.1, 290.6) greenball (126.1, 245.8) balls [(126.1, 245.8), (348.1, 290.6)]
+320 bx 356.3 gx 142.5 | blueball (387.1, 267.8) greenball (112.9, 227.5) balls [(112.9, 227.5), (387.1, 267.8)]
+330 bx 357.6 gx 117.4 | blueball (388.2, 231.1) greenball (88.0, 262.6) balls [(388.2, 231.1), (88.0, 262.6)]
+340 bx 351.6 gx 111.2 | blueball (382.0, 229.3) greenball (82.2, 289.2) balls [(382.0, 229.3), (82.2, 289.2)]
+350 bx 368.5 gx 128.5 | blueball (399.0, 278.9) greenball (98.7, 231.8) balls [(98.7, 231.8), (399.0, 278.9)]
+360 bx 361.5 gx 121.5 | blueball (392.0, 280.2) greenball (91.9, 231.5) balls [(91.9, 231.5), (392.0, 280.2)]
+370 bx 348.9 gx 108.5 | blueball (378.9, 215.7) greenball (79.1, 228.0) balls [(378.9, 215.7), (79.1, 228.0)]
+380 bx 362.5 gx 122.8 | blueball (392.8, 222.7) greenball (92.3, 270.8) balls [(392.8, 222.7), (92.3, 270.8)]
+390 bx 367.5 gx 127.5 | blueball (397.8, 266.2) greenball (97.9, 231.4) balls [(97.9, 231.4), (397.8, 266.2)]
+400 bx 355.5 gx 115.8 | blueball (386.1, 284.3) greenball (86.2, 224.2) balls [(86.2, 224.2), (386.1, 284.3)]
+410 bx 358.6 gx 119.0 | blueball (389.2, 228.2) greenball (88.7, 227.5) balls [(88.7, 227.5), (389.2, 228.2)]
+420 bx 358.6 gx 118.4 | blueball (389.1, 214.1) greenball (88.5, 284.8) balls [(389.1, 214.1), (88.5, 284.8)]
+430 bx 353.6 gx 113.5 | blueball (384.1, 242.2) greenball (83.3, 258.9) balls [(384.1, 242.2), (83.3, 258.9)]
+440 bx 366.5 gx 126.5 | blueball (397.4, 279.5) greenball (97.0, 230.0) balls [(97.0, 230.0), (397.4, 279.5)]
+450 bx 366.5 gx 125.8 | blueball (397.0, 286.6) greenball (96.9, 239.2) balls [(96.9, 239.2), (397.0, 286.6)]
+460 bx 348.5 gx 108.3 | blueball (379.0, 238.5) greenball (78.8, 285.2) balls [(379.0, 238.5), (78.8, 285.2)]
+470 bx 358.9 gx 118.5 | blueball (389.2, 245.2) greenball (88.6, 260.3) balls [(389.2, 245.2), (88.6, 260.3)]
+480 bx 385.2 gx 128.5 | blueball (415.7, 237.1) greenball (99.0, 218.7) balls [(99.0, 218.7), (415.7, 237.1)]
+490 bx 403.6 gx 113.6 | blueball (434.0, 237.1) greenball (84.2, 235.9) balls [(84.2, 235.9), (434.0, 237.1)]
+500 bx 437.5 gx 114.5 | blueball (468.3, 231.8) greenball (84.7, 247.6) balls [(468.3, 231.8), (84.7, 247.6)]
+510 bx 482.7 gx 128.5 | blueball None greenball (99.2, 268.5) balls [(99.2, 268.5)]
+520 bx None gx 119.6 | blueball None greenball (90.1, 223.7) balls [(90.1, 223.7), (547.0, 233.0)]
+530 bx 547.1 gx 114.9 | blueball (568.4, 231.1) greenball (84.9, 224.5) balls [(84.9, 224.5), (568.4, 231.1)]
+540 bx 577.9 gx 121.6 | blueball (608.6, 239.9) greenball (91.7, 257.4) balls [(608.6, 239.9), (91.7, 257.4)]
+550 bx 606.4 gx 116.5 | blueball (634.2, 237.8) greenball (86.6, 255.1) balls [(634.2, 237.8), (86.6, 255.1)]
+
+$ python - <<'EOF'
+import json,numpy as np
+ser=json.load(open("work/dribble_series.json"))
+ys=[]
+for s in ser:
+    if s["blue"]:
+        ys.append((s["f"], s["blue"][1]-(s["line"]-10)))
+a=np.array([y for f,y in ys])
+print("min rel",a.min(),"max",a.max())
+import collections
+print(np.percentile(a,[0,5,10,25,50,75,90,95,100]))
+# histogram
+h,edges=np.histogram(a,bins=20)
+for i in range(20): print(round(edges[i],1),h[i])
+EOF
+min rel -76.06849315068493 max -2.9468085106382773
+[-76.06849315 -71.46223275 -68.86063348 -59.15769941 -50.82111523
+ -19.66248507  -9.15069851  -5.25718966  -2.94680851]
+-76.1 35
+-72.4 57
+-68.8 54
+-65.1 49
+-61.4 37
+-57.8 31
+-54.1 193
+-50.5 29
+-46.8 11
+-43.2 28
+-39.5 36
+-35.9 15
+-32.2 9
+-28.5 3
+-24.9 51
+-21.2 71
+-17.6 59
+-13.9 31
+-10.3 24
+-6.6 73
+
+$ python - <<'EOF'
+import json,numpy as np
+from scipy.signal import find_peaks
+ser=json.load(open("work/dribble_series.json"))
+F=[];Y=[]
+for s in ser:
+    F.append(s["f"]); Y.append(np.nan if not s["blue"] else s["blue"][1]-(s["line"]-10))
+F=np.array(F);Y=np.array(Y)
+np.save("work/dy.npy",Y)
+# interpolate nan
+idx=np.arange(len(Y)); good=~np.isnan(Y)
+Yi=np.interp(idx,idx[good],Y[good])
+for prom in [5,8,12,15]:
+    pk,props=find_peaks(Yi,prominence=prom,distance=5)
+    sel=[p for p in pk if Yi[p]>-25]
+    print("prom",prom,"peaks",len(pk),"nearfloor",len(sel))
+# print selected peaks for prom 8
+pk,props=find_peaks(Yi,prominence=8,distance=6)
+print([(int(p),round(Yi[p],1)) for p in pk if Yi[p]>-30])
+EOF
+prom 5 peaks 56 nearfloor 55
+prom 8 peaks 56 nearfloor 55
+prom 12 peaks 56 nearfloor 55
+prom 15 peaks 48 nearfloor 47
+[(8, np.float64(-5.6)), (21, np.float64(-5.9)), (33, np.float64(-4.4)), (47, np.float64(-5.0)), (59, np.float64(-6.6)), (73, np.float64(-4.2)), (85, np.float64(-3.7)), (101, np.float64(-4.9)), (114, np.float64(-5.3)), (125, np.float64(-3.3)), (139, np.float64(-3.7)), (152, np.float64(-5.1)), (164, np.float64(-4.9)), (179, np.float64(-5.6)), (190, np.float64(-3.9)), (204, np.float64(-4.1)), (216, np.float64(-5.7)), (232, np.float64(-3.3)), (245, np.float64(-4.2)), (256, np.float64(-5.0)), (283, np.float64(-4.2)), (295, np.float64(-3.7)), (310, np.float64(-5.4)), (321, np.float64(-5.8)), (335, np.float64(-4.9)), (347, np.float64(-4.2)), (363, np.float64(-3.8)), (376, np.float64(-6.1)), (387, np.float64(-4.4)), (401, np.float64(-3.7)), (414, np.float64(-5.9)), (426, np.float64(-5.1)), (441, np.float64(-2.9)), (452, np.float64(-3.2)), (672, np.float64(-5.2)), (683, np.float64(-5.4)), (697, np.float64(-5.2)), (709, np.float64(-4.1)), (725, np.float64(-4.3)), (738, np.float64(-6.0)), (749, np.float64(-4.9)), (763, np.float64(-4.2)), (776, np.float64(-5.9)), (788, np.float64(-5.3)), (803, np.float64(-3.0)), (814, np.float64(-3.5)), (828, np.float64(-5.1)), (840, np.float64(-5.0)), (856, np.float64(-5.2)), (869, np.float64(-4.5)), (880, np.float64(-4.2)), (894, np.float64(-4.9)), (907, np.float64(-3.8)), (919, np.float64(-4.3)), (934, np.float64(-3.6))]
+
+$ python - <<'EOF'
+import numpy as np
+Y=np.load("work/dy.npy")
+for i in range(430,700,5):
+    v=Y[i]
+    bar=("" if np.isnan(v) else "#"*int(max(0,(v+80))/2))
+    print(f"{i:4d} {0 if np.isnan(v) else round(v,1):>7} {bar}")
+EOF
+430   -50.8 ##############
+ 435   -62.5 ########
+ 440   -17.0 ###############################
+ 445   -15.6 ################################
+ 450   -10.4 ##################################
+ 455   -35.8 ######################
+ 460   -52.5 #############
+ 465   -52.7 #############
+ 470   -52.8 #############
+ 475   -52.5 #############
+ 480   -52.9 #############
+ 485   -52.9 #############
+ 490   -52.9 #############
+ 495   -52.6 #############
+ 500   -53.2 #############
+ 505   -53.3 #############
+ 510       0 
+ 515       0 
+ 520       0 
+ 525       0 
+ 530   -52.9 #############
+ 535   -53.0 #############
+ 540   -53.1 #############
+ 545   -53.1 #############
+ 550   -53.2 #############
+ 555   -52.2 #############
+ 560   -53.2 #############
+ 565   -53.1 #############
+ 570       0 
+ 575   -53.4 #############
+ 580   -52.6 #############
+ 585       0 
+ 590   -53.2 #############
+ 595   -52.7 #############
+ 600   -53.1 #############
+ 605   -52.7 #############
+ 610   -52.7 #############
+ 615       0 
+ 620       0 
+ 625       0 
+ 630       0 
+ 635   -52.9 #############
+ 640   -52.7 #############
+ 645   -52.9 #############
+ 650   -52.7 #############
+ 655   -52.8 #############
+ 660   -52.3 #############
+ 665   -52.7 #############
+ 670   -26.9 ##########################
+ 675   -56.5 ###########
+ 680   -56.6 ###########
+ 685   -37.1 #####################
+ 690   -74.6 ##
+ 695   -37.0 #####################
+
+$ python - <<'EOF'
+import numpy as np
+Y=np.load("work/dy.npy")
+idx=np.arange(len(Y)); good=~np.isnan(Y)
+Yi=np.interp(idx,idx[good],Y[good])
+# count runs where Yi > -20
+mask=Yi>-20
+runs=[];start=None
+for i,m in enumerate(mask):
+    if m and start is None: start=i
+    if not m and start is not None: runs.append((start,i-1)); start=None
+if start is not None: runs.append((start,len(mask)-1))
+print("runs",len(runs))
+print([(a,b) for a,b in runs])
+# durations
+print([ (a,b,b-a) for a,b in runs if b-a>20])
+EOF
+runs 46
+[(8, 8), (21, 21), (33, 48), (59, 60), (73, 76), (82, 86), (100, 101), (114, 114), (125, 139), (152, 152), (164, 165), (178, 179), (190, 204), (216, 217), (231, 236), (241, 245), (256, 257), (282, 296), (309, 310), (321, 321), (335, 335), (347, 363), (376, 376), (387, 391), (397, 401), (414, 414), (426, 427), (440, 453), (671, 672), (683, 683), (697, 697), (709, 725), (738, 738), (749, 753), (759, 763), (776, 776), (788, 789), (802, 814), (828, 828), (840, 841), (855, 857), (868, 880), (893, 895), (907, 910), (915, 920), (933, 936)]
+[]
+
+$ python - <<'EOF'
+import numpy as np
+Y=np.load("work/dy.npy")
+for i in range(0,130):
+    v=Y[i]
+    if np.isnan(v): print(f"{i:4d}   NaN")
+    else: print(f"{i:4d} {v:7.1f} "+" "*0+"#"*int(max(0,(v+80))/2))
+EOF
+0   -67.1 ######
+   1   -70.4 ####
+   2   -70.8 ####
+   3   -67.2 ######
+   4   -60.2 #########
+   5   -50.5 ##############
+   6   -37.6 #####################
+   7   -20.3 #############################
+   8    -5.6 #####################################
+   9   -21.6 #############################
+  10   -39.1 ####################
+  11   -54.1 ############
+  12   -64.0 ########
+  13   -70.9 ####
+  14   -74.7 ##
+  15   -74.2 ##
+  16   -70.5 ####
+  17   -63.5 ########
+  18   -52.6 #############
+  19   -39.3 ####################
+  20   -22.6 ############################
+  21    -5.9 #####################################
+  22   -20.9 #############################
+  23   -37.6 #####################
+  24   -50.4 ##############
+  25   -59.7 ##########
+  26   -65.0 #######
+  27   -66.7 ######
+  28   -64.8 #######
+  29   -59.5 ##########
+  30   -50.7 ##############
+  31   -37.8 #####################
+  32   -21.4 #############################
+  33    -4.4 #####################################
+  34    -6.0 ####################################
+  35    -9.3 ###################################
+  36   -12.2 #################################
+  37   -15.1 ################################
+  38   -17.0 ###############################
+  39   -18.2 ##############################
+  40   -18.9 ##############################
+  41   -18.8 ##############################
+  42   -18.4 ##############################
+  43   -17.2 ###############################
+  44   -15.3 ################################
+  45   -12.5 #################################
+  46    -9.0 ###################################
+  47    -5.0 #####################################
+  48    -5.1 #####################################
+  49   -23.9 ############################
+  50   -43.2 ##################
+  51   -57.2 ###########
+  52   -66.8 ######
+  53   -71.6 ####
+  54   -71.7 ####
+  55   -66.8 ######
+  56   -57.7 ###########
+  57   -43.5 ##################
+  58   -24.5 ###########################
+  59    -6.6 ####################################
+  60   -19.6 ##############################
+  61   -35.1 ######################
+  62   -47.9 ################
+  63   -58.2 ##########
+  64   -65.0 #######
+  65   -69.3 #####
+  66   -71.0 ####
+  67   -69.4 #####
+  68   -65.0 #######
+  69   -57.7 ###########
+  70   -47.7 ################
+  71   -34.6 ######################
+  72   -20.0 #############################
+  73    -4.2 #####################################
+  74    -7.4 ####################################
+  75   -12.8 #################################
+  76   -16.9 ###############################
+  77   -20.4 #############################
+  78   -22.3 ############################
+  79   -22.9 ############################
+  80   -22.0 #############################
+  81   -20.7 #############################
+  82   -17.1 ###############################
+  83   -13.3 #################################
+  84    -7.0 ####################################
+  85    -3.7 ######################################
+  86   -17.2 ###############################
+  87   -30.6 ########################
+  88   -42.3 ##################
+  89   -52.2 #############
+  90   -59.6 ##########
+  91   -64.5 #######
+  92   -67.6 ######
+  93   -68.8 #####
+  94   -67.9 ######
+  95   -64.5 #######
+  96   -59.5 ##########
+  97   -51.8 ##############
+  98   -42.2 ##################
+  99   -30.8 ########################
+ 100   -16.6 ###############################
+ 101    -4.9 #####################################
+ 102   -21.0 #############################
+ 103   -38.8 ####################
+ 104   -53.8 #############
+ 105   -64.5 #######
+ 106   -72.0 ####
+ 107   -75.3 ##
+ 108   -75.2 ##
+ 109   -72.0 ####
+ 110   -64.7 #######
+ 111   -53.7 #############
+ 112   -39.5 ####################
+ 113   -21.9 #############################
+ 114    -5.3 #####################################
+ 115   -22.0 #############################
+ 116   -38.5 ####################
+ 117   -51.3 ##############
+ 118   -60.1 #########
+ 119   -64.4 #######
+ 120   -64.4 #######
+ 121   -60.2 #########
+ 122   -50.4 ##############
+ 123   -38.8 ####################
+ 124   -21.6 #############################
+ 125    -3.3 ######################################
+ 126    -4.2 #####################################
+ 127    -8.9 ###################################
+ 128   -11.7 ##################################
+ 129   -14.0 ################################
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+rows=json.load(open("work/dribble_raw.json"))
+cap=cv2.VideoCapture("dribble-count.mp4")
+# recompute per frame with bbox and assignment done via series logic but keep comps
+out=[]
+for fi in range(len(rows)):
+    ok,img=cap.read()
+    if not ok: break
+    b,g,r=cv2.split(img.astype(int))
+    ball=((r>195)&(g>105)&(b<95)).astype(np.uint8)
+    n,lab,st,ce=cv2.connectedComponentsWithStats(ball,8)
+    comps=[(float(ce[i,0]),float(ce[i,1]),int(st[i,4]),int(st[i,0]),int(st[i,1]),int(st[i,2]),int(st[i,3])) for i in range(1,n) if st[i,4]>=15]
+    out.append(dict(f=fi,comps=comps,line=rows[fi]["line"],blue=rows[fi]["blue"],green=rows[fi]["green"]))
+cap.release()
+json.dump(out,open("work/dribble_comps.json","w"))
+# print comps in 30-50
+for o in out[30:52]:
+    print(o["f"], o["line"], [(round(c[0],1),round(c[1],1),c[2],c[4]+c[6]) for c in o["comps"]])
+EOF
+30 294.0 [(348.1, 223.3, 303, 234), (128.0, 233.3, 258, 242)]
+31 294.0 [(342.9, 224.6, 289, 235), (122.7, 246.2, 209, 254)]
+32 297.0 [(340.1, 232.6, 279, 242), (119.6, 265.6, 146, 273)]
+33 301.0 [(341.0, 244.8, 271, 255), (120.4, 286.6, 207, 295)]
+34 304.0 [(345.0, 259.0, 269, 269), (124.7, 288.0, 262, 298)]
+35 305.0 [(351.7, 276.4, 171, 284), (131.2, 285.7, 302, 296)]
+36 306.0 [(136.0, 283.8, 299, 294), (356.3, 290.1, 209, 298)]
+37 308.0 [(359.6, 277.4, 150, 284), (139.2, 282.9, 306, 293)]
+38 309.0 [(359.6, 261.9, 169, 270), (139.1, 282.0, 302, 292)]
+39 307.0 [(357.2, 246.7, 190, 255), (137.2, 278.8, 299, 289)]
+40 303.0 [(356.3, 232.5, 238, 241), (136.2, 274.1, 292, 284)]
+41 298.0 [(355.1, 220.8, 281, 231), (135.2, 269.2, 311, 280)]
+42 295.0 [(355.1, 214.6, 275, 224), (135.2, 266.6, 296, 277)]
+43 296.0 [(355.1, 215.4, 260, 224), (135.3, 268.8, 296, 280)]
+44 299.0 [(354.4, 221.7, 258, 231), (134.3, 273.7, 284, 284)]
+45 302.0 [(350.5, 231.2, 258, 240), (130.4, 279.5, 286, 290)]
+46 302.0 [(346.6, 241.8, 182, 250), (126.2, 283.0, 274, 292)]
+47 301.0 [(343.1, 253.7, 140, 260), (122.1, 286.0, 275, 296)]
+48 301.0 [(340.7, 269.9, 139, 276), (120.3, 285.9, 181, 293)]
+49 300.5 [(122.6, 266.6, 62, 270), (342.2, 286.5, 198, 294)]
+50 300.5 [(127.3, 247.3, 83, 252), (347.3, 275.1, 176, 282)]
+51 298.5 [(132.9, 231.3, 144, 238), (353.4, 259.5, 181, 267)]
+
+$ python - <<'EOF'
+import cv2
+cap=cv2.VideoCapture("dribble-count.mp4")
+for f in [33,36,40,47,73,79,85]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,f); ok,img=cap.read()
+    crop=img[240:320, 80:400]
+    cv2.imwrite(f"work/frames/drib_{f}.png", cv2.resize(crop,(640,160),interpolation=cv2.INTER_NEAREST))
+cap.release()
+EOF
+ls work/frames/drib_*
+work/frames/drib_33.png
+work/frames/drib_36.png
+work/frames/drib_40.png
+work/frames/drib_47.png
+work/frames/drib_73.png
+work/frames/drib_79.png
+work/frames/drib_85.png
+
+→ Read work/frames/drib_33.png
+→ Read work/frames/drib_40.png
+
+$ python - <<'EOF'
+import json
+rows=json.load(open("work/dribble_raw.json"))
+for i in range(500,700,5):
+    r=rows[i]
+    print(i, "bx",None if not r["blue"] else round(r["blue"][0],1), "gx",None if not r["green"] else round(r["green"][0],1),
+          "balls",[(round(b[0],1),round(b[1],1),int(b[2])) for b in r["balls"]])
+EOF
+500 bx 437.5 gx 114.5 balls [(468.3, 231.8, 303), (84.7, 247.6, 193)]
+505 bx 459.1 gx 119.6 balls [(90.1, 223.6, 293), (485.7, 240.7, 127)]
+510 bx 482.7 gx 128.5 balls [(99.2, 268.5, 146)]
+515 bx 477.4 gx 115.2 balls [(85.2, 248.8, 193)]
+520 bx None gx 119.6 balls [(90.1, 223.7, 294), (547.0, 233.0, 37)]
+525 bx None gx 122.5 balls [(559.8, 237.8, 298), (92.3, 274.2, 178)]
+530 bx 547.1 gx 114.9 balls [(84.9, 224.5, 280), (568.4, 231.1, 297)]
+535 bx 557.9 gx 116.4 balls [(586.9, 242.0, 294), (86.8, 244.5, 278)]
+540 bx 577.9 gx 121.6 balls [(608.6, 239.9, 290), (91.7, 257.4, 163)]
+545 bx 590.5 gx 117.9 balls [(88.0, 218.9, 282), (621.1, 238.9, 286)]
+550 bx 606.4 gx 116.5 balls [(634.2, 237.8, 194), (86.6, 255.1, 127)]
+555 bx 616.7 gx 126.7 balls [(638.5, 236.3, 19), (96.7, 243.3, 211)]
+560 bx 609.5 gx 120.0 balls [(90.2, 242.2, 280), (635.5, 242.8, 135)]
+565 bx 606.5 gx 116.5 balls [(634.2, 231.9, 203), (86.4, 264.0, 180)]
+570 bx 619.7 gx 129.2 balls [(99.9, 221.8, 303)]
+575 bx 605.6 gx 115.5 balls [(633.6, 231.6, 228), (85.7, 247.7, 192)]
+580 bx 604.9 gx 114.4 balls [(633.4, 247.4, 237), (84.9, 258.4, 202)]
+585 bx 618.1 gx 128.6 balls [(99.2, 226.3, 295)]
+590 bx 591.0 gx 108.7 balls [(620.4, 240.8, 265), (78.5, 263.6, 232)]
+595 bx 582.8 gx 117.3 balls [(613.4, 231.3, 286), (87.5, 233.3, 194)]
+600 bx 577.4 gx 128.5 balls [(98.9, 230.8, 293), (607.3, 237.9, 311)]
+605 bx 545.6 gx 108.5 balls [(570.7, 239.3, 298), (78.4, 273.0, 230)]
+610 bx 553.5 gx 124.3 balls [(94.9, 220.7, 285), (570.0, 239.3, 291)]
+615 bx None gx 126.9 balls [(559.1, 239.1, 189), (97.9, 242.7, 237)]
+620 bx 478.6 gx 111.2 balls [(82.8, 254.0, 144)]
+625 bx 486.4 gx 127.6 balls [(98.1, 237.8, 269)]
+630 bx 470.4 gx 122.5 balls [(92.8, 283.2, 196)]
+635 bx 443.5 gx 111.6 balls [(81.8, 225.7, 255), (473.5, 240.1, 262)]
+640 bx 439.6 gx 124.5 balls [(470.2, 229.3, 298), (94.8, 231.3, 229)]
+645 bx 415.5 gx 117.5 balls [(446.4, 243.1, 296), (87.9, 265.8, 203)]
+650 bx 395.4 gx 113.6 balls [(84.5, 226.4, 265), (426.1, 238.3, 278)]
+655 bx 386.5 gx 121.8 balls [(416.8, 245.2, 279), (92.0, 256.3, 202)]
+660 bx 367.6 gx 119.7 balls [(398.0, 234.2, 283), (90.0, 249.8, 136)]
+665 bx 356.3 gx 116.4 balls [(87.4, 223.2, 279), (386.8, 235.8, 286)]
+670 bx 361.5 gx 121.4 balls [(392.5, 263.1, 254), (92.1, 284.0, 193)]
+675 bx 365.6 gx 125.6 balls [(96.4, 223.4, 245), (396.2, 234.5, 220)]
+680 bx 355.5 gx 115.1 balls [(86.0, 233.7, 272), (386.0, 236.4, 274)]
+685 bx 362.4 gx 122.8 balls [(392.8, 248.9, 138), (92.3, 266.9, 152)]
+690 bx 365.5 gx 125.6 balls [(396.2, 221.9, 269), (96.1, 236.0, 283)]
+695 bx 350.6 gx 111.1 balls [(380.6, 253.0, 184), (80.8, 271.5, 167)]
+
+$ python - <<'EOF'
+import cv2
+cap=cv2.VideoCapture("dribble-count.mp4")
+for f in [460,480,520,560,600,650]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,f); ok,img=cap.read()
+    cv2.imwrite(f"work/frames/dcarry_{f}.png", img)
+cap.release()
+EOF
+(no output)
+
+→ Read work/frames/dcarry_480.png
+→ Read work/frames/dcarry_560.png
+
+$ python - <<'EOF'
+import json,numpy as np
+rows=json.load(open("work/dribble_raw.json")); ser=json.load(open("work/dribble_series.json"))
+for i in range(255,290):
+    r=rows[i]
+    print(i,"bx",None if not r["blue"] else round(r["blue"][0],1),"gx",None if not r["green"] else round(r["green"][0],1),
+          "balls",[(round(b[0],1),round(b[1],1),int(b[2])) for b in r["balls"]], "line",r["line"])
+EOF
+255 bx 175.4 gx 300.1 balls [(270.2, 229.5, 287), (206.2, 270.8, 137)] line 304.0
+256 bx 177.6 gx 296.6 balls [(267.3, 227.9, 290), (208.6, 285.0, 191)] line 300.0
+257 bx 180.1 gx 294.4 balls [(265.1, 229.1, 263), (211.5, 266.6, 137)] line 296.5
+258 bx 185.5 gx 293.7 balls [(264.2, 235.2, 238), (215.6, 248.5, 129)] line 296.0
+259 bx 191.4 gx 295.1 balls [(222.9, 236.9, 146), (265.9, 245.7, 233)] line 298.0
+260 bx 198.5 gx 296.8 balls [(229.0, 226.9, 211), (267.0, 258.6, 167)] line 298.5
+261 bx 203.4 gx 297.1 balls [(234.6, 220.4, 197), (267.4, 273.5, 167)] line 300.0
+262 bx 206.3 gx 295.3 balls [(237.2, 216.1, 236), (264.7, 285.8, 166)] line 300.5
+263 bx 206.5 gx 288.8 balls [(236.6, 218.1, 276), (259.1, 273.2, 82)] line 304.0
+264 bx 202.9 gx 280.2 balls [(233.4, 223.5, 271), (250.9, 260.7, 95)] line 308.0
+265 bx 200.0 gx 272.1 balls [(229.8, 229.6, 255), (242.4, 249.3, 136)] line 310.0
+266 bx 198.0 gx 263.6 balls [(232.4, 239.6, 361)] line 310.0
+267 bx 199.4 gx 260.5 balls [(231.1, 236.7, 435)] line 306.0
+268 bx 205.6 gx 261.6 balls [(232.9, 223.1, 258), (235.3, 252.5, 128)] line 300.0
+269 bx 211.6 gx 263.9 balls [(236.6, 221.9, 193), (242.2, 266.5, 125)] line 296.5
+270 bx 218.5 gx 265.5 balls [(240.4, 227.4, 70), (249.0, 281.2, 187)] line 296.0
+271 bx 223.5 gx 265.4 balls [(253.3, 267.4, 127)] line 297.0
+272 bx 226.5 gx 263.4 balls [(257.0, 253.7, 167)] line 298.0
+273 bx 228.0 gx 262.1 balls [(258.3, 241.4, 191)] line 298.0
+274 bx 231.5 gx 262.5 balls [(262.9, 233.6, 230)] line 299.0
+275 bx 235.5 gx 263.0 balls [(266.6, 229.6, 259)] line 301.0
+276 bx 239.8 gx 265.8 balls [(270.6, 228.8, 285), (219.8, 258.0, 28)] line 303.0
+277 bx 243.6 gx 267.5 balls [(274.2, 229.6, 286), (219.8, 245.3, 91)] line 304.0
+278 bx 245.6 gx None balls [(275.8, 230.5, 281), (219.6, 231.9, 220)] line 302.0
+279 bx 243.6 gx None balls [(213.9, 220.8, 266), (274.6, 232.4, 281)] line 298.0
+280 bx 241.4 gx 219.5 balls [(204.8, 212.7, 288), (270.6, 237.4, 235)] line 294.0
+281 bx 237.5 gx 213.5 balls [(196.6, 211.2, 286), (267.9, 249.6, 216)] line 294.0
+282 bx 237.1 gx 210.5 balls [(190.9, 215.6, 292), (267.1, 267.7, 173)] line 297.0
+283 bx 240.6 gx 211.5 balls [(189.1, 223.9, 293), (271.0, 286.8, 220)] line 301.0
+284 bx 247.0 gx 215.4 balls [(190.8, 233.9, 268), (277.6, 288.2, 268)] line 304.0
+285 bx 254.8 gx 220.5 balls [(193.2, 245.5, 206), (285.2, 285.3, 306)] line 305.0
+286 bx 261.6 gx 224.5 balls [(195.7, 259.7, 199), (292.8, 283.0, 296)] line 306.0
+287 bx 266.1 gx 224.5 balls [(195.0, 277.8, 183), (297.2, 283.0, 301)] line 308.0
+288 bx 269.5 gx 222.2 balls [(299.8, 282.6, 282), (192.1, 293.8, 205)] line 309.0
+289 bx 269.6 gx 216.7 balls [(300.4, 279.8, 298), (187.5, 278.3, 135)] line 306.5
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("dribble-count.mp4")
+for f in range(262,282,2):
+    cap.set(cv2.CAP_PROP_POS_FRAMES,f); ok,img=cap.read()
+    crop=img[190:320,160:300]
+    cv2.imwrite(f"work/frames/cross_{f}.png", cv2.resize(crop,(560,520),interpolation=cv2.INTER_NEAREST))
+cap.release()
+EOF
+(no output)
+
+→ Read work/frames/cross_266.png
+→ Read work/frames/cross_270.png
+
+$ python - <<'EOF'
+import json, numpy as np
+from scipy.signal import find_peaks
+rows=json.load(open("work/dribble_comps.json"))
+# rows have comps (x,y,area,left,top,w,h) and line
+xs=[];ys=[];fs=[];lines=[]
+lastx=None; vx=0.0
+for o in rows:
+    comps=o["comps"]
+    cand=None
+    if lastx is None:
+        # choose ball nearest blue player initially
+        if o["blue"]:
+            comps2=sorted(comps,key=lambda c:abs(c[0]-o["blue"][0]))
+            if comps2: cand=comps2[0]
+    else:
+        pred=lastx+vx
+        comps2=sorted(comps,key=lambda c:abs(c[0]-pred))
+        if comps2 and abs(comps2[0][0]-pred)<28:
+            cand=comps2[0]
+            # if the two blobs are within 12 px, ambiguous merge
+            if len(comps2)>1 and abs(comps2[0][0]-comps2[1][0])<12:
+                cand=None
+    if cand is not None:
+        if lastx is not None:
+            nvx=cand[0]-lastx
+            vx=0.6*vx+0.4*nvx
+        lastx=cand[0]
+        xs.append(cand[0]); ys.append(cand[1]); fs.append(o["f"]); lines.append(o["line"])
+    else:
+        xs.append(np.nan); ys.append(np.nan); fs.append(o["f"]); lines.append(o["line"])
+        if cand is not None: pass
+X=np.array(xs,float); Y=np.array(ys,float); L=np.array(lines,float)
+rel=Y-(L-10)
+np.save("work/blueY.npy",Y); np.save("work/blueRel.npy",rel)
+print("missing",int(np.isnan(Y).sum()))
+# print region
+for i in range(255,285):
+    print(i, None if np.isnan(Y[i]) else round(Y[i],1), None if np.isnan(rel[i]) else round(rel[i],1), None if np.isnan(X[i]) else round(X[i],1))
+EOF
+missing 127
+255 270.8 -23.2 206.2
+256 285.0 -5.0 208.6
+257 266.6 -19.9 211.5
+258 248.5 -37.5 215.6
+259 236.9 -51.1 222.9
+260 226.9 -61.6 229.0
+261 220.4 -69.6 234.6
+262 216.1 -74.4 237.2
+263 218.1 -75.9 236.6
+264 223.5 -74.5 233.4
+265 229.6 -70.4 229.8
+266 239.6 -60.4 232.4
+267 236.7 -59.3 231.1
+268 None None None
+269 None None None
+270 None None None
+271 267.4 -19.6 253.3
+272 253.7 -34.3 257.0
+273 241.4 -46.6 258.3
+274 233.6 -55.4 262.9
+275 229.6 -61.4 266.6
+276 228.8 -64.2 270.6
+277 229.6 -64.4 274.2
+278 230.5 -61.5 275.8
+279 232.4 -55.6 274.6
+280 237.4 -46.6 270.6
+281 249.6 -34.4 267.9
+282 267.7 -19.3 267.1
+283 286.8 -4.2 271.0
+284 288.2 -5.8 277.6
+
+$ python - <<'EOF'
+import numpy as np
+from scipy.signal import find_peaks
+rel=np.load("work/blueRel.npy")
+idx=np.arange(len(rel)); good=~np.isnan(rel)
+Ri=np.interp(idx,idx[good],rel[good])
+for prom in [5,8,12,15,20]:
+    pk,props=find_peaks(Ri,prominence=prom,distance=6)
+    sel=[p for p in pk if Ri[p]>-25]
+    print("prom",prom,"all",len(pk),"near",len(sel))
+pk,_=find_peaks(Ri,prominence=8,distance=6)
+print("peak frames:",[int(p) for p in pk if Ri[p]>-25])
+print("count",len([p for p in pk if Ri[p]>-25]))
+EOF
+prom 5 all 56 near 56
+prom 8 all 56 near 56
+prom 12 all 56 near 56
+prom 15 all 48 near 48
+prom 20 all 42 near 42
+peak frames: [8, 21, 33, 47, 59, 73, 85, 101, 114, 125, 139, 152, 164, 179, 190, 204, 216, 232, 245, 256, 271, 283, 295, 310, 321, 335, 347, 363, 376, 387, 401, 414, 426, 441, 452, 672, 683, 697, 709, 725, 738, 749, 763, 776, 788, 803, 814, 828, 840, 856, 869, 880, 894, 907, 919, 934]
+count 56
+
+→ Read work/frames/squat-reps_f0.png
+→ Read work/frames/squat-reps_f399.png
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+cap=cv2.VideoCapture("squat-reps.mp4")
+n=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+data=[]
+for fi in range(n):
+    ok,img=cap.read()
+    if not ok: break
+    b,g,r=cv2.split(img.astype(int))
+    yellow=((r>180)&(g>140)&(b<120)).astype(np.uint8)
+    ys,xs=np.nonzero(yellow)
+    white=((r>200)&(g>200)&(b>200)).astype(np.uint8)
+    wr=white.sum(axis=1)
+    rows=[y for y in range(len(wr)) if wr[y]>200]
+    # split into clusters
+    cl=[];cur=[]
+    for y in rows:
+        if cur and y-cur[-1]>5: cl.append(cur);cur=[]
+        cur.append(y)
+    if cur: cl.append(cur)
+    lines=[float(np.mean(c)) for c in cl]
+    data.append(dict(f=fi, cy=float(np.mean(ys)) if len(ys) else None, cx=float(np.mean(xs)) if len(xs) else None, area=len(ys), lines=lines))
+cap.release()
+json.dump(data,open("work/squat.json","w"))
+for d in data[::50]:
+    print(d["f"], None if d["cy"] is None else round(d["cy"],1), d["area"], [round(x,1) for x in d["lines"]])
+EOF
+0 87.1 829 [97.0, 207.0]
+50 217.9 823 [99.0, 209.0]
+100 158.0 787 [107.0, 217.0]
+150 96.5 825 [105.0, 215.0]
+200 99.8 820 [112.0, 222.0]
+250 230.4 827 [107.0, 217.0]
+300 207.4 763 [109.0, 219.0]
+350 157.3 785 [117.0, 227.0]
+400 209.8 763 [115.0, 225.0]
+450 114.4 843 [122.0, 232.0]
+500 116.5 790 [117.0, 227.0]
+550 222.6 777 [119.0, 229.0]
+600 212.1 780 [127.0, 237.0]
+650 240.9 801 [125.0, 235.0]
+700 119.6 829 [132.0, 242.0]
+750 117.3 824 [127.0, 237.0]
+800 146.4 752 [128.5, 239.0]
+850 253.6 832 [137.0, 247.0]
+900 123.7 826 [135.0, 245.0]
+950 190.5 833 [142.0, 252.0]
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/squat.json"))
+for x in d:
+    if x["cy"] is None or len(x["lines"])<2: x["ok"]=False
+    else: x["ok"]=True
+seq=[x for x in d]
+# print transitions with below/above
+print("frames with bad:",sum(1 for x in seq if not x["ok"]))
+# Smooth cy a little
+cy=np.array([x["cy"] if x["cy"] is not None else np.nan for x in seq])
+idx=np.arange(len(cy));good=~np.isnan(cy);cy=np.interp(idx,idx[good],cy[good])
+up=np.array([x["lines"][0] if len(x["lines"])>=2 else np.nan for x in seq])
+lo=np.array([x["lines"][1] if len(x["lines"])>=2 else np.nan for x in seq])
+good=~np.isnan(up);up=np.interp(idx,idx[good],up[good]);lo=np.interp(idx,idx[good],lo[good])
+below=cy>lo
+above=cy<up
+# list runs of below
+runs=[];s=None
+for i,v in enumerate(below):
+    if v and s is None: s=i
+    if not v and s is not None: runs.append((s,i-1)); s=None
+if s is not None: runs.append((s,len(below)-1))
+print("below runs",runs)
+# state machine
+count=0;state="up";events=[]
+for i in range(len(cy)):
+    if state=="up":
+        if below[i]: state="down"; events.append(("down",i))
+    else:
+        if above[i]:
+            count+=1; state="up"; events.append(("complete",i))
+print("count",count)
+print(events[:10])
+print([e for e in events if e[0]=="complete"][:5])
+# also min/max rel positions
+print("cy min/max",cy.min(),cy.max())
+EOF
+frames with bad: 3
+below runs [(43, 52), (108, 116), (242, 253), (302, 312), (332, 341), (539, 548), (604, 614), (649, 659), (718, 730), (848, 856), (922, 931)]
+count 8
+[('down', 43), ('complete', 67), ('down', 108), ('complete', 131), ('down', 242), ('complete', 266), ('down', 302), ('complete', 356), ('down', 539), ('complete', 563)]
+[('complete', 67), ('complete', 131), ('complete', 266), ('complete', 356), ('complete', 563)]
+cy min/max 86.38125 265.60510328068045
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/squat.json"))
+cy=np.array([x["cy"] if x["cy"] is not None else np.nan for x in d])
+idx=np.arange(len(cy));good=~np.isnan(cy);cy=np.interp(idx,idx[good],cy[good])
+up=np.array([x["lines"][0] if len(x["lines"])>=2 else np.nan for x in d])
+lo=np.array([x["lines"][1] if len(x["lines"])>=2 else np.nan for x in d])
+good=~np.isnan(up);up=np.interp(idx,idx[good],up[good]);lo=np.interp(idx,idx[good],lo[good])
+below=cy>lo; above=cy<up
+state="up";count=0
+for i in range(len(cy)):
+    if state=="up":
+        if below[i]:
+            state="down"; print(f"DOWN  f={i} t={i/25:.2f} cy={cy[i]:.1f} lo={lo[i]:.1f}")
+    else:
+        if above[i]:
+            count+=1; state="up"; print(f"UP    f={i} t={i/25:.2f} cy={cy[i]:.1f} up={up[i]:.1f}  => rep {count}")
+print("count",count)
+# print min cy between events to see if returns above upper
+EOF
+DOWN  f=43 t=1.72 cy=215.0 lo=211.0
+UP    f=67 t=2.68 cy=102.9 up=107.0  => rep 1
+DOWN  f=108 t=4.32 cy=217.7 lo=216.0
+UP    f=131 t=5.24 cy=109.4 up=110.0  => rep 2
+DOWN  f=242 t=9.68 cy=232.3 lo=228.0
+UP    f=266 t=10.64 cy=113.6 up=114.0  => rep 3
+DOWN  f=302 t=12.08 cy=217.4 lo=215.5
+UP    f=356 t=14.24 cy=108.7 up=112.0  => rep 4
+DOWN  f=539 t=21.56 cy=233.7 lo=233.0
+UP    f=563 t=22.52 cy=117.1 up=120.0  => rep 5
+DOWN  f=604 t=24.16 cy=236.0 lo=234.0
+UP    f=674 t=26.96 cy=123.7 up=128.0  => rep 6
+DOWN  f=718 t=28.72 cy=246.4 lo=244.0
+UP    f=744 t=29.76 cy=128.1 up=132.0  => rep 7
+DOWN  f=848 t=33.92 cy=246.7 lo=243.0
+UP    f=871 t=34.84 cy=136.3 up=137.5  => rep 8
+DOWN  f=922 t=36.88 cy=251.2 lo=247.0
+count 8
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/squat.json"))
+cy=np.array([x["cy"] if x["cy"] is not None else np.nan for x in d])
+idx=np.arange(len(cy));good=~np.isnan(cy);cy=np.interp(idx,idx[good],cy[good])
+up=np.array([x["lines"][0] if len(x["lines"])>=2 else np.nan for x in d]);lo=np.array([x["lines"][1] if len(x["lines"])>=2 else np.nan for x in d])
+good=~np.isnan(up);up=np.interp(idx,idx[good],up[good]);lo=np.interp(idx,idx[good],lo[good])
+below=cy>lo
+runs=[];s=None
+for i,v in enumerate(below):
+    if v and s is None: s=i
+    if not v and s is not None: runs.append((s,i-1));s=None
+if s is not None: runs.append((s,len(below)-1))
+for a,b in runs:
+    seg=cy[a:b+1]; print(f"run {a}-{b} t={a/25:.2f}-{b/25:.2f} maxcy={seg.max():.1f} maxbelow={seg.max()-lo[a:b+1].min():.1f} mincy_local")
+# print full cy curve minima per ~cycle
+print("---lowest per 100 frames")
+for st in range(0,1000,50):
+    seg=cy[st:st+50]
+    print(st, round(seg.max(),1), round(lo[st:st+50].mean(),1), round(up[st:st+50].mean(),1), round(seg.min(),1))
+EOF
+run 43-52 t=1.72-2.08 maxcy=223.4 maxbelow=17.4 mincy_local
+run 108-116 t=4.32-4.64 maxcy=224.1 maxbelow=16.1 mincy_local
+run 242-253 t=9.68-10.12 maxcy=235.1 maxbelow=18.1 mincy_local
+run 302-312 t=12.08-12.48 maxcy=240.5 maxbelow=25.0 mincy_local
+run 332-341 t=13.28-13.64 maxcy=235.7 maxbelow=13.2 mincy_local
+run 539-548 t=21.56-21.92 maxcy=242.3 maxbelow=15.3 mincy_local
+run 604-614 t=24.16-24.56 maxcy=246.5 maxbelow=14.5 mincy_local
+run 649-659 t=25.96-26.36 maxcy=253.1 maxbelow=21.1 mincy_local
+run 718-730 t=28.72-29.20 maxcy=258.2 maxbelow=25.7 mincy_local
+run 848-856 t=33.92-34.24 maxcy=257.0 maxbelow=15.0 mincy_local
+run 922-931 t=36.88-37.24 maxcy=265.6 maxbelow=24.6 mincy_local
+---lowest per 100 frames
+0 223.4 211.0 101.0 86.4
+50 217.9 212.6 102.6 88.3
+100 224.1 215.2 105.3 87.3
+150 212.2 217.2 107.2 96.5
+200 235.1 218.9 108.9 89.2
+250 230.4 221.0 111.1 93.8
+300 240.5 222.7 112.6 153.9
+350 207.4 225.3 115.2 99.0
+400 220.8 227.2 117.2 101.6
+450 215.6 228.9 118.9 103.4
+500 242.3 231.0 121.0 106.4
+550 222.6 232.6 122.6 108.3
+600 246.5 235.3 125.3 134.7
+650 253.1 237.2 127.2 110.5
+700 258.2 238.9 128.9 112.6
+750 237.9 241.1 131.0 113.8
+800 249.7 242.6 132.6 117.6
+850 257.0 245.3 135.3 119.1
+900 265.6 247.3 137.2 123.5
+950 192.3 248.9 138.9 177.0
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/squat.json"))
+cy=np.array([x["cy"] if x["cy"] is not None else np.nan for x in d])
+up=np.array([x["lines"][0] if len(x["lines"])>=2 else np.nan for x in d]);lo=np.array([x["lines"][1] if len(x["lines"])>=2 else np.nan for x in d])
+for i in range(840,900):
+    print(i, round(cy[i],1), round(up[i],1), round(cy[i]-up[i],1))
+EOF
+840 195.0 138.0 57.0
+841 202.3 136.0 66.3
+842 208.6 133.0 75.6
+843 213.4 129.0 84.4
+844 219.0 127.0 92.0
+845 227.0 128.0 99.0
+846 235.2 130.0 105.2
+847 241.0 131.0 110.0
+848 246.7 133.0 113.7
+849 249.7 134.0 115.7
+850 253.6 137.0 116.6
+851 255.7 139.0 116.7
+852 257.0 140.0 117.0
+853 255.3 138.0 117.3
+854 250.8 134.0 116.8
+855 246.8 132.0 114.8
+856 243.6 132.0 111.6
+857 241.1 134.0 107.1
+858 237.7 136.0 101.7
+859 231.7 137.0 94.7
+860 224.0 137.0 87.0
+861 215.5 137.0 78.5
+862 206.8 137.0 69.8
+863 197.6 137.0 60.6
+864 186.5 135.0 51.5
+865 173.0 131.0 42.0
+866 160.9 128.0 32.9
+867 151.3 127.0 24.3
+868 144.9 nan nan
+869 142.5 133.0 9.5
+870 139.7 136.5 3.2
+871 136.3 137.5 -1.2
+872 132.5 137.0 -4.5
+873 131.4 138.0 -6.6
+874 130.8 138.0 -7.2
+875 130.7 138.0 -7.3
+876 128.7 136.0 -7.3
+877 126.5 134.0 -7.5
+878 124.6 132.0 -7.4
+879 125.5 133.0 -7.5
+880 128.4 136.0 -7.6
+881 132.4 140.0 -7.6
+882 133.3 141.0 -7.7
+883 131.1 139.0 -7.9
+884 129.0 137.0 -8.0
+885 127.8 136.0 -8.2
+886 126.7 135.0 -8.3
+887 124.4 133.0 -8.6
+888 121.4 130.0 -8.6
+889 119.1 128.0 -8.9
+890 119.8 129.0 -9.2
+891 122.4 132.0 -9.6
+892 126.4 136.0 -9.6
+893 129.0 139.0 -10.0
+894 129.8 140.0 -10.2
+895 127.8 138.0 -10.2
+896 126.5 137.0 -10.5
+897 125.5 136.0 -10.5
+898 125.1 136.0 -10.9
+899 124.8 136.0 -11.2
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/squat.json"))
+for i in range(915,1000):
+    print(i, round(d[i]["cy"],1) if d[i]["cy"] else None, [round(x,1) for x in d[i]["lines"]])
+EOF
+915 198.4 [139.0, 249.0]
+916 210.0 [141.0, 251.0]
+917 218.6 [140.0, 250.0]
+918 224.4 [137.0, 247.0]
+919 230.8 [135.0, 245.0]
+920 237.2 [134.0, 244.0]
+921 245.4 [136.0, 246.0]
+922 251.2 [137.0, 247.0]
+923 256.0 [138.0, 248.0]
+924 258.3 [138.0, 248.0]
+925 261.4 [140.0, 250.0]
+926 263.4 [142.0, 252.0]
+927 265.6 [144.0, 254.0]
+928 263.8 [142.0, 252.0]
+929 259.9 [139.0, 249.0]
+930 252.1 [134.0, 244.0]
+931 244.4 [131.0, 241.0]
+932 238.0 [131.0, 241.0]
+933 232.2 [133.0, 243.0]
+934 225.3 [135.0, 245.0]
+935 216.2 [135.0, 245.0]
+936 208.5 [136.0, 246.0]
+937 202.7 [138.0, 248.0]
+938 198.1 [140.0, 250.0]
+939 193.6 [141.0, 251.0]
+940 188.5 [139.0, 249.0]
+941 184.3 [136.0, 246.0]
+942 182.6 [134.0, 244.5]
+943 182.6 [134.0, 244.5]
+944 185.7 [137.0, 247.5]
+945 188.6 [140.0, 250.5]
+946 190.6 [142.0, 252.5]
+947 190.6 [142.0, 252.5]
+948 190.6 [142.0, 252.5]
+949 191.6 [143.0, 253.0]
+950 190.5 [142.0, 252.0]
+951 189.4 [141.0, 251.0]
+952 185.4 [137.0, 247.0]
+953 181.3 [133.0, 243.0]
+954 179.2 [131.0, 241.0]
+955 181.1 [133.0, 243.0]
+956 183.8 [136.0, 246.0]
+957 185.5 [138.0, 247.5]
+958 186.3 [139.0, 249.0]
+959 186.2 [139.0, 249.0]
+960 186.0 [139.0, 249.0]
+961 185.8 [139.0, 249.0]
+962 185.7 [139.0, 249.0]
+963 184.4 [138.0, 248.0]
+964 182.1 [136.0, 246.0]
+965 179.9 [134.0, 244.0]
+966 181.6 [136.0, 246.0]
+967 185.6 [140.0, 250.0]
+968 189.4 [144.0, 254.0]
+969 191.4 [146.0, 256.0]
+970 189.8 [145.0, 255.5]
+971 187.7 [143.0, 253.5]
+972 185.7 [141.0, 251.5]
+973 184.3 [140.0, 250.0]
+974 183.3 [139.0, 249.0]
+975 180.2 [136.0, 246.0]
+976 178.0 [134.0, 244.0]
+977 177.0 [133.0, 243.0]
+978 178.9 [135.0, 245.0]
+979 182.7 [139.0, 249.0]
+980 185.7 [142.0, 252.0]
+981 185.6 [142.0, 252.0]
+982 183.6 [140.0, 250.0]
+983 181.7 [138.0, 248.0]
+984 180.7 [137.0, 247.0]
+985 180.7 [137.0, 247.0]
+986 180.7 [137.0, 247.0]
+987 180.8 [137.0, 247.0]
+988 181.0 [137.0, 247.0]
+989 183.0 [139.0, 249.0]
+990 187.1 [143.0, 253.0]
+991 191.5 [147.0, 257.0]
+992 192.3 [148.0, 258.0]
+993 190.8 [146.0, 256.0]
+994 186.9 [142.0, 252.0]
+995 184.1 [139.0, 249.0]
+996 183.3 [138.0, 248.0]
+997 183.4 [138.0, 248.0]
+998 182.8 [137.0, 247.0]
+999 183.0 [137.0, 247.0]
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/squat.json"))
+for i in list(range(300,360))+list(range(600,690)):
+    print(i, round(d[i]["cy"],1), [round(x,1) for x in d[i]["lines"]])
+EOF
+300 207.4 [109.0, 219.0]
+301 212.5 [107.0, 217.0]
+302 217.4 [106.0, 215.5]
+303 223.3 [107.0, 217.0]
+304 230.7 [111.0, 221.0]
+305 236.9 [115.0, 225.0]
+306 240.5 [118.0, 228.0]
+307 240.5 [118.0, 228.0]
+308 239.5 [117.0, 227.0]
+309 237.3 [115.0, 225.0]
+310 235.2 [114.0, 224.0]
+311 232.0 [114.0, 224.0]
+312 224.8 [112.0, 222.0]
+313 216.2 [110.0, 220.0]
+314 207.0 [109.0, 219.0]
+315 200.2 [111.0, 221.0]
+316 194.2 [114.0, 224.0]
+317 188.5 [117.0, 227.0]
+318 179.4 [116.0, 226.0]
+319 170.1 [114.0, 224.0]
+320 161.8 [111.0, 221.0]
+321 156.2 [109.0, 219.0]
+322 153.9 [108.0, 218.0]
+323 154.7 [108.0, 218.0]
+324 158.0 [108.0, 218.0]
+325 163.9 [109.0, 219.0]
+326 172.0 [110.0, 220.0]
+327 183.9 [114.0, 224.0]
+328 196.6 [118.0, 228.0]
+329 207.6 [120.0, 230.5]
+330 215.0 [119.0, 229.5]
+331 220.1 [116.0, 226.5]
+332 223.8 [113.0, 223.5]
+333 227.7 [112.0, 222.5]
+334 231.8 [113.0, 223.5]
+335 232.6 [113.0, 223.5]
+336 232.8 [113.0, 223.5]
+337 232.8 [113.0, 223.5]
+338 233.7 [114.0, 224.0]
+339 235.7 [117.0, 227.0]
+340 234.6 [118.0, 228.0]
+341 229.3 [116.0, 226.0]
+342 221.4 [113.0, 223.0]
+343 211.4 [109.0, 219.0]
+344 202.3 [107.0, 217.0]
+345 195.2 [108.0, 218.0]
+346 188.5 [110.0, 220.0]
+347 180.2 [111.0, 221.0]
+348 172.8 [113.0, 223.0]
+349 163.9 [114.0, 224.0]
+350 157.3 [117.0, 227.0]
+351 150.2 [119.0, 229.0]
+352 142.4 [120.0, 230.0]
+353 132.1 [118.0, 228.0]
+354 121.3 [114.0, 224.0]
+355 113.8 [112.0, 222.0]
+356 108.7 [112.0, 222.0]
+357 107.2 [114.0, 224.0]
+358 107.3 [116.0, 226.0]
+359 107.5 [117.0, 227.0]
+600 212.1 [127.0, 237.0]
+601 222.4 [129.0, 239.0]
+602 230.6 [130.0, 240.5]
+603 234.8 [128.0, 238.5]
+604 236.0 [124.0, 234.0]
+605 238.2 [122.0, 232.0]
+606 240.6 [122.0, 232.0]
+607 243.9 [124.0, 234.0]
+608 245.8 [126.0, 236.0]
+609 246.5 [127.0, 237.0]
+610 246.5 [127.0, 237.0]
+611 246.1 [127.0, 237.0]
+612 244.7 [127.0, 237.0]
+613 241.9 [127.0, 237.0]
+614 236.4 [125.0, 235.0]
+615 227.6 [121.0, 231.5]
+616 219.0 [118.0, 228.0]
+617 211.5 [117.0, 227.0]
+618 206.2 [119.0, 229.0]
+619 202.5 [123.0, 233.0]
+620 197.4 [126.0, 236.0]
+621 189.9 [127.0, 237.0]
+622 181.9 [127.0, 237.0]
+623 174.8 [128.0, 238.0]
+624 167.0 [128.0, 238.0]
+625 160.1 [128.0, 238.0]
+626 151.7 [126.0, 236.0]
+627 144.0 [124.0, 234.0]
+628 136.9 [122.0, 232.0]
+629 134.7 [123.0, 233.0]
+630 135.3 [126.0, 236.0]
+631 138.2 [130.0, 240.0]
+632 139.4 [131.0, 241.0]
+633 138.7 [129.0, 239.0]
+634 139.1 [127.0, 237.0]
+635 141.9 [126.0, 236.0]
+636 145.7 [125.0, 235.0]
+637 149.5 [123.0, 233.0]
+638 152.7 [120.0, 230.0]
+639 158.4 [118.0, 228.0]
+640 166.9 [119.0, 229.0]
+641 178.0 [122.0, 232.0]
+642 190.3 [126.0, 236.0]
+643 201.2 [129.0, 239.0]
+644 210.4 [130.0, 240.0]
+645 216.0 [128.0, 238.0]
+646 222.2 [127.0, 237.0]
+647 228.0 [126.0, 236.0]
+648 233.5 [126.0, 236.0]
+649 238.2 [126.0, 236.0]
+650 240.9 [125.0, 235.0]
+651 243.3 [125.0, 235.0]
+652 245.6 [126.0, 236.0]
+653 249.8 [130.0, 239.5]
+654 252.1 [132.0, 242.0]
+655 253.1 [133.0, 243.0]
+656 250.2 [130.0, 240.0]
+657 245.0 [126.0, 236.0]
+658 239.3 [123.0, 233.0]
+659 233.9 [122.0, 232.0]
+660 228.7 [122.0, 232.0]
+661 222.3 [122.0, 232.0]
+662 214.1 [121.0, 231.0]
+663 206.8 [122.0, 232.0]
+664 200.9 [125.0, 235.0]
+665 195.6 [129.0, 239.0]
+666 188.0 [131.0, 241.0]
+667 177.5 [130.0, 240.0]
+668 165.1 [127.0, 237.0]
+669 154.1 [125.0, 235.0]
+670 144.4 [124.0, 234.0]
+671 138.4 [126.0, 236.0]
+672 132.8 [127.0, 237.0]
+673 128.2 [128.0, 238.0]
+674 123.7 [128.0, 238.0]
+675 122.6 [130.0, 240.0]
+676 123.0 [132.0, 242.0]
+677 124.5 [134.0, 244.0]
+678 122.3 [132.0, 242.0]
+679 119.1 [129.0, 239.0]
+680 113.9 [124.0, 234.0]
+681 110.7 [121.0, 231.0]
+682 110.5 [121.0, 231.0]
+683 112.2 [123.0, 233.0]
+684 113.9 [125.0, 235.0]
+685 113.8 [125.0, 235.0]
+686 114.6 [126.0, 236.0]
+687 116.5 [128.0, 238.0]
+688 118.3 [130.0, 240.0]
+689 119.3 [131.0, 241.0]
+
+→ Read work/frames/cadence-change_f0.png
+→ Read work/frames/cadence-change_f799.png
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+cap.set(cv2.CAP_PROP_POS_FRAMES,799); ok,img=cap.read()
+# print unique-ish colors
+for p in [(300,268),(330,265),(300,300),(290,240),(300,170),(310,200),(385,270),(240,280),(320,120)]:
+    x,y=p; print(p,img[y,x])
+cap.release()
+EOF
+(300, 268) [81 81 81]
+(330, 265) [69 58 49]
+(300, 300) [121 115 110]
+(290, 240) [80 59 45]
+(300, 170) [86 62 50]
+(310, 200) [89 69 45]
+(385, 270) [62 64 57]
+(240, 280) [48 52 47]
+(320, 120) [192 109  37]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+for fi in [0,200,400,600,700,800,900,950]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    mask=((b<65)&(g<65)&(r<65)).astype(np.uint8)
+    n,lab,st,ce=cv2.connectedComponentsWithStats(mask,8)
+    comps=[(int(st[i,4]),tuple(np.round(ce[i],1)),(st[i,0],st[i,1],st[i,2],st[i,3])) for i in range(1,n) if st[i,4]>30]
+    print(fi, comps)
+cap.release()
+EOF
+0 [(4766, (np.float64(326.6), np.float64(277.6)), (np.int32(118), np.int32(258), np.int32(409), np.int32(29))), (1934, (np.float64(331.6), np.float64(333.0)), (np.int32(102), np.int32(331), np.int32(442), np.int32(5))), (36, (np.float64(300.5), np.float64(356.5)), (np.int32(298), np.int32(354), np.int32(6), np.int32(6)))]
+200 [(373, (np.float64(287.6), np.float64(251.3)), (np.int32(273), np.int32(243), np.int32(31), np.int32(16))), (370, (np.float64(363.4), np.float64(253.2)), (np.int32(348), np.int32(244), np.int32(32), np.int32(17))), (297, (np.float64(427.3), np.float64(279.9)), (np.int32(406), np.int32(273), np.int32(40), np.int32(14))), (209, (np.float64(146.9), np.float64(278.6)), (np.int32(136), np.int32(274), np.int32(25), np.int32(12))), (251, (np.float64(187.2), np.float64(278.6)), (np.int32(173), np.int32(274), np.int32(28), np.int32(12))), (172, (np.float64(229.2), np.float64(279.0)), (np.int32(222), np.int32(274), np.int32(17), np.int32(12))), (290, (np.float64(266.1), np.float64(279.7)), (np.int32(252), np.int32(274), np.int32(32), np.int32(12))), (321, (np.float64(306.3), np.float64(279.8)), (np.int32(289), np.int32(274), np.int32(35), np.int32(12))), (254, (np.float64(348.7), np.float64(278.9)), (np.int32(332), np.int32(274), np.int32(29), np.int32(12))), (266, (np.float64(385.6), np.float64(279.6)), (np.int32(369), np.int32(274), np.int32(31), np.int32(12))), (331, (np.float64(466.3), np.float64(280.3)), (np.int32(453), np.int32(274), np.int32(34), np.int32(13))), (250, (np.float64(507.7), np.float64(279.1)), (np.int32(493), np.int32(274), np.int32(29), np.int32(13)))]
+400 [(58, (np.float64(528.0), np.float64(175.5)), (np.int32(528), np.int32(147), np.int32(1), np.int32(58))), (152, (np.float64(547.0), np.float64(243.5)), (np.int32(547), np.int32(168), np.int32(1), np.int32(152))), (403, (np.float64(321.0), np.float64(219.3)), (np.int32(304), np.int32(213), np.int32(34), np.int32(14))), (5068, (np.float64(327.3), np.float64(276.6)), (np.int32(128), np.int32(257), np.int32(403), np.int32(29))), (34, (np.float64(8.0), np.float64(330.5)), (np.int32(0), np.int32(330), np.int32(17), np.int32(2))), (3205, (np.float64(366.9), np.float64(333.6)), (np.int32(112), np.int32(330), np.int32(528), np.int32(14))), (37, (np.float64(633.9), np.float64(337.6)), (np.int32(630), np.int32(334), np.int32(10), np.int32(9))), (33, (np.float64(59.0), np.float64(348.0)), (np.int32(55), np.int32(345), np.int32(7), np.int32(7))), (596, (np.float64(582.5), np.float64(349.9)), (np.int32(530), np.int32(344), np.int32(92), np.int32(16)))]
+600 [(396, (np.float64(284.8), np.float64(238.4)), (np.int32(270), np.int32(228), np.int32(32), np.int32(19))), (4774, (np.float64(320.5), np.float64(280.6)), (np.int32(126), np.int32(262), np.int32(386), np.int32(28)))]
+700 [(346, (np.float64(298.5), np.float64(231.9)), (np.int32(284), np.int32(224), np.int32(31), np.int32(16))), (734, (np.float64(348.7), np.float64(271.2)), (np.int32(320), np.int32(258), np.int32(48), np.int32(29))), (614, (np.float64(247.2), np.float64(280.2)), (np.int32(199), np.int32(272), np.int32(95), np.int32(15))), (294, (np.float64(145.1), np.float64(280.7)), (np.int32(124), np.int32(275), np.int32(36), np.int32(12))), (227, (np.float64(308.1), np.float64(280.2)), (np.int32(296), np.int32(275), np.int32(24), np.int32(11))), (307, (np.float64(385.9), np.float64(280.0)), (np.int32(359), np.int32(274), np.int32(52), np.int32(13))), (170, (np.float64(425.1), np.float64(279.5)), (np.int32(414), np.int32(274), np.int32(24), np.int32(11))), (267, (np.float64(466.2), np.float64(280.7)), (np.int32(440), np.int32(274), np.int32(39), np.int32(13))), (233, (np.float64(183.3), np.float64(280.9)), (np.int32(166), np.int32(276), np.int32(32), np.int32(10))), (235, (np.float64(505.5), np.float64(281.9)), (np.int32(480), np.int32(276), np.int32(46), np.int32(11))), (230, (np.float64(430.5), np.float64(331.0)), (np.int32(316), np.int32(331), np.int32(230), np.int32(1)))]
+800 [(278, (np.float64(314.4), np.float64(215.4)), (np.int32(304), np.int32(209), np.int32(22), np.int32(14))), (914, (np.float64(324.9), np.float64(265.8)), (np.int32(290), np.int32(252), np.int32(62), np.int32(28))), (736, (np.float64(208.7), np.float64(272.5)), (np.int32(170), np.int32(264), np.int32(72), np.int32(16))), (401, (np.float64(268.4), np.float64(272.3)), (np.int32(247), np.int32(264), np.int32(40), np.int32(16))), (389, (np.float64(389.1), np.float64(271.9)), (np.int32(374), np.int32(264), np.int32(32), np.int32(16))), (428, (np.float64(428.1), np.float64(271.9)), (np.int32(404), np.int32(264), np.int32(46), np.int32(16))), (438, (np.float64(468.4), np.float64(271.6)), (np.int32(451), np.int32(264), np.int32(32), np.int32(16))), (379, (np.float64(506.7), np.float64(271.5)), (np.int32(492), np.int32(264), np.int32(31), np.int32(16))), (189, (np.float64(147.1), np.float64(273.9)), (np.int32(135), np.int32(266), np.int32(28), np.int32(14))), (70, (np.float64(355.2), np.float64(274.5)), (np.int32(350), np.int32(270), np.int32(13), np.int32(10)))]
+900 [(105, (np.float64(333.0), np.float64(218.6)), (np.int32(330), np.int32(208), np.int32(8), np.int32(19))), (198, (np.float64(311.0), np.float64(220.1)), (np.int32(302), np.int32(213), np.int32(17), np.int32(15))), (5215, (np.float64(321.6), np.float64(276.6)), (np.int32(122), np.int32(257), np.int32(409), np.int32(29))), (34, (np.float64(8.0), np.float64(330.5)), (np.int32(0), np.int32(330), np.int32(17), np.int32(2))), (706, (np.float64(158.0), np.float64(334.5)), (np.int32(113), np.int32(330), np.int32(126), np.int32(13))), (1535, (np.float64(460.7), np.float64(333.8)), (np.int32(240), np.int32(330), np.int32(336), np.int32(17))), (171, (np.float64(306.8), np.float64(339.5)), (np.int32(294), np.int32(336), np.int32(24), np.int32(8))), (107, (np.float64(23.5), np.float64(354.8)), (np.int32(16), np.int32(351), np.int32(16), np.int32(9))), (54, (np.float64(520.6), np.float64(355.3)), (np.int32(518), np.int32(351), np.int32(7), np.int32(9)))]
+950 [(65, (np.float64(315.5), np.float64(220.0)), (np.int32(313), np.int32(215), np.int32(6), np.int32(13))), (175, (np.float64(336.6), np.float64(221.0)), (np.int32(330), np.int32(215), np.int32(15), np.int32(13))), (1186, (np.float64(307.7), np.float64(274.5)), (np.int32(242), np.int32(258), np.int32(114), np.int32(29))), (35, (np.float64(135.5), np.float64(277.9)), (np.int32(134), np.int32(274), np.int32(4), np.int32(9))), (524, (np.float64(169.8), np.float64(280.3)), (np.int32(128), np.int32(274), np.int32(72), np.int32(13))), (60, (np.float64(215.9), np.float64(278.0)), (np.int32(212), np.int32(274), np.int32(8), np.int32(9))), (147, (np.float64(230.7), np.float64(278.0)), (np.int32(223), np.int32(274), np.int32(17), np.int32(9))), (253, (np.float64(389.0), np.float64(280.1)), (np.int32(375), np.int32(274), np.int32(29), np.int32(13))), (960, (np.float64(465.0), np.float64(280.3)), (np.int32(405), np.int32(274), np.int32(128), np.int32(13))), (72, (np.float64(226.7), np.float64(285.2)), (np.int32(210), np.int32(284), np.int32(31), np.int32(3))), (82, (np.float64(346.3), np.float64(285.5)), (np.int32(322), np.int32(285), np.int32(51), np.int32(2))), (324, (np.float64(385.5), np.float64(331.0)), (np.int32(224), np.int32(331), np.int32(324), np.int32(1)))]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+imgs=[]
+for f in range(300,325):
+    cap.set(cv2.CAP_PROP_POS_FRAMES,f); ok,img=cap.read()
+    crop=img[190:300,240:400]
+    crop=cv2.resize(crop,(320,220),interpolation=cv2.INTER_NEAREST)
+    cv2.putText(crop,str(f),(5,20),cv2.FONT_HERSHEY_SIMPLEX,0.6,(0,255,0),1)
+    imgs.append(crop)
+rows=[np.hstack(imgs[i:i+5]) for i in range(0,25,5)]
+cv2.imwrite("work/frames/run_montage.png",np.vstack(rows))
+cap.release()
+EOF
+(no output)
+
+→ Read work/frames/run_montage.png
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+for f in [0,300,305,310,315,320]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,f); ok,img=cap.read()
+    crop=img[100:290,230:420]
+    cv2.imwrite(f"work/frames/runner_{f}.png", cv2.resize(crop,(570,570),interpolation=cv2.INTER_NEAREST))
+cap.release()
+EOF
+(no output)
+
+→ Read work/frames/runner_0.png
+→ Read work/frames/runner_310.png
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+cap.set(cv2.CAP_PROP_POS_FRAMES,310); ok,img=cap.read()
+for p in [(293,232),(347,262),(300,270),(350,250),(120,265),(600,265),(320,300),(300,285)]:
+    x,y=p;print(p,img[y,x])
+cap.release()
+EOF
+(293, 232) [27 25 16]
+(347, 262) [16 19 19]
+(300, 270) [65 66 61]
+(350, 250) [90 71 45]
+(120, 265) [94 68 48]
+(600, 265) [94 67 51]
+(320, 300) [131 121 116]
+(300, 285) [67 64 65]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+for fi in [0,300,310,320,335,350,700,799]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    mask=((b<45)&(g<45)&(r<45)).astype(np.uint8)
+    n,lab,st,ce=cv2.connectedComponentsWithStats(mask,8)
+    comps=[(int(st[i,4]),round(float(ce[i,0]),1),round(float(ce[i,1]),1),(int(st[i,0]),int(st[i,1]),int(st[i,2]),int(st[i,3]))) for i in range(1,n) if st[i,4]>40]
+    print(fi,comps)
+cap.release()
+EOF
+0 [(489, 319.2, 264.5, (299, 259, 43, 13))]
+300 [(241, 298.0, 225.7, (286, 220, 27, 12)), (306, 354.9, 257.6, (342, 252, 26, 13))]
+310 [(215, 291.6, 230.8, (279, 225, 27, 11)), (299, 345.3, 263.5, (332, 258, 28, 12))]
+320 [(256, 299.5, 221.0, (288, 216, 24, 11)), (300, 339.7, 257.6, (327, 252, 26, 12))]
+335 [(215, 349.1, 241.9, (336, 236, 28, 12)), (292, 279.7, 264.7, (266, 259, 28, 12))]
+350 [(176, 301.5, 225.4, (292, 221, 20, 10)), (303, 323.4, 267.6, (311, 262, 27, 12))]
+700 [(176, 299.6, 231.7, (288, 228, 24, 8)), (296, 352.3, 264.9, (338, 259, 29, 12))]
+799 [(239, 309.7, 221.6, (297, 216, 27, 12)), (293, 348.6, 259.8, (336, 254, 28, 12))]
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+cap=cv2.VideoCapture("cadence-change.mp4")
+n=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+data=[]
+for fi in range(n):
+    ok,img=cap.read()
+    if not ok: break
+    b,g,r=cv2.split(img.astype(int))
+    # grey deck light
+    grey=((b>105)&(b<150)&(abs(b-g)<20)&(abs(g-r)<20)&(b>g)).astype(np.uint8)
+    gr=grey.sum(axis=1)
+    rows=[y for y in range(len(gr)) if gr[y]>200]
+    deck = float(min(rows)) if rows else None
+    mask=((b<45)&(g<45)&(r<45)).astype(np.uint8)
+    nn,lab,st,ce=cv2.connectedComponentsWithStats(mask,8)
+    shoes=[]
+    for i in range(1,nn):
+        if st[i,4]>40:
+            shoes.append(dict(cx=float(ce[i,0]),cy=float(ce[i,1]),area=int(st[i,4]),
+                              top=int(st[i,1]),bot=int(st[i,1]+st[i,3]),left=int(st[i,0]),w=int(st[i,2]),h=int(st[i,3])))
+    shoes.sort(key=lambda s:s["bot"])
+    data.append(dict(f=fi,deck=deck,shoes=shoes))
+cap.release()
+json.dump(data,open("work/cadence.json","w"))
+for d in data[::40]:
+    print(d["f"],"deck",d["deck"],[(s["cx"],s["bot"],s["area"]) for s in d["shoes"]])
+EOF
+0 deck 287.0 [(319.2147239263804, 272, 489)]
+40 deck 283.0 [(337.46543778801845, 224, 217), (314.74344023323613, 268, 343)]
+80 deck 286.0 [(344.51953125, 229, 256), (314.18918918918916, 270, 333)]
+120 deck 288.0 [(350.12886597938143, 240, 194), (293.6707317073171, 272, 328)]
+160 deck 283.0 [(356.0376344086022, 242, 186), (283.64874551971326, 267, 279)]
+200 deck 287.0 [(287.39366515837105, 256, 221), (362.7156862745098, 258, 204)]
+240 deck 293.0 [(291.13488372093025, 256, 215), (365.4141791044776, 277, 268)]
+280 deck 283.0 [(295.86633663366337, 234, 202), (349.7062706270627, 267, 303)]
+320 deck 280.0 [(299.546875, 227, 256), (339.6666666666667, 264, 300)]
+360 deck 289.0 [(319.09124087591243, 230, 274), (331.08038585209005, 273, 311)]
+400 deck 286.0 [(322.7409836065574, 226, 305), (323.04560260586317, 270, 307)]
+440 deck 282.0 [(331.0161943319838, 225, 247), (300.4560810810811, 266, 296)]
+480 deck 288.0 [(337.25, 233, 256), (298.0854430379747, 272, 316)]
+520 deck 288.0 [(312.3523316062176, 231, 193), (340.25324675324674, 272, 308)]
+560 deck 286.0 [(294.02985074626866, 235, 201), (345.4935897435897, 270, 312)]
+600 deck 290.0 [(284.7860696517413, 244, 201), (343.87412587412587, 274, 286)]
+640 deck 284.0 [(359.2621359223301, 253, 206), (284.7065868263473, 258, 167)]
+680 deck 280.0 [(355.50970873786406, 238, 206), (288.2378048780488, 264, 328)]
+720 deck 289.0 [(326.5416666666667, 232, 216), (303.94392523364485, 273, 321)]
+760 deck 288.0 [(316.9074733096085, 228, 281), (320.80981595092027, 272, 326)]
+800 deck 280.0 [(315.50625, 221, 160), (334.6566666666667, 264, 300)]
+840 deck 288.0 [(292.340206185567, 240, 194), (350.0950819672131, 272, 305)]
+880 deck 294.0 [(282.34265734265733, 256, 143), (353.83720930232556, 274, 215)]
+920 deck 286.0 [(356.7417218543046, 240, 151), (292.2604501607717, 268, 311)]
+960 deck 284.0 [(350.7892561983471, 232, 242), (306.3343848580442, 268, 317)]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+for fi in [0,100,300,500,700,900]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    band=((b>45)&(b<95)&(abs(b-g)<12)&(abs(g-r)<12)&(abs(b-r)<14)).astype(np.uint8)
+    br=band.sum(axis=1)
+    rows=[y for y in range(len(br)) if br[y]>200]
+    print(fi,[(y,int(br[y])) for y in range(240,300) if br[y]>150])
+cap.release()
+EOF
+0 [(272, 404), (273, 405), (274, 407), (275, 407), (276, 406), (277, 406), (278, 407), (279, 407), (280, 405), (281, 407), (282, 407), (283, 407), (284, 407), (285, 405), (286, 404)]
+100 [(274, 342), (275, 342), (276, 211), (277, 208), (278, 406), (279, 399), (280, 401), (281, 401), (282, 402), (283, 402), (284, 402), (285, 402), (286, 393), (287, 410), (288, 410), (289, 410)]
+300 [(264, 223), (265, 228), (266, 402), (267, 398), (268, 402), (269, 402), (270, 401), (271, 402), (272, 397), (273, 400), (274, 401), (275, 399), (276, 405), (277, 407), (278, 397), (279, 397)]
+500 [(270, 172), (271, 172), (272, 335), (273, 335), (274, 409), (275, 409), (276, 408), (277, 408), (278, 409), (279, 409), (280, 409), (281, 409), (282, 409), (283, 406), (284, 410), (285, 400), (286, 410)]
+700 [(272, 296), (273, 284), (274, 377), (275, 401), (276, 390), (277, 389), (278, 391), (279, 386), (280, 389), (281, 390), (282, 384), (283, 383), (284, 409), (285, 409), (286, 409)]
+900 [(270, 258), (271, 260), (272, 404), (273, 404), (274, 409), (275, 409), (276, 409), (277, 409), (278, 409), (279, 409), (280, 409), (281, 409), (282, 409), (283, 409), (284, 408), (285, 407)]
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+cap=cv2.VideoCapture("cadence-change.mp4")
+n=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+belt=[]; shoes=[]
+for fi in range(n):
+    ok,img=cap.read()
+    if not ok: break
+    b,g,r=cv2.split(img.astype(int))
+    band=((b>45)&(b<95)&(abs(b-g)<12)&(abs(g-r)<12)&(abs(b-r)<14)).astype(np.uint8)
+    sub=band[:,400:500]
+    br=sub.sum(axis=1)
+    rows=[y for y in range(200,320) if br[y]>60]
+    top=float(min(rows)) if rows else np.nan
+    belt.append(top)
+    mask=((b<45)&(g<45)&(r<45)).astype(np.uint8)
+    nn,lab,st,ce=cv2.connectedComponentsWithStats(mask,8)
+    ss=[]
+    for i in range(1,nn):
+        if st[i,4]>40:
+            ss.append((float(ce[i,0]),float(ce[i,1]),int(st[i,1]+st[i,3]),int(st[i,4])))
+    ss.sort(key=lambda s:s[2])
+    shoes.append(ss)
+cap.release()
+np.save("work/belt.npy",np.array(belt))
+json.dump(shoes,open("work/cadence_shoes.json","w"))
+print("belt range",np.nanmin(belt),np.nanmax(belt),np.isnan(belt).sum())
+print("belt first",belt[:10])
+EOF
+belt range 264.0 280.0 0
+belt first [272.0, 274.0, 272.0, 272.0, 270.0, 266.0, 266.0, 268.0, 268.0, 268.0]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+for fi in [0,40,120,240,600,880]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    band=((b>45)&(b<95)&(abs(b-g)<12)&(abs(g-r)<12)&(abs(b-r)<14)).astype(np.uint8)
+    for x0,x1 in [(150,250),(280,360),(400,500),(500,560)]:
+        br=band[:,x0:x1].sum(axis=1)
+        rows=[y for y in range(200,320) if br[y]>(x1-x0)*0.6]
+        print(fi,(x0,x1),rows[:4])
+    print()
+cap.release()
+EOF
+0 (150, 250) [272, 273, 274, 275]
+0 (280, 360) [272, 273, 274, 275]
+0 (400, 500) [272, 273, 274, 275]
+0 (500, 560) []
+
+40 (150, 250) [268, 269, 270, 271]
+40 (280, 360) [268, 269, 270, 271]
+40 (400, 500) [268, 269, 270, 271]
+40 (500, 560) []
+
+120 (150, 250) [272, 273, 274, 275]
+120 (280, 360) [272, 273, 274, 275]
+120 (400, 500) [272, 273, 274, 275]
+120 (500, 560) []
+
+240 (150, 250) [278, 279, 280, 281]
+240 (280, 360) [278, 279, 280, 281]
+240 (400, 500) [276, 277, 278, 279]
+240 (500, 560) []
+
+600 (150, 250) [274, 275, 276, 277]
+600 (280, 360) [274, 275, 276, 277]
+600 (400, 500) [274, 275, 278, 279]
+600 (500, 560) []
+
+880 (150, 250) [278, 279, 280, 281]
+880 (280, 360) [278, 279, 280, 281]
+880 (400, 500) [278, 279, 280, 281]
+880 (500, 560) []
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cadence-change.mp4")
+for fi in [0,40,120,240,600,880]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    grey=((b>100)&(b<160)&(abs(b-g)<18)&(abs(g-r)<18)).astype(np.uint8)
+    n,lab,st,ce=cv2.connectedComponentsWithStats(grey,8)
+    big=max(range(1,n),key=lambda i:st[i,4])
+    print(fi,"deck comp area",st[big,4],"bbox",st[big,:4], "top",st[big,1])
+cap.release()
+EOF
+0 deck comp area 20746 bbox [107 121 436 210] top 121
+40 deck comp area 21688 bbox [112 117 436 210] top 117
+120 deck comp area 21744 bbox [112 122 436 210] top 122
+240 deck comp area 21648 bbox [115 128 437 209] top 128
+600 deck comp area 20859 bbox [102 126 436 208] top 126
+880 deck comp area 21370 bbox [104 128 436 209] top 128
+
+$ python - <<'EOF'
+import json,numpy as np
+sh=json.load(open("work/cadence_shoes.json"))
+belt=np.load("work/belt.npy")
+for i in range(295,365):
+    s=sh[i]
+    print(i, [(round(a),round(b),c) for a,b,c,d in s], "belt",belt[i])
+EOF
+295 [(339, 229, 235), (293, 266, 272)] belt 272.0
+296 [(350, 233, 239), (288, 263, 269)] belt 272.0
+297 [(358, 240, 246), (286, 259, 266)] belt 268.0
+298 [(289, 248, 254), (364, 249, 255)] belt 268.0
+299 [(293, 236, 244), (365, 259, 265)] belt 268.0
+300 [(298, 226, 232), (355, 258, 265)] belt 266.0
+301 [(305, 219, 225), (343, 258, 264)] belt 266.0
+302 [(312, 217, 223), (331, 260, 266)] belt 266.0
+303 [(322, 219, 226), (321, 264, 270)] belt 274.0
+304 [(332, 226, 232), (310, 268, 274)] belt 274.0
+305 [(339, 232, 238), (299, 270, 276)] belt 276.0
+306 [(347, 238, 243), (289, 269, 275)] belt 276.0
+307 [(352, 245, 249), (279, 265, 271)] belt 274.0
+308 [(279, 252, 257), (354, 254, 259)] belt 272.0
+309 [(282, 240, 246), (353, 262, 268)] belt 272.0
+310 [(292, 231, 236), (345, 264, 270)] belt 270.0
+311 [(303, 224, 229), (337, 264, 270)] belt 270.0
+312 [(314, 219, 225), (332, 263, 269)] belt 270.0
+313 [(339, 219, 225), (324, 263, 269)] belt 270.0
+314 [(346, 224, 230), (315, 265, 271)] belt 272.0
+315 [(352, 235, 240), (303, 268, 274)] belt 276.0
+316 [(357, 245, 251), (289, 269, 275)] belt 276.0
+317 [(359, 255, 260), (284, 259, 265)] belt 276.0
+318 [(286, 243, 248), (359, 263, 270)] belt 270.0
+319 [(292, 230, 236), (351, 259, 266)] belt 266.0
+320 [(300, 221, 227), (340, 258, 264)] belt 264.0
+321 [(310, 216, 222), (332, 258, 264)] belt 266.0
+322 [(319, 215, 221), (321, 259, 266)] belt 266.0
+323 [(330, 217, 223), (311, 260, 267)] belt 266.0
+324 [(339, 223, 228), (299, 261, 267)] belt 268.0
+325 [(346, 231, 237), (288, 263, 269)] belt 268.0
+326 [(354, 244, 250), (282, 265, 272)] belt 272.0
+327 [(361, 256, 261), (287, 257, 263)] belt 274.0
+328 [(296, 246, 251), (368, 269, 276)] belt 276.0
+329 [(305, 233, 239), (360, 267, 273)] belt 274.0
+330 [(316, 224, 230), (349, 264, 270)] belt 272.0
+331 [(318, 218, 224), (335, 262, 268)] belt 270.0
+332 [(337, 218, 224), (321, 262, 268)] belt 268.0
+333 [(337, 224, 230), (306, 264, 270)] belt 268.0
+334 [(342, 232, 238), (291, 265, 271)] belt 272.0
+335 [(349, 242, 248), (280, 265, 271)] belt 274.0
+336 [(355, 253, 257), (281, 257, 262)] belt 272.0
+337 [(286, 248, 253), (359, 265, 272)] belt 274.0
+338 [(293, 237, 241), (351, 268, 274)] belt 278.0
+339 [(300, 230, 235), (342, 268, 274)] belt 278.0
+340 [(309, 224, 230), (331, 266, 272)] belt 272.0
+341 [(319, 217, 223), (321, 261, 267)] belt 272.0
+342 [(332, 214, 220), (313, 258, 264)] belt 266.0
+343 [(344, 218, 224), (306, 256, 262)] belt 264.0
+344 [(355, 226, 231), (299, 258, 264)] belt 264.0
+345 [(363, 238, 243), (291, 261, 267)] belt 268.0
+346 [(368, 250, 255), (291, 252, 256)] belt 268.0
+347 [(290, 242, 246), (364, 263, 270)] belt 270.0
+348 [(293, 234, 240), (350, 264, 271)] belt 270.0
+349 [(297, 228, 233), (335, 266, 272)] belt 272.0
+350 [(302, 225, 231), (323, 268, 274)] belt 274.0
+351 [(305, 222, 228), (324, 222, 229), (314, 267, 273)] belt 272.0
+352 [(329, 222, 229), (306, 265, 271)] belt 272.0
+353 [(339, 224, 230), (299, 261, 268)] belt 268.0
+354 [(348, 230, 235), (291, 261, 267)] belt 268.0
+355 [(356, 240, 246), (282, 261, 268)] belt 268.0
+356 [(285, 252, 258), (359, 253, 260)] belt 272.0
+357 [(290, 244, 250), (361, 267, 274)] belt 276.0
+358 [(298, 236, 242), (352, 269, 275)] belt 276.0
+359 [(308, 228, 234), (341, 268, 274)] belt 274.0
+360 [(319, 223, 230), (331, 267, 273)] belt 274.0
+361 [(332, 222, 229), (321, 266, 273)] belt 272.0
+362 [(340, 225, 232), (309, 265, 271)] belt 272.0
+363 [(347, 230, 235), (296, 263, 269)] belt 270.0
+364 [(350, 235, 241), (281, 259, 265)] belt 266.0
+
+$ python - <<'EOF'
+import json,numpy as np
+from scipy.signal import medfilt
+sh=json.load(open("work/cadence_shoes.json"))
+belt=np.load("work/belt.npy")
+bs=medfilt(belt,7)
+bs2=medfilt(belt,11)
+print("diff med7",np.round(np.abs(belt-bs),1)[:20])
+d=[]
+for i,s in enumerate(sh):
+    for cx,cy,bot,area in s:
+        d.append(bs2[i]-bot)
+d=np.array(d)
+print(np.percentile(d,[0,5,10,20,30,40,50,60,70,80,90,95,100]))
+h,e=np.histogram(d,bins=20,range=(-40,30))
+for i in range(20): print(round(e[i],1),h[i])
+np.save("work/belt_smooth.npy",bs2)
+EOF
+diff med7 [0. 2. 0. 0. 0. 2. 2. 0. 0. 0. 0. 0. 2. 2. 2. 0. 0. 0. 0. 0.]
+[-7. -4. -2.  0.  2.  5. 14. 24. 32. 38. 43. 46. 52.]
+-40.0 0
+-36.5 0
+-33.0 0
+-29.5 0
+-26.0 0
+-22.5 0
+-19.0 0
+-15.5 0
+-12.0 0
+-8.5 24
+-5.0 207
+-1.5 316
+2.0 286
+5.5 85
+9.0 66
+12.5 68
+16.0 76
+19.5 46
+23.0 88
+26.5 101
+
+$ python - <<'EOF'
+import json,numpy as np
+sh=json.load(open("work/cadence_shoes.json")); bs=np.load("work/belt_smooth.npy")
+cnt=np.zeros(len(sh),int)
+for i,s in enumerate(sh):
+    c=sum(1 for cx,cy,bot,a in s if bs[i]-bot<=3.5)
+    cnt[i]=c
+from collections import Counter
+print(Counter(cnt))
+# runs of counts
+runs=[];cur=cnt[0];st=0
+for i in range(1,len(cnt)):
+    if cnt[i]!=cur: runs.append((cur,st,i-1));cur=cnt[i];st=i
+runs.append((cur,st,len(cnt)-1))
+print(runs[:40])
+print("frames with 2:",np.where(cnt==2)[0][:50])
+print("frames with 0:",np.where(cnt==0)[0][:50])
+EOF
+Counter({np.int64(1): 711, np.int64(0): 289})
+[(np.int64(1), 0, 4), (np.int64(0), 5, 6), (np.int64(1), 7, 14), (np.int64(0), 15, 18), (np.int64(1), 19, 23), (np.int64(0), 24, 24), (np.int64(1), 25, 26), (np.int64(0), 27, 29), (np.int64(1), 30, 33), (np.int64(0), 34, 34), (np.int64(1), 35, 39), (np.int64(0), 40, 40), (np.int64(1), 41, 43), (np.int64(0), 44, 44), (np.int64(1), 45, 49), (np.int64(0), 50, 51), (np.int64(1), 52, 52), (np.int64(0), 53, 53), (np.int64(1), 54, 62), (np.int64(0), 63, 64), (np.int64(1), 65, 69), (np.int64(0), 70, 71), (np.int64(1), 72, 73), (np.int64(0), 74, 74), (np.int64(1), 75, 81), (np.int64(0), 82, 83), (np.int64(1), 84, 90), (np.int64(0), 91, 95), (np.int64(1), 96, 101), (np.int64(0), 102, 105), (np.int64(1), 106, 111), (np.int64(0), 112, 117), (np.int64(1), 118, 121), (np.int64(0), 122, 122), (np.int64(1), 123, 125), (np.int64(0), 126, 127), (np.int64(1), 128, 130), (np.int64(0), 131, 131), (np.int64(1), 132, 136), (np.int64(0), 137, 139)]
+frames with 2: []
+frames with 0: [  5   6  15  16  17  18  24  27  28  29  34  40  44  50  51  53  63  64
+  70  71  74  82  83  91  92  93  94  95 102 103 104 105 112 113 114 115
+ 116 117 122 126 127 131 137 138 139 142 152 161 168 169]
+
+$ python - <<'EOF'
+import json,numpy as np
+sh=json.load(open("work/cadence_shoes.json")); bs=np.load("work/belt_smooth.npy")
+for i in range(0,70):
+    s=sh[i]
+    print(i, "belt",round(bs[i],1), [(round(a),round(b),round(c),round(bs[i]-c,1)) for a,b,c,d in s])
+EOF
+0 belt 266.0 [(319, 265, 272, np.float64(-6.0))]
+1 belt 266.0 [(313, 266, 272, np.float64(-6.0))]
+2 belt 268.0 [(305, 266, 273, np.float64(-5.0))]
+3 belt 268.0 [(299, 264, 271, np.float64(-3.0))]
+4 belt 268.0 [(295, 259, 266, np.float64(2.0))]
+5 belt 270.0 [(296, 253, 263, np.float64(7.0))]
+6 belt 270.0 [(293, 237, 242, np.float64(28.0)), (365, 257, 263, np.float64(7.0))]
+7 belt 270.0 [(299, 231, 236, np.float64(34.0)), (358, 260, 267, np.float64(3.0))]
+8 belt 270.0 [(306, 226, 232, np.float64(38.0)), (346, 263, 269, np.float64(1.0))]
+9 belt 270.0 [(310, 223, 229, np.float64(41.0)), (332, 265, 271, np.float64(-1.0))]
+10 belt 272.0 [(317, 222, 228, np.float64(44.0)), (317, 266, 272, np.float64(0.0))]
+11 belt 272.0 [(323, 224, 230, np.float64(42.0)), (303, 267, 273, np.float64(-1.0))]
+12 belt 272.0 [(331, 231, 237, np.float64(35.0)), (293, 269, 275, np.float64(-3.0))]
+13 belt 272.0 [(340, 237, 242, np.float64(30.0)), (286, 270, 276, np.float64(-4.0))]
+14 belt 272.0 [(351, 247, 252, np.float64(20.0)), (278, 268, 275, np.float64(-3.0))]
+15 belt 272.0 [(283, 253, 258, np.float64(14.0)), (359, 254, 260, np.float64(12.0))]
+16 belt 274.0 [(288, 238, 244, np.float64(30.0)), (359, 261, 268, np.float64(6.0))]
+17 belt 272.0 [(296, 227, 233, np.float64(39.0)), (350, 260, 266, np.float64(6.0))]
+18 belt 272.0 [(307, 220, 226, np.float64(46.0)), (339, 261, 267, np.float64(5.0))]
+19 belt 272.0 [(311, 220, 226, np.float64(46.0)), (329, 264, 270, np.float64(2.0))]
+20 belt 272.0 [(335, 222, 228, np.float64(44.0)), (319, 265, 272, np.float64(0.0))]
+21 belt 270.0 [(341, 225, 231, np.float64(39.0)), (310, 265, 272, np.float64(-2.0))]
+22 belt 270.0 [(352, 232, 237, np.float64(33.0)), (301, 265, 272, np.float64(-2.0))]
+23 belt 270.0 [(360, 242, 247, np.float64(23.0)), (291, 264, 271, np.float64(-1.0))]
+24 belt 270.0 [(362, 252, 258, np.float64(12.0)), (287, 255, 261, np.float64(9.0))]
+25 belt 270.0 [(286, 244, 250, np.float64(20.0)), (360, 263, 270, np.float64(0.0))]
+26 belt 270.0 [(287, 232, 238, np.float64(32.0)), (347, 262, 268, np.float64(2.0))]
+27 belt 270.0 [(294, 222, 228, np.float64(42.0)), (335, 259, 265, np.float64(5.0))]
+28 belt 270.0 [(302, 215, 221, np.float64(49.0)), (325, 257, 263, np.float64(7.0))]
+29 belt 270.0 [(315, 214, 220, np.float64(50.0)), (317, 258, 264, np.float64(6.0))]
+30 belt 270.0 [(330, 218, 224, np.float64(46.0)), (312, 261, 267, np.float64(3.0))]
+31 belt 272.0 [(342, 228, 234, np.float64(38.0)), (304, 265, 272, np.float64(0.0))]
+32 belt 272.0 [(352, 235, 240, np.float64(32.0)), (297, 267, 275, np.float64(-3.0))]
+33 belt 272.0 [(360, 247, 253, np.float64(19.0)), (288, 268, 275, np.float64(-3.0))]
+34 belt 272.0 [(366, 255, 262, np.float64(10.0)), (289, 256, 264, np.float64(8.0))]
+35 belt 272.0 [(291, 245, 252, np.float64(20.0)), (364, 266, 273, np.float64(-1.0))]
+36 belt 272.0 [(298, 236, 242, np.float64(30.0)), (355, 267, 273, np.float64(-1.0))]
+37 belt 272.0 [(307, 228, 234, np.float64(38.0)), (347, 266, 272, np.float64(0.0))]
+38 belt 272.0 [(313, 221, 227, np.float64(45.0)), (337, 263, 270, np.float64(2.0))]
+39 belt 272.0 [(316, 218, 224, np.float64(48.0)), (335, 217, 224, np.float64(48.0)), (326, 262, 269, np.float64(3.0))]
+40 belt 272.0 [(337, 219, 224, np.float64(48.0)), (315, 261, 268, np.float64(4.0))]
+41 belt 272.0 [(339, 225, 230, np.float64(42.0)), (300, 263, 269, np.float64(3.0))]
+42 belt 272.0 [(346, 235, 240, np.float64(32.0)), (287, 266, 272, np.float64(0.0))]
+43 belt 270.0 [(349, 246, 252, np.float64(18.0)), (276, 267, 274, np.float64(-4.0))]
+44 belt 270.0 [(281, 256, 262, np.float64(8.0)), (354, 256, 263, np.float64(7.0))]
+45 belt 270.0 [(286, 241, 246, np.float64(24.0)), (357, 265, 271, np.float64(-1.0))]
+46 belt 270.0 [(298, 230, 236, np.float64(34.0)), (351, 263, 269, np.float64(1.0))]
+47 belt 268.0 [(310, 221, 227, np.float64(41.0)), (344, 261, 267, np.float64(1.0))]
+48 belt 268.0 [(323, 217, 224, np.float64(44.0)), (337, 261, 267, np.float64(1.0))]
+49 belt 268.0 [(334, 216, 222, np.float64(46.0)), (324, 260, 266, np.float64(2.0))]
+50 belt 268.0 [(341, 218, 224, np.float64(44.0)), (312, 258, 264, np.float64(4.0))]
+51 belt 268.0 [(350, 225, 231, np.float64(37.0)), (299, 258, 264, np.float64(4.0))]
+52 belt 268.0 [(353, 236, 241, np.float64(27.0)), (287, 259, 266, np.float64(2.0))]
+53 belt 270.0 [(358, 252, 256, np.float64(14.0)), (282, 255, 261, np.float64(9.0))]
+54 belt 270.0 [(286, 249, 255, np.float64(15.0)), (361, 267, 274, np.float64(-4.0))]
+55 belt 272.0 [(292, 241, 246, np.float64(26.0)), (353, 270, 276, np.float64(-4.0))]
+56 belt 272.0 [(297, 234, 240, np.float64(32.0)), (342, 269, 275, np.float64(-3.0))]
+57 belt 272.0 [(301, 225, 231, np.float64(41.0)), (330, 265, 272, np.float64(0.0))]
+58 belt 272.0 [(303, 221, 227, np.float64(45.0)), (319, 265, 271, np.float64(1.0))]
+59 belt 272.0 [(325, 220, 226, np.float64(46.0)), (309, 264, 272, np.float64(0.0))]
+60 belt 272.0 [(329, 223, 228, np.float64(44.0)), (301, 264, 270, np.float64(2.0))]
+61 belt 272.0 [(339, 227, 232, np.float64(40.0)), (295, 264, 270, np.float64(2.0))]
+62 belt 272.0 [(351, 233, 238, np.float64(34.0)), (291, 263, 269, np.float64(3.0))]
+63 belt 272.0 [(360, 242, 247, np.float64(25.0)), (287, 261, 267, np.float64(5.0))]
+64 belt 272.0 [(290, 251, 256, np.float64(16.0)), (366, 254, 260, np.float64(12.0))]
+65 belt 270.0 [(294, 244, 250, np.float64(20.0)), (365, 267, 274, np.float64(-4.0))]
+66 belt 270.0 [(298, 236, 242, np.float64(28.0)), (354, 269, 275, np.float64(-5.0))]
+67 belt 270.0 [(303, 229, 235, np.float64(35.0)), (340, 268, 274, np.float64(-4.0))]
+68 belt 270.0 [(307, 221, 227, np.float64(43.0)), (327, 264, 270, np.float64(0.0))]
+69 belt 268.0 [(318, 216, 222, np.float64(46.0)), (318, 260, 267, np.float64(1.0))]
+
+$ python - <<'EOF'
+import json,numpy as np
+sh=json.load(open("work/cadence_shoes.json")); bs=np.load("work/belt_smooth.npy")
+# simple tracker with 2 tracks, state (cx,cy,bot) and velocity
+tracks=[None,None]
+res=[]
+for i,s in enumerate(sh):
+    # s list of tuples
+    if i==0:
+        # one blob only; start track0
+        t=[list(x) for x in s]
+        while len(t)<2: t.append(None)
+        tracks=t
+    else:
+        preds=[]
+        for tr in tracks:
+            if tr is None: preds.append(None)
+            else: preds.append((tr[0]+tr[3], tr[1]+tr[4]))
+        # pair: try all assignments
+        best=None
+        blobs=list(s)
+        # if 3 blobs, merge the two closest in y? handle by keeping largest 2? we'll do assignment with dummy
+        import itertools
+        idxs=list(range(len(blobs)))
+        # assignment options: each track gets distinct blob or None
+        opts=[]
+        if len(blobs)>=2:
+            for a,b in itertools.permutations(idxs,2):
+                cost=0
+                for k,bi in enumerate([a,b]):
+                    p=preds[k]
+                    if p is None: c=0
+                    else: c=abs(blobs[bi][0]-p[0])+abs(blobs[bi][1]-p[1])
+                    cost+=c
+                opts.append((cost,a,b))
+            cost,a,b=min(opts)
+        else:
+            a,b=0,None
+        newt=[]
+        for k,bi in [(0,a),(1,b)]:
+            if bi is None:
+                newt.append(None)
+            else:
+                cx,cy,bot,area=blobs[bi]
+                old=tracks[k]
+                if old is None: nv=(0,0)
+                else: nv=(cx-old[0], cy-old[1])
+                newt.append([cx,cy,bot,0.5*(nv[0] if old else 0)+0.5*(nv[0] if old else 0),0.0,area])
+        # recompute velocities properly
+        newt2=[]
+        for k in range(2):
+            if newt[k] is None: newt2.append(None); continue
+            cx,cy,bot,_,_,area=newt[k]
+            old=tracks[k]
+            if old is None: vx=vy=0.0
+            else:
+                vx=0.6*old[3]+0.4*(cx-old[0]); vy=0.6*old[4]+0.4*(cy-old[1])
+            newt2.append([cx,cy,bot,vx,vy,area])
+        tracks=newt2
+    res.append([None if tr is None else (tr[0],tr[1],tr[2]) for tr in tracks])
+json.dump(res,open("work/cadence_tracks.json","w"))
+for i in range(0,70):
+    r=res[i]
+    print(i, "belt",round(bs[i],1), [None if x is None else (round(x[0]),round(x[1]),round(x[2])) for x in r])
+EOF
+Traceback (most recent call last):
+  File "<stdin>", line 17, in <module>
+IndexError: list index out of range
+
+$ python - <<'EOF'
+import json,numpy as np, itertools
+sh=json.load(open("work/cadence_shoes.json")); bs=np.load("work/belt_smooth.npy")
+tracks=[None,None]
+res=[]
+for i,s in enumerate(sh):
+    blobs=[list(x) for x in s]
+    preds=[]
+    for tr in tracks:
+        preds.append(None if tr is None else (tr[0]+tr[3], tr[1]+tr[4]))
+    assign=[None,None]
+    if i==0:
+        if len(blobs)>=1: assign[0]=0
+        if len(blobs)>=2: assign[1]=1
+    else:
+        # enumerate assignments of distinct blobs to non-None tracks
+        bestcost=1e18;best=None
+        opts=[]
+        avail=list(range(len(blobs)))
+        if None not in preds:
+            if len(blobs)>=2:
+                for a,b in itertools.permutations(avail,2):
+                    cost=sum(abs(blobs[bi][0]-preds[k][0])+abs(blobs[bi][1]-preds[k][1]) for k,bi in [(0,a),(1,b)])
+                    opts.append((cost,a,b))
+        else:
+            for k in range(2):
+                if preds[k] is None: continue
+                for bi in avail:
+                    opts.append((abs(blobs[bi][0]-preds[k][0])+abs(blobs[bi][1]-preds[k][1]),k,bi))
+        if opts:
+            cost,k,bi=min(opts)
+            assign[k]=bi
+            # assign other track if possible
+            for k2 in range(2):
+                if k2!=k and preds[k2] is not None and assign[k2] is None:
+                    cands=[(abs(blobs[j][0]-preds[k2][0])+abs(blobs[j][1]-preds[k2][1]),j) for j in avail if j!=bi]
+                    if cands and min(cands)[0]<60: assign[k2]=min(cands)[1]
+        # if a track has no pred, pick nearest blob not used
+        for k in range(2):
+            if preds[k] is None and assign[k] is None:
+                used=[a for a in assign if a is not None]
+                cands=[j for j in avail if j not in used]
+                if cands: assign[k]=cands[0]
+    newt=[]
+    for k in range(2):
+        if assign[k] is None:
+            newt.append(None); continue
+        cx,cy,bot,area=blobs[assign[k]]
+        old=tracks[k]
+        if old is None: vx=vy=0.0
+        else: vx=0.6*old[3]+0.4*(cx-old[0]); vy=0.6*old[4]+0.4*(cy-old[1])
+        newt.append([cx,cy,bot,vx,vy,area])
+    tracks=newt
+    res.append([None if t is None else (t[0],t[1],t[2]) for t in tracks])
+json.dump(res,open("work/cadence_tracks.json","w"))
+print("missing counts",sum(1 for r in res if r[0] is None),sum(1 for r in res if r[1] is None))
+for i in range(0,80):
+    r=res[i]
+    print(i,round(bs[i],1),[None if x is None else (round(x[0]),round(x[1]),round(x[2])) for x in r])
+EOF
+Traceback (most recent call last):
+  File "<stdin>", line 31, in <module>
+IndexError: list assignment index out of range
+
+$ python - <<'EOF'
+import json,numpy as np, itertools
+sh=json.load(open("work/cadence_shoes.json")); bs=np.load("work/belt_smooth.npy")
+tracks=[None,None]
+res=[]
+def dist(blob,pred):
+    if pred is None: return 0.0
+    return abs(blob[0]-pred[0])+abs(blob[1]-pred[1])
+for i,s in enumerate(sh):
+    blobs=[list(x) for x in s]
+    preds=[None if tr is None else (tr[0]+tr[3], tr[1]+tr[4]) for tr in tracks]
+    assign=[None,None]
+    if i==0:
+        for k in range(min(2,len(blobs))): assign[k]=k
+    else:
+        best=None;bestcost=1e18
+        if all(p is not None for p in preds) and len(blobs)>=2:
+            for a,b in itertools.permutations(range(len(blobs)),2):
+                c=dist(blobs[a],preds[0])+dist(blobs[b],preds[1])
+                if c<bestcost: bestcost=c;best=(a,b)
+            if best: assign=[best[0],best[1]]
+        else:
+            used=set()
+            for k in range(2):
+                if preds[k] is None: continue
+                cands=sorted([(dist(blobs[j],preds[k]),j) for j in range(len(blobs)) if j not in used])
+                if cands and cands[0][0]<80:
+                    assign[k]=cands[0][1]; used.add(cands[0][1])
+            for k in range(2):
+                if assign[k] is None:
+                    rem=[j for j in range(len(blobs)) if j not in used]
+                    if rem and preds[k] is None:
+                        assign[k]=rem[0]; used.add(rem[0])
+    newt=[]
+    for k in range(2):
+        if assign[k] is None: newt.append(None); continue
+        cx,cy,bot,area=blobs[assign[k]]
+        old=tracks[k]
+        if old is None: vx=vy=0.0
+        else: vx=0.6*old[3]+0.4*(cx-old[0]); vy=0.6*old[4]+0.4*(cy-old[1])
+        newt.append([cx,cy,bot,vx,vy,area])
+    tracks=newt
+    res.append([None if t is None else (t[0],t[1],t[2]) for t in tracks])
+json.dump(res,open("work/cadence_tracks.json","w"))
+print("missing",sum(1 for r in res if r[0] is None),sum(1 for r in res if r[1] is None))
+for i in range(0,80):
+    r=res[i]
+    print(i,round(bs[i],1),[None if x is None else (round(x[0]),round(x[1]),round(x[2])) for x in r])
+EOF
+missing 1 6
+0 266.0 [(319, 265, 272), None]
+1 266.0 [(313, 266, 272), None]
+2 268.0 [(305, 266, 273), None]
+3 268.0 [(299, 264, 271), None]
+4 268.0 [(295, 259, 266), None]
+5 270.0 [(296, 253, 263), None]
+6 270.0 [(293, 237, 242), (365, 257, 263)]
+7 270.0 [(299, 231, 236), (358, 260, 267)]
+8 270.0 [(306, 226, 232), (346, 263, 269)]
+9 270.0 [(310, 223, 229), (332, 265, 271)]
+10 272.0 [(317, 222, 228), (317, 266, 272)]
+11 272.0 [(323, 224, 230), (303, 267, 273)]
+12 272.0 [(331, 231, 237), (293, 269, 275)]
+13 272.0 [(340, 237, 242), (286, 270, 276)]
+14 272.0 [(351, 247, 252), (278, 268, 275)]
+15 272.0 [(359, 254, 260), (283, 253, 258)]
+16 274.0 [(359, 261, 268), (288, 238, 244)]
+17 272.0 [(350, 260, 266), (296, 227, 233)]
+18 272.0 [(339, 261, 267), (307, 220, 226)]
+19 272.0 [(329, 264, 270), (311, 220, 226)]
+20 272.0 [(319, 265, 272), (335, 222, 228)]
+21 270.0 [(310, 265, 272), (341, 225, 231)]
+22 270.0 [(301, 265, 272), (352, 232, 237)]
+23 270.0 [(291, 264, 271), (360, 242, 247)]
+24 270.0 [(287, 255, 261), (362, 252, 258)]
+25 270.0 [(286, 244, 250), (360, 263, 270)]
+26 270.0 [(287, 232, 238), (347, 262, 268)]
+27 270.0 [(294, 222, 228), (335, 259, 265)]
+28 270.0 [(302, 215, 221), (325, 257, 263)]
+29 270.0 [(315, 214, 220), (317, 258, 264)]
+30 270.0 [(330, 218, 224), (312, 261, 267)]
+31 272.0 [(342, 228, 234), (304, 265, 272)]
+32 272.0 [(352, 235, 240), (297, 267, 275)]
+33 272.0 [(360, 247, 253), (288, 268, 275)]
+34 272.0 [(366, 255, 262), (289, 256, 264)]
+35 272.0 [(364, 266, 273), (291, 245, 252)]
+36 272.0 [(355, 267, 273), (298, 236, 242)]
+37 272.0 [(347, 266, 272), (307, 228, 234)]
+38 272.0 [(337, 263, 270), (313, 221, 227)]
+39 272.0 [(326, 262, 269), (316, 218, 224)]
+40 272.0 [(315, 261, 268), (337, 219, 224)]
+41 272.0 [(300, 263, 269), (339, 225, 230)]
+42 272.0 [(287, 266, 272), (346, 235, 240)]
+43 270.0 [(276, 267, 274), (349, 246, 252)]
+44 270.0 [(281, 256, 262), (354, 256, 263)]
+45 270.0 [(286, 241, 246), (357, 265, 271)]
+46 270.0 [(298, 230, 236), (351, 263, 269)]
+47 268.0 [(310, 221, 227), (344, 261, 267)]
+48 268.0 [(323, 217, 224), (337, 261, 267)]
+49 268.0 [(334, 216, 222), (324, 260, 266)]
+50 268.0 [(341, 218, 224), (312, 258, 264)]
+51 268.0 [(350, 225, 231), (299, 258, 264)]
+52 268.0 [(353, 236, 241), (287, 259, 266)]
+53 270.0 [(358, 252, 256), (282, 255, 261)]
+54 270.0 [(361, 267, 274), (286, 249, 255)]
+55 272.0 [(353, 270, 276), (292, 241, 246)]
+56 272.0 [(342, 269, 275), (297, 234, 240)]
+57 272.0 [(330, 265, 272), (301, 225, 231)]
+58 272.0 [(319, 265, 271), (303, 221, 227)]
+59 272.0 [(309, 264, 272), (325, 220, 226)]
+60 272.0 [(301, 264, 270), (329, 223, 228)]
+61 272.0 [(295, 264, 270), (339, 227, 232)]
+62 272.0 [(291, 263, 269), (351, 233, 238)]
+63 272.0 [(287, 261, 267), (360, 242, 247)]
+64 272.0 [(290, 251, 256), (366, 254, 260)]
+65 270.0 [(294, 244, 250), (365, 267, 274)]
+66 270.0 [(298, 236, 242), (354, 269, 275)]
+67 270.0 [(303, 229, 235), (340, 268, 274)]
+68 270.0 [(307, 221, 227), (327, 264, 270)]
+69 268.0 [(318, 216, 222), (318, 260, 267)]
+70 268.0 [(329, 216, 222), (308, 258, 264)]
+71 268.0 [(337, 219, 224), (298, 258, 264)]
+72 268.0 [(346, 228, 234), (289, 259, 265)]
+73 268.0 [(349, 238, 244), (278, 260, 266)]
+74 268.0 [(353, 250, 255), (278, 249, 255)]
+75 268.0 [(355, 262, 269), (283, 239, 245)]
+76 268.0 [(347, 266, 275), (294, 232, 238)]
+77 268.0 [(339, 269, 275), (305, 228, 234)]
+78 270.0 [(332, 270, 276), (314, 226, 232)]
+79 270.0 [(325, 267, 273), (340, 223, 230)]
+
+$ python - <<'EOF'
+import json,numpy as np
+res=json.load(open("work/cadence_tracks.json")); bs=np.load("work/belt_smooth.npy")
+for k in [0,1]:
+    bot=np.array([np.nan if r[k] is None else r[k][2] for r in res],float)
+    good=~np.isnan(bot); bot=np.interp(np.arange(len(bot)),np.where(good)[0],bot[good])
+    planted=bot>=bs-4
+    runs=[];s=None
+    for i,v in enumerate(planted):
+        if v and s is None: s=i
+        if not v and s is not None: runs.append((s,i-1));s=None
+    if s is not None: runs.append((s,len(planted)-1))
+    print("track",k,"runs",runs)
+    print("   durations",[(b-a+1) for a,b in runs])
+EOF
+track 0 runs [(0, 4), (19, 23), (35, 43), (54, 62), (75, 82), (96, 101), (113, 113), (118, 121), (132, 136), (139, 141), (153, 160), (172, 179), (192, 199), (210, 219), (231, 232), (234, 238), (250, 254), (269, 276), (288, 289), (291, 297), (309, 316), (328, 335), (347, 353), (355, 355), (367, 374), (387, 394), (406, 413), (425, 428), (432, 433), (444, 451), (465, 472), (485, 491), (501, 504), (519, 524), (533, 539), (550, 557), (567, 573), (584, 590), (599, 603), (605, 606), (617, 623), (633, 639), (650, 656), (665, 667), (670, 672), (682, 689), (699, 701), (705, 705), (716, 722), (731, 738), (748, 754), (765, 765), (769, 771), (782, 788), (797, 804), (814, 821), (831, 837), (848, 853), (863, 863), (867, 870), (880, 887), (897, 904), (914, 918), (920, 920), (929, 929), (932, 936), (946, 951), (963, 969), (980, 986), (995, 999)]
+   durations [5, 5, 9, 9, 8, 6, 1, 4, 5, 3, 8, 8, 8, 10, 2, 5, 5, 8, 2, 7, 8, 8, 7, 1, 8, 8, 8, 4, 2, 8, 8, 7, 4, 6, 7, 8, 7, 7, 5, 2, 7, 7, 7, 3, 3, 8, 3, 1, 7, 8, 7, 1, 3, 7, 8, 8, 7, 6, 1, 4, 8, 8, 5, 1, 1, 5, 6, 7, 7, 5]
+track 1 runs [(0, 1), (7, 14), (25, 26), (30, 33), (45, 52), (65, 73), (84, 90), (103, 103), (106, 111), (123, 130), (143, 151), (162, 167), (170, 170), (182, 189), (201, 201), (204, 208), (221, 224), (227, 229), (240, 248), (259, 266), (280, 286), (299, 307), (318, 326), (337, 340), (345, 345), (357, 363), (378, 385), (396, 404), (415, 417), (420, 423), (435, 440), (455, 463), (474, 482), (493, 499), (509, 516), (526, 526), (531, 532), (542, 548), (559, 566), (575, 582), (592, 592), (594, 598), (608, 614), (625, 626), (628, 631), (641, 648), (658, 664), (674, 679), (693, 697), (707, 714), (724, 730), (740, 746), (758, 763), (773, 776), (780, 780), (791, 796), (806, 812), (823, 829), (839, 842), (844, 846), (856, 861), (872, 878), (889, 895), (905, 912), (922, 927), (938, 939), (943, 944), (955, 961), (971, 974), (977, 978), (988, 994)]
+   durations [2, 8, 2, 4, 8, 9, 7, 1, 6, 8, 9, 6, 1, 8, 1, 5, 4, 3, 9, 8, 7, 9, 9, 4, 1, 7, 8, 9, 3, 4, 6, 9, 9, 7, 8, 1, 2, 7, 8, 8, 1, 5, 7, 2, 4, 8, 7, 6, 5, 8, 7, 7, 6, 4, 1, 6, 7, 7, 4, 3, 6, 7, 7, 8, 6, 2, 2, 7, 4, 2, 7]
+
+$ python - <<'EOF'
+import json,numpy as np
+from scipy.signal import find_peaks, medfilt
+res=json.load(open("work/cadence_tracks.json"))
+allpk=[]
+for k in [0,1]:
+    x=np.array([np.nan if r[k] is None else r[k][0] for r in res],float)
+    y=np.array([np.nan if r[k] is None else r[k][1] for r in res],float)
+    bot=np.array([np.nan if r[k] is None else r[k][2] for r in res],float)
+    idx=np.arange(len(x))
+    for arr in (x,y,bot):
+        g=~np.isnan(arr); arr[:]=np.interp(idx,idx[g],arr[g])
+    xs=medfilt(x,3)
+    pk,props=find_peaks(xs,distance=13,prominence=5)
+    print("track",k,"npeaks",len(pk))
+    for p in pk:
+        allpk.append((p,k,xs[p],bot[p],round(props["prominences"][list(pk).index(p)],1)))
+for a in sorted(allpk):
+    print(a[0], "t=%.2f"%(a[0]/25), "track",a[1],"x",round(a[2],1),"bot",round(a[3],1),"prom",a[4])
+print("total peaks",len(allpk))
+EOF
+track 0 npeaks 56
+track 1 npeaks 55
+15 t=0.60 track 0 x 358.7 bot 260.0 prom 63.3
+24 t=0.96 track 1 x 360.5 bot 258.0 prom 74.7
+34 t=1.36 track 0 x 364.4 bot 262.0 prom 77.8
+44 t=1.76 track 1 x 353.7 bot 263.0 prom 64.9
+53 t=2.12 track 0 x 357.6 bot 256.0 prom 73.7
+64 t=2.56 track 1 x 365.4 bot 260.0 prom 82.2
+74 t=2.96 track 0 x 352.6 bot 255.0 prom 62.3
+83 t=3.32 track 1 x 355.8 bot 256.0 prom 68.3
+93 t=3.72 track 0 x 363.6 bot 249.0 prom 82.3
+102 t=4.08 track 1 x 354.7 bot 257.0 prom 66.7
+112 t=4.48 track 0 x 361.7 bot 258.0 prom 77.8
+122 t=4.88 track 1 x 362.8 bot 258.0 prom 84.6
+131 t=5.24 track 0 x 348.8 bot 264.0 prom 61.6
+142 t=5.68 track 1 x 358.5 bot 264.0 prom 81.2
+152 t=6.08 track 0 x 369.3 bot 264.0 prom 88.3
+161 t=6.44 track 1 x 357.9 bot 254.0 prom 65.3
+170 t=6.80 track 0 x 359.0 bot 245.0 prom 75.4
+180 t=7.20 track 1 x 358.0 bot 251.0 prom 72.4
+190 t=7.60 track 0 x 350.9 bot 255.0 prom 63.5
+200 t=8.00 track 1 x 362.7 bot 258.0 prom 82.2
+209 t=8.36 track 0 x 365.3 bot 256.0 prom 82.5
+220 t=8.80 track 1 x 353.9 bot 262.0 prom 66.3
+230 t=9.20 track 0 x 356.9 bot 261.0 prom 71.5
+239 t=9.56 track 1 x 361.7 bot 262.0 prom 77.8
+249 t=9.96 track 0 x 355.1 bot 256.0 prom 66.9
+257 t=10.28 track 1 x 363.4 bot 241.0 prom 77.5
+268 t=10.72 track 0 x 361.6 bot 254.0 prom 83.4
+278 t=11.12 track 1 x 352.2 bot 251.0 prom 64.8
+287 t=11.48 track 0 x 362.6 bot 259.0 prom 82.1
+298 t=11.92 track 1 x 364.0 bot 255.0 prom 88.5
+308 t=12.32 track 0 x 352.6 bot 259.0 prom 64.3
+317 t=12.68 track 1 x 358.6 bot 260.0 prom 71.8
+327 t=13.08 track 0 x 361.0 bot 261.0 prom 75.4
+336 t=13.44 track 1 x 354.8 bot 257.0 prom 64.0
+346 t=13.84 track 0 x 363.6 bot 255.0 prom 78.3
+356 t=14.24 track 1 x 359.0 bot 260.0 prom 80.1
+365 t=14.60 track 0 x 350.9 bot 250.0 prom 64.5
+376 t=15.04 track 1 x 363.4 bot 256.0 prom 85.2
+386 t=15.44 track 0 x 368.0 bot 255.0 prom 90.0
+395 t=15.80 track 1 x 357.5 bot 256.0 prom 67.3
+404 t=16.16 track 0 x 360.6 bot 254.0 prom 77.7
+414 t=16.56 track 1 x 356.5 bot 258.0 prom 68.8
+424 t=16.96 track 0 x 354.1 bot 262.0 prom 63.7
+434 t=17.36 track 1 x 366.0 bot 257.0 prom 84.7
+443 t=17.72 track 0 x 363.1 bot 258.0 prom 84.0
+454 t=18.16 track 1 x 353.4 bot 256.0 prom 67.1
+464 t=18.56 track 0 x 361.5 bot 255.0 prom 80.8
+473 t=18.92 track 1 x 357.3 bot 256.0 prom 71.7
+483 t=19.32 track 0 x 355.7 bot 251.0 prom 61.7
+492 t=19.68 track 1 x 366.1 bot 260.0 prom 86.7
+500 t=20.00 track 0 x 358.6 bot 256.0 prom 69.7
+508 t=20.32 track 1 x 364.9 bot 255.0 prom 78.8
+517 t=20.68 track 0 x 360.4 bot 250.0 prom 74.2
+524 t=20.96 track 1 x 355.1 bot 242.0 prom 67.5
+532 t=21.28 track 0 x 362.0 bot 257.0 prom 79.7
+541 t=21.64 track 1 x 353.1 bot 254.0 prom 62.0
+549 t=21.96 track 0 x 364.8 bot 250.0 prom 86.8
+558 t=22.32 track 1 x 353.7 bot 256.0 prom 64.3
+566 t=22.64 track 0 x 362.5 bot 259.0 prom 80.4
+574 t=22.96 track 1 x 355.6 bot 252.0 prom 69.8
+582 t=23.28 track 0 x 355.1 bot 242.0 prom 72.5
+591 t=23.64 track 1 x 356.4 bot 250.0 prom 73.8
+598 t=23.92 track 0 x 354.6 bot 254.0 prom 69.9
+607 t=24.28 track 1 x 362.0 bot 261.0 prom 80.0
+615 t=24.60 track 0 x 352.6 bot 249.0 prom 66.1
+624 t=24.96 track 1 x 362.9 bot 256.0 prom 82.9
+632 t=25.28 track 0 x 352.1 bot 257.0 prom 62.4
+640 t=25.60 track 1 x 359.3 bot 253.0 prom 78.5
+650 t=26.00 track 0 x 353.7 bot 270.0 prom 68.8
+657 t=26.28 track 1 x 353.2 bot 250.0 prom 67.2
+664 t=26.56 track 0 x 354.7 bot 254.0 prom 71.4
+673 t=26.92 track 1 x 354.5 bot 258.0 prom 69.7
+681 t=27.24 track 0 x 363.1 bot 252.0 prom 81.0
+690 t=27.60 track 1 x 353.2 bot 253.0 prom 64.9
+698 t=27.92 track 0 x 362.3 bot 259.0 prom 83.5
+706 t=28.24 track 1 x 353.1 bot 256.0 prom 64.0
+715 t=28.60 track 0 x 358.9 bot 254.0 prom 75.8
+723 t=28.92 track 1 x 361.2 bot 254.0 prom 75.3
+730 t=29.20 track 0 x 358.0 bot 254.0 prom 68.9
+739 t=29.56 track 1 x 365.8 bot 260.0 prom 85.9
+747 t=29.88 track 0 x 353.7 bot 254.0 prom 63.9
+756 t=30.24 track 1 x 365.0 bot 249.0 prom 81.8
+764 t=30.56 track 0 x 354.1 bot 260.0 prom 63.2
+772 t=30.88 track 1 x 365.6 bot 256.0 prom 83.9
+781 t=31.24 track 0 x 361.8 bot 258.0 prom 70.0
+789 t=31.56 track 1 x 361.3 bot 253.0 prom 72.8
+796 t=31.84 track 0 x 362.6 bot 250.0 prom 76.3
+805 t=32.20 track 1 x 359.1 bot 262.0 prom 68.7
+813 t=32.52 track 0 x 366.0 bot 253.0 prom 87.2
+822 t=32.88 track 1 x 354.7 bot 251.0 prom 61.8
+830 t=33.20 track 0 x 365.0 bot 254.0 prom 83.0
+838 t=33.52 track 1 x 357.1 bot 258.0 prom 65.9
+846 t=33.84 track 0 x 362.9 bot 243.0 prom 79.1
+855 t=34.20 track 1 x 363.5 bot 254.0 prom 76.9
+862 t=34.48 track 0 x 361.6 bot 254.0 prom 69.7
+871 t=34.84 track 1 x 364.4 bot 256.0 prom 77.9
+879 t=35.16 track 0 x 353.8 bot 258.0 prom 64.9
+888 t=35.52 track 1 x 362.6 bot 250.0 prom 80.3
+896 t=35.84 track 0 x 353.9 bot 254.0 prom 64.8
+904 t=36.16 track 1 x 362.9 bot 262.0 prom 80.9
+913 t=36.52 track 0 x 356.9 bot 256.0 prom 68.2
+920 t=36.80 track 1 x 356.7 bot 240.0 prom 73.4
+928 t=37.12 track 0 x 360.2 bot 254.0 prom 74.0
+936 t=37.44 track 1 x 354.7 bot 244.0 prom 67.4
+945 t=37.80 track 0 x 361.5 bot 262.0 prom 79.8
+954 t=38.16 track 1 x 352.0 bot 254.0 prom 63.0
+962 t=38.48 track 0 x 362.5 bot 253.0 prom 79.1
+970 t=38.80 track 1 x 354.7 bot 257.0 prom 67.2
+979 t=39.16 track 0 x 358.9 bot 258.0 prom 72.5
+987 t=39.48 track 1 x 354.8 bot 252.0 prom 69.4
+994 t=39.76 track 0 x 355.0 bot 251.0 prom 38.4
+total peaks 111
+
+$ python - <<'EOF'
+import json,numpy as np
+from scipy.signal import find_peaks, medfilt
+res=json.load(open("work/cadence_tracks.json"))
+peaks=[]
+for k in [0,1]:
+    x=np.array([np.nan if r[k] is None else r[k][0] for r in res],float)
+    idx=np.arange(len(x)); g=~np.isnan(x); x=np.interp(idx,idx[g],x[g])
+    xs=medfilt(x,3)
+    pk,props=find_peaks(xs,distance=13,prominence=5)
+    for p in pk: peaks.append((int(p),k))
+peaks.sort()
+frames=np.array([p[0] for p in peaks])
+t=frames/25.0
+print("n peaks",len(peaks))
+d=np.diff(frames)
+print("interval stats",d.min(),d.max(),np.median(d),np.mean(d))
+print("any interval>13 or <6:",[(int(frames[i]),int(d[i])) for i in range(len(d)) if d[i]>13 or d[i]<6])
+# cadence windows
+for a,b in [(0,500),(500,750),(750,1000),(500,1000)]:
+    sel=t[(t>=a/25)&(t<b/25)]
+    if len(sel)>1:
+        print(f"window {a/25}-{b/25}: N={len(sel)} rate={60*(len(sel)-1)/(sel[-1]-sel[0]):.2f}")
+sel=t[t>=20.0]
+print("from 20:",len(sel), sel[0], sel[-1], "rate",60*(len(sel)-1)/(sel[-1]-sel[0]))
+print("first few after 20",sel[:5])
+EOF
+n peaks 111
+interval stats 7 11 9.0 8.9
+any interval>13 or <6: []
+window 0.0-20.0: N=50 rate=154.09
+window 20.0-30.0: N=31 rate=182.19
+window 30.0-40.0: N=30 rate=182.77
+window 20.0-40.0: N=61 rate=182.19
+from 20: 61 20.0 39.76 rate 182.18623481781378
+first few after 20 [20.   20.32 20.68 20.96 21.28]
+
+$ python - <<'EOF'
+import json,numpy as np
+res=json.load(open("work/cadence_tracks.json")); bs=np.load("work/belt_smooth.npy")
+landings=[]
+for k in [0,1]:
+    bot=np.array([np.nan if r[k] is None else r[k][2] for r in res],float)
+    idx=np.arange(len(bot)); g=~np.isnan(bot); bot=np.interp(idx,idx[g],bot[g])
+    thr=bs-4.0
+    for i in range(1,len(bot)):
+        if bot[i-1] < thr[i-1] and bot[i] >= thr[i]:
+            # only if it stays planted for >=4 frames
+            if np.all(bot[i:i+4]>=thr[i:i+4]-1):
+                # linear interp crossing
+                frac=(thr[i]-bot[i-1])/((bot[i]-bot[i-1])-(thr[i]-thr[i-1])+1e-9)
+                landings.append((i-1+frac,k))
+landings.sort()
+t=[a/25 for a,k in landings]
+print("landings",len(landings))
+print([round(x,2) for x in t])
+sel=[x for x in t if x>=20.0]
+print("from20 N",len(sel),"first",sel[0],"last",sel[-1],"rate",60*(len(sel)-1)/(sel[-1]-sel[0]))
+EOF
+landings 111
+[np.float64(0.27), np.float64(0.73), np.float64(1.19), np.float64(1.38), np.float64(1.77), np.float64(2.14), np.float64(2.57), np.float64(2.99), np.float64(3.35), np.float64(3.82), np.float64(4.22), np.float64(4.69), np.float64(4.91), np.float64(5.26), np.float64(5.68), np.float64(6.09), np.float64(6.47), np.float64(6.87), np.float64(7.25), np.float64(7.68), np.float64(8.14), np.float64(8.39), np.float64(8.83), np.float64(9.22), np.float64(9.36), np.float64(9.58), np.float64(9.99), np.float64(10.35), np.float64(10.75), np.float64(11.19), np.float64(11.51), np.float64(11.61), np.float64(11.96), np.float64(12.36), np.float64(12.7), np.float64(13.09), np.float64(13.47), np.float64(13.87), np.float64(14.26), np.float64(14.68), np.float64(15.09), np.float64(15.47), np.float64(15.84), np.float64(16.21), np.float64(16.79), np.float64(16.98), np.float64(17.39), np.float64(17.75), np.float64(18.19), np.float64(18.6), np.float64(18.95), np.float64(19.38), np.float64(19.71), np.float64(20.02), np.float64(20.35), np.float64(20.73), np.float64(21.31), np.float64(21.67), np.float64(22.0), np.float64(22.36), np.float64(22.65), np.float64(22.99), np.float64(23.35), np.float64(23.68), np.float64(23.76), np.float64(23.95), np.float64(24.3), np.float64(24.68), np.float64(25.12), np.float64(25.31), np.float64(25.62), np.float64(25.99), np.float64(26.31), np.float64(26.94), np.float64(27.27), np.float64(27.76), np.float64(28.26), np.float64(28.63), np.float64(28.95), np.float64(29.23), np.float64(29.58), np.float64(29.91), np.float64(30.31), np.float64(30.91), np.float64(31.27), np.float64(31.62), np.float64(31.87), np.float64(32.22), np.float64(32.55), np.float64(32.91), np.float64(33.24), np.float64(33.54), np.float64(33.94), np.float64(34.24), np.float64(34.68), np.float64(34.87), np.float64(35.18), np.float64(35.56), np.float64(35.87), np.float64(36.18), np.float64(36.54), np.float64(36.88), np.float64(37.16), np.float64(37.25), np.float64(37.82), np.float64(38.19), np.float64(38.51), np.float64(38.83), np.float64(39.18), np.float64(39.52), np.float64(39.79)]
+from20 N 58 first 20.02499999999844 last 39.792499999997965 rate 173.01125584925165
+
+→ Read work/frames/cone-touches-pan_f0.png
+→ Read work/frames/cone-touches-pan_f279.png
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cone-touches-pan.mp4")
+cap.set(cv2.CAP_PROP_POS_FRAMES,279); ok,img=cap.read()
+for p in [(245,285),(320,285),(295,255),(560,285),(140,255),(100,300)]:
+    x,y=p; print(p,img[y,x])
+cap.release()
+EOF
+(245, 285) [ 23 134 239]
+(320, 285) [ 18 114 212]
+(295, 255) [ 44  44 192]
+(560, 285) [ 52 101  43]
+(140, 255) [ 51 100  42]
+(100, 300) [ 51 100  42]
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+cap=cv2.VideoCapture("cone-touches-pan.mp4")
+n=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+data=[]
+def comps(mask,minarea):
+    nn,lab,st,ce=cv2.connectedComponentsWithStats(mask,8)
+    out=[]
+    for i in range(1,nn):
+        if st[i,4]>=minarea:
+            out.append(dict(cx=float(ce[i,0]),cy=float(ce[i,1]),area=int(st[i,4]),
+                            left=int(st[i,0]),top=int(st[i,1]),w=int(st[i,2]),h=int(st[i,3])))
+    return out
+for fi in range(n):
+    ok,img=cap.read()
+    if not ok: break
+    b,g,r=cv2.split(img.astype(int))
+    red=((r>150)&(g<95)&(b<95)).astype(np.uint8)
+    orange=((r>180)&(g>90)&(g<190)&(b<110)).astype(np.uint8)
+    R=comps(red,100); O=comps(orange,20)
+    data.append(dict(f=fi,red=R,orange=O))
+cap.release()
+json.dump(data,open("work/cone.json","w"))
+for d in data[::40]:
+    print(d["f"],[(round(x["cx"]),round(x["cy"]),x["area"]) for x in d["red"]],[(round(x["cx"]),round(x["cy"]),x["area"]) for x in d["orange"]])
+EOF
+0 [(140, 264, 1672)] [(560, 286, 369), (140, 294, 48)]
+40 [(260, 267, 1616)] [(140, 289, 386), (560, 289, 377)]
+80 [(398, 274, 1625)] [(38, 297, 381), (458, 297, 371)]
+120 [(385, 266, 1712)] [(295, 289, 387), (595, 289, 383)]
+160 [(436, 264, 1665)] [(286, 286, 372), (366, 286, 380)]
+200 [(336, 273, 1646)] [(59, 295, 395), (399, 295, 373)]
+240 [(293, 269, 1625)] [(94, 291, 368), (174, 291, 381), (514, 291, 376)]
+280 [(286, 261, 1621)] [(247, 284, 365), (327, 284, 344)]
+320 [(446, 266, 1416)] [(79, 289, 358), (159, 289, 370), (499, 289, 352)]
+360 [(438, 270, 1680)] [(500, 291, 354), (220, 291, 353)]
+400 [(400, 266, 1605)] [(220, 289, 385), (500, 289, 379)]
+440 [(192, 271, 1672)] [(72, 293, 380), (412, 293, 382), (1, 300, 32)]
+480 [(190, 269, 1706)] [(391, 291, 388), (471, 291, 391), (91, 291, 384)]
+520 [(382, 265, 1740)] [(184, 287, 397), (484, 287, 393), (564, 287, 396)]
+560 [(356, 271, 1656)] [(436, 293, 382), (56, 293, 377), (356, 302, 71)]
+600 [(239, 269, 1598)] [(48, 292, 354), (348, 292, 374), (428, 292, 371)]
+640 [(201, 260, 1563)] [(386, 282, 364)]
+680 [(140, 267, 1654)] [(560, 289, 361), (140, 298, 64)]
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/cone.json"))
+for i in range(0,700,10):
+    r=d[i]["red"]; o=d[i]["orange"]
+    rx = max(r,key=lambda x:x["area"])["cx"] if r else None
+    print(i, None if rx is None else round(rx,1), [(round(c["cx"]),c["area"]) for c in o])
+EOF
+0 139.6 [(560, 369), (140, 48)]
+10 139.5 [(560, 383), (140, 69)]
+20 139.9 [(560, 394), (140, 73)]
+30 199.5 [(140, 368), (560, 362)]
+40 259.5 [(140, 386), (560, 377)]
+50 319.5 [(140, 393), (560, 382)]
+60 379.5 [(140, 395), (560, 380)]
+70 397.5 [(98, 385), (518, 390)]
+80 397.5 [(38, 381), (458, 371)]
+90 395.8 [(397, 48)]
+100 362.4 [(364, 60)]
+110 340.0 [(636, 165), (340, 46)]
+120 384.7 [(295, 387), (595, 383)]
+130 415.4 [(236, 381), (536, 377), (616, 375)]
+140 430.7 [(162, 352), (462, 348), (542, 351)]
+150 431.8 [(72, 383), (372, 383), (453, 347)]
+160 435.6 [(286, 372), (366, 380)]
+170 440.4 [(201, 371), (621, 358), (281, 365)]
+180 436.3 [(527, 368), (107, 370), (187, 361)]
+190 436.7 [(19, 403), (99, 399), (439, 74)]
+200 335.6 [(59, 395), (399, 373)]
+210 281.6 [(68, 362), (408, 359)]
+220 260.3 [(29, 372), (109, 361), (449, 371)]
+230 276.5 [(77, 385), (157, 391), (497, 392)]
+240 293.5 [(94, 368), (174, 381), (514, 376)]
+250 264.2 [(115, 351), (195, 360), (535, 345)]
+260 230.0 [(181, 383), (261, 394), (601, 384)]
+270 280.2 [(241, 391), (321, 393)]
+280 286.1 [(247, 365), (327, 344)]
+290 326.2 [(313, 88), (274, 374), (354, 373)]
+300 394.1 [(317, 379), (237, 385)]
+310 425.4 [(164, 396), (244, 393), (584, 386)]
+320 445.7 [(79, 358), (159, 370), (499, 352)]
+330 434.5 [(64, 382), (404, 383)]
+340 415.4 [(323, 388), (603, 388)]
+350 413.2 [(258, 349), (538, 365)]
+360 437.5 [(500, 354), (220, 353)]
+370 498.5 [(220, 391), (500, 72)]
+380 499.5 [(220, 400), (500, 72)]
+390 498.7 [(220, 364), (499, 50)]
+400 399.6 [(220, 385), (500, 379)]
+410 299.6 [(220, 394), (500, 401)]
+420 206.5 [(227, 333), (506, 364)]
+430 193.7 [(594, 367), (314, 371)]
+440 191.7 [(72, 380), (412, 382), (1, 32)]
+450 190.1 [(170, 328), (91, 387), (511, 374)]
+460 184.2 [(265, 345), (605, 349), (185, 50)]
+470 186.3 [(367, 348), (287, 380)]
+480 190.2 [(391, 388), (471, 391), (91, 384)]
+490 185.6 [(485, 394), (565, 395), (185, 75)]
+500 298.0 [(232, 345), (612, 355), (532, 346)]
+510 361.7 [(229, 381), (529, 381), (609, 384)]
+520 382.5 [(184, 397), (484, 393), (564, 396)]
+530 345.5 [(146, 345), (526, 362), (446, 358)]
+540 335.5 [(136, 365), (436, 373), (516, 372)]
+550 396.4 [(97, 388), (477, 387), (397, 73)]
+560 355.5 [(436, 382), (56, 377), (356, 71)]
+570 361.4 [(35, 370), (335, 371), (415, 370)]
+580 372.5 [(295, 390), (2, 74), (375, 69)]
+590 279.1 [(373, 367), (296, 209), (1, 30)]
+600 238.9 [(48, 354), (348, 374), (428, 371)]
+610 217.4 [(120, 364), (420, 351), (500, 352)]
+620 200.5 [(497, 396), (577, 392), (196, 78)]
+630 200.8 [(292, 383), (592, 375)]
+640 200.6 [(386, 364)]
+650 191.5 [(51, 379), (471, 380)]
+660 185.5 [(201, 78), (140, 383), (560, 385)]
+670 139.5 [(560, 382), (139, 63)]
+680 139.6 [(560, 361), (140, 64)]
+690 139.5 [(560, 387), (140, 71)]
+
+$ python - <<'EOF'
+import cv2, numpy as np
+cap=cv2.VideoCapture("cone-touches-pan.mp4")
+for fi in [0,100,300,500,690]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,fi); ok,img=cap.read()
+    b,g,r=cv2.split(img.astype(int))
+    white=((r>180)&(g>180)&(b>180)).astype(np.uint8)
+    row=white[330:345,:].sum(axis=0)
+    xs=[x for x in range(640) if row[x]>=10]
+    # cluster
+    cl=[];cur=[]
+    for x in xs:
+        if cur and x-cur[-1]>3: cl.append(cur);cur=[]
+        cur.append(x)
+    if cur: cl.append(cur)
+    print(fi,[round(np.mean(c),1) for c in cl])
+cap.release()
+EOF
+0 [np.float64(100.0), np.float64(200.0), np.float64(300.0), np.float64(400.5), np.float64(500.0), np.float64(600.0)]
+100 [np.float64(3.0), np.float64(103.0), np.float64(203.0), np.float64(303.0), np.float64(403.0), np.float64(503.0), np.float64(603.0)]
+300 [np.float64(77.0), np.float64(177.0), np.float64(277.0), np.float64(377.0), np.float64(477.0), np.float64(577.0)]
+500 [np.float64(72.0), np.float64(172.0), np.float64(272.5), np.float64(372.0), np.float64(472.0), np.float64(572.0)]
+690 [np.float64(100.0), np.float64(200.0), np.float64(300.0), np.float64(400.0), np.float64(500.0), np.float64(600.0)]
+
+$ python - <<'EOF'
+import cv2
+cap=cv2.VideoCapture("cone-touches-pan.mp4")
+for f in [0,100,240,280,320,400,500,620]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,f); ok,img=cap.read()
+    cv2.imwrite(f"work/frames/cone_{f}.png",img)
+cap.release()
+EOF
+(no output)
+
+→ Read work/frames/cone_240.png
+→ Read work/frames/cone_100.png
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+cap=cv2.VideoCapture("cone-touches-pan.mp4")
+n=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+data=json.load(open("work/cone.json"))
+shift=[]
+prev=None; acc=0.0
+for fi in range(n):
+    ok,img=cap.read()
+    if not ok: break
+    b,g,r=cv2.split(img.astype(int))
+    white=((r>170)&(g>170)&(b>170)).astype(np.uint8)
+    row=white[332:346,:].sum(axis=0)
+    xs=np.where(row>=9)[0]
+    cl=[];cur=[]
+    for x in xs:
+        if cur and x-cur[-1]>3:
+            cl.append(np.mean(cur)); cur=[]
+        cur.append(x)
+    if cur: cl.append(np.mean(cur))
+    # offsets mod 100
+    offs=[c%100 for c in cl]
+    # circular mean
+    ang=np.angle(np.mean(np.exp(1j*2*np.pi*np.array(offs)/100)))
+    s=(ang/(2*np.pi)*100)%100
+    if prev is None:
+        acc=s
+    else:
+        d=(s-prev+50)%100-50
+        acc+=d
+    prev=s
+    shift.append(acc)
+    data[fi]["shift"]=acc
+    data[fi]["lines"]=[round(c,1) for c in cl]
+cap.release()
+json.dump(data,open("work/cone2.json","w"))
+print("shift range",min(shift),max(shift),"total",shift[-1]-shift[0])
+for i in range(0,n,40):
+    print(i,round(shift[i],1),data[i]["lines"])
+EOF
+shift range -1060.0 0.0 total 0.0
+0 0.0 [np.float64(100.0), np.float64(200.0), np.float64(300.0), np.float64(400.0), np.float64(500.0), np.float64(600.0)]
+40 0.0 [np.float64(100.0), np.float64(200.0), np.float64(300.0), np.float64(400.0), np.float64(500.0), np.float64(600.0)]
+80 -102.0 [np.float64(98.0), np.float64(198.0), np.float64(298.0), np.float64(398.0), np.float64(498.0), np.float64(598.0)]
+120 -265.0 [np.float64(35.0), np.float64(135.0), np.float64(235.0), np.float64(335.0), np.float64(435.0), np.float64(535.0), np.float64(635.0)]
+160 -574.0 [np.float64(26.0), np.float64(126.0), np.float64(226.0), np.float64(326.0), np.float64(426.0), np.float64(526.0), np.float64(626.0)]
+200 -881.0 [np.float64(19.0), np.float64(119.0), np.float64(219.0), np.float64(319.0), np.float64(419.0), np.float64(519.0), np.float64(619.0)]
+240 -766.0 [np.float64(34.0), np.float64(134.0), np.float64(234.0), np.float64(334.0), np.float64(434.0), np.float64(534.0), np.float64(634.0)]
+280 -613.0 [np.float64(87.0), np.float64(187.0), np.float64(287.0), np.float64(387.0), np.float64(487.0), np.float64(587.0)]
+320 -780.9 [np.float64(19.0), np.float64(119.0), np.float64(219.5), np.float64(319.0), np.float64(419.0), np.float64(519.0), np.float64(619.0)]
+360 -1060.0 [np.float64(40.0), np.float64(140.0), np.float64(240.0), np.float64(340.0), np.float64(440.0), np.float64(540.0)]
+400 -1060.0 [np.float64(40.0), np.float64(140.0), np.float64(240.0), np.float64(340.0), np.float64(440.0), np.float64(540.0)]
+440 -868.0 [np.float64(32.0), np.float64(132.0), np.float64(232.0), np.float64(332.0), np.float64(432.0), np.float64(532.0), np.float64(632.0)]
+480 -469.0 [np.float64(31.0), np.float64(131.0), np.float64(231.0), np.float64(331.0), np.float64(431.0), np.float64(531.0), np.float64(631.0)]
+520 -376.0 [np.float64(24.0), np.float64(124.0), np.float64(224.0), np.float64(324.0), np.float64(424.0), np.float64(524.0), np.float64(624.0)]
+560 -504.0 [np.float64(96.0), np.float64(196.0), np.float64(296.0), np.float64(396.0), np.float64(496.0), np.float64(596.0)]
+600 -512.0 [np.float64(88.0), np.float64(188.0), np.float64(288.0), np.float64(388.0), np.float64(488.0), np.float64(588.0)]
+640 -174.0 [np.float64(26.0), np.float64(126.0), np.float64(226.0), np.float64(326.0), np.float64(426.0), np.float64(526.0), np.float64(626.0)]
+680 0.0 [np.float64(100.0), np.float64(200.0), np.float64(300.0), np.float64(400.0), np.float64(500.0), np.float64(600.0)]
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/cone2.json"))
+sh=np.array([x["shift"] for x in d])
+dd=np.diff(sh)
+print("max per-frame shift change",np.abs(dd).max(), "mean abs",np.abs(dd).mean())
+print(np.round(dd[:60],1))
+# runner world
+rx=np.array([max(x["red"],key=lambda y:y["area"])["cx"] if x["red"] else np.nan for x in d])
+worldx=rx+sh  # since screen=world-S, S=-sh => world=screen-sh? check later
+# use world = rx - sh alternative
+for name,w in [("rx+sh",rx+sh),("rx-sh",rx-sh)]:
+    print(name, np.round(w[::40],0))
+EOF
+max per-frame shift change 13.0 mean abs 4.603958013498276
+[0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+ 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+ 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+rx+sh [ 140.  260.  296.  120. -138. -545. -473. -327. -335. -622. -660. -676.
+ -279.    6. -148. -273.   27.  140.]
+rx-sh [ 140.  260.  500.  650. 1010. 1217. 1059.  899. 1227. 1498. 1460. 1060.
+  659.  758.  860.  751.  375.  140.]
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/cone2.json"))
+vals=[]
+for x in d:
+    for c in x["orange"]:
+        if c["area"]>=150:  # full cones only
+            vals.append((c["cx"]-x["shift"], x["f"], c["cx"], c["area"]))
+vals.sort()
+w=np.array([v[0] for v in vals])
+print("range",w.min(),w.max())
+h,e=np.histogram(w,bins=60)
+for i in range(60):
+    if h[i]>5: print(round(e[i],1),h[i])
+EOF
+range 136.6953642384106 1562.6683673469388
+136.7 84
+540.7 346
+849.7 362
+921.0 387
+1277.5 247
+1538.9 76
+
+$ python - <<'EOF'
+import cv2, numpy as np, json
+cap=cv2.VideoCapture("cone-touches-pan.mp4")
+n=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+d=json.load(open("work/cone.json"))
+prev=None; S=0.0; shifts=[]
+# use fence band y=60:170, and also field band for verification
+prevf=None; Sf=0.0
+for fi in range(n):
+    ok,img=cap.read()
+    if not ok: break
+    gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    fence=gray[55:170, :].astype(np.float32)
+    field=gray[200:330, :].astype(np.float32)
+    if prev is not None:
+        (dx,dy),resp=cv2.phaseCorrelate(prev,fence)
+        S+=dx
+    prev=fence
+    shifts.append(S)
+    d[fi]["S"]=S
+cap.release()
+json.dump(d,open("work/cone3.json","w"))
+print("S range",min(shifts),max(shifts))
+for i in range(0,n,40):
+    print(i, round(shifts[i],1))
+EOF
+S range -1059.748223748004 0.1873391960645563
+0 0.0
+40 0.1
+80 -101.9
+120 -264.7
+160 -572.9
+200 -879.3
+240 -765.6
+280 -612.8
+320 -780.9
+360 -1059.7
+400 -1059.7
+440 -867.3
+480 -468.8
+520 -376.1
+560 -503.7
+600 -511.8
+640 -174.2
+680 -0.3
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/cone3.json"))
+n=len(d)
+rx=np.array([max(x["red"],key=lambda y:y["area"])["cx"] if x["red"] else np.nan for x in d])
+S=np.array([x["S"] for x in d])
+idx=np.arange(n); g=~np.isnan(rx); rx=np.interp(idx,idx[g],rx[g])
+w=rx-S
+# smooth w lightly
+from scipy.signal import medfilt
+ws=medfilt(w,5)
+v=np.gradient(ws)
+print("world pos range",ws.min(),ws.max())
+# print every 10 frames
+for i in range(0,n,20):
+    print(i, "rx",round(rx[i],1),"S",round(S[i],1),"w",round(ws[i],1),"v",round(v[i],2))
+EOF
+world pos range 139.33674145702037 1559.2094104704433
+0 rx 139.6 S 0.0 w 139.4 v 0.06
+20 rx 139.9 S 0.2 w 139.7 v 2.9
+40 rx 259.5 S 0.1 w 259.4 v 5.99
+60 rx 379.5 S 0.0 w 379.5 v 5.95
+80 rx 397.5 S -101.9 w 499.4 v 5.96
+100 rx 362.4 S -196.8 w 559.3 v -0.01
+120 rx 384.7 S -264.7 w 649.4 v 8.7
+140 rx 430.7 S -397.3 w 827.9 v 9.36
+160 rx 435.6 S -572.9 w 1008.5 v 8.72
+180 rx 436.3 S -751.8 w 1188.1 v 9.27
+200 rx 335.6 S -879.3 w 1214.9 v -6.01
+220 rx 260.3 S -829.5 w 1089.8 v -6.19
+240 rx 293.5 S -765.6 w 1059.1 v 0.16
+260 rx 230.0 S -678.8 w 908.8 v -10.17
+280 rx 286.1 S -612.8 w 898.8 v -7.78
+300 rx 394.1 S -623.0 w 1017.1 v 9.77
+320 rx 445.7 S -780.9 w 1226.7 v 10.52
+340 rx 415.4 S -956.8 w 1372.2 v 6.47
+360 rx 437.5 S -1059.7 w 1497.2 v 6.06
+380 rx 499.5 S -1059.7 w 1559.2 v 0.0
+400 rx 399.6 S -1059.7 w 1459.3 v -9.97
+420 rx 206.5 S -1053.6 w 1260.0 v -10.56
+440 rx 191.7 S -867.3 w 1059.1 v -9.51
+460 rx 184.2 S -675.0 w 859.2 v -9.26
+480 rx 190.2 S -468.8 w 659.1 v -9.44
+500 rx 298.0 S -328.2 w 626.1 v 6.46
+520 rx 382.5 S -376.1 w 758.6 v 2.87
+540 rx 335.5 S -424.0 w 759.5 v 5.01
+560 rx 355.5 S -503.7 w 859.2 v -0.01
+580 rx 372.5 S -564.8 w 931.3 v 0.0
+600 rx 238.9 S -511.8 w 750.7 v -9.42
+620 rx 200.5 S -363.0 w 563.4 v -9.13
+640 rx 200.6 S -174.2 w 374.8 v -9.89
+660 rx 185.5 S -0.2 w 185.8 v -9.66
+680 rx 139.6 S -0.3 w 139.8 v 0.02
+
+$ python - <<'EOF'
+import json,numpy as np
+d=json.load(open("work/cone3.json"))
+pts=[]
+for x in d:
+    for c in x["orange"]:
+        pts.append((c["cx"]-x["S"], x["f"], c["cx"], c["area"]))
+pts=np.array([(p[0],p[1],p[2],p[3]) for p in pts])
+# kmeans 1d 6 clusters on world pos of full cones only
+full=pts[pts[:,3]>=150]
+from scipy.cluster.vq import kmeans2
+cent,lab=kmeans2(full[:,0],6,minit='points',seed=1)
+print("centers",np.sort(cent))
+order=np.argsort(cent)
+for o in order:
+    sel=full[lab==o]
+    print("center",round(cent[o],1),"n",len(sel),"std",round(sel[:,0].std(),1),"frames",int(sel[:,1].min()),int(sel[:,1].max()))
+EOF
+centers [ 139.98705948  560.21914648  900.93685811 1278.48607709 1279.71213887
+ 1559.69181317]
+center 140.0 n 84 std 0.6 frames 22 663
+center 560.2 n 349 std 3.1 frames 0 699
+center 900.9 n 749 std 39.9 frames 110 635
+center 1278.5 n 68 std 0.4 frames 168 416
+center 1279.7 n 181 std 0.3 frames 188 462
+center 1559.7 n 76 std 0.5 frames 336 434
+
+$ python - <<'EOF'
+import json,numpy as np
+from scipy.signal import medfilt
+d=json.load(open("work/cone3.json"))
+n=len(d)
+rx=np.array([max(x["red"],key=lambda y:y["area"])["cx"] if x["red"] else np.nan for x in d])
+S=np.array([x["S"] for x in d])
+idx=np.arange(n); g=~np.isnan(rx); rx=np.interp(idx,idx[g],rx[g])
+w=medfilt(rx-S,7)
+v=np.gradient(w)
+# find segments where |v|<1 (stops) for >=3 frames
+stop=(np.abs(v)<1.0)
+runs=[];s=None
+for i,val in enumerate(stop):
+    if val and s is None: s=i
+    if not val and s is not None: runs.append((s,i-1)); s=None
+if s is not None: runs.append((s,len(stop)-1))
+print("stops:",[(a,b,"t=%.2f-%.2f"%(a/25,b/25),"w~%.0f"%w[(a+b)//2]) for a,b in runs if b-a>=2])
+# turns: sign changes of v with magnitude
+sign=np.sign(v)
+turns=[]
+for i in range(1,n):
+    if sign[i-1]!=0 and sign[i]!=0 and sign[i-1]!=sign[i]:
+        turns.append((i,v[i-1],v[i],w[i]))
+print("turns:")
+for t in turns: print("  f",t[0],"t=%.2f"%(t[0]/25),"v",round(t[1],2),"->",round(t[2],2),"w",round(t[3],0))
+EOF
+stops: [(0, 19, 't=0.00-0.76', 'w~139'), (91, 109, 't=3.64-4.36', 'w~559'), (226, 244, 't=9.04-9.76', 'w~1058'), (274, 276, 't=10.96-11.04', 'w~924'), (371, 389, 't=14.84-15.56', 'w~1559'), (521, 539, 't=20.84-21.56', 'w~760'), (551, 564, 't=22.04-22.56', 'w~859'), (666, 699, 't=26.64-27.96', 'w~140')]
+turns:
+  f 96 t=3.84 v 0.01 -> -0.02 w 559.0
+  f 380 t=15.20 v 0.0 -> -0.0 w 1559.0
+  f 537 t=21.48 v -0.04 -> 0.03 w 760.0
+  f 556 t=22.24 v 0.01 -> -0.01 w 859.0
+
+$ python - <<'EOF'
+import cv2
+cap=cv2.VideoCapture("cone-touches-pan.mp4")
+for f in [90,95,110,230,270,275,375,530,555,560,665,690]:
+    cap.set(cv2.CAP_PROP_POS_FRAMES,f); ok,img=cap.read()
+    cv2.imwrite(f"work/frames/ct_{f}.png",img)
+cap.release()
+EOF
+(no output)
+
+## OpenCode's own log, errors in this run
+timestamp=2026-10-25T05:18:26.850Z level=ERROR run=1dfc392b message="stream error" providerID=opencode modelID=deepseek-v4.1-flash-free session.id=ses_e8e925195ffemEdxj42aTEz6Q5 small=false agent=build mode=primary error.error="AI_APICallError: Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go ...

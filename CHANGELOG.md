@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Fixed
+- `bench run --agent opencode` passes `--dir <run folder>`: in the first real run (OpenCode 1.19.4, free
+  `opencode/deepseek-v4.1-flash-free`, no account) OpenCode ignored its working folder and started in the folder
+  `bench run` was launched from. The three runs are on the board (0.000 each: killed at the 1200 s timeout with
+  `answers.json` unwritten, then the free usage limit), with redacted transcripts; docs/benchmark.md lists OpenCode as
+  run once, with what happened.
+
 ### Security
 - Every install command pins one commit: `uv tool install git+...@<sha>`, and every `git clone` is followed by
   `git checkout <sha>` (README, AGENTS.md, the skill, docs, the demo site, the basketball install hint). The sha
