@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- The benchmark share card (`card.png` / `card-zh.png`) no longer shows two bars with the same name: contenders with
+  the same model and agent but other settings now end their label with what differs (the effort, "own config" /
+  "clean room", else the first part of Settings that differs), and a panel's labels shrink together to fit its width.
+  The code-track panel showed "sonnet-5-5 · Claude Code" twice.
 - docs/benchmark.md's pull request path and the benchmark page's "Submit your run" (both languages) say that a
   first PR's checks start only after a maintainer approves them (GitHub holds workflow runs from a first-time
   contributor's fork); the docs promised a score "within minutes", so a first

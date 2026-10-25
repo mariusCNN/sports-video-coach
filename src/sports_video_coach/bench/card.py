@@ -18,6 +18,7 @@ SUB = "sports-video-coach benchmark  ·  {}  ·  scored against drawn ground tru
 PANELS = 3       # suite + track panels on the card, hardest first
 BARS = 4         # top contenders per panel
 TRACKS = ("frames", "code")   # within a suite, the frames-only track (eyes) first
+TAG_LEN = 18     # longest free-text tag (the part of Settings that tells two same-name contenders apart)
 FLOOR = "Mean score above chance per contender: 0 = the blind baseline's guess (no video seen), 1 = perfect."
 
 
@@ -27,10 +28,34 @@ def label(key: tuple[str, str, str]) -> str:
     return f"{model.removeprefix('claude-')} · {agent}" if model else agent
 
 
+def config_of(settings: str) -> str:
+    """How much of the runner's own agent config a run's settings say it loaded: "own config", "clean room" or ''."""
+    from .run import CLEAN_ROOM, MY_CONFIG
+    return "clean room" if CLEAN_ROOM in settings else "own config" if MY_CONFIG in settings else ""
+
+
+def tags(settings: list[str]) -> list[str]:
+    """Short words that tell contenders with the same card label apart, one per settings: their effort when that
+    differs, else their config, else the first part of Settings ("; "-separated) that differs, cut at a word
+    within TAG_LEN."""
+    from .effort import effort_of, setting
+    for words in ([setting(effort_of(s)) for s in settings], [config_of(s) for s in settings]):
+        if len(set(words)) == len(words) and all(words):
+            return words
+    parts = [s.split("; ") for s in settings]
+    out = []
+    for mine in parts:
+        part = next((x for i, x in enumerate(mine) if any(i >= len(o) or o[i] != x for o in parts if o is not mine)),
+                    "; ".join(mine))
+        out.append(part if len(part) <= TAG_LEN else (part[:TAG_LEN + 1].rsplit(" ", 1)[0] or part[:TAG_LEN]) + "…")
+    return out
+
+
 def card_data(rows: list[dict]) -> dict:
-    """What the card shows: {"date", "panels": [{"suite", "track", "bars": [{"label", "agent", "model", "n",
+    """What the card shows: {"date", "panels": [{"suite", "track", "bars": [{"label", "tag", "agent", "model", "n",
     "above"}]}]}. Panels follow the page's suite order (`page.SUITES`), frames track first, only those with a
-    contender above a floor; bars are the first BARS entries of that panel's summary (`page.summarize`)."""
+    contender above a floor; bars are the first BARS entries of that panel's summary (`page.summarize`). Bars that
+    would share a label (same model and agent, other settings) end it with their `tags`, "tag" ('' otherwise)."""
     from . import page as P
     known = [n for n, _ in P.SUITES]
     suites = known + sorted({P.suite_of(r) for r in rows} - set(known))
@@ -39,8 +64,15 @@ def card_data(rows: list[dict]) -> dict:
         for t in TRACKS:
             mine = [r for r in rows if P.suite_of(r) == s and P.track_of(r) == t]
             summary = P.summarize(mine, P.floor_of(mine))
-            bars = [{"label": label(x["key"]), "agent": x["key"][0], "model": x["key"][1], "n": x["n"],
-                     "above": round(x["above"], 3)} for x in summary if x["above"] is not None][:BARS]
+            top = [x for x in summary if x["above"] is not None][:BARS]
+            bars = [{"label": label(x["key"]), "tag": "", "agent": x["key"][0], "model": x["key"][1], "n": x["n"],
+                     "above": round(x["above"], 3)} for x in top]
+            for name in {b["label"] for b in bars}:
+                same = [i for i, b in enumerate(bars) if b["label"] == name]
+                if len(same) > 1:
+                    for i, tag in zip(same, tags([top[i]["key"][2] for i in same])):
+                        bars[i]["tag"] = tag
+                        bars[i]["label"] += f" · {tag}"
             if bars:
                 panels.append({"suite": s, "track": t, "bars": bars})
     dates = [str(r.get("date")) for r in rows if r.get("date")]
@@ -52,7 +84,7 @@ def draw(data: dict, path: Path, lang: str = "en", font: str | None = None) -> P
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    from .page import t
+    from .page import ZH, t
 
     ink, muted, bg, bar, track = "#1d1b38", "#5c5a86", "#f6f5fb", "#3b36a8", "#e2e0ef"
     w, h = SIZE
@@ -71,9 +103,13 @@ def draw(data: dict, path: Path, lang: str = "en", font: str | None = None) -> P
             fig.text(x0, 0.72, p["suite"], fontsize=22, fontweight="bold", color=ink, va="center")
             fig.text(x0, 0.665, t("frames only (eyes)" if p["track"] == "frames" else "code track", lang), fontsize=16,
                      color=muted, va="center")
+            names = []
             for j, b in enumerate(p["bars"]):
                 y = 0.585 - j * 0.115
-                fig.text(x0, y, b["label"], fontsize=19, color=ink, va="center")
+                name = b["label"]
+                if b["tag"] and lang != "en":   # free-text tags (a part of Settings) stay as they are
+                    name = name.removesuffix(b["tag"]) + ZH.get(b["tag"], b["tag"])
+                names.append(fig.text(x0, y, name, fontsize=19, color=ink, va="center"))
                 ax = fig.add_axes((x0, y - 0.07, pw * 0.78, 0.04))
                 ax.set_xlim(0, 1)
                 ax.barh([0], [1], color=track, height=1)
@@ -81,11 +117,24 @@ def draw(data: dict, path: Path, lang: str = "en", font: str | None = None) -> P
                 ax.axis("off")
                 fig.text(x0 + pw * 0.8, y - 0.05, f"{b['above']:.2f}", fontsize=20, fontweight="bold", color=ink,
                          va="center")
+            fit(names, pw * w)
         fig.text(0.04, 0.045, t(FLOOR, lang), fontsize=15, color=muted, va="center")
         path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(path, dpi=100, facecolor=bg)
         plt.close(fig)
     return path
+
+
+def fit(texts: list, width: float, smallest: int = 12) -> None:
+    """Shrink one panel's figure texts a point at a time, all to the same size, until each is at most `width` pixels
+    wide (or the size is `smallest`)."""
+    if not texts:
+        return
+    renderer = texts[0].figure.canvas.get_renderer()
+    while (max(x.get_window_extent(renderer).width for x in texts) > width
+           and texts[0].get_fontsize() > smallest):
+        for x in texts:
+            x.set_fontsize(x.get_fontsize() - 1)
 
 
 def write(rows: list[dict], out_dir: Path) -> dict[str, Path]:

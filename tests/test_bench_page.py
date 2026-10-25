@@ -256,6 +256,31 @@ def test_card_numbers_are_the_summary_numbers(tmp_path):
     assert [round(s["above"], 3) for s in summary] == [b["above"] for b in frames]
 
 
+def card_labels(settings: list[str], lang: str = "en") -> list[str]:
+    """The card's bar labels for one code-track panel: a blind baseline and one Claude Code run per settings."""
+    rows = [row("blind baseline", "", 0.5, [0.5] * 3, track="code", _file="base.json")]
+    for i, s in enumerate(settings):
+        r = row("Claude Code", "claude-sonnet-5-5", 0.9 - i / 10, [0.9 - i / 10] * 3, track="code", _file=f"{i}.json")
+        r["contender"]["settings"] = s
+        rows.append(r)
+    return [b["label"] for b in card.card_data(rows)["panels"][0]["bars"]]
+
+
+def test_contenders_differing_only_by_effort_get_distinct_card_labels():
+    assert card_labels(["clean-room: no user config; effort high", "clean-room: no user config; default effort"]) == [
+        "sonnet-5-5 · Claude Code · effort high", "sonnet-5-5 · Claude Code · default effort"]
+    # the same model and agent once with the runner's own config and once clean-room, as on the live board
+    assert card_labels(["runner's own agent config (--use-my-config)", "clean-room: no user config"]) == [
+        "sonnet-5-5 · Claude Code · own config", "sonnet-5-5 · Claude Code · clean room"]
+    # any other difference: the first part of Settings that differs, cut short
+    assert card_labels(["frames track; temperature 0.2 and top_p 0.9", "frames track; temperature 0"]) == [
+        "sonnet-5-5 · Claude Code · temperature 0.2…", "sonnet-5-5 · Claude Code · temperature 0"]
+    # a contender alone under its name keeps the short label
+    assert card_labels(["clean-room: no user config; effort high"]) == ["sonnet-5-5 · Claude Code"]
+    for en in ("own config", "clean room"):
+        assert page.ZH[en]
+
+
 # "Where each contender fails": answers vs truth, derived at build time
 
 

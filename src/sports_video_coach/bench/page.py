@@ -253,6 +253,7 @@ ZH = {
     share_card.TITLE: "哪个编程 agent 最会看体育录像？",
     share_card.SUB: "sports-video-coach 基准测试  ·  {}  ·  按绘制的真实值打分",
     "frames only (eyes)": "只看静帧（用眼睛）", "No runs yet: be the first.": "还没有运行记录：来做第一个。",
+    "own config": "自带配置", "clean room": "不带配置",
     share_card.FLOOR: "每个参赛者超出盲猜的平均分：0 = 盲猜基线的答案（没看视频），1 = 满分。",
 }
 
