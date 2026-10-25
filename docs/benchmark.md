@@ -629,7 +629,8 @@ Pick one:
 
 - **Pull request:** add your file to `benchmark/results/` as `<date>-<agent>-<model>.json` (lower case, `-` for
   spaces; `bench score` adds the suite for `svc-bench-2` and `svc-bench-3`, and `-frames` for the frames track) and fill the benchmark part of the PR template.
-  Within minutes the pull request's checks show its score: open the `tests` run, then its Summary tab. For each
+  Your first PR's checks start after a maintainer approves them; we reply within a day.
+  Once they run, within minutes the checks show its score: open the `tests` run, then its Summary tab. For each
   added or changed result file it says whether the file validates, and gives the suite, track, contender, total,
   above chance, time, cost, where it would rank on its table, and per task your answer, the truth, the score and
   what was missed, with the same numbers the leaderboard page will show. A file that does not validate fails the
