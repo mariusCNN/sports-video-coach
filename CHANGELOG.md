@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- The demo site's landing, benchmark and findings pages can count visits per referrer and `?ref=` campaign with
+  GoatCounter (no cookies): set the repository variable `GOATCOUNTER_CODE` to the site code; unset, no counter.
 - `examples/plugins/jump-rope/`: a second worked example plugin that counts jump-rope skips (a count, where the
   swim example measures a rate), tested on drawn video against the exact count.
 

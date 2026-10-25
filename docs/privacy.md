@@ -39,3 +39,7 @@ Design notes, plans and prompts (`docs/`, `prompts/`) are public too: write "the
 - Training program links (`/p/<token>/`) are both the page and the key to its synced log: anyone with the link can read and change that player's training log (ticks, weights, game stats, sleep and leg-fatigue numbers). The log is stored in Cloudflare Workers KV under your account, with one copy per day kept for 60 days. Send the link only to that player; `publish <folder> --new-link --deploy` retires it (the old log stays in KV until you delete it with `wrangler kv key delete`).
 - The explained video (`hoop-tape-miner film`) is footage of players too: same rules as clips, send it to the team only.
 - Report clips (`hoop-tape-miner clips`) are footage of players and are embedded in `--share` files and uploaded by `publish`: the same consent rules as for frames apply, and a shared page or link with clips goes only to the team.
+
+## The public demo site
+
+The demo site (GitHub Pages, synthetic content only) may count visits with GoatCounter when its build sets `SVC_GOATCOUNTER`: no cookies, and GoatCounter keeps aggregate counts per day (pages, referrers, `?ref=` campaigns, browsers), not IP addresses or individual page views. Only the landing, benchmark and findings pages carry it; report pages (`html`, `publish`) never do.

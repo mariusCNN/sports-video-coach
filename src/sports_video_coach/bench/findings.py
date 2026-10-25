@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .. import site_counter
 from . import card as share_card
 from . import effort as effort_chart
 from . import page as P
@@ -667,6 +668,7 @@ def render(rows: list[dict], lang: str = "en", image: str | None = None, data: d
 <p>{rerun}</p>
 <footer>{esc(t(BUILT, lang))} <a href="{P.REPO_URL}">sports-video-coach</a> (MIT).</footer>
 </main>
+{site_counter.tag()}
 </body>
 </html>
 """

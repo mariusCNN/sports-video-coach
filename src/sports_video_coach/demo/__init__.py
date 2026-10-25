@@ -22,6 +22,7 @@ import urllib.request
 from pathlib import Path
 
 from .. import INSTALL, media, page_check, pipeline as P, workspace
+from .. import site_counter
 from ..plugins.generic import new, unit as U
 
 FILES = Path(__file__).parent / "files"
@@ -260,6 +261,7 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
 no person appears. {("Other languages: " + other) if other else ""}{version_note(ver)}</small>
 </main>
+{site_counter.tag()}
 </body>
 </html>
 """

@@ -26,6 +26,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # GoatCounter site code (a public repo variable, not a secret); unset, the pages carry no visit counter
+      SVC_GOATCOUNTER: ${{ vars.GOATCOUNTER_CODE }}
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7

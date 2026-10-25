@@ -23,6 +23,7 @@ import json
 from pathlib import Path
 
 from .. import INSTALL
+from .. import site_counter
 from . import card as share_card
 from . import clip as share_clip
 from . import count as count_it
@@ -1434,6 +1435,7 @@ can differ (see the sample size note at the top).</li>
 
 <footer>Made by <a href="{REPO_URL}">sports-video-coach</a> (MIT).</footer>
 </main>
+{site_counter.tag()}
 </body>
 </html>
 """
@@ -1519,6 +1521,7 @@ CI 会用 <code>bench validate</code> 重新打分。
 
 <footer>由 <a href="{REPO_URL}">sports-video-coach</a>（MIT）制作。</footer>
 </main>
+{site_counter.tag()}
 </body>
 </html>
 """
