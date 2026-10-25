@@ -487,3 +487,50 @@ def test_league_periods_wait_for_the_agent_check(game, capsys):
     runner = Runner(game)
     assert R.drive(R.Game.load(game), runner=runner) == R.WAITING
     assert not runner.calls and "waiting for the agent: periods" in capsys.readouterr().out
+
+
+def test_summary_waits_for_coach_parts_edited_after_it(game, capsys):
+    # summary.json splits (opp_back, turnovers) come from the coach parts: a part edited later makes it stale
+    finished_until_html(game)
+    touch(game, "index.html", "player-7/index.html")
+    g = R.Game.load(game)
+    step = next(s for s in R.STEPS if s.name == "summary")
+    assert step.done(g) and not step.errors(g)
+    assert R.drive(g, until="summary", runner=Runner(game)) == 0          # untouched: done
+    t = time.time()
+    os.utime(g.review / "coach_part1.json", (t + 60, t + 60))
+    assert not step.done(g)
+    assert any("coach_part1.json" in e and "coach-summary --official" in e for e in step.errors(g))
+    capsys.readouterr()
+    assert R.drive(R.Game.load(game), until="summary", runner=Runner(game)) == R.WAITING
+    out = capsys.readouterr().out
+    assert "waiting for the agent: summary" in out and "coach_part1.json" in out
+    os.utime(g.review / "summary.json", (t + 61, t + 61))               # coach-summary re-run
+    assert step.done(g)
+
+
+def test_reports_wait_for_a_facts_sheet_edited_after_them(game, capsys):
+    finished_until_html(game)
+    touch(game, "index.html", "player-7/index.html")
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == 0   # notes what the READMEs follow
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == 0   # untouched: still done
+    review = game / "run/review_v1"
+    (review / "player7_facts.md").write_text("# corrected: the and-one at 12:30 was #7\n", encoding="utf8")
+    capsys.readouterr()
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == R.WAITING
+    out = capsys.readouterr().out
+    assert "reports is out of date" in out
+    assert "player-7/README.md" in out and "player-7/README.en.md" in out and "player7_facts.md" in out
+    assert "--accept reports" in out
+    assert {n: ok for n, _, ok in R.status(R.Game.load(game))}["reports"] is False
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game), accept="reports") == 0
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == 0
+    (review / "players_facts.md").write_text("# corrected: 3 turnovers, not 2\n", encoding="utf8")
+    capsys.readouterr()
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == R.WAITING
+    out = capsys.readouterr().out
+    assert "README.en.md: run/review_v1/players_facts.md changed after it was written" in out
+    assert "player-7/README" not in out                      # the player page follows its own facts sheet
+    (game / "README.md").write_text("# rewritten from the facts\n", encoding="utf8")
+    (game / "README.en.md").write_text("# rewritten from the facts\n", encoding="utf8")
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == 0

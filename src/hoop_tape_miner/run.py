@@ -173,8 +173,8 @@ def critic_errors(g: Game) -> list[str]:
 
 
 def summary_errors(g: Game) -> list[str]:
-    """review/summary.json missing, or written before the Four Factors (no `all.four_factors`: the team page then
-    has no Four Factors panel)."""
+    """review/summary.json missing, written before the Four Factors (no `all.four_factors`: the team page then
+    has no Four Factors panel), or older than a coach_part*.json it counts (opp_back, turnover splits)."""
     p = g.review / "summary.json"
     if not p.exists():
         return [f"missing: {p.as_posix()}"]
@@ -185,6 +185,10 @@ def summary_errors(g: Game) -> list[str]:
     if not isinstance(allv, dict) or not isinstance(allv.get("four_factors"), dict):
         return [f"{p.as_posix()} has no all.four_factors (written before the Four Factors): re-run coach-summary "
                 "--official with the same --segments"]
+    moved = [c.name for c in sorted(g.review.glob("coach_part*.json")) if not _newer(p, c)]
+    if moved:
+        return [f"{', '.join(moved)} changed after {p.as_posix()} was written (its trip splits are stale): re-run "
+                "coach-summary --official with the same --segments"]
     return []
 
 
@@ -266,6 +270,15 @@ def locate_errors(g: Game) -> list[str]:
     except (OSError, ValueError) as e:
         return [f"coach_part*.json unreadable: {e}"]
     return miss[:5] + ([f"... {len(miss) - 5} more"] if len(miss) > 5 else [])
+
+
+def facts_files(g: Game, d: Path | None = None) -> list[Path]:
+    """The fact sheets (facts step): players_facts.md and the focus player's player<N>_facts.md. With report folder
+    `d`, the ones its README is written from: the team page reads both, the player page its own sheet."""
+    team, player = g.review / "players_facts.md", g.review / f"player{g.focus}_facts.md"
+    if d is not None and d != g.folder:
+        return [player]
+    return [team, *([player] if g.focus else [])]
 
 
 def _with_posters(tail: list[Step]) -> list[Step]:
@@ -422,11 +435,12 @@ STEPS = [
          inputs=lambda g: [g.gj, *sorted(g.review.glob("coach_part*.json")),
                            *([g.run / "shot_proposals.json"] if (g.run / "shot_proposals.json").exists() else [])],
          after=("analyze",)),
-    Step("facts", "agent",
-         lambda g: (g.review / "players_facts.md").exists() and (not g.focus or (g.review / f"player{g.focus}_facts.md").exists()),
+    Step("facts", "agent", lambda g: all(p.exists() for p in facts_files(g)),
          how="Write the fact sheets (playbook step 9): {review}/players_facts.md and {review}/player{focus}_facts.md."),
+    # a corrected fact sheet makes the READMEs written from it out of date (and through them the scripts)
     Step("reports", "agent", reports_done, checks=pipeline.report_checks,
          errors=lambda g: pipeline.missing([d / pipeline.readme(l) for d in g.reports() for l in g.langs], g),
+         derives=lambda g: [(d / pipeline.readme(l), facts_files(g, d)) for d in g.reports() for l in g.langs],
          how="Write the reports (playbook step 10): {readmes} in {folder} (prompts/coach_report.md) "
              "and in {folder}/player-{focus} (prompts/player_deep_dive.md), with clip markers on the key plays."),
     *_with_posters(tail_steps(

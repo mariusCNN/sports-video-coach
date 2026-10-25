@@ -164,6 +164,13 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- Game run: the `reports` step follows the fact sheets it is written from (`players_facts.md` and
+  `player<N>_facts.md` for the team README, the player's sheet for the player README). A sheet corrected after
+  the READMEs makes them wait as out of date (exit 3 names each README and the sheet; `--accept reports` keeps
+  them), like the narration and film scripts after a README edit.
+- Game run: `summary` waits again when a `coach_part*.json` changed after `summary.json` was written (the
+  opponent back-court and turnover splits went stale); re-run `coach-summary --official` with the same
+  `--segments`.
 - A film script with a scene prefix the folder's plugin does not know (`stats:` for `stat:`) now keeps the run's
   `film-script` step waiting (exit 3) with the file, line and prefix, instead of passing it and stopping later in
   the film render; the step reuses the film render's own prefix check.
