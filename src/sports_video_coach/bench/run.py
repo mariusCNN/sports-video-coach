@@ -655,8 +655,8 @@ def main(argv=None) -> int:
         room = "custom command: it runs as given, so keeping your own agent config out is up to you"
     elif a.agent in PRESETS:
         p = PRESETS[a.agent]
-        room = (f"{p.name} {RAN + ' on a task (' + p.ran if p.ran else UNTESTED + ' on a task ('}; flags from "
-                f"{p.docs}, checked against the --help of version {p.checked} on {HELP_CHECKED}); {p.config}"
+        room = (f"{p.name} {RAN + ' on a task (' + p.ran + ')' if p.ran else UNTESTED + ' on a task'}; flags from "
+                f"{p.docs}, checked against the --help of version {p.checked} on {HELP_CHECKED}; {p.config}"
                 + (f"; {p.note}" if p.note else ""))
     elif a.agent == "codex":
         room = "Codex runs with your own config (~/.codex): not isolated, so credentials stay where they are"
