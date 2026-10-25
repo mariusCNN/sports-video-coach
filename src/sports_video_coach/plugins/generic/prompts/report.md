@@ -42,6 +42,8 @@ The reader must be able to scan it in seconds. One idea per line, short bullets,
 - Optional page blocks, each opened by `::: name` and closed by `:::` on their own lines: `::: verdict` (the
   bottom line as a headline), `::: keys` (a list of `**number** label` items, drawn as stat tiles), `::: do`
   (what to do, a yellow box), `::: note` (small print) and `::: more <summary>` (a fold for long evidence).
+- Keep the `note` to at most two short sentences (<= 220 characters; Chinese <= 110); the details that do not
+  fit go in a `::: more Details` fold right after it.
 - 2-4 numbered sections, most important first; each has a clip, then the same five bold-labelled parts in
   the same order.
 - Every claim has a time or a clip from `review.json`. Never add what the review did not see.

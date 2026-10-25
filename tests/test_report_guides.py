@@ -4,12 +4,17 @@ from pathlib import Path
 
 import pytest
 
-PROMPTS = Path(__file__).resolve().parents[1] / "prompts"
+ROOT = Path(__file__).resolve().parents[1]
 CAP = re.compile(r"note`? to at most two short sentences \(<= 220 characters; Chinese <= 110\).{0,200}?"
                  r"`::: more [^`]+` fold", re.S)
 
 
-@pytest.mark.parametrize("guide", ["coach_report.md", "player_deep_dive.md"])
+@pytest.mark.parametrize("guide", [
+    "prompts/coach_report.md",
+    "prompts/player_deep_dive.md",
+    "src/sports_video_coach/plugins/generic/prompts/report.md",
+    "examples/plugins/swim-stroke-rate/prompts/report.md",
+])
 def test_guide_caps_the_note_and_folds_the_rest(guide):
-    text = " ".join((PROMPTS / guide).read_text(encoding="utf8").split())  # the guides wrap lines anywhere
+    text = " ".join((ROOT / guide).read_text(encoding="utf8").split())  # the guides wrap lines anywhere
     assert CAP.search(text), f"{guide}: the note block has no length cap"
