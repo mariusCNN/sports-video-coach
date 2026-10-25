@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- `bench run --agent opencode` stops as soon as OpenCode reports its free usage limit (`Free usage limit
+  reached`) instead of hanging to the 1200 s timeout: the preset adds `--print-logs --log-level ERROR` (OpenCode
+  wrote the error only to its own log), and the output is watched for each preset's usage-limit lines. The result
+  is scored as usual, its `settings` quote the line, `run.json` has `usage_limit`, and the run says to retry after
+  the quota resets.
 - `bench run --agent opencode` passes `--dir <run folder>`: in the first real run (OpenCode 1.19.4, free
   `opencode/deepseek-v4.1-flash-free`, no account) OpenCode ignored its working folder and started in the folder
   `bench run` was launched from. One run is on the board (`svc-bench-2` with `--dir`, 0.000: killed at the 1200 s

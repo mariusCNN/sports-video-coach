@@ -15,7 +15,8 @@ TRUTH = {t.id: t.truth for t in suite.TASKS}
 DOC = Path(__file__).resolve().parents[1] / "docs" / "benchmark.md"
 
 # Records its argv and stdin in the run folder, answers --version / version, then fills answers.json from the file
-# named by FAKE_FILL (or sleeps, with FAKE_SLEEP).
+# named by FAKE_FILL (or sleeps, with FAKE_SLEEP; or prints FAKE_LIMIT to FAKE_STREAM and hangs, like OpenCode at
+# its free usage limit).
 FAKE = """
 import json, os, pathlib, sys, time
 args = sys.argv[1:]
@@ -23,7 +24,10 @@ if args in (["--version"], ["version"]):
     print("fake-cli 9.8.7")
     sys.exit(0)
 json.dump({"argv": args, "stdin": sys.stdin.read()}, open("argv.json", "w"))
-print("fake agent ran")
+print("fake agent ran", flush=True)
+if os.environ.get("FAKE_LIMIT"):
+    print(os.environ["FAKE_LIMIT"], file=getattr(sys, os.environ.get("FAKE_STREAM", "stderr")), flush=True)
+    time.sleep(60)
 if os.environ.get("FAKE_SLEEP"):
     time.sleep(60)
 answers = json.loads(pathlib.Path(os.environ["FAKE_FILL"]).read_text(encoding="utf8"))
@@ -87,7 +91,8 @@ def test_preset_prompt_placement_and_no_model(tmp_path):
     assert aider[aider.index("--message-file") + 1] == str(pf) and aider[-1] == "answers.json"
     assert "P" not in aider and "--yes-always" in aider and "--no-git" in aider
     # OpenCode 1.19.4 worked in the folder `bench run` was started from, not the process's working folder
-    assert R.command("opencode", "P", pf) == ["opencode", "run", "--auto", "--dir", str(tmp_path), "P"]
+    assert R.command("opencode", "P", pf) == ["opencode", "run", "--auto", "--print-logs", "--log-level", "ERROR",
+                                                "--dir", str(tmp_path), "P"]
     assert R.command("cursor", "P", pf)[:4] == ["agent", "-p", "--force", "--trust"]
     assert R.command("copilot", "P", pf) == ["copilot", "-p", "P", "--allow-all-tools", "--no-ask-user", "-s"]
     assert R.command("goose", "P", pf, "g") == ["goose", "run", "--no-session", "--model", "g", "-t", "P"]
@@ -110,11 +115,46 @@ def test_preset_is_killed_at_the_timeout(tmp_path, fake_bin, monkeypatch):
     assert result_of(out)["total"] == 0.0
 
 
+# OpenCode 1.19.4 at its free limit, as --print-logs --log-level ERROR puts it on stderr (then it hangs, no exit)
+LIMIT_LOG = ('timestamp=2026-10-25T05:19:59.388Z level=ERROR message="stream error" error.error="AI_APICallError: '
+             'Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go '
+             'to keep going: https://opencode.ai/go"')
+
+
+@pytest.mark.parametrize("stream", ["stderr", "stdout"])
+def test_preset_stops_at_the_providers_usage_limit(tmp_path, fake_bin, monkeypatch, capsys, stream):
+    monkeypatch.setenv("FAKE_LIMIT", LIMIT_LOG)
+    monkeypatch.setenv("FAKE_STREAM", stream)
+    out = tmp_path / "run"
+    t0 = time.monotonic()
+    assert bench.main(["run", "--agent", "opencode", "--out", str(out), "--timeout", "30"]) == 0
+    assert time.monotonic() - t0 < 20                     # stopped at the line, not at the timeout
+    info = json.loads((out / "run.json").read_text(encoding="utf8"))
+    assert info["exit_code"] is None and info["timed_out"] is False
+    assert info["usage_limit"].startswith("Free usage limit reached. Free models work in OpenCode")
+    res = result_of(out)
+    assert res["total"] == 0.0
+    assert "stopped early by the provider's usage limit: \"Free usage limit reached." in res["contender"]["settings"]
+    printed = capsys.readouterr().out
+    assert "usage limit" in printed and "rerun after the quota resets" in printed
+
+
+def test_usage_limit_lines_are_preset_data():
+    assert R.PRESETS["opencode"].limits == ("Free usage limit reached",)
+    assert {"--print-logs", "--log-level"} <= set(R.PRESETS["opencode"].argv)   # its ERROR log lines on stderr
+    hit = R.limit_hit("x\n\x1b[91mError: Free usage limit reached. Go on\x1b[0m\n",
+                      ("Free usage limit reached",))
+    assert hit == "Free usage limit reached. Go on"
+    assert R.limit_hit("all fine\n", ("Free usage limit reached",)) == ""
+    assert R.limit_hit("Free usage limit reached\n", ()) == ""
+
+
 def test_dry_run_prints_the_preset_command_and_says_untested(tmp_path, capsys):
     dry = tmp_path / "dry"
     assert bench.main(["run", "--agent", "opencode", "--model", "p/m", "--out", str(dry), "--dry-run"]) == 0
     printed = capsys.readouterr().out
-    assert f"opencode run --auto --dir {dry.resolve()} --model p/m" in printed and "You are a contender" in printed
+    assert f"opencode run --auto --print-logs --log-level ERROR --dir {dry.resolve()} --model p/m" in printed
+    assert "You are a contender" in printed
     assert "run by the maintainer on a task (OpenCode 1.19.4" in printed and "https://opencode.ai/docs/cli/" in printed
     assert bench.main(["run", "--agent", "goose", "--out", str(dry), "--dry-run"]) == 0
     assert "not run by the maintainer" in capsys.readouterr().out
@@ -138,7 +178,8 @@ def test_settings_name_the_preset():
 
 def test_only_presets_run_on_a_task_say_so():
     assert {k for k, p in R.PRESETS.items() if p.ran} == {"opencode"}
-    assert R.shown("opencode") == "opencode run --auto --dir <run folder> [--model M] <prompt>"
+    assert R.shown("opencode") == ("opencode run --auto --print-logs --log-level ERROR --dir <run folder> "
+                                  "[--model M] <prompt>")
 
 
 def test_presets_name_the_cli_version_their_flags_were_checked_against():

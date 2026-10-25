@@ -475,7 +475,7 @@ of each preset: send the result row, or the error if a flag is wrong (or fix the
 | `--agent gemini` | Gemini CLI | `gemini --approval-mode yolo [--model M] -p <prompt>` | [docs](https://geminicli.com/docs/cli/cli-reference/) | not run by the maintainer; your own config; Google moved individual users to Antigravity CLI on 2026-06-18; API-key and Code Assist users keep Gemini CLI |
 | `--agent qwen` | Qwen Code | `qwen --safe-mode --approval-mode yolo [--model M] <prompt>` | [docs](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/) | not run by the maintainer; --safe-mode: no context files, hooks, extensions, skills or MCP servers |
 | `--agent aider` | Aider | `aider --yes-always --no-git --no-check-update --no-pretty --no-stream [--model M] --read TASKS.md --message-file <prompt file> answers.json` | [docs](https://aider.chat/docs/config/options.html) | not run by the maintainer; your own config; it edits answers.json; whether --yes-always also runs the shell commands it suggests is not stated in the docs |
-| `--agent opencode` | OpenCode | `opencode run --auto --dir <run folder> [--model M] <prompt>` | [docs](https://opencode.ai/docs/cli/) | run by the maintainer on a task (OpenCode 1.19.4, opencode/deepseek-v4.1-flash-free, 2026-10-25, [below](#opencode-run-once-2026-10-25)); your own config; --model takes provider/model |
+| `--agent opencode` | OpenCode | `opencode run --auto --print-logs --log-level ERROR --dir <run folder> [--model M] <prompt>` | [docs](https://opencode.ai/docs/cli/) | run by the maintainer on a task (OpenCode 1.19.4, opencode/deepseek-v4.1-flash-free, 2026-10-25, [below](#opencode-run-once-2026-10-25)); your own config; --model takes provider/model |
 | `--agent cursor` | Cursor CLI | `agent -p --force --trust --output-format text [--model M] <prompt>` | [docs](https://cursor.com/docs/cli/reference/parameters) | not run by the maintainer; your own config |
 | `--agent copilot` | GitHub Copilot CLI | `copilot -p <prompt> --allow-all-tools --no-ask-user -s [--model M]` | [docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically) | not run by the maintainer; your own config |
 | `--agent goose` | Goose | `goose run --no-session [--model M] -t <prompt>` | [docs](https://goose-docs.ai/docs/guides/goose-cli-commands) | not run by the maintainer; your own config; tool approval follows your GOOSE_MODE (Autonomous by default) |
@@ -487,7 +487,7 @@ Flags checked against each CLI's own `--help` on 2026-10-25 (installed without a
 | `gemini` | Gemini CLI 0.65.0 | every flag listed in `--help` |
 | `qwen` | Qwen Code 0.26.1 | fixed: `-p` is deprecated in favour of the positional prompt, so the prompt is now positional; other flags listed |
 | `aider` | Aider 0.86.2 | every flag listed in `--help` |
-| `opencode` | OpenCode 1.19.4 | every flag listed in `opencode run --help`; fixed after a real run: `--dir <run folder>` added |
+| `opencode` | OpenCode 1.19.4 | every flag listed in `opencode run --help`; fixed after a real run: `--dir <run folder>` added, then `--print-logs --log-level ERROR` (its usage-limit error on stderr) |
 | `cursor` | Cursor CLI 2026.10.22-27dcf5f | every flag listed in `agent --help` |
 | `copilot` | GitHub Copilot CLI 1.0.103 | every flag listed in `--help`; `copilot version` works |
 | `goose` | Goose 1.56.0 | every flag listed in `goose run --help` |
@@ -528,6 +528,9 @@ measure the contender, not our harness or a quota outage, so only one of the thr
   (https://opencode.ai); subscribe to OpenCode Go to keep going`. The runs and a few short checks used about
   44 minutes of it. How long the limit lasts is unclear. After that error OpenCode printed nothing more and did not
   exit, so the run waited for the timeout.
+- **Fixed: the run now stops at that error.** The preset adds `--print-logs --log-level ERROR`, so OpenCode's error
+  lines reach stderr; `bench run` stops it within a second of `Free usage limit reached`, scores it as usual (0 with
+  no answers), quotes the line in the result's `settings` and says to rerun after the quota resets.
 - OpenCode prints its tool calls to stderr; `transcript.txt` holds only its replies. The redacted transcripts
   (stdout, stderr and the log errors) are in `benchmark/transcripts/` (the first run as an excerpt); the two runs
   not on the board keep their transcripts there as evidence, with no result file in `benchmark/results/`.
