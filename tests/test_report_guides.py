@@ -14,6 +14,7 @@ CAP = re.compile(r"note`? to at most two short sentences \(<= 220 characters; Ch
     "prompts/player_deep_dive.md",
     "src/sports_video_coach/plugins/generic/prompts/report.md",
     "examples/plugins/swim-stroke-rate/prompts/report.md",
+    "examples/plugins/jump-rope/prompts/report.md",
 ])
 def test_guide_caps_the_note_and_folds_the_rest(guide):
     text = " ".join((ROOT / guide).read_text(encoding="utf8").split())  # the guides wrap lines anywhere

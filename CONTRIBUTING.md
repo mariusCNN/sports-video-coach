@@ -75,7 +75,7 @@ sports-video-coach demo indexnow             # POST to api.indexnow.org; 200 or 
    drills and targets they would give. Cite the coaching sources you used.
 3. Add measurement stages only when the review needs numbers the contact sheets cannot give.
 4. Tests on synthetic video (`ffmpeg -f lavfi -i testsrc=...`); no real players.
-5. Ship it in its own repo (topic `sports-video-coach-plugin`) or as a pull request adding `examples/plugins/<sport>/` (model: `examples/plugins/swim-stroke-rate/`; the checklist is in [docs/plugins.md](docs/plugins.md#share-it)).
+5. Ship it in its own repo (topic `sports-video-coach-plugin`) or as a pull request adding `examples/plugins/<sport>/` (models: a rate: `examples/plugins/swim-stroke-rate/`; a count: `examples/plugins/jump-rope/`; the checklist is in [docs/plugins.md](docs/plugins.md#share-it)).
 
 ## Pull requests
 

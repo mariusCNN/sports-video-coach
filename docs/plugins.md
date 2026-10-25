@@ -69,6 +69,10 @@ sport: a `stroke` stage measures swimming stroke rate with plain OpenCV and NumP
 it, the page shows it, and a `synth` stage draws a test swimmer at a known rate for the tests. Its README says which
 file does what and how to turn it into your sport. Try it in a clone with `SVC_PLUGIN_PATH=examples/plugins`.
 
+Two worked examples: a rate: swim-stroke-rate (above); a count:
+[`examples/plugins/jump-rope/`](../examples/plugins/jump-rope/), whose `skip` stage counts jump-rope skips from a
+still side view, with its truth test in the plugin's own `tests/`.
+
 ## The contract
 
 A plugin is a `sports_video_coach.plugin.Plugin` object named `PLUGIN`:
@@ -255,8 +259,9 @@ More:
 ## Share it
 
 Publish it as its own repo or package with the GitHub topic `sports-video-coach-plugin`, or open a pull request
-here to add it under `examples/plugins/`, modelled on
-[`examples/plugins/swim-stroke-rate/`](../examples/plugins/swim-stroke-rate/). Never put real players' video, frames or names in a plugin repo or its tests.
+here to add it under `examples/plugins/`, modelled on a worked example (a rate:
+[`examples/plugins/swim-stroke-rate/`](../examples/plugins/swim-stroke-rate/); a count:
+[`examples/plugins/jump-rope/`](../examples/plugins/jump-rope/)). Never put real players' video, frames or names in a plugin repo or its tests.
 
 For a pull request, write it there from the start, in a clone of your fork:
 

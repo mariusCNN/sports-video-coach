@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Added
+- `examples/plugins/jump-rope/`: a second worked example plugin that counts jump-rope skips (a count, where the
+  swim example measures a rate), tested on drawn video against the exact count.
+
 ### Fixed
 - A run could rewrite a unit folder while another run worked on it, or from an older checkout than the code that
   last wrote it, overwriting newer outputs. Every driver (`run`, `train`, `move`) now holds
