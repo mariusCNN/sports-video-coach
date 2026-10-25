@@ -65,6 +65,27 @@ def test_invalid_file_fails_and_says_why(tmp_path, capsys):
 def test_no_changed_files_says_so(tmp_path):
     text, ok = report.report([], setup(tmp_path))
     assert ok and "No result file" in text
+    assert "was added or changed.\n\nScored by" in text           # two Markdown paragraphs, not one
+
+
+def test_date_must_be_yyyy_mm_dd(tmp_path):
+    results = setup(tmp_path)
+    _, res = run_file(results)
+    assert S.problems(res) == []
+    for bad in ("20261030", 20261030, "2026-W44-5", "2026-10-30T00:00", "2026-13-01", None):
+        out = S.problems(res | {"date": bad})
+        assert out == [f"date is {bad!r}, expected a YYYY-MM-DD date such as 2026-10-30"], (bad, out)
+    assert S.problems(res | {"date": "2026-10-30"}) == []
+
+
+def test_contender_not_an_object_and_unknown_suite_say_only_that(tmp_path):
+    results = setup(tmp_path)
+    _, res = run_file(results)
+    assert "contender must be an object with agent, agent_version, model and settings" in S.problems(
+        res | {"contender": "me"})
+    assert S.problems(res | {"contender": None}) == ["contender missing"]
+    out = S.problems(res | {"suite": "svc-bench-9"})
+    assert out == ["suite is 'svc-bench-9', expected one of ['svc-bench-1', 'svc-bench-2', 'svc-bench-3']"], out
 
 
 def test_outsider_text_cannot_break_the_markdown(tmp_path):

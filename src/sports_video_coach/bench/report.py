@@ -111,7 +111,7 @@ def report(paths: list[Path], results: Path = RESULTS) -> tuple[str, bool]:
     rows, _ = P.load(Path(results))
     parts, ok = ["## Benchmark result check", ""], True
     if not paths:
-        parts.append("No result file in `benchmark/results/` was added or changed.")
+        parts += ["No result file in `benchmark/results/` was added or changed.", ""]
     for p in paths:
         text, good = report_one(Path(p), rows)
         parts += [text, ""]

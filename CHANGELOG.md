@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- The pull request `bench-report` job fails, with one `::error::` line, when it cannot list the changed result
+  files (`git diff HEAD^1 HEAD` failing, as in a depth-1 checkout); before, it reported "no result file changed"
+  and went green without checking anything. `bench validate` / `bench report` take only a `YYYY-MM-DD` date
+  (Python 3.11 also parsed `20261030`), say "contender must be an object" for a contender that is not one, and give
+  only the suite line for an unknown suite instead of svc-bench-1's task lines; the no-file report's last line is
+  its own paragraph.
 - After a pinned `uv tool install git+...@<sha>`, `sports-video-coach plugins` (and `--json`) told you to clone the
   basketball plugin at the commit before `<sha>` (the pin a commit carries is always its parent). A plugin's install
   hint now names the commit the tool was installed from (`installed_ref()`, read from uv's record, as `new-plugin`'s

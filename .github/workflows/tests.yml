@@ -55,6 +55,13 @@ jobs:
       - name: Score the added or changed result files into the job summary
         shell: bash
         run: |
-          mapfile -d '' files < <(git diff -z --name-only --diff-filter=AMR HEAD^1 HEAD -- 'benchmark/results/*.json')
+          # The list goes through a file, not `< <(...)`: a failing git diff there (no HEAD^1 in a depth-1 checkout)
+          # would give 0 files and a green job that checked nothing.
+          list="$RUNNER_TEMP/bench-results.z"
+          if ! git diff -z --name-only --diff-filter=AMR HEAD^1 HEAD -- 'benchmark/results/*.json' > "$list"; then
+            echo "::error::git diff HEAD^1 HEAD failed: cannot list the changed result files (needs fetch-depth: 2)"
+            exit 1
+          fi
+          mapfile -d '' files < "$list"
           echo "result files added or changed: ${#files[@]}"
           sports-video-coach bench report "${files[@]}" | tee -a "$GITHUB_STEP_SUMMARY"

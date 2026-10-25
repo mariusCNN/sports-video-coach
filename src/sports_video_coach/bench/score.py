@@ -224,6 +224,17 @@ def table(res: dict) -> str:
     return "\n".join(lines)
 
 
+def is_date(d) -> bool:
+    """A calendar date written YYYY-MM-DD (Python 3.11's fromisoformat alone also takes 20261030 and 2026-W44-5)."""
+    if not isinstance(d, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", d):
+        return False
+    try:
+        dt.date.fromisoformat(d)
+    except ValueError:
+        return False
+    return True
+
+
 def problems(res) -> list[str]:
     """Why a result file is not a valid, honestly scored schema-1 file ([] when it is)."""
     if not isinstance(res, dict):
@@ -231,25 +242,24 @@ def problems(res) -> list[str]:
     out = []
     if res.get("schema") != SCHEMA:
         out.append(f"schema is {res.get('schema')!r}, expected {SCHEMA}")
-    name = res.get("suite")
-    if name not in SUITES:
+    name, seed, by_id = res.get("suite"), res.get("seed"), None
+    if name not in SUITES:                       # no suite: its seeds, tasks and truths cannot be checked
         out.append(f"suite is {name!r}, expected one of {sorted(SUITES)}")
-        name = SUITE
-    seed = res.get("seed")
-    try:
-        by_id = suite_tasks(name, seed).BY_ID
-    except ValueError as e:
-        out.append(f"seed: {e}")
-        seed, by_id = None, SUITES[name].BY_ID
+    else:
+        try:
+            by_id = suite_tasks(name, seed).BY_ID
+        except ValueError as e:
+            out.append(f"seed: {e}")
+            seed, by_id = None, SUITES[name].BY_ID
     if res.get("track", F.TRACK) not in F.TRACKS:
         out.append(f"track is {res.get('track')!r}, expected one of {list(F.TRACKS)} (or none, for code)")
-    try:
-        dt.date.fromisoformat(str(res.get("date")))
-    except ValueError:
-        out.append(f"date {res.get('date')!r} is not an ISO date")
+    if not is_date(res.get("date")):
+        out.append(f"date is {res.get('date')!r}, expected a YYYY-MM-DD date such as 2026-10-30")
     c = res.get("contender")
-    if not isinstance(c, dict):
+    if c is None:
         out.append("contender missing")
+    elif not isinstance(c, dict):
+        out.append("contender must be an object with agent, agent_version, model and settings")
     else:
         for k in ("agent", "agent_version", "model", "settings"):
             if not isinstance(c.get(k), str):
@@ -265,6 +275,8 @@ def problems(res) -> list[str]:
     rows = res.get("tasks")
     if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
         return out + ["tasks must be a list of objects"]
+    if by_id is None:
+        return out + ([] if is_num(res.get("total")) else ["total must be a number"])
     ids = [r.get("id") for r in rows]
     if sorted(map(str, ids)) != sorted(by_id):
         out.append(f"tasks {ids} do not match the suite's {list(by_id)}")
