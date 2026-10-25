@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- The README's benchmark rerun (both languages) now gives the pinned install next to the command and adds
+  `--seed`, as the benchmark page's headline box does: without it a reader landing on that section found no
+  install line, and the command drew the published `svc-bench-3`, so the row went to the fixed board instead of
+  the fresh-seed board whose numbers the README quotes.
 - `bench run --dry-run` for a preset no maintainer ran no longer prints an empty "(;" in its description, and the
   plugin docs and CONTRIBUTING point plugin pull requests at `examples/plugins/` (there is no top-level `plugins/`).
 - The README (both languages) puts a benchmark line (the fresh-seed scores, what they mean, the leaderboard) and a

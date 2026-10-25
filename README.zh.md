@@ -41,10 +41,12 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.919。<br>
   本地显卡上的 qwen3-vl 4B 0.000。
   每个设置跑了一到三次；目前所有运行都是作者自己跑的。
 - [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/#frames-svc-bench-3-fresh) · [自己数一数触球](https://mariusding.github.io/sports-video-coach/benchmark/zh/#count) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）
-- 一条命令重跑静帧榜：
+- 重跑新种子榜：先安装（需要 ffmpeg），再跑一条命令（`--seed` 抽一个新种子；
+  加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：
 
 ```bash
-sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
+uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f
+sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
 - 不想在本机安装：[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)

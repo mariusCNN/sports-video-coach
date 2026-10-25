@@ -42,10 +42,12 @@ Drawn drills, scored against the exact truth the tool drew in. No judge model.
   0.919 at high (3 runs, 0.856–0.994; max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
   One to three runs per setting; all runs so far are the author's.
 - [Leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariusding.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)
-- Rerun the frames-only board in one command:
+- Rerun the fresh-seed board: install (needs ffmpeg), then one command (`--seed` draws a new seed;
+  add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
 
 ```bash
-sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
+uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f
+sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
 - No local install: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
