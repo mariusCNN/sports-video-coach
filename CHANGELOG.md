@@ -168,6 +168,12 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- An agent step that follows its inputs (the game `reports`, the narration and film scripts, a generic report)
+  no longer takes a folder seen for the first time as it is: a fact sheet (or README) newer than the file written
+  from it makes that file wait as out of date once (`--accept STEP` keeps it); a file newer than its inputs is
+  still noted quietly.
+- Game run: the `summary` step names the `official.json` the run really reads (`run/` or next to `game.json`) in
+  its `coach-summary --official` hint, and says when the game has none, instead of always `run/official.json`.
 - Game run: the `reports` step follows the fact sheets it is written from (`players_facts.md` and
   `player<N>_facts.md` for the team README, the player's sheet for the player README). A sheet corrected after
   the READMEs makes them wait as out of date (exit 3 names each README and the sheet; `--accept reports` keeps

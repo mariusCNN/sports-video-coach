@@ -83,7 +83,15 @@ class Game(Unit):
     def fill_values(self) -> dict:
         return dict(super().fill_values(), gj=self.gj, focus=self.focus or "<N>", times=calib_times(self),
                     us_label=pipeline.quoted(game_config.team(self.game, "us").get("label", "?")),
-                    them_label=pipeline.quoted(game_config.team(self.game, "them").get("label", "?")))
+                    them_label=pipeline.quoted(game_config.team(self.game, "them").get("label", "?")),
+                    official=self.official)
+
+    def fill(self, how: str) -> str:
+        """{coach_summary}: the coach-summary call with the official.json the run reads (run/ or next to game.json),
+        or without it, saying so, when the game has none."""
+        cmd = ("`coach-summary --official {official}` (with Four Factors)" if self.official.exists() else
+               "`coach-summary` (no official.json in {run} or {folder}: the Four Factors without official makes)")
+        return super().fill(how.replace("{coach_summary}", cmd))
 
     def note(self, step: str, errors: list[str]) -> str | None:
         """Finished games whose reports predate the stricter coach gates get the LEGACY note."""
@@ -400,9 +408,8 @@ STEPS = [
                      "--gate"]],
          inputs=lambda g: [g.official, *sorted(g.review.glob("coach_part*.json"))] if g.official.exists() else None),
     Step("summary", "agent", lambda g: not summary_errors(g),
-         how="Choose the game's stretches from the score flow, then run `coach-summary --official "
-             "{run}/official.json` (with Four Factors) and `plusminus` into {review}/summary.json and "
-             "{review}/plusminus.json (playbook step 7.4).",
+         how="Choose the game's stretches from the score flow, then run {coach_summary} and `plusminus` "
+             "into {review}/summary.json and {review}/plusminus.json (playbook step 7.4).",
          errors=summary_errors),
     Step("insights", "agent", lambda g: not insights_errors(g),
          how="Coaching insights (playbook step 7.5): launch the writer subagent with prompts/coach_insights.md "
