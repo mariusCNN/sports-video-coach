@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- The README (both languages) puts a benchmark line (the fresh-seed scores, what they mean, the leaderboard) and a
+  try-it line (demo page, Codespaces, the rerun command) right under the tagline: on the repo page the file list
+  pushes the README down, so readers sent from a benchmark post saw only the title and badges and found no number
+  and no way to try it in the first two screens.
 - The benchmark page (`bench page`, both languages) opens with a "Headline: what reasoning effort changed" box
   right under the title: each contender's above-chance score per effort on the fresh-seed frames board (n and
   range), what "above chance" means, who ran it, and the install plus the one rerun command. Cold readers sent

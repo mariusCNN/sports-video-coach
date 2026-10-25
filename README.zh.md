@@ -4,6 +4,15 @@
 
 ### 你的 AI agent 看你的运动录像，像教练一样给你指导。
 
+**还带一个基准测试**，看哪个 agent 看运动录像最准：Codex gpt-6-astra 1.000，Claude Opus 5.5 0.997，
+Claude Sonnet 5.5 默认 effort 0.419，high 时 0.919。<br>
+<sub>新种子榜：比盲猜高出的部分取平均，1 = 全对 · 每个设置跑一到三次，都是作者自己跑的 ·
+[中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/)</sub>
+
+**试一下：**[demo 网页，不用安装](https://mariusding.github.io/sports-video-coach/demo/) ·
+[在 Codespaces 里打开](https://codespaces.new/mariusDing/sports-video-coach) ·
+[一条命令重跑基准](#基准测试哪个-agent-看运动录像最准)
+
 [![release](https://img.shields.io/github/v/release/mariusDing/sports-video-coach)](https://github.com/mariusDing/sports-video-coach/releases)
 [![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)
