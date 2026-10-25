@@ -14,7 +14,7 @@ import re
 import shutil
 from pathlib import Path
 
-from . import INSTALL_REF, REPO_URL, plugin, workspace
+from . import REPO_URL, installed_ref, plugin, workspace
 
 TEMPLATE = Path(__file__).parent / "plugins" / "generic"
 
@@ -116,16 +116,9 @@ def in_clone() -> bool:
 
 
 def pinned() -> str:
-    """`git+<repo>@<commit>`: the commit this tool was installed from (uv records it in direct_url.json), else
-    INSTALL_REF, so a plugin's tests run against the core it was written with, not whatever master is now."""
-    from importlib import metadata
-    commit = ""
-    try:
-        raw = metadata.distribution("sports-video-coach").read_text("direct_url.json") or "{}"
-        commit = json.loads(raw).get("vcs_info", {}).get("commit_id", "")
-    except (metadata.PackageNotFoundError, ValueError, AttributeError):
-        pass
-    return f"git+{REPO_URL}@{commit if re.fullmatch(r'[0-9a-f]{40}', commit or '') else INSTALL_REF}"
+    """`git+<repo>@<commit>`: the commit this tool was installed from (installed_ref), so a plugin's tests run against
+    the core it was written with, not whatever master is now."""
+    return f"git+{REPO_URL}@{installed_ref()}"
 
 
 def test_command(out: Path) -> str:

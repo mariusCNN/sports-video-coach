@@ -76,14 +76,14 @@ def list_plugins(argv=None) -> None:
         print(json.dumps({"plugins": [dict(name=p.name, summary=p.summary, use_when=p.use_when,
                                            kinds=[dict(name=k.name, json=k.json) for k in p.kinds],
                                            stages=list(p.stages), prompts=str(p.prompts) if p.prompts else None,
-                                           missing=plugin.missing(p), install=p.install,
+                                           missing=plugin.missing(p), install=plugin.install_hint(p),
                                            summary_written=plugin.summary_written(p))
                                       for p in found.values()], "errors": errs}, indent=1))
         return
     for p in found.values():
         if gone := plugin.missing(p):  # one line: the full list and the rest are in --json
             print(f"{p.name}: not usable in this install ({len(gone)} package{'s' if len(gone) > 1 else ''} missing, "
-                  f"`plugins --json` lists them); needs {p.install or ', '.join(gone)}")
+                  f"`plugins --json` lists them); needs {plugin.install_hint(p) or ', '.join(gone)}")
             continue
         print(f"{p.name}: {p.summary}" + ("" if plugin.summary_written(p) else "  [summary not written yet]"))
         if p.use_when:

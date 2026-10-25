@@ -79,6 +79,13 @@ def missing(p: Plugin) -> list[str]:
     return [m for m in p.requires if importlib.util.find_spec(m) is None]
 
 
+def install_hint(p: Plugin) -> str:
+    """`p.install` as shown to a user who already has the tool: a pin to INSTALL_REF (e.g. in CLONE) names the commit
+    this tool was installed from instead, so the clone matches the core it sits next to."""
+    from . import INSTALL_REF, installed_ref
+    return p.install.replace(INSTALL_REF, installed_ref())
+
+
 def _attr(ref: str):
     mod, _, name = ref.partition(":")
     return getattr(importlib.import_module(mod), name)

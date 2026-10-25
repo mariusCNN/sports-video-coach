@@ -11,3 +11,19 @@ REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 INSTALL_REF = "ac27030efdd1c7008e3174650ff16f81f7c41187"
 INSTALL = f"uv tool install git+{REPO_URL}@{INSTALL_REF}"
 CLONE = f"git clone {REPO_URL} && cd sports-video-coach && git checkout {INSTALL_REF}"
+
+
+def installed_ref() -> str:
+    """The commit this tool was installed from (`uv tool install git+...@<sha>` records it in direct_url.json), else
+    INSTALL_REF. Text that tells an installed user what to check out names this: a pinned commit's own INSTALL_REF
+    is the commit before it."""
+    import json
+    import re
+    from importlib import metadata
+    commit = ""
+    try:
+        raw = metadata.distribution("sports-video-coach").read_text("direct_url.json") or "{}"
+        commit = json.loads(raw).get("vcs_info", {}).get("commit_id", "")
+    except (metadata.PackageNotFoundError, ValueError, AttributeError):
+        pass
+    return commit if re.fullmatch(r"[0-9a-f]{40}", commit or "") else INSTALL_REF

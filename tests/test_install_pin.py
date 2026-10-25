@@ -1,6 +1,7 @@
 """Every install command a user or an agent copies pins one revision (sports_video_coach.INSTALL_REF), so what gets
 installed is what was read: the docs, the skill, the demo site and the plugin's install hint all name it, and it is
 a commit of this repo's history."""
+import json
 import re
 import shutil
 import subprocess
@@ -10,7 +11,7 @@ import pytest
 
 import sports_video_coach as svc
 from hoop_tape_miner.plugin import PLUGIN as HOOP
-from sports_video_coach import demo
+from sports_video_coach import cli, demo, plugin
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ["README.md", "README.zh.md", "AGENTS.md", "docs/benchmark.md", "docs/basketball.md", "docs/basketball.zh.md",
@@ -65,3 +66,41 @@ def test_the_ref_is_in_this_repos_history():
                                  capture_output=True).returncode != 0:
         pytest.skip("no git, or a shallow clone without that commit")
     assert subprocess.run([git, "merge-base", "--is-ancestor", svc.INSTALL_REF, "HEAD"], cwd=ROOT).returncode == 0
+
+
+def _installed_from(monkeypatch, commit):
+    """Fake uv's direct_url.json: `uv tool install git+...@<commit>` records the commit; None = no record."""
+    from importlib import metadata
+
+    class Dist:
+        def read_text(self, name):
+            return json.dumps({"url": svc.REPO_URL, "vcs_info": {"vcs": "git", "commit_id": commit}})
+
+    def missing(name):
+        raise metadata.PackageNotFoundError(name)
+    monkeypatch.setattr(metadata, "distribution", (lambda name: Dist()) if commit else missing)
+
+
+def test_the_basketball_hint_names_the_commit_the_tool_was_installed_from(monkeypatch, capsys):
+    """A pinned install's INSTALL_REF names the commit before it, so the hint reads the installed commit."""
+    sha = "0123456789abcdef0123456789abcdef01234567"
+    _installed_from(monkeypatch, sha)
+    assert svc.installed_ref() == sha
+    monkeypatch.setattr(plugin, "missing", lambda p: ["torch"])
+    cli.list_plugins([])
+    line = next(x for x in capsys.readouterr().out.splitlines() if x.startswith("basketball:"))
+    assert f"git checkout {sha}`" in line and svc.INSTALL_REF not in line
+    cli.list_plugins(["--json"])
+    row = next(p for p in json.loads(capsys.readouterr().out)["plugins"] if p["name"] == "basketball")
+    assert f"git checkout {sha}`" in row["install"] and svc.INSTALL_REF not in row["install"]
+
+
+def test_the_basketball_hint_falls_back_to_the_pin_without_a_vcs_record(monkeypatch, capsys):
+    """A local-path or editable install records no commit (or not a full sha): the hint keeps INSTALL_REF."""
+    for commit in (None, "", "main"):
+        _installed_from(monkeypatch, commit)
+        assert svc.installed_ref() == svc.INSTALL_REF
+        assert plugin.install_hint(HOOP) == HOOP.install
+    monkeypatch.setattr(plugin, "missing", lambda p: ["torch"])
+    cli.list_plugins([])
+    assert f"git checkout {svc.INSTALL_REF}`" in capsys.readouterr().out

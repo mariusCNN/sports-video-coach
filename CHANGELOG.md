@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- After a pinned `uv tool install git+...@<sha>`, `sports-video-coach plugins` (and `--json`) told you to clone the
+  basketball plugin at the commit before `<sha>` (the pin a commit carries is always its parent). A plugin's install
+  hint now names the commit the tool was installed from (`installed_ref()`, read from uv's record, as `new-plugin`'s
+  test command already did); without a record (a local-path or editable install) it keeps the pin.
 - The benchmark share card (`card.png` / `card-zh.png`) no longer shows two bars with the same name: contenders with
   the same model and agent but other settings now end their label with what differs (the effort, "own config" /
   "clean room", else the first part of Settings that differs), and a panel's labels shrink together to fit its width.
