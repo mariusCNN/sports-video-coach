@@ -57,6 +57,13 @@ def test_english_left_in_the_chinese_report_is_a_warning_not_a_failure(tmp_path,
     assert "2 English phrase" in PC.warnings(tmp_path)[0]                 # the guides' hedges, even in a gloss
 
 
+def test_style_and_script_inside_a_report_are_not_report_text(tmp_path):
+    # a plugin panel may carry its own <style> inside the report part; its CSS is not English left in the text
+    page(tmp_path, '<article class="report" lang="zh-CN"><style>.bars{border-top:2px solid var(--ink)}</style>'
+                   '<script>const shown = "keep your hips low";</script><p>第 4 次挥拍击球点偏低。</p></article>')
+    assert PC.warnings(tmp_path) == []
+
+
 def test_bold_that_did_not_render_is_a_warning(tmp_path):
     page(tmp_path, '<article class="report" lang="zh-CN"><p>**一句话：**第 4 次挥拍击球点偏低。</p></article>')
     warns = PC.warnings(tmp_path)

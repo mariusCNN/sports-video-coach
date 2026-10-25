@@ -35,6 +35,7 @@ ID = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
 LOCAL_PATH = re.compile(r"""(?:file:///|\b[A-Za-z]:[\\/](?:Users|home)\b|/home/\w|/Users/\w)""")
 REPORT = re.compile(r"""<article\b[^>]*\blang=["']([^"']+)["'][^>]*>(.*?)</article>""", re.I | re.S)
 TAG = re.compile(r"<[^>]+>")
+CODE = re.compile(r"<(style|script)\b[^>]*>.*?</\1\s*>", re.I | re.S)  # a panel's own CSS / JS, not report text
 HEDGE = re.compile(r"(?<![A-Za-z])(?:unclear|likely|unknown|maybe)(?![A-Za-z])", re.I)  # guide words left untranslated
 # three or more Latin words in a row: a sentence or phrase, not a name, unit or acronym (ACL, mp4, Brunson)
 LATIN_RUN = re.compile(r"[A-Za-z][A-Za-z'\u2019-]*(?:[ ,]+[A-Za-z][A-Za-z'\u2019-]*){2,}")
@@ -171,16 +172,16 @@ def foreign_labels(page: str) -> list[str]:
 
 
 def texts(folder: Path) -> list[tuple[str, str, str]]:
-    """(where, language code, plain text) of each report part of folder/index.html and of each narration and
-    explained-video script next to it (listen.<lang>.md, film.<lang>.md: the voice and the subtitles come from
-    them), with the scripts' clip and freeze-mark syntax taken out."""
+    """(where, language code, plain text) of each report part of folder/index.html (its <style> and <script>
+    blocks left out) and of each narration and explained-video script next to it (listen.<lang>.md, film.<lang>.md:
+    the voice and the subtitles come from them), with the scripts' clip and freeze-mark syntax taken out."""
     out = []
     page = folder / "index.html"
     if page.exists():
         codes = {l.tag.lower(): c for c, l in L.LANGS.items()}
         for tag, body in REPORT.findall(page.read_text(encoding="utf8")):
             code = codes.get(tag.lower(), tag.split("-")[0].lower())
-            out.append((f"the {L.name(code)} report", code, html_lib.unescape(TAG.sub("\n", body))))
+            out.append((f"the {L.name(code)} report", code, html_lib.unescape(TAG.sub("\n", CODE.sub("\n", body)))))
     for p in [*sorted(folder.glob("listen.*.md")), *sorted(folder.glob("film.*.md"))]:
         code = p.name.split(".")[1]
         if code in L.LANGS:
