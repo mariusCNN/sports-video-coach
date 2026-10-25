@@ -1,6 +1,8 @@
 """media: one ffmpeg / ffprobe wrapper, atomic writes and partial outputs (subprocess faked, nothing encoded)."""
 import json
+import os
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -61,6 +63,42 @@ def test_partial_moves_into_place_only_on_success(tmp_path):
             raise RuntimeError("ffmpeg died")
     assert out.read_bytes() == b"half"  # the old good file stays
     assert not (out.parent / ".partial").exists()
+
+
+def _locked(monkeypatch, fails: int):
+    """os.replace raises PermissionError `fails` times (a player or OneDrive holds the target), then works."""
+    real, calls, naps = os.replace, [], []
+
+    def replace(src, dst):
+        calls.append(dst)
+        if len(calls) <= fails:
+            raise PermissionError(13, "Access is denied", str(dst))
+        real(src, dst)
+    monkeypatch.setattr(media.os, "replace", replace)
+    monkeypatch.setattr(time, "sleep", naps.append)
+    return calls, naps
+
+
+def test_partial_waits_for_a_locked_target(tmp_path, monkeypatch):
+    out = tmp_path / "listen.en.mp3"
+    out.write_bytes(b"old")
+    calls, naps = _locked(monkeypatch, 3)
+    with media.partial(out) as part:
+        part.write_bytes(b"new")
+    assert out.read_bytes() == b"new" and len(calls) == 4
+    assert naps == [0.2, 0.4, 0.8]  # short, doubling
+    assert not (tmp_path / ".partial").exists()
+
+
+def test_partial_names_a_target_that_stays_locked(tmp_path, monkeypatch):
+    out = tmp_path / "listen.en.mp3"
+    out.write_bytes(b"old")
+    calls, _ = _locked(monkeypatch, 99)
+    with pytest.raises(PermissionError, match=r"listen\.en\.mp3.*(open in another program|synced)"):
+        with media.partial(out) as part:
+            part.write_bytes(b"new")
+    assert len(calls) == 5
+    assert out.read_bytes() == b"old" and not (tmp_path / ".partial").exists()  # no temp file left
 
 
 def test_atomic_writes_leave_no_temp_file(tmp_path):

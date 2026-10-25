@@ -6,7 +6,8 @@ ffprobe call has a timeout (a cloud placeholder file can hang it).
 
 Writers that take a while go through `partial(out)`: they write into a hidden `.partial/` folder next to `out`,
 and the file moves into place only when the block ends cleanly. A crash or Ctrl-C then never leaves a half file
-that the next run would count as done, and globs such as `clips/*.mp4` never see one. Small text and JSON files
+that the next run would count as done, and globs such as `clips/*.mp4` never see one. The move retries a few times
+while the target is locked (a media player or OneDrive holds it on Windows). Small text and JSON files
 use `write_text_atomic` / `write_json_atomic` (temp file + replace).
 """
 from __future__ import annotations
@@ -16,6 +17,7 @@ import json
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 PROBE_TIMEOUT = 120  # seconds
@@ -112,6 +114,20 @@ def scratch(near: Path):
             d.rmdir()  # only when empty, as in `partial`
 
 
+def replace(src: Path, dst: Path, tries: int = 5, wait: float = 0.2) -> None:
+    """os.replace, retried with a short doubling wait while Windows refuses it (a media player or OneDrive sync holds
+    `dst`); still refused after `tries` -> PermissionError naming `dst`."""
+    for i in range(tries):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError as e:
+            if i == tries - 1:
+                raise PermissionError(f"cannot replace {dst}: it is likely open in another program (a media player) "
+                                      "or being synced (OneDrive); close it or wait, then run again") from e
+            time.sleep(wait * 2 ** i)
+
+
 @contextlib.contextmanager
 def partial(out: Path):
     """Yield a path to write instead of `out` (same name, in `<dir>/.partial/`); it replaces `out` only when the
@@ -123,7 +139,7 @@ def partial(out: Path):
     tmp.unlink(missing_ok=True)
     try:
         yield tmp
-        os.replace(tmp, out)
+        replace(tmp, out)
     finally:
         tmp.unlink(missing_ok=True)
         with contextlib.suppress(OSError):

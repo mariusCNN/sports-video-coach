@@ -156,6 +156,9 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- `narrate` (and every stage that writes through `media.partial`) no longer crashes when `listen.<lang>.mp3` is
+  locked on Windows (a media player or OneDrive sync holds it): the move retries 5 times with a short doubling
+  wait, then fails with a message naming the file; no temp file is left behind.
 - The Chinese benchmark pages' link previews showed English images: `/benchmark/zh/` now points `og:image` at a
   Chinese share card (`card-zh.png`, drawn from the same numbers when a CJK font is installed, as on the demo
   site's runner) and `/benchmark/zh/findings/` at `effort-zh.png`; every benchmark page also states `og:locale`
