@@ -27,6 +27,10 @@ step before it is done. A stop on agent steps lists every one that waits that wa
 An agent step may declare `auto`: what the run does itself before it stops for the step (QA: a qa.md that is an
 untouched `page-check --write-qa` draft is written again by the same static check; the run stops only when that
 draft does not pass).
+
+A run that writes holds `<folder>/.run-lock.json`, so a second run on the folder exits 1, and stamps the store with
+the code that wrote it ("code"); a later run from older code (or code it cannot show newer) exits 1 before it
+writes, unless `--allow-older-code` (runlock.py).
 """
 from __future__ import annotations
 
@@ -42,7 +46,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, ClassVar
 
-from . import artifacts, clips, humanize, media, workspace
+from . import artifacts, clips, humanize, media, runlock, workspace
 from . import langs as L
 
 WAITING = 3
@@ -268,22 +272,25 @@ def input_key(g: Unit, p: Path) -> str:
 
 
 class Store:
-    """<folder>/.hoop-steps.json: {"version": 1, "steps": {name: record}, "notes": {...}}; an unreadable file counts
-    as empty. `notes` holds what the run remembers outside the steps (the READMEs' signatures: language_drift)."""
+    """<folder>/.hoop-steps.json: {"version": 1, "steps": {name: record}, "notes": {...}, "code": {...}}; an
+    unreadable file counts as empty. `notes` holds what the run remembers outside the steps (the READMEs'
+    signatures: language_drift); `code` the code that last wrote the folder (runlock.stamp_for)."""
 
     def __init__(self, folder: Path):
         self.path = Path(folder) / STORE
         try:
             data = json.loads(self.path.read_text(encoding="utf8"))
             self.steps, self.notes = data.get("steps") or {}, data.get("notes") or {}
+            self.code = data.get("code") or None
         except (OSError, ValueError, AttributeError):
-            self.steps, self.notes = {}, {}
+            self.steps, self.notes, self.code = {}, {}, None
 
     def get(self, name: str) -> dict | None:
         return self.steps.get(name)
 
     def save(self):
-        data = {"version": 1, "steps": self.steps, **({"notes": self.notes} if self.notes else {})}
+        data = {"version": 1, "steps": self.steps, **({"notes": self.notes} if self.notes else {}),
+                **({"code": self.code} if self.code else {})}
         media.write_json_atomic(self.path, data, indent=1)
 
 
@@ -793,12 +800,33 @@ def print_status(g: Unit, steps: list[Step]) -> None:
 
 
 def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None = None, publish: bool = False,
-          dry: bool = False, runner=subprocess.run, accept: str | list[str] | None = None) -> int:
+          dry: bool = False, runner=subprocess.run, accept: str | list[str] | None = None,
+          allow_older_code: bool = False) -> int:
     """Walk `steps` and return the exit code: 0 done (or stopped at --until), 3 waiting for the agent, 1 failed.
-    `accept`: the agent steps (one name or several) to take as they are."""
+    `accept`: the agent steps (one name or several) to take as they are. A run that is not `dry` holds the folder's
+    lock and exits 1 when another run holds it, or when newer code last wrote the folder (runlock.check;
+    `allow_older_code` rewrites anyway)."""
+    if dry:
+        return walk(g, steps, until, redo, publish, dry, runner, accept, None)
+    code = runlock.code_version()
+    with runlock.hold(g.folder, code):
+        runlock.check(g.folder, Store(g.folder).code, code, allow_older_code, run_hint(g, "--allow-older-code"))
+        return walk(g, steps, until, redo, publish, dry, runner, accept, code)
+
+
+def walk(g: Unit, steps: list[Step], until: str | None, redo: str | None, publish: bool, dry: bool, runner,
+         accept: str | list[str] | None, code: dict | None) -> int:
+    """drive's step walk; `code` (None when dry) is stamped into the store whenever the walk writes an output or
+    stops for the agent to write one."""
     steps = artifacts.keep(steps, g)  # exits on a bad `artifacts` choice before any step runs
     accept = {accept} if isinstance(accept, str) else set(accept or ())
     store = Store(g.folder)
+
+    def stamp():
+        if code is not None:
+            store.code = runlock.stamp_for(store.code, code)
+            store.save()
+
     if not dry:
         adopt(steps, g, store)
         before = json.dumps(store.notes, sort_keys=True)
@@ -817,12 +845,13 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
         own = s.done(g)
         if not own and s.kind == "agent" and s.auto and not dry and s.auto(g):
             own = s.done(g)  # the run did the step itself (QA: an untouched page-check draft written again)
+            stamp()
         why = changes(s, g, store) if own else []
         stale = pending(s, g, store) if own and s.kind == "agent" else []
         if stale and s.name in accept and not dry:
             print(f"[run] {s.name}: accepted as it is ({len(stale)} finding(s) kept: inputs changed or a check)")
             accept_step(s, g, store)
-            store.save()
+            stamp()
             stale = []
         if own and not why and not stale and s.name != redo:
             if not dry and note_outputs(s, g, store):
@@ -851,6 +880,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
                       f"`{run_hint(g, '--accept', *names)}` keeps them.")
                 print(slash(f"[run] The step, for reference: {g.fill(s.how)}"))
                 print(DATA_NOTE.format(hint=run_hint(g)))
+                stamp()   # the agent writes next, by this code's instructions
                 return WAITING
             print(slash(f"[run] waiting for the agent: {s.name}\n{g.fill(s.how)}"))
             errs = s.errors(g) if s.errors else []
@@ -862,6 +892,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             if note:
                 print(f"[run] note: {line(note)}")
             print(DATA_NOTE.format(hint=run_hint(g)))
+            stamp()
             return WAITING
         argvs = [[*a, *s.again] for a in s.args(g)] if own else s.args(g)
         if why:
@@ -870,6 +901,7 @@ def drive(g: Unit, steps: list[Step], until: str | None = None, redo: str | None
             for argv in argvs:
                 print(f"[dry] {s.name}: {shown(argv, g.PLUGIN)}")
             return 0
+        stamp()   # before the stage: a failed one may have written part of its output
         if not run_cmd(s, g, runner, argvs):
             return 1
         g = type(g).load(g.folder)  # stages may have filled game.json
@@ -939,3 +971,6 @@ def add_drive_args(ap, names: list[str], pages: str = "pages") -> None:
     ap.add_argument("--accept", nargs="+", choices=names, metavar="STEP",
                     help="agent steps reported out of date (their inputs changed, or a check flagged them) that still "
                          "hold as they are: record them and go on (one or several: --accept listen-script film-script)")
+    ap.add_argument("--allow-older-code", action="store_true",
+                    help="rewrite outputs although newer code (or code this run cannot show to be older) last wrote "
+                         "the folder; without it such a run exits 1 and says what differs")

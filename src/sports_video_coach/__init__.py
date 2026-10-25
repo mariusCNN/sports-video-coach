@@ -13,10 +13,9 @@ INSTALL = f"uv tool install git+{REPO_URL}@{INSTALL_REF}"
 CLONE = f"git clone {REPO_URL} && cd sports-video-coach && git checkout {INSTALL_REF}"
 
 
-def installed_ref() -> str:
-    """The commit this tool was installed from (`uv tool install git+...@<sha>` records it in direct_url.json), else
-    INSTALL_REF. Text that tells an installed user what to check out names this: a pinned commit's own INSTALL_REF
-    is the commit before it."""
+def installed_commit() -> str:
+    """The commit this tool was installed from, as `uv tool install git+...@<sha>` records it in direct_url.json;
+    '' without that record (a local-path or editable install)."""
     import json
     import re
     from importlib import metadata
@@ -26,4 +25,10 @@ def installed_ref() -> str:
         commit = json.loads(raw).get("vcs_info", {}).get("commit_id", "")
     except (metadata.PackageNotFoundError, ValueError, AttributeError):
         pass
-    return commit if re.fullmatch(r"[0-9a-f]{40}", commit or "") else INSTALL_REF
+    return commit if re.fullmatch(r"[0-9a-f]{40}", commit or "") else ""
+
+
+def installed_ref() -> str:
+    """The commit this tool was installed from (installed_commit), else INSTALL_REF. Text that tells an installed
+    user what to check out names this: a pinned commit's own INSTALL_REF is the commit before it."""
+    return installed_commit() or INSTALL_REF

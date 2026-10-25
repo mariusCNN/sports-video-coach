@@ -228,7 +228,7 @@ def test_passed_long_step_shows_its_result_lines_and_absolute_log(unit, capsys, 
 def test_failed_step_writes_no_record(unit):
     s = steps()[:1]
     assert P.drive(Unit.load(unit), s, runner=Runner(unit, rc=1)) == 1
-    assert not (unit / P.STORE).exists()
+    assert P.Store(unit).steps == {}                            # only the code stamp (runlock), no step record
 
 
 def test_publish_runs_only_with_publish(unit, capsys):

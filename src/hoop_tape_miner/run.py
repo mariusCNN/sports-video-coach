@@ -473,9 +473,10 @@ def status(g: Game) -> list[tuple[str, str, bool]]:
 
 def drive(g: Game, until: str | None = None, redo: str | None = None, publish: bool = False,
           dry: bool = False, runner=subprocess.run, steps: list[Step] | None = None,
-          accept: str | list[str] | None = None) -> int:
+          accept: str | list[str] | None = None, allow_older_code: bool = False) -> int:
     """Walk `steps` (default: the game STEPS) with pipeline.drive; `g` may be any pipeline.Unit."""
-    return pipeline.drive(g, STEPS if steps is None else steps, until, redo, publish, dry, runner, accept)
+    return pipeline.drive(g, STEPS if steps is None else steps, until, redo, publish, dry, runner, accept,
+                          allow_older_code)
 
 
 def game_for_url(url: str, game_id: Callable[[str], str]) -> Path | None:
@@ -514,7 +515,7 @@ def main(argv=None):
         if line:
             print(f"  {line}")
         return
-    sys.exit(drive(g, a.until, a.redo, a.publish, a.dry, accept=a.accept))
+    sys.exit(drive(g, a.until, a.redo, a.publish, a.dry, accept=a.accept, allow_older_code=a.allow_older_code))
 
 
 if __name__ == "__main__":

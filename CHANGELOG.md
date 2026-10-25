@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- A run could rewrite a unit folder while another run worked on it, or from an older checkout than the code that
+  last wrote it, overwriting newer outputs. Every driver (`run`, `train`, `move`) now holds
+  `<folder>/.run-lock.json` while it writes (a second run exits 1 naming the holder; a dead run's lock is taken
+  over with a warning), stamps the code version in `.hoop-steps.json`, and exits 1 with both versions when its
+  code is older than the stamp or not provably newer; `--allow-older-code` rewrites anyway.
 - The pull request `bench-report` job fails, with one `::error::` line, when it cannot list the changed result
   files (`git diff HEAD^1 HEAD` failing, as in a depth-1 checkout); before, it reported "no result file changed"
   and went green without checking anything. `bench validate` / `bench report` take only a `YYYY-MM-DD` date

@@ -88,7 +88,8 @@ def drive_unit(folder: Path, rest: list[str]) -> int:
     if a.status:
         pipeline.print_status(unit, steps)
         return 0
-    return pipeline.drive(unit, steps, a.until, a.redo, a.publish, a.dry, accept=a.accept)
+    return pipeline.drive(unit, steps, a.until, a.redo, a.publish, a.dry, accept=a.accept,
+                          allow_older_code=a.allow_older_code)
 
 
 def for_sport(argv: list[str]) -> tuple[plugin.Plugin, str]:

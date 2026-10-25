@@ -194,7 +194,8 @@ def main(argv=None):
     if a.status:
         P.print_status(g, MOVE_STEPS)
         return
-    sys.exit(P.drive(g, MOVE_STEPS, a.until, a.redo, a.publish, a.dry, accept=a.accept))
+    sys.exit(P.drive(g, MOVE_STEPS, a.until, a.redo, a.publish, a.dry, accept=a.accept,
+                     allow_older_code=a.allow_older_code))
 
 
 if __name__ == "__main__":
