@@ -365,10 +365,16 @@ def derived(step: Step, g: Unit) -> dict:
 
 def outdated(step: Step, g: Unit, store: Store) -> list[str]:
     """Outputs of an agent step whose inputs changed since the run last saw them, while the output itself did not
-    (an output the agent edited since counts as following the change). [] without `derives` or a record."""
-    rec = (store.get(step.name) or {}).get("outputs") if step.derives else None
-    if rec is None:
+    (an output the agent edited since counts as following the change). [] without `derives`. Without a record yet
+    (a folder from before it, or inputs corrected before the first walk), an input newer than the output counts as
+    changed after it, once: the stop's `--accept`, or the output edited after it, notes things as they are."""
+    if not step.derives:
         return []
+    rec = (store.get(step.name) or {}).get("outputs")
+    if rec is None:
+        return [f"{input_key(g, o)}: {', '.join(moved)} changed after it was written" for o, ins in step.derives(g)
+                if o.exists() and (moved := [input_key(g, p) for p in ins
+                                             if p.exists() and p.stat().st_mtime > o.stat().st_mtime])]
     out = []
     for o, ins in step.derives(g):
         r = rec.get(input_key(g, o))

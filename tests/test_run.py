@@ -534,3 +534,43 @@ def test_reports_wait_for_a_facts_sheet_edited_after_them(game, capsys):
     (game / "README.md").write_text("# rewritten from the facts\n", encoding="utf8")
     (game / "README.en.md").write_text("# rewritten from the facts\n", encoding="utf8")
     assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == 0
+
+
+def test_reports_without_a_record_wait_for_a_facts_sheet_newer_than_them(game, capsys):
+    # a unit seen for the first time: a fact sheet corrected after the READMEs is flagged once, not taken as-is
+    finished_until_html(game)
+    touch(game, "index.html", "player-7/index.html")
+    t = time.time()
+    os.utime(game / "run/review_v1/players_facts.md", (t + 60, t + 60))
+    capsys.readouterr()
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == R.WAITING
+    out = capsys.readouterr().out
+    assert "reports is out of date" in out and "--accept reports" in out
+    assert "README.en.md: run/review_v1/players_facts.md changed after it was written" in out
+    assert "player-7/README" not in out                      # its own sheet is older than it
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game), accept="reports") == 0
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == 0   # kept: noted as it is
+
+
+def test_reports_without_a_record_newer_than_their_facts_are_noted_quietly(game, capsys):
+    finished_until_html(game)
+    touch(game, "index.html", "player-7/index.html")
+    t = time.time()
+    for r in ("README.md", "README.en.md", "player-7/README.md", "player-7/README.en.md"):
+        os.utime(game / r, (t + 60, t + 60))
+    capsys.readouterr()
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == 0
+    assert "out of date" not in capsys.readouterr().out
+    (game / "run/review_v1/players_facts.md").write_text("# corrected: 3 turnovers, not 2\n", encoding="utf8")
+    assert R.drive(R.Game.load(game), until="reports", runner=Runner(game)) == R.WAITING   # the record follows it
+
+
+def test_summary_hint_names_the_official_json_that_exists(game):
+    step = next(s for s in R.STEPS if s.name == "summary")
+    touch(game, "official.json")                             # next to game.json, not under run/
+    hint = R.Game.load(game).fill(step.how)
+    assert f"--official {(game / 'official.json').as_posix()}" in hint and "run/official.json" not in hint
+    (game / "official.json").unlink()
+    hint = R.Game.load(game).fill(step.how)
+    assert "no official.json" in hint and "--official" not in hint
+    assert "Four Factors come from the reviewed trips alone" in hint
