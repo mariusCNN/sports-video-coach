@@ -507,13 +507,14 @@ OpenCode (below).
 
 The first preset run on a task: OpenCode 1.19.4 (npm `opencode-ai`, empty config, no login, no key) with
 `opencode/deepseek-v4.1-flash-free`, one of the 10 free OpenCode Zen models `opencode models` lists on a fresh
-install. A one-word prompt worked with no account. Code track, default 1200 s timeout, every run submitted:
+install. A one-word prompt worked with no account. Code track, default 1200 s timeout. A board row must
+measure the contender, not our harness or a quota outage, so only one of the three runs is on the board:
 
-| Suite | Run | Total | Above chance | Wall | What happened |
-|---|---|---|---|---|---|
-| `svc-bench-2` | before the fix | 0.000 | 0.000 | 1200 s (killed) | worked in the wrong folder at first (below); no answer written |
-| `svc-bench-2` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | 87 tool calls; scripts on 4 of the 5 videos (not the shots); no answer written; free limit hit about 1130 s in |
-| `svc-bench-3` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | free limit already reached: first request failed, then no output and no exit |
+| Suite | Run | Total | Above chance | Wall | What happened | On the board | Transcript |
+|---|---|---|---|---|---|---|---|
+| `svc-bench-2` | before the fix | 0.000 | 0.000 | 1200 s (killed) | worked in the wrong folder at first (below); no answer written | no: our preset bug (wrong folder), not the model | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-2-wrong-folder.txt) |
+| `svc-bench-2` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | 87 tool calls; scripts on 4 of the 5 videos (not the shots); no answer written; free limit hit about 1130 s in | yes: the model worked 1130 s of the 1200 s limit | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-2.txt) |
+| `svc-bench-3` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | free limit already reached: first request failed, then no output and no exit | no: free quota used up, the model never replied | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-3.txt) |
 
 - **Preset fix.** OpenCode ignored the process's working folder and worked in the folder `bench run` was started
   from: its first `ls` listed the repo, then it searched the machine for `TASKS.md` until it found the run folder
@@ -528,7 +529,8 @@ install. A one-word prompt worked with no account. Code track, default 1200 s ti
   44 minutes of it. How long the limit lasts is unclear. After that error OpenCode printed nothing more and did not
   exit, so the run waited for the timeout.
 - OpenCode prints its tool calls to stderr; `transcript.txt` holds only its replies. The redacted transcripts
-  (stdout, stderr and the log errors) are in `benchmark/transcripts/` (the first run as an excerpt).
+  (stdout, stderr and the log errors) are in `benchmark/transcripts/` (the first run as an excerpt); the two runs
+  not on the board keep their transcripts there as evidence, with no result file in `benchmark/results/`.
 
 Any other CLI, with its own non-interactive, auto-approve flags:
 
