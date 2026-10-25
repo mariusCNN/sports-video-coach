@@ -156,6 +156,8 @@ All notable changes to this project are documented here. The format follows [Kee
   verdict, three to six key numbers and this week's orders.
 
 ### Fixed
+- Film `--dry` also warns about a short arrow between two tracked players (it only measured x,y spots), at the
+  same length (a tenth of the frame) below which the drawing drops the arrow's second ring.
 - The Chinese benchmark pages' link previews showed English images: `/benchmark/zh/` now points `og:image` at a
   Chinese share card (`card-zh.png`, drawn from the same numbers when a CJK font is installed, as on the demo
   site's runner) and `/benchmark/zh/findings/` at `effort-zh.png`; every benchmark page also states `og:locale`

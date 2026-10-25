@@ -27,7 +27,7 @@ ZOOM_MAX = 1.4       # punch-in on a freeze: at most this (720p source footage g
 ZOOM_S = 0.5         # the zoom in (and out, OUT_S) takes this long; the marks start after it
 OUT_S = 0.35
 STEP_S = 0.45        # one mark after another
-SHORT_ARROW = 0.12   # arrow ends closer than this (frame fractions) get one ring, at the start
+SHORT_ARROW = 0.1    # arrow ends closer than this (frame fractions) get one ring, at the start; --dry warns
 POINT_RE = re.compile(r"^(?:(us|them|我|对):?)?(\d*\.?\d+),(\d*\.?\d+)$")  # a spot, maybe with its team
 SIDES = {"我": "us", "对": "them"}
 ARROW_RE = re.compile(r"^(.+?)(?:->|→)(.+)$")
@@ -140,10 +140,16 @@ def bgr(hex_: str) -> str:
 
 def mark_hex(mark) -> str:
     """Ring colour of a mark: a player or spot on our side blue, on the other side red, anything else white."""
-    side = (mark[3] if len(mark) > 3 else None) if mark and mark[0] == "point" else         mark[1] if mark and len(mark) > 1 and mark[0] != "arrow" else None
-    if side in ("us", "them"):
-        return US_HEX if side == "us" else THEM_HEX
-    return POINT_HEX
+    side = None
+    if mark and mark[0] != "arrow":
+        rest = mark[3:] if mark[0] == "point" else mark[1:]  # ('point', x, y, side) / ('player', side, number)
+        side = rest[0] if rest else None
+    return {"us": US_HEX, "them": THEM_HEX}.get(side, POINT_HEX)
+
+
+def short_arrow(a, b) -> bool:
+    """Two mark boxes (mark_box) closer than SHORT_ARROW, centre to centre: an arrow between them is a stub."""
+    return math.hypot((a[0] + a[2] - b[0] - b[2]) / 2, (a[1] + a[3] - b[1] - b[3]) / 2) < SHORT_ARROW
 
 
 def text_w(text: str, fs: float) -> float:
@@ -220,8 +226,7 @@ def freeze_events(marks, label: str, t: float, tracks, w: int, h: int, fit, star
     ring_marks = explicit or [m for m, _ in found]
     for mk in [] if explicit else marks:  # arrows only: a short one ("stopped short of the cone") rings its start
         if mk[0] == "arrow" and boxes.get(mk[1]) and boxes.get(mk[2]) and mk[2] in ring_marks and mk[1] != mk[2]:
-            (a1, b1, a2, b2), (c1, d1, c2, d2) = boxes[mk[1]], boxes[mk[2]]
-            if math.hypot((a1 + a2 - c1 - c2) / 2, (b1 + b2 - d1 - d2) / 2) < SHORT_ARROW:
+            if short_arrow(boxes[mk[1]], boxes[mk[2]]):
                 ring_marks = [m for m in ring_marks if m != mk[2]]
     if animate:
         t0 = start + (ZOOM_S if zoom else 0.15) + 0.1  # the first mark, once the zoom settles

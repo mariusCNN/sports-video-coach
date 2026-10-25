@@ -202,6 +202,11 @@ def test_freeze_events_circle_tracked_players_and_dim_the_rest():
     assert film.freeze_warnings(stub, None) == [
         "scene 1: freeze 03:10: the arrow us:0.66,0.6->0.71,0.55 is too short to read; aim it further "
         "(at least 0.1 of the frame) or ring the players instead"]
+    pass_ = film.parse_script("![x](clip:03:08-03:20)\n> 03:10 我#7 对#11 我#7->对#11 我#7->0.9,0.5\n", FILM)
+    assert film.freeze_warnings(pass_, tracks) == [  # two tracked players about 0.07 apart, centre to centre
+        "scene 1: freeze 03:10: the arrow us#7->them#11 is too short to read; aim it further "
+        "(at least 0.1 of the frame) or ring the players instead"]
+    assert film.freeze_warnings(pass_, None) == []  # no tracks: a player arrow cannot be measured
 
 
 def test_court_diagram_states_and_frames(tmp_path):
@@ -372,6 +377,7 @@ def test_a_spot_can_say_its_team_so_its_ring_and_label_take_the_team_colour():
     assert fd.mark_text(fd.parse_mark("对0.77,0.53")) == "them:0.77,0.53"
     assert fd.parse_mark("我0.6,0.5->对0.7,0.5")[2] == ("point", 0.7, 0.5, "them")
     assert fd.mark_hex(("point", 0.7, 0.5, "them")) == fd.THEM_HEX and fd.mark_hex(("point", 0.7, 0.5)) == fd.POINT_HEX
+    assert fd.mark_hex(("player", "us", "7")) == fd.US_HEX and fd.mark_hex(None) == fd.POINT_HEX
     marks = fd.parse_freeze_line('> 00:04 对0.4,0.6 "two"')[1]
     ev = fd.freeze_events(marks, "two", 4.0, None, 1280, 720, (0, 0, 1280, 720), 2.0, 10.0, animate=True)
     red = fd.bgr(fd.THEM_HEX)

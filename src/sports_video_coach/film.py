@@ -77,7 +77,7 @@ MAX_CHARS = {c: l.sub_chars for c, l in L.LANGS.items()}  # one subtitle at most
 FREEZE_S = 2.0                   # a freeze without narration
 MIN_ZOOM_HOLD = 1.5              # a shorter freeze is not zoomed (in and out would be all it does)
 BANNER_S = 6.0                  # a clip's caption shows this long, at its start
-MIN_ARROW = 0.1                  # --dry warns about a spot-to-spot arrow shorter than this (frame fractions)
+SUB_FS, BANNER_FS = 0.055, 0.034  # font sizes of the Sub and Banner styles (fractions of the short side)
 COUNT_S, COUNT_STEPS = 0.6, 12   # a stat card's number counts up in this long, in so many steps
 KICKER_RE = re.compile(r"^([^：:]{1,12})(?:：|:(?!\d))\s*(.+)$")  # "第一件事：有压力" -> kicker, title; never in 03:10
 SLOW_TAG = {c: L.film_tag(c, "slow") for c in L.CODES}
@@ -308,8 +308,9 @@ def points(mark) -> tuple:
 
 
 def freeze_warnings(scenes: list[Scene], tracks) -> list[str]:
-    """Marks after the label (the label belongs at the end of the line), and marked players the tracks do not
-    have at that moment (their ring is left out)."""
+    """Marks after the label (the label belongs at the end of the line), arrows too short to read (between spots,
+    or between players the tracks have), and marked players the tracks do not have at that moment (their ring is
+    left out)."""
     out = []
     for i, sc in enumerate(scenes, 1):
         for fz in sc.freezes:
@@ -318,18 +319,19 @@ def freeze_warnings(scenes: list[Scene], tracks) -> list[str]:
             if m and fz.line[m.end():].strip():
                 out.append(f"scene {i}: freeze {t}: `{fz.line[m.end():].strip()}` comes after the label; put the "
                            "label last: > mm:ss.s x,y x,y \"label\"")
+            at = seconds(t) if tracks is not None and TIME_RE.match(t) else None
             for mk in marks:  # the rings take a bite out of each end: a short arrow is left as a stub
-                if mk[0] == "arrow" and all(p[0] == "point" for p in mk[1:]):
-                    if math.hypot(mk[1][1] - mk[2][1], mk[1][2] - mk[2][2]) < MIN_ARROW:
-                        out.append(f"scene {i}: freeze {t}: the arrow {fd.mark_text(mk[1])}->{fd.mark_text(mk[2])} "
-                                   f"is too short to read; aim it further (at least {MIN_ARROW:g} of the frame) or "
-                                   "ring the players instead")
-            if tracks is None or not TIME_RE.match(t):
+                if mk[0] != "arrow":
+                    continue
+                ends = [fd.mark_box(p, at, tracks) if p[0] == "point" or at is not None else None for p in mk[1:]]
+                if all(ends) and fd.short_arrow(*ends):
+                    out.append(f"scene {i}: freeze {t}: the arrow {fd.mark_text(mk)} is too short to read; aim it "
+                               f"further (at least {fd.SHORT_ARROW:g} of the frame) or ring the players instead")
+            if at is None:
                 continue
             for m in dict.fromkeys(m for mk in marks for m in points(mk)):
-                if m[0] != "point" and fd.mark_box(m, seconds(t), tracks) is None:
-                    name = "#".join(map(str, m[1:]))  # ('player', 'us', '9') -> us#9
-                    out.append(f"scene {i}: freeze {t}: {name} is not in the tracks near that moment; "
+                if m[0] != "point" and fd.mark_box(m, at, tracks) is None:
+                    out.append(f"scene {i}: freeze {t}: {fd.mark_text(m)} is not in the tracks near that moment; "
                                f"mark them with x,y instead")
     return out
 
@@ -522,9 +524,9 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
     white, ink, shade = "&H00FFFFFF", "&H00000000", "&H80000000"
     styles = {  # size, primary, outline/box, back (shadow), border style, outline, shadow, alignment, margin l/r,
         # margin v, bold. One system: white type, a thin dark outline and a soft shadow instead of boxes
-        "Sub": (round(u * 0.055), white, ink, shade, 1, max(2, round(u * 0.004)), max(1, round(u * 0.003)), 2, m,
+        "Sub": (round(u * SUB_FS), white, ink, shade, 1, max(2, round(u * 0.004)), max(1, round(u * 0.003)), 2, m,
                 round(u * 0.045), 1),
-        "Banner": (round(u * 0.034), white, ass_colour(fd.INK_HEX, 0x40), ass_colour(fd.INK_HEX, 0x40), 3,
+        "Banner": (round(u * BANNER_FS), white, ass_colour(fd.INK_HEX, 0x40), ass_colour(fd.INK_HEX, 0x40), 3,
                    round(u * 0.014), 0, 8, side, m, 1),
         "Title": (round(u * 0.075), white, ink, shade, 1, 0, max(1, round(u * 0.004)), 5, m, 0, 1),
         "Kicker": (round(u * 0.036), ass_colour(lighten(accent)), ink, shade, 1, 0, max(1, round(u * 0.003)), 1, m, 0, 1),
@@ -555,8 +557,8 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
     h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h; banner_to: the clip's
     first freeze, where its banner goes so the label is the only text on the frozen frame."""
     fw, fh = frame or (round(h * 16 / 9), h)
-    m, side = round(h * 0.04), round(fw * 0.08)  # the margins and font sizes ass_doc gives Sub, Banner, Title
-    sub_fs, small, big = round(h * 0.057), round(h * 0.036), round(h * 0.075)
+    m, side = round(h * 0.04), round(fw * 0.08)  # the margins ass_doc gives Sub and Banner
+    sub_fs, small = round(h * SUB_FS), round(h * BANNER_FS)
     ev = []
 
     def wrap(text: str, cap: float) -> str:
@@ -801,7 +803,7 @@ def scene_cmd(sc: Scene, length: float, slow: float, w: int, h: int, folder: Pat
             v = "[0:v]null"
         if sc.kind == "title":  # a chapter card draws its own accent bar (card_events)
             u = min(w, h)  # under the text, which sits mid-frame at the short side's size
-            v += (f",drawbox=x={w // 2 - w // 16}:y={int(h / 2 + u * (0.14 if sc.kind == 'title' else 0.08))}:"
+            v += (f",drawbox=x={w // 2 - w // 16}:y={int(h / 2 + u * 0.14)}:"
                   f"w={w // 8}:h={max(4, u // 120)}:color=0x{accent[1:]}:t=fill")
         graph.append(v + "[c]")
     graph.append(f"[c]format=yuv420p,ass={ass_name}[v]")
