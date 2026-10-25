@@ -14,14 +14,14 @@ import re
 import shutil
 from pathlib import Path
 
-from . import plugin, workspace
+from . import INSTALL_REF, REPO_URL, plugin, workspace
 
 TEMPLATE = Path(__file__).parent / "plugins" / "generic"
-REPO = "git+https://github.com/mariusDing/sports-video-coach"
 
 
 TEST = '''"""Tests for the {name} plugin. In a clone: `uv run pytest <this folder>`; after `uv tool install`:
-`uv run --isolated --no-project --with pytest --with sports-video-coach@{repo} pytest <this folder>`."""
+`uv run --isolated --no-project --with pytest --with sports-video-coach@{repo} pytest <this folder>`
+(the revision new-plugin was run from, so the tests see the core this plugin was written against)."""
 import json
 import sys
 from pathlib import Path
@@ -104,7 +104,7 @@ def scaffold(name: str, dest: Path, sport: str = "", summary: str = "", use_when
         f.write_text(t.replace("sports-video-coach generic:", f"sports-video-coach {name}:")
                      .replace("(generic plugin)", f"({name} plugin)"), encoding="utf8")
     (out / "tests").mkdir()
-    (out / "tests" / f"test_{name.replace('-', '_')}.py").write_text(TEST.format(name=name, repo=REPO), encoding="utf8")
+    (out / "tests" / f"test_{name.replace('-', '_')}.py").write_text(TEST.format(name=name, repo=pinned()), encoding="utf8")
     return out
 
 
@@ -114,12 +114,24 @@ def in_clone() -> bool:
     return (root / "pyproject.toml").is_file() and (root / "src" / "sports_video_coach").is_dir()
 
 
+def pinned() -> str:
+    """`git+<repo>@<commit>`: the commit this tool was installed from (uv records it in direct_url.json), else
+    INSTALL_REF, so a plugin's tests run against the core it was written with, not whatever master is now."""
+    from importlib import metadata
+    commit = ""
+    try:
+        commit = json.loads(metadata.distribution("sports-video-coach").read_text("direct_url.json") or "{}")             .get("vcs_info", {}).get("commit_id", "")
+    except (metadata.PackageNotFoundError, ValueError, AttributeError):
+        pass
+    return f"git+{REPO_URL}@{commit if re.fullmatch(r'[0-9a-f]{40}', commit or '') else INSTALL_REF}"
+
+
 def test_command(out: Path) -> str:
     """How to run a scaffolded plugin's tests: `uv run pytest` in a clone; a tool install has no pytest and no
     project, so a throwaway env with both."""
     if in_clone():
         return f"uv run pytest {out.as_posix()}"
-    return f"uv run --isolated --no-project --with pytest --with sports-video-coach@{REPO} pytest {out.as_posix()}"
+    return f"uv run --isolated --no-project --with pytest --with sports-video-coach@{pinned()} pytest {out.as_posix()}"
 
 
 def main(argv=None):
@@ -137,8 +149,12 @@ def main(argv=None):
     print(f"wrote {out.as_posix()}")
     print(f"sport:  {a.sport or a.name}" + ("" if a.sport else f"  (the plugin name; for another: --sport <sport>, or "
           f"change SPORT in {(out / '__init__.py').as_posix()})"))
+    parent = out.parent.as_posix()
+    if out.parent.resolve() not in plugin.searched_dirs():  # --dir elsewhere (examples/plugins in a clone, say)
+        print(f"first:  export SVC_PLUGIN_PATH={parent}   (PowerShell: $env:SVC_PLUGIN_PATH = \"{parent}\"; "
+              f"plugins are not looked for in {parent} otherwise, so `plugins` and `run` would not find {a.name})")
     print(f"check:  sports-video-coach plugins      (lists {a.name}; from another folder: set SVC_WORKSPACE, or "
-          f"SVC_PLUGIN_PATH={out.parent.as_posix()})")
+          f"SVC_PLUGIN_PATH={parent})")
     print(f"use:    sports-video-coach run <video> --plugin {a.name}")
     print(f"test:   {test_command(out)}")
     print(f"next:   edit {(out / 'prompts').as_posix()}/review.md and report.md for {a.sport or a.name}"

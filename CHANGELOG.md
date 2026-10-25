@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- `new-plugin <name> --dir <folder>` into a folder plugins are not looked for in (`examples/plugins` in a clone, as a
+  pull request needs) now prints `first:  export SVC_PLUGIN_PATH=<folder>` before its `check:` line; it said
+  `plugins` would list the new plugin, and then `plugins` did not and `run` stopped with `unknown plugin`.
+- After `uv tool install`, the test command `new-plugin` prints (and the one in the scaffolded tests and
+  docs/plugins.md) pins the installed commit instead of the moving master, so a plugin's tests run against the
+  core it was written with. docs/plugins.md and CONTRIBUTING.md are now in the install-pin test.
 - docs/benchmark.md's pull request path and the benchmark page's "Submit your run" (both languages) say that a
   first PR's checks start only after a maintainer approves them (GitHub holds workflow runs from a first-time
   contributor's fork); the docs promised a score "within minutes", so a first

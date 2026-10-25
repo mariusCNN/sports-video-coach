@@ -223,10 +223,10 @@ The basketball plugin (`src/hoop_tape_miner/plugin.py`) uses every hook; read it
 
 `new-plugin` writes `<name>/tests/test_<name>.py` in the plugin folder and prints the command that runs it.
 After `uv tool install` the tool's environment has no pytest (and a plain `uv run pytest` may pick up an unrelated
-project), so it runs in a throwaway environment:
+project), so it runs in a throwaway environment on the commit you installed (the one below is the pinned install):
 
 ```bash
-uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach pytest workspace/plugins/tennis
+uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187 pytest workspace/plugins/tennis
 ```
 
 In a clone: `uv run pytest workspace/plugins/tennis` (or the folder you gave `--dir`); `uv sync --no-group basketball` is enough.
@@ -257,3 +257,4 @@ More:
 Publish it as its own repo or package with the GitHub topic `sports-video-coach-plugin`, or open a pull request
 here to add it under `examples/plugins/`, modelled on
 [`examples/plugins/swim-stroke-rate/`](../examples/plugins/swim-stroke-rate/). Never put real players' video, frames or names in a plugin repo or its tests.
+

@@ -14,7 +14,7 @@ from sports_video_coach import demo
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ["README.md", "README.zh.md", "AGENTS.md", "docs/benchmark.md", "docs/basketball.md", "docs/basketball.zh.md",
-        "skills/sports-video-coach/SKILL.md"]
+        "docs/plugins.md", "CONTRIBUTING.md", "skills/sports-video-coach/SKILL.md"]
 REPO = re.escape(svc.REPO_URL)
 
 
