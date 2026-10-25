@@ -285,6 +285,51 @@ def test_new_plugin_writes_to_the_workspace_and_prints_a_test_command_that_fits_
     assert (tmp_path / "mine" / "kayak" / "__init__.py").exists()
 
 
+def test_new_plugin_into_a_folder_that_is_not_searched_says_to_put_it_on_the_plugin_path(tmp_path, monkeypatch,
+                                                                                          capsys):
+    """`new-plugin x --dir examples/plugins` in a clone: `plugins` does not look there, so the output says so first."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
+    monkeypatch.delenv("SVC_PLUGIN_PATH", raising=False)
+    scaffold.main(["rowing", "--dir", "examples/plugins"])
+    out = capsys.readouterr().out
+    assert "first:  export SVC_PLUGIN_PATH=examples/plugins   (PowerShell: $env:SVC_PLUGIN_PATH = \"examples/plugins\"" in out
+    assert out.index("first:") < out.index("check:")
+    monkeypatch.setenv("SVC_PLUGIN_PATH", "examples/plugins")             # done as told: found, and no "first:" again
+    try:
+        assert "rowing" in plugin.plugins(refresh=True)
+        scaffold.main(["kayak", "--dir", "examples/plugins"])
+        assert "first:" not in capsys.readouterr().out
+    finally:
+        monkeypatch.undo()
+        plugin.plugins(refresh=True)
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
+    scaffold.main(["canoe"])                                                # the default place is searched
+    assert "first:" not in capsys.readouterr().out
+
+
+def test_the_tool_install_test_command_pins_the_installed_commit(tmp_path, monkeypatch):
+    """After `uv tool install git+...@<sha>` the plugin's tests run against that commit's core, not master."""
+    from importlib import metadata
+    import sports_video_coach as svc
+    sha = "0123456789abcdef0123456789abcdef01234567"
+
+    class Dist:
+        def read_text(self, name):
+            return json.dumps({"url": svc.REPO_URL, "vcs_info": {"vcs": "git", "commit_id": sha}})
+    monkeypatch.setattr(scaffold, "in_clone", lambda: False)
+    monkeypatch.setattr(metadata, "distribution", lambda name: Dist())
+    assert f"--with sports-video-coach@git+{svc.REPO_URL}@{sha} pytest" in scaffold.test_command(tmp_path / "x")
+    out = scaffold.scaffold("rowing", tmp_path / "plugins")
+    assert f"sports-video-coach@git+{svc.REPO_URL}@{sha} pytest" in (out / "tests" / "test_rowing.py").read_text(
+        encoding="utf8")
+
+    def missing(name):
+        raise metadata.PackageNotFoundError(name)
+    monkeypatch.setattr(metadata, "distribution", missing)                # no record (an editable install): the pin
+    assert f"@git+{svc.REPO_URL}@{svc.INSTALL_REF} pytest" in scaffold.test_command(tmp_path / "x")
+
+
 def test_scaffolded_plugin_tests_pass(tmp_path):
     out = scaffold.scaffold("swimming", tmp_path / "plugins")
     assert (out / "tests" / "test_swimming.py").exists()
