@@ -7,8 +7,8 @@
   version and the commit (a git checkout's HEAD, else the commit uv recorded at install); a checkout also adds its
   path (`source`) and whether src/ has uncommitted changes (`dirty`). A run exits 1 unless `--allow-older-code` when
   its commit is an ancestor of the stamped one (older), when the two diverged or the stamped commit is not in this
-  checkout, or when uncommitted code wrote the folder and this run is another checkout or another HEAD (newer
-  commits do not hold those changes). Unknown commits on either side, or two commits an installed tool (no git)
+  checkout, or when uncommitted code wrote the folder and this run is another checkout (newer commits do not hold
+  those changes) or that checkout at a HEAD that is not a descendant (it committed and moved on: newer). Unknown commits on either side, or two commits an installed tool (no git)
   cannot order: a warning, no stop.
 """
 from __future__ import annotations
@@ -85,10 +85,13 @@ def compare(stamp: dict | None, now: dict, root: Path | None = None) -> tuple[st
         return "same", ""
     if not old or not new:
         return "unknown", "a commit is not known"
-    if stamp.get("dirty"):   # uncommitted changes live only in that checkout, at that HEAD
-        if stamp.get("source") != now.get("source") or old != new:
-            return "differs", f"the folder was last written by uncommitted code in {stamp.get('source') or '?'}"
-        return "same", ""
+    if stamp.get("dirty"):   # uncommitted changes live only in that checkout, until it commits them
+        if stamp.get("source") == now.get("source"):
+            if old == new:
+                return "same", ""
+            if root is not None and ancestor(root, old, new):
+                return "newer", ""   # that checkout committed and moved on
+        return "differs", f"the folder was last written by uncommitted code in {stamp.get('source') or '?'}"
     if old == new:
         return "same", ""
     if root is None:
@@ -96,11 +99,16 @@ def compare(stamp: dict | None, now: dict, root: Path | None = None) -> tuple[st
     r = git(root, "cat-file", "-e", f"{old}^{{commit}}")
     if not r or r.returncode:
         return "differs", f"commit {old[:12]} is not in this checkout (git fetch, then run again)"
-    if getattr(git(root, "merge-base", "--is-ancestor", new, old), "returncode", 1) == 0:
+    if ancestor(root, new, old):
         return "older", f"{new[:12]} is an ancestor of {old[:12]}"
-    if getattr(git(root, "merge-base", "--is-ancestor", old, new), "returncode", 1) == 0:
+    if ancestor(root, old, new):
         return "newer", ""
     return "differs", "the two commits are on different branches"
+
+
+def ancestor(root: Path, a: str, b: str) -> bool:
+    """Whether commit `a` is an ancestor of commit `b` in the checkout at `root`."""
+    return getattr(git(root, "merge-base", "--is-ancestor", a, b), "returncode", 1) == 0
 
 
 def check(folder: Path, stamp: dict | None, now: dict, allow: bool, hint: str, root: Path | None = None) -> None:

@@ -10,8 +10,8 @@ All notable changes to this project are documented here. The format follows [Kee
   `<folder>/.run-lock.json` while it writes (a second run exits 1 naming the holder; a dead run's lock is taken
   over with a warning), stamps the code version in `.hoop-steps.json` (commit, and for a checkout its path and
   whether `src/` had uncommitted changes), and exits 1 with both versions when its commit is older than the
-  stamp, diverged from it, or missing from the checkout, or when uncommitted code in another checkout (or at
-  another HEAD) wrote the folder; `--allow-older-code` rewrites anyway. An installed tool that cannot order two
+  stamp, diverged from it, or missing from the checkout, or when uncommitted code in another checkout (or in
+  this one at an older or diverged HEAD) wrote the folder; `--allow-older-code` rewrites anyway. An installed tool that cannot order two
   commits only warns.
 - The pull request `bench-report` job fails, with one `::error::` line, when it cannot list the changed result
   files (`git diff HEAD^1 HEAD` failing, as in a depth-1 checkout); before, it reported "no result file changed"

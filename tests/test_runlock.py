@@ -164,14 +164,38 @@ def dirty(sha, source):
     return {**code(sha), "source": source, "dirty": True}
 
 
-def test_uncommitted_code_holds_the_folder_against_other_checkouts_and_heads(repo):
+def test_uncommitted_code_holds_the_folder_against_other_checkouts(repo):
     root = repo["root"]
     stamp = dirty(repo["base"], "/checkouts/main")
     assert runlock.compare(stamp, {**code(repo["newer"]), "source": "/checkouts/sprint"}, root) == (
         "differs", "the folder was last written by uncommitted code in /checkouts/main")
-    assert runlock.compare(stamp, {**code(repo["newer"]), "source": "/checkouts/main"}, root)[0] == "differs"
     assert runlock.compare(stamp, dirty(repo["base"], "/checkouts/main"), root)[0] == "same"   # still editing
     assert runlock.compare(stamp, {**code(repo["base"]), "source": "/checkouts/main"}, root)[0] == "same"
+
+
+def test_the_same_checkout_committing_its_work_is_newer(repo):
+    """Dirty at A in checkout X, then X commits and runs at descendant B: go on. An older or diverged HEAD in X
+    still blocks."""
+    root, stamp = repo["root"], dirty(repo["base"], "/checkouts/main")
+    assert runlock.compare(stamp, {**code(repo["newer"]), "source": "/checkouts/main"}, root) == ("newer", "")
+    assert runlock.compare(stamp, {**code(repo["side"]), "source": "/checkouts/main"}, root)[0] == "newer"
+    assert runlock.compare(dirty(repo["newer"], "/checkouts/main"),
+                           {**code(repo["base"]), "source": "/checkouts/main"}, root)[0] == "differs"   # older
+    assert runlock.compare(dirty(repo["side"], "/checkouts/main"),
+                           {**code(repo["newer"]), "source": "/checkouts/main"}, root)[0] == "differs"  # diverged
+    assert runlock.compare(stamp, {**code(repo["newer"]), "source": "/checkouts/main"}, None)[0] == "differs"
+
+
+def test_a_dirty_folder_goes_on_after_its_checkout_commits(unit, repo, monkeypatch):  # noqa: F811
+    store = P.Store(unit)
+    store.code = dirty(repo["base"], "/checkouts/main")
+    store.save()
+    monkeypatch.setattr(runlock, "code_version", lambda: {**code(repo["newer"]), "source": "/checkouts/main",
+                                                          "dirty": False})
+    monkeypatch.setattr(runlock, "checkout", lambda: repo["root"])
+    r = Runner(unit)
+    assert P.drive(Unit.load(unit), steps(), runner=r) == 0 and len(r.calls) == 4
+    assert P.Store(unit).code["commit"] == repo["newer"] and not P.Store(unit).code["dirty"]
 
 
 def test_the_incident_a_newer_commit_elsewhere_cannot_overwrite_uncommitted_work(unit, repo, monkeypatch):  # noqa: F811
