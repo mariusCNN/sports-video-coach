@@ -62,6 +62,7 @@ FRAMES = ("Frames-only track: the agent sees still images of each video (contact
 ABOVE = ("Above chance: per task, (score - floor) / (1 - floor), clipped to 0..1, where the floor is the score of "
          "the blind baseline (it copies the example answers from the task text and sees no video); 0 = no better "
          "than that guess, 1 = perfect.")
+HEADLINE_HOW = "Frames track: stills only, no code. Every run drew svc-bench-3 from a new, unseen seed."
 COSTS = ("Time = wall seconds the run took; cost = USD the agent itself reported (Claude Code does, Codex does "
          "not); '-' = not recorded.")
 SUMMARY = ("n = runs of that agent, model and settings; range = lowest to highest above-chance total over them "
@@ -190,6 +191,18 @@ ZH = {
     "Latest run {}": "最近一次运行 {}", "Frames-only board ({})": "静帧榜（{}）", "Code-track board": "代码赛道榜",
     "Rerun it in one command": "一条命令重跑", "Code on GitHub": "GitHub 上的代码", "On this page": "本页导航",
     "Before you trust this: {} things a skeptic asks first": "信之前先看：怀疑的人最先会问的 {} 件事",
+    "Headline: what reasoning effort changed": "主要结论：推理 effort 改变了什么",
+    HEADLINE_HOW: "静帧赛道：只看静帧，不能跑代码。每次运行都用一个新的、没见过的种子重新画 svc-bench-3。",
+    "default": "默认", "{}: no answer, timed out, scored 0 (n={})": "{}：没有回答，超时，记 0 分（n={}）",
+    "{}: no answer, scored 0 (n={})": "{}：没有回答，记 0 分（n={}）",
+    "{} runs, {} of {} settings ran once{}.": "共 {0} 次运行，{2} 个设置里有 {1} 个只跑了一次{3}。",
+    ", all by {}, who wrote the tool": "，全部由写这个工具的 {} 自己跑",
+    "Score = above chance:": "分数 = 超出盲猜：",
+    "0 = no better than a blind guess that sees no video, 1 = perfect.": "0 = 不比不看视频的盲猜强，1 = 满分。",
+    "Chart and every run": "图表和每次运行",
+    "Rerun it on your agent": "用你的 agent 重跑",
+    "(change --model for another model; leave out --effort for the default)":
+        "（换模型就改 --model；用默认 effort 就去掉 --effort）",
     # count it yourself
     count_it.QUESTION: "两名球员各用一只脚颠一模一样的黄色小球，侧面视角：左边是红色球员，右边是橙红色球员。数左边（红色）"
                        "球员的触球次数：他的脚每碰到自己的球一次算一次。快速连续两触（球从脚上稍微弹起，马上又被碰到）算两"
@@ -295,6 +308,12 @@ td.sub { color: var(--muted); font-size: .85rem; }
 .cards section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; }
 .cards p { margin: .2rem 0; font-size: .92rem; }
 .cards .rule { color: var(--muted); }
+.headline { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .2rem 1rem .4rem;
+             margin: 0 0 1rem; }
+.headline h2 { margin: .7rem 0 .2rem; }
+.headline p { margin: .4rem 0; }
+.headline li { margin: .3rem 0; }
+.headline .sub { color: var(--muted); font-size: .9rem; }
 ol.steps { padding-left: 1.3rem; }
 ol.steps li { margin-bottom: .8rem; }
 pre { background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: .7rem 1rem;
@@ -837,6 +856,47 @@ def effort_block(rows: list[dict], drawn=(), lang: str = "en") -> str:
             f'<p class="sub" style="font-size:.85rem;color:var(--muted)">{esc(t(effort_chart.BOUND, lang))}</p>')
 
 
+HEADLINE_RUN = ("sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --effort high --seed "
+                "--suite svc-bench-3 --track frames")
+
+
+def headline(rows: list[dict], lang: str = "en") -> str:
+    """The first-screen box: what effort changed on the fresh-seed frames board (`bench.effort` data, one line per
+    contender), what "above chance" means, who ran it, and the install and rerun commands ('' when no contender ran
+    at two effort settings)."""
+    data = effort_chart.effort_data(rows)
+    if not data["groups"]:
+        return ""
+    bars = [b for g in data["groups"] for b in g["bars"]]
+    by = {r["_file"]: r for r in rows}
+    files = [f for b in bars for f in b["files"]]
+    owner = all(str(by[f].get("submitted_by") or "").lower() == OWNER.lower() for f in files)
+
+    def said(b: dict) -> str:   # "high 0.919 (n=3, 0.856–0.994)"
+        e = t("default", lang) if b["effort"] == effort_chart.DEFAULT else b["effort"]
+        if b["n"] == b["no_answer"]:
+            why = "{}: no answer, timed out, scored 0 (n={})" if b["timed_out"] == b["n"] else \
+                "{}: no answer, scored 0 (n={})"
+            return t(why, lang).format(e, b["n"])
+        rng = f", {b['lo']:.3f}–{b['hi']:.3f}" if b["n"] > 1 else ""
+        return f"{e} <strong>{b['above']:.3f}</strong> (n={b['n']}{rng})"
+    items = "".join(f'<li><strong>{esc(g["label"])}</strong> <span class="sub">{esc(g["agent"])}</span><br>'
+                    + " · ".join(said(b) for b in g["bars"]) + "</li>" for g in data["groups"])
+    who = t("{} runs, {} of {} settings ran once{}.", lang).format(
+        len(files), sum(1 for b in bars if b["n"] == 1), len(bars),
+        t(", all by {}, who wrote the tool", lang).format(esc(OWNER)) if owner else "")
+    how = esc(t(HEADLINE_HOW, lang))
+    score = esc(t("0 = no better than a blind guess that sees no video, 1 = perfect.", lang))
+    vary = t("(change --model for another model; leave out --effort for the default)", lang)
+    return (f'<section class="headline" id="headline"><h2>{t("Headline: what reasoning effort changed", lang)}</h2>'
+            f'<p class="sub">{how}</p><ul class="plain">{items}</ul>'
+            f'<p class="sub"><strong>{t("Score = above chance:", lang)}</strong> {score}</p>'
+            f'<p class="sub">{who} <a href="#{effort_chart.ANCHOR}">{t("Chart and every run", lang)}</a></p>'
+            f'<p><strong>{t("Rerun it on your agent", lang)}</strong> <span class="sub">{esc(vary)}</span></p>'
+            f'<pre><code>{esc(INSTALL)}\n{esc(HEADLINE_RUN)}</code></pre>'
+            f'<p><a href="{REPO_URL}">{t("Code on GitHub", lang)}</a></p></section>')
+
+
 def frames_board(rows: list[dict], lang: str = "en", effort=()) -> str:
     """The frames-only track's section: its own tables (the fresh-seed board with "What effort changed", the chart
     shown for the languages in `effort`), or a line saying it has no runs yet."""
@@ -1326,6 +1386,7 @@ def render(rows: list[dict], notes: list[str], card=(), clip: bool = False, lang
 <p class="name"><a href="../">sports-video-coach</a> {switch("en")}</p>
 <h1>{TITLE}</h1>
 <p class="lead">{esc(WHAT)}</p>
+{headline(rows)}
 <p class="lead">{esc(PART_OF)} <a href="{DEMO_URL}">See a demo coaching page</a>.</p>
 <p class="lead"><a href="findings/">The findings in short</a>: what effort changed, the blind floor, local models, cost.</p>
 <ul class="chips"><li>Suites {", ".join(n for n, _ in SUITES)}</li><li>{runs} run{"s" * (runs != 1)}</li>
@@ -1410,6 +1471,7 @@ def render_zh(rows: list[dict], notes: list[str], card=(), clip: bool = False, c
 <p class="name"><a href="../../">sports-video-coach</a> {switch(lang)}</p>
 <h1>{title}</h1>
 <p class="lead">{esc(t(WHAT, lang))}</p>
+{headline(rows, lang)}
 <p class="lead">{esc(t(PART_OF, lang))} <a href="{DEMO_URL}">看一个示例教练复盘页</a>。</p>
 <p class="lead"><a href="findings/">结论速读</a>：effort 改变了什么、盲猜基线、本地模型、费用。</p>
 <ul class="chips"><li>套件 {", ".join(n for n, _ in SUITES)}</li><li>{runs} 次运行</li>

@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- The benchmark page (`bench page`, both languages) opens with a "Headline: what reasoning effort changed" box
+  right under the title: each contender's above-chance score per effort on the fresh-seed frames board (n and
+  range), what "above chance" means, who ran it, and the install plus the one rerun command. Cold readers sent
+  from a post found no headline number on the first screen, met the code-track board (different numbers) first,
+  and found the rerun command on the seventh phone screen and the install at the bottom.
 - The team report and player deep dive guides cap the small-print `::: note` block at two short sentences
   (<= 220 characters; Chinese <= 110) and send the rest to a `::: more` fold after it: an uncapped data note
   grew into a six-sentence paragraph on the first screen.

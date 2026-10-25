@@ -177,3 +177,33 @@ def test_every_new_text_has_a_translation():
     for en in (effort.TITLE, effort.SUB, effort.FLOOR, effort.LEAD, effort.BOUND, effort.ALT,
                "No contender ran at two effort settings yet."):
         assert page.ZH[en]
+
+
+def test_headline_box_states_scores_what_they_mean_and_the_rerun(fake_above):
+    rows = runs_of(("claude-m-1-0", "default effort", 0.4, 10, True), ("claude-m-1-0", "default effort", 0.5, 30, True),
+                   ("claude-m-1-0", "effort max", 0.0, 1200.5, False), ("claude-m-1-0", "effort low", 0.7, 50, True))
+    for r in rows:
+        r["submitted_by"] = page.OWNER
+    box = page.headline(rows)
+    assert "M 1.0" in box and "default <strong>0.450</strong> (n=2, 0.400–0.500)" in box
+    assert "low <strong>0.700</strong> (n=1)" in box and "max: no answer, timed out, scored 0 (n=1)" in box
+    assert "1 = perfect" in box and "4 runs, 2 of 3 settings ran once, all by mariusDing" in box
+    assert page.INSTALL in box and page.HEADLINE_RUN in box and f'href="{page.REPO_URL}"' in box
+    assert '<a href="#effort">' in box
+    zh = page.headline(rows, "zh")
+    assert "默认 <strong>0.450</strong>" in zh and "max：没有回答，超时，记 0 分（n=1）" in zh
+    assert "共 4 次运行，3 个设置里有 2 个只跑了一次，全部由" in zh and page.HEADLINE_RUN in zh
+    rows[0]["submitted_by"] = "someone"
+    assert "all by" not in page.headline(rows)                          # only when every run is the author's
+    assert page.headline(runs_of(("claude-m-1-0", "default effort", 0.4, 10, True))) == ""   # one setting: no box
+
+
+def test_headline_box_is_on_the_first_screen_before_any_board(tmp_path):
+    out = build(tmp_path)
+    for doc in ((out / "index.html"), (out / "zh" / "index.html")):
+        html = doc.read_text(encoding="utf8")
+        at = html.index('<section class="headline" id="headline">')
+        assert html.index("<h1>") < at < html.index('<nav class="jump"') < html.index('id="frames"')
+        assert html.index('<p class="lead">') < at                         # right under the one-line "what is this"
+    assert page_check.problems(out) == [] and page_check.problems(out / "zh") == []
+

@@ -360,3 +360,13 @@ def test_frames_track_runs_claude_with_read_only_and_the_published_prompt(tmp_pa
     assert bench.main(["run", "--track", "frames", "--suite", "svc-bench-3", "--agent", "claude",
                        "--out", str(tmp_path / "dry"), "--dry-run"]) == 0
     assert "--tools Read" in capsys.readouterr().out
+
+
+def test_the_benchmark_page_rerun_command_runs(tmp_path, fake, capsys):
+    from sports_video_coach.bench import page
+    words = page.HEADLINE_RUN.split()
+    assert words[:3] == ["sports-video-coach", "bench", "run"]
+    out = tmp_path / "dry"
+    assert bench.main([*words[2:], "--out", str(out), "--dry-run"]) == 0
+    said = capsys.readouterr().out
+    assert "fresh seed" in said and "--model claude-sonnet-5-5 --effort high" in said and not out.exists()
