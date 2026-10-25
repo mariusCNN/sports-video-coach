@@ -508,13 +508,14 @@ OpenCode (below).
 The first preset run on a task: OpenCode 1.19.4 (npm `opencode-ai`, empty config, no login, no key) with
 `opencode/deepseek-v4.1-flash-free`, one of the 10 free OpenCode Zen models `opencode models` lists on a fresh
 install. A one-word prompt worked with no account. Code track, default 1200 s timeout. A board row must
-measure the contender, not our harness or a quota outage, so only one of the three runs is on the board:
+measure the contender, not our harness or a quota outage, so only one of the four runs is on the board:
 
 | Suite | Run | Total | Above chance | Wall | What happened | On the board | Transcript |
 |---|---|---|---|---|---|---|---|
 | `svc-bench-2` | before the fix | 0.000 | 0.000 | 1200 s (killed) | worked in the wrong folder at first (below); no answer written | no: our preset bug (wrong folder), not the model | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-2-wrong-folder.txt) |
 | `svc-bench-2` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | 87 tool calls; scripts on 4 of the 5 videos (not the shots); no answer written; free limit hit about 1130 s in | yes: the model worked 1130 s of the 1200 s limit | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-2.txt) |
 | `svc-bench-3` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | free limit already reached: first request failed, then no output and no exit | no: free quota used up, the model never replied | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-3.txt) |
+| `svc-bench-3` | rerun, 2 h later | 0.000 | 0.000 | 10.7 s (stopped at the limit) | a one-line probe got a reply just before and just after, but the run's first request got `Free usage limit reached`; `bench run` stopped it about a second later | no: free quota, the model never replied | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-3-limit-stop.txt) |
 
 - **Preset fix.** OpenCode ignored the process's working folder and worked in the folder `bench run` was started
   from: its first `ls` listed the repo, then it searched the machine for `TASKS.md` until it found the run folder
@@ -530,9 +531,12 @@ measure the contender, not our harness or a quota outage, so only one of the thr
   exit, so the run waited for the timeout.
 - **Fixed: the run now stops at that error.** The preset adds `--print-logs --log-level ERROR`, so OpenCode's error
   lines reach stderr; `bench run` stops it within a second of `Free usage limit reached`, scores it as usual (0 with
-  no answers), quotes the line in the result's `settings` and says to rerun after the quota resets.
+  no answers), quotes the line in the result's `settings` and says to rerun after the quota resets. Checked live
+  on the rerun: the error line at 10 s, the run stopped about a second later (10.7 s wall), `run.json` holds
+  `usage_limit`. A one-line prompt still got a reply 73 s before and 25 s after it, so a short probe does not
+  tell whether a full run will get through; what the free limit counts is unclear.
 - OpenCode prints its tool calls to stderr; `transcript.txt` holds only its replies. The redacted transcripts
-  (stdout, stderr and the log errors) are in `benchmark/transcripts/` (the first run as an excerpt); the two runs
+  (stdout, stderr and the log errors) are in `benchmark/transcripts/` (the first run as an excerpt); the three runs
   not on the board keep their transcripts there as evidence, with no result file in `benchmark/results/`.
 
 Any other CLI, with its own non-interactive, auto-approve flags:
