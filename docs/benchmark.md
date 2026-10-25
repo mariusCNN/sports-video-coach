@@ -306,8 +306,9 @@ sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-
 
 Fresh-seed rows (frames track, 2026-10-25; Claude Code in the clean room at default effort unless the row names an
 effort set with `bench run --effort`, Codex with the runner's own config at reasoning effort xhigh; each run drew
-its own random seed with `bench run --seed`; two runs each for Opus and Sonnet at default effort and for
-Sonnet at effort max, one each for Haiku, Codex and the other `--effort` settings, each run on its own seed):
+its own random seed with `bench run --seed`; three runs for Sonnet at effort high, two each for Opus and Sonnet at
+default effort and for Sonnet at effort max, one each for Haiku (default and effort high), Codex and Opus at effort
+low, each run on its own seed):
 
 | Agent | Model | Total | Above chance | Juggle | Shots | Passes | Rate | Wall | Cost |
 |---|---|---|---|---|---|---|---|---|---|
@@ -318,9 +319,12 @@ Sonnet at effort max, one each for Haiku, Codex and the other `--effort` setting
 | Claude Code 2.1.310 | claude-haiku-5-5 (seed 166697672) | 0.440 | 0.198 | 0.500 | 0.455 | 0.250 | 0.556 | 96 s | $0.06 |
 | Codex 0.159.3 | gpt-6-astra, xhigh (seed 911623366) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 514 s | not reported |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 208632171) | 0.995 | 0.994 | 0.980 | 1.000 | 1.000 | 1.000 | 256 s | $0.94 |
+| Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 288038083) | 0.917 | 0.906 | 0.667 | 1.000 | 1.000 | 1.000 | 257 s | $0.99 |
+| Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 633675701) | 0.875 | 0.856 | 0.500 | 1.000 | 1.000 | 0.998 | 184 s | $0.73 |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort max (seed 280902796) | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 1200 s (killed at the timeout) | not reported |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort max (seed 604284533) | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 2401 s (killed at the timeout) | not reported |
 | Claude Code 2.1.310 | claude-opus-5-5, effort low (seed 959964891) | 0.879 | 0.778 | 0.976 | 0.538 | 1.000 | 1.000 | 70 s | $0.45 |
+| Claude Code 2.1.310 | claude-haiku-5-5, effort high (seed 778572209) | 0.698 | 0.564 | 0.864 | 0.385 | 1.000 | 0.543 | 369 s | $0.32 |
 
 - **Opus nearly holds its published score on a seed drawn at run time.** It counted 44 touches against 45 (it
   said itself the count "could be off by one or two"), called all 11 shots, found the 11 releases within 0.05 s
@@ -355,12 +359,17 @@ Sonnet at effort max, one each for Haiku, Codex and the other `--effort` setting
   0.125 / 0.273 / 0.153 / 0.639, seed 911623366 0.106 / 0.308 / 0.153 / 0.112 (published: 0.106 / 0.500 /
   0.167 / 0.551).
 
-**What effort changed** (`bench run --effort`; one run per setting, two for Sonnet at max, each on its own seed, so
-this is not a variance estimate):
+**What effort changed** (`bench run --effort`; three runs for Sonnet at high, two for Sonnet at max, one for each
+other setting, each on its own seed, so this is not a variance estimate):
 
-- **Sonnet at effort high looked and scored like Opus.** It opened 54 of 72 sheets and 32 full-size frames in 87
-  Reads and scored 0.995 (0.994 above chance) in 256 s for $0.94, against 0.413 and 0.426 above chance, 4 sheets,
-  16-19 s and $0.06-0.07 at its default effort.
+- **Sonnet at effort high came close to Opus in three runs, but not on the juggling.** Above chance it scored
+  0.994, 0.906 and 0.856 (mean 0.919, a spread of 0.138), against 0.413 and 0.426 at its default effort and 0.994
+  and 1.000 for Opus at its default. Each run opened most of the sheets (54 of 72, 65 of 72 and 58 of 73, in 87, 82
+  and 65 Reads) and took 184-257 s for $0.73-0.99, against 4 sheets, 16-19 s and $0.06-0.07 at its default.
+- **The shots, passes and stroke rate held in all three; the juggling only in the first.** All three runs called
+  every shot (13 of 13 each), put every release within 0.5 s and the stroke rate within 2 %. The touch counts were
+  50 against 49, 56 against 42 and 60 against 40: the second and third runs said their count came from a touch
+  rate, not one by one (the third skipped 8 of the juggling sheets and extrapolated).
 - **Sonnet at effort max ran out of time.** It traced the juggling frame by frame (56 of 72 sheets, 570 full-size
   frames, 628 Reads), was on the third task when the 1200 s timeout killed it, and never wrote its answer block,
   so every task scores 0.000. Its last status message listed the 13 shot outcomes as they are in the truth, but an
@@ -374,9 +383,16 @@ this is not a variance estimate):
   the juggling off by 1, all 12 releases and the stroke rate right, but 7 of 13 shots (0.538, that seed's blind
   floor is 0.462), so 0.879 (0.778 above chance) in 70 s for $0.45, against 0.994 and 1.000 above chance,
   317-378 s and $2.32-2.77 at its default.
+- **Haiku at effort high (one run) looked much longer and gained on two tasks.** 55 of 72 sheets and 74
+  full-size frames in 131 Reads, 369 s for $0.32, against 60 of 67 sheets, 96 s and $0.06 at its default. All 12
+  releases within 0.5 s and the juggling off by 6 (50 against 44), but it read 4 of the 13 shots and guessed the
+  rest (5 right, 0.385, below that seed's blind floor of 0.462) and took the stroke rate from three catches at
+  15-18 s, assumed steady (40 against 36.29, 10.2 % off): 0.698 (0.564 above chance), against 0.198 above chance
+  at its default.
 - Blind floors of these seeds (juggle / shots / passes / rate): seed 208632171 0.102 / 0.538 / 0.182 / 0.695,
-  seed 280902796 0.102 / 0.615 / 0.141 / 0.413, seed 604284533 0.104 / 0.417 / 0.153 / 0.313, seed 959964891
-  0.122 / 0.462 / 0.167 / 0.738.
+  seed 288038083 0.119 / 0.538 / 0.144 / 0.074, seed 633675701 0.125 / 0.462 / 0.164 / 0.438, seed 280902796
+  0.102 / 0.615 / 0.141 / 0.413, seed 604284533 0.104 / 0.417 / 0.153 / 0.313, seed 959964891 0.122 / 0.462 /
+  0.167 / 0.738, seed 778572209 0.114 / 0.462 / 0.167 / 0.225.
 
 ## Rules
 

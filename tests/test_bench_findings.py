@@ -48,8 +48,9 @@ def test_numbers_equal_the_page_functions(rows):
     assert d["effort"]["data"] == effort_chart.effort_data(rows)
     b = d["effort"]["best"]
     assert f'from {n3(b["lo"]["above"])} (' in html and f'to {n3(b["hi"]["above"])} (' in html
-    assert f'n={b["lo"]["n"]})' in html and f'n={b["hi"]["n"]})' in html
-    strong = b["gap"] >= F.BIG and min(b["lo"]["n"], b["hi"]["n"]) >= 2
+    for x in (b["lo"], b["hi"]):   # each side's n, and its range when it ran more than once
+        assert (f'n={x["n"]}, range {n3(x["lo"])}–{n3(x["hi"])})' if x["n"] > 1 else f'n={x["n"]})') in html
+    strong = b["gap"] >= F.BIG and min(b["lo"]["n"], b["hi"]["n"]) >= 2 and b["hi"]["lo"] > b["lo"]["hi"]
     assert ("Yes, a lot." in html) == strong
 
     # floor: each suite's blind guess is the board's floor row; fresh floors are seed_floor's mean
@@ -180,16 +181,21 @@ def test_no_results_say_no_findings_yet(tmp_path):
 
 
 def test_effort_answer_word_follows_the_run_counts():
-    def bar(effort, above, n):
-        return {"effort": effort, "above": above, "n": n, "no_answer": 0, "timed_out": False, "secs": 10.0,
-                "files": []}
-    def html(lo_n, hi_n, gap=0.5):
-        best = {"label": "M", "lo": bar("low", 0.4, lo_n), "hi": bar("high", 0.4 + gap, hi_n), "gap": gap,
-                "silent": []}
+    def bar(effort, above, n, spread=0.0):
+        return {"effort": effort, "above": above, "n": n, "lo": above - spread, "hi": above + spread, "no_answer": 0,
+                "timed_out": False, "secs": 10.0, "files": []}
+    def html(lo_n, hi_n, gap=0.5, spread=0.01):
+        best = {"label": "M", "lo": bar("low", 0.4, lo_n, spread), "hi": bar("high", 0.4 + gap, hi_n, spread),
+                "gap": gap, "silent": []}
         f = {"data": {"groups": [{"label": "M", "agent": "A", "bars": [best["lo"], best["hi"]]}]}, "best": best,
              "runs": lo_n + hi_n, "singles": 0, "settings": 2}
         return text(F.effort_section(f, {}, "en"))
-    assert "Yes, a lot." in html(2, 3)
-    one = html(2, 1)   # one side is a single run: no strong word, and n is stated
-    assert "Yes, a lot." not in one and "Likely, on few runs." in one and "n=1)" in one and "n=2)" in one
+    many = html(2, 3)   # n and the range of each side are stated
+    assert "Yes, a lot." in many and "(effort low, n=2, range 0.390–0.410)" in many
+    assert "(effort high, n=3, range 0.890–0.910)" in many
+    one = html(2, 1)   # one side is a single run: no strong word, n is stated, no range for the single run
+    assert "Yes, a lot." not in one and "Likely, on few runs." in one and "(effort high, n=1)" in one
+    assert "(effort low, n=2, range" in one
+    # ranges that overlap: no strong word either, however wide the gap between the means
+    assert "Yes, a lot." not in html(2, 3, gap=0.3, spread=0.2) and "Likely, on few runs." in html(2, 3, 0.3, 0.2)
     assert "A little." in html(1, 1, gap=0.1)

@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "seed": 778572209,
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-25",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-haiku-5-5",
+    "settings": "frames track; claude -p --restricted --safe-mode --tools Read; effort high"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 44,
+      "answer": 50,
+      "score": 0.864,
+      "note": "off by 6"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "missed",
+        "missed",
+        "made",
+        "missed"
+      ],
+      "answer": [
+        "missed",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "missed",
+        "made",
+        "missed",
+        "made",
+        "missed",
+        "missed",
+        "made"
+      ],
+      "score": 0.385,
+      "note": "5 of 13 right, 13 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        1.88,
+        2.68,
+        3.76,
+        5.56,
+        7.28,
+        9.76,
+        10.96,
+        12.8,
+        14.12,
+        16.04,
+        16.72,
+        18.8
+      ],
+      "answer": [
+        1.96,
+        2.74,
+        3.88,
+        5.63,
+        7.32,
+        9.85,
+        11.08,
+        12.85,
+        14.18,
+        16.03,
+        16.77,
+        18.83
+      ],
+      "score": 1.0,
+      "note": "12 of 12 within 0.5 s, 12 answered"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 36.29,
+      "answer": 40.0,
+      "score": 0.543,
+      "note": "10.2% off"
+    }
+  ],
+  "total": 0.698,
+  "wall_seconds": 369,
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-25-claude-code-claude-haiku-5-5-svc-bench-3-frames-seed778572209.jsonl.gz",
+  "cost_usd": 0.3229
+}

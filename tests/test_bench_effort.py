@@ -51,18 +51,22 @@ def test_chart_data_equals_the_result_files():
             vals = [page.above_value(next(r for r in rows if r["_file"] == f), None) for f in b["files"]]
             assert (b["lo"], b["hi"]) == (round(min(vals), 3), round(max(vals), 3))
     charted = {g["model"] for g in data["groups"]}
-    assert {"claude-sonnet-5-5", "claude-opus-5-5"} <= charted
-    assert "claude-haiku-5-5" not in charted          # one effort setting only: nothing to compare
+    assert {"claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5"} <= charted
+    assert "gpt-6-astra" not in charted               # one effort setting only: nothing to compare
     # the runs the posts quote (a later run adds to a bar, so only bars no new run is expected in are pinned)
     sd = bar(data, "claude-sonnet-5-5", effort.DEFAULT)
     assert (sd["n"], sd["lo"], sd["hi"]) == (2, 0.413, 0.426)
-    assert bar(data, "claude-sonnet-5-5", "high")["above"] == 0.994
+    sh = bar(data, "claude-sonnet-5-5", "high")
+    assert (sh["n"], sh["above"], sh["lo"], sh["hi"]) == (3, 0.919, 0.856, 0.994)
+    hh = bar(data, "claude-haiku-5-5", "high")
+    assert (hh["n"], hh["above"]) == (1, 0.564)
     assert bar(data, "claude-opus-5-5", "low")["above"] == 0.778
     od = bar(data, "claude-opus-5-5", effort.DEFAULT)
     assert (od["n"], od["lo"], od["hi"]) == (2, 0.994, 1.0)
     mx = bar(data, "claude-sonnet-5-5", "max")
     assert mx["timed_out"] >= 1 and mx["lo"] == 0.0
-    assert [b["effort"] for b in data["groups"][1]["bars"]][:2] == [effort.DEFAULT, "high"]   # default first
+    sonnet = next(g for g in data["groups"] if g["model"] == "claude-sonnet-5-5")
+    assert [b["effort"] for b in sonnet["bars"]][:2] == [effort.DEFAULT, "high"]   # default first
 
 
 def runs_of(*specs) -> list[dict]:
@@ -144,7 +148,7 @@ def test_page_shows_the_chart_in_both_languages(tmp_path):
     assert '<h4 id="effort">What effort changed</h4>' in en and 'src="effort.png"' in en
     assert '<a href="#effort">What effort changed</a>' in en
     assert "default effort: 0.419 mean, range 0.413–0.426 (2 runs" in en and "not a variance estimate" in en
-    assert 'alt="Bar chart of mean score above chance by effort setting. Opus 5.5' in en
+    assert 'alt="Bar chart of mean score above chance by effort setting. Haiku 5.5' in en
     # the section sits on the fresh-seed frames board, under its description
     assert en.index('id="frames-svc-bench-3-fresh"') < en.index('id="effort"')
     assert '<h4 id="effort">effort 改变了什么</h4>' in zh and "不是方差估计" in zh

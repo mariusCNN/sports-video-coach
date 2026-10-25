@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "suite": "svc-bench-3",
+  "track": "frames",
+  "seed": 288038083,
+  "tool_version": "0.3.1.dev0",
+  "date": "2026-10-25",
+  "contender": {
+    "agent": "Claude Code",
+    "agent_version": "2.1.310",
+    "model": "claude-sonnet-5-5",
+    "settings": "frames track; claude -p --restricted --safe-mode --tools Read; effort high"
+  },
+  "submitted_by": "mariusDing",
+  "tasks": [
+    {
+      "id": "juggle-touches",
+      "kind": "count",
+      "truth": 42,
+      "answer": 56,
+      "score": 0.667,
+      "note": "off by 14"
+    },
+    {
+      "id": "far-hoop-shots",
+      "kind": "outcomes",
+      "truth": [
+        "missed",
+        "made",
+        "made",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "made",
+        "missed",
+        "missed"
+      ],
+      "answer": [
+        "missed",
+        "made",
+        "made",
+        "made",
+        "made",
+        "missed",
+        "missed",
+        "missed",
+        "made",
+        "made",
+        "made",
+        "missed",
+        "missed"
+      ],
+      "score": 1.0,
+      "note": "13 of 13 right, 13 answered"
+    },
+    {
+      "id": "pass-releases",
+      "kind": "timestamps",
+      "truth": [
+        0.52,
+        2.4,
+        4.2,
+        6.12,
+        7.28,
+        9.04,
+        10.28,
+        12.0,
+        12.68,
+        14.52,
+        16.4,
+        18.36
+      ],
+      "answer": [
+        0.52,
+        2.44,
+        4.2,
+        6.14,
+        7.32,
+        9.1,
+        10.34,
+        12.0,
+        12.74,
+        14.48,
+        16.45,
+        18.36
+      ],
+      "score": 1.0,
+      "note": "12 of 12 within 0.5 s, 12 answered"
+    },
+    {
+      "id": "stroke-rate",
+      "kind": "rate",
+      "truth": 37.5,
+      "answer": 37.5,
+      "score": 1.0,
+      "note": "0.0% off"
+    }
+  ],
+  "total": 0.917,
+  "wall_seconds": 257.1,
+  "evidence": "https://github.com/mariusDing/sports-video-coach/blob/master/benchmark/transcripts/2026-10-25-claude-code-claude-sonnet-5-5-svc-bench-3-frames-seed288038083.jsonl",
+  "cost_usd": 0.9898
+}

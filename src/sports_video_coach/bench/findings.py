@@ -87,8 +87,9 @@ ZH = {
                  "同样这些参赛者的数字不同：{} 在那里超出盲猜 {}，在这里是 {}。",
     # effort
     "Likely, on few runs.": "可能有，但运行次数少。",
-    " Changing only the effort moved {} from {} ({}, n={}) to {} ({}, n={}) above chance.":
-        "只改 effort，{} 的超出盲猜分就从 {}（{}，n={}）变到 {}（{}，n={}）。",
+    " Changing only the effort moved {} from {} ({}) to {} ({}) above chance.":
+        "只改 effort，{} 的超出盲猜分就从 {}（{}）变到 {}（{}）。",
+    "{}, n={}": "{}，n={}", "{}, n={}, range {}–{}": "{}，n={}，范围 {}–{}",
     "Does reasoning effort matter for video review?": "effort 对看录像有影响吗？",
     "Yes, a lot.": "有，而且很大。", "A little.": "有一点。",
     " At {} it gave no answer before the time limit.": "用 {} 时，它在时限前没有给出回答。",
@@ -395,13 +396,18 @@ def board_label(board: str, lang: str) -> str:
 def effort_section(f: dict, ev: dict, lang: str) -> str:
     b = f["best"]
     s = effort_chart.setting
-    # a strong word only when the gap is large and every compared bar has at least two runs
+    # a strong word only when the gap is large, every compared bar has at least two runs and their ranges do not
+    # overlap
     verdict = ("A little." if b["gap"] < BIG else "Yes, a lot." if min(b["lo"]["n"], b["hi"]["n"]) >= 2
-               else "Likely, on few runs.")
-    answer = t(verdict, lang) + t(
-        " Changing only the effort moved {} from {} ({}, n={}) to {} ({}, n={}) above chance.", lang).format(
-        esc(b["label"]), n3(b["lo"]["above"]), esc(s(b["lo"]["effort"], lang)), b["lo"]["n"], n3(b["hi"]["above"]),
-        esc(s(b["hi"]["effort"], lang)), b["hi"]["n"])
+               and b["hi"]["lo"] > b["lo"]["hi"] else "Likely, on few runs.")
+
+    def said(x: dict) -> str:   # "effort high, n=3, range 0.950–1.000" (the range only when n > 1)
+        if x["n"] > 1:
+            return t("{}, n={}, range {}–{}", lang).format(s(x["effort"], lang), x["n"], n3(x["lo"]), n3(x["hi"]))
+        return t("{}, n={}", lang).format(s(x["effort"], lang), x["n"])
+    answer = t(verdict, lang) + t(" Changing only the effort moved {} from {} ({}) to {} ({}) above chance.",
+                                  lang).format(esc(b["label"]), n3(b["lo"]["above"]), esc(said(b["lo"])),
+                                               n3(b["hi"]["above"]), esc(said(b["hi"])))
     for x in b["silent"]:
         answer += t(" At {} it gave no answer before the time limit.", lang).format(esc(s(x["effort"], lang)))
     rows = []

@@ -40,6 +40,10 @@ All notable changes to this project are documented here. The format follows [Kee
   recorded in the result's `settings`; fresh-seed frames rows for Sonnet 5.5 at effort high (0.995) and max
   (0.000, killed at the 1200 s timeout before it answered) and Opus 5.5 at effort low (0.879), with transcripts.
   A second Sonnet 5.5 max run on a new seed with `--timeout 2400` was also killed before it answered (0.000).
+  Two more Sonnet 5.5 effort high runs on new seeds (0.917 and 0.875 total; 0.906 and 0.856 above chance, so
+  three runs from 0.856 to 0.994) and one Haiku 5.5 effort high run (0.698, 0.564 above chance), with
+  transcripts. The findings page's effort answer now names each side's range next to its n, and keeps the
+  strong word for gaps whose ranges do not overlap.
 - `bench report <result.json...>`: a result file's score as Markdown (validates or why not; suite, track,
   contender, total, above chance, time, cost, rank on its table, and per task answer vs truth, score and what was
   missed), computed by the leaderboard page's code. A pull request that adds or changes a file in
