@@ -5,9 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
-- docs/benchmark.md's pull request path says that a first PR's checks start only after a maintainer approves them
-  (GitHub holds workflow runs from a first-time contributor's fork), and that we reply within a day; it promised a
-  score "within minutes", so a first outside submitter would have waited on checks that never started.
+- docs/benchmark.md's pull request path and the benchmark page's "Submit your run" (both languages) say that a
+  first PR's checks start only after a maintainer approves them (GitHub holds workflow runs from a first-time
+  contributor's fork), and that we reply within a day; the docs promised a score "within minutes", so a first
+  outside submitter would have waited on checks that never started.
 - Every install line (`INSTALL_REF`: README, AGENTS.md, SKILL.md, the docs and the benchmark page) now pins
   ac27030 instead of dcda37e: the old pin predated the OpenCode preset's `--dir` / `--print-logs` fixes and its
   stop at the free usage limit, so an OpenCode run from the pinned install worked in the wrong folder and could

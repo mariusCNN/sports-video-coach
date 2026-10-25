@@ -575,3 +575,15 @@ def test_dataset_numbers_on_the_published_results():
     assert f"{board['runs']} scored runs" in ld["description"] and board["runs"] > 0
     assert f"{sum(len(b['contenders']) for b in board['boards'])} contenders" in ld["description"]
     assert ld["dateModified"] == page.newest_date(rows) and 50 <= len(ld["description"]) <= 5000
+
+
+def test_submit_section_says_first_pr_checks_wait_for_approval(tmp_path):
+    # GitHub holds a first-time contributor's fork PR runs until a maintainer approves them
+    results = tmp_path / "results"
+    results.mkdir()
+    out, html = render(tmp_path, results)
+    zh = (out / "zh" / "index.html").read_text(encoding="utf8")
+    en_submit = html[html.index('<h2 id="submit">'):]
+    zh_submit = zh[zh.index('<h2 id="submit">'):]
+    assert "Your first PR's checks start after a maintainer approves them; we reply within a day." in en_submit
+    assert "你的第一个 PR 的检查要等维护者批准后才会运行；我们一天内回复。" in zh_submit
