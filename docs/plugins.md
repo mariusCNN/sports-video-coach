@@ -258,3 +258,24 @@ Publish it as its own repo or package with the GitHub topic `sports-video-coach-
 here to add it under `examples/plugins/`, modelled on
 [`examples/plugins/swim-stroke-rate/`](../examples/plugins/swim-stroke-rate/). Never put real players' video, frames or names in a plugin repo or its tests.
 
+For a pull request, write it there from the start, in a clone of your fork:
+
+```bash
+uv sync --no-group basketball
+uv run sports-video-coach new-plugin rowing --dir examples/plugins --summary "..." --use-when "..."
+export SVC_PLUGIN_PATH=examples/plugins          # PowerShell: $env:SVC_PLUGIN_PATH = "examples/plugins"
+uv run sports-video-coach plugins                # lists rowing
+```
+
+`./workspace/` (the default place) is gitignored, so a plugin left there never shows in `git status`.
+`examples/plugins/` is not searched unless it is on `SVC_PLUGIN_PATH`; `new-plugin` prints that line first.
+
+Ready for review when:
+
+- `README.md` in the plugin folder says what it measures, how, the output file, what was checked against a known
+  truth (the numbers) and what was not.
+- Its `tests/` measure a synthetic video (ffmpeg-drawn, no people) and assert the known truth, not just that a file
+  exists; CI has ffmpeg, so they run there.
+- `uv run sports-video-coach run <test video> --plugin <name>` runs your measurement and stops with exit 3 at the review.
+- `uv run pytest -q` passes (the whole suite collects `examples/plugins/`), and `CHANGELOG.md` has a line under
+  *Unreleased* / *Added*.

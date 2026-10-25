@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- CONTRIBUTING.md and docs/plugins.md "Share it" now give the pull request path for a plugin: `new-plugin <sport>
+  --dir examples/plugins` plus `SVC_PLUGIN_PATH`, since the default `workspace/plugins/` is gitignored, and a
+  ready-for-review checklist (README with measured vs truth, a test that asserts the truth on drawn video, the
+  `run` loop to exit 3, the full suite, a CHANGELOG line).
 - `new-plugin <name> --dir <folder>` into a folder plugins are not looked for in (`examples/plugins` in a clone, as a
   pull request needs) now prints `first:  export SVC_PLUGIN_PATH=<folder>` before its `check:` line; it said
   `plugins` would list the new plugin, and then `plugins` did not and `run` stopped with `unknown plugin`.

@@ -67,12 +67,15 @@ sports-video-coach demo indexnow             # POST to api.indexnow.org; 200 or 
 
 ## Adding a sport
 
-1. `uv run sports-video-coach new-plugin <sport>` and follow [docs/plugins.md](docs/plugins.md).
+1. `uv run sports-video-coach new-plugin <sport> --dir examples/plugins`, then
+   `export SVC_PLUGIN_PATH=examples/plugins` (PowerShell: `$env:SVC_PLUGIN_PATH = "examples/plugins"`) so
+   `plugins` and `run` find it, and follow [docs/plugins.md](docs/plugins.md). Without `--dir` it goes to
+   `workspace/plugins/`, which is gitignored.
 2. Start with the prompts (`prompts/review.md`, `prompts/report.md`): what a coach of that sport looks for, and the
    drills and targets they would give. Cite the coaching sources you used.
 3. Add measurement stages only when the review needs numbers the contact sheets cannot give.
 4. Tests on synthetic video (`ffmpeg -f lavfi -i testsrc=...`); no real players.
-5. Ship it in its own repo (topic `sports-video-coach-plugin`) or as a pull request adding `examples/plugins/<sport>/` (model: `examples/plugins/swim-stroke-rate/`).
+5. Ship it in its own repo (topic `sports-video-coach-plugin`) or as a pull request adding `examples/plugins/<sport>/` (model: `examples/plugins/swim-stroke-rate/`; the checklist is in [docs/plugins.md](docs/plugins.md#share-it)).
 
 ## Pull requests
 
