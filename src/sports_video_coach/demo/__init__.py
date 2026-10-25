@@ -121,8 +121,12 @@ def robots_txt() -> str:
     return f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n"
 
 
-def sitemap_xml() -> str:
-    urls = "".join(f"  <url><loc>{u}</loc></url>\n" for u in SITE_PAGES)
+def sitemap_xml(lastmod: dict[str, str] | None = None) -> str:
+    """The site's sitemap; `lastmod`: {page url: YYYY-MM-DD} for pages whose date is known (`bench page` passes the
+    newest result file's date for the benchmark pages, never the build time)."""
+    lastmod = lastmod or {}
+    urls = "".join(f"  <url><loc>{u}</loc>{f'<lastmod>{lastmod[u]}</lastmod>' if u in lastmod else ''}</url>\n"
+                   for u in SITE_PAGES)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
 

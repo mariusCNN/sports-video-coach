@@ -17,6 +17,7 @@ never invents a row: every number on it comes from a result file.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import html
 import json
 from pathlib import Path
@@ -1172,6 +1173,81 @@ def switch(lang: str) -> str:
     return '<a class="switch" href="../" hreflang="en" lang="en">English</a>'
 
 
+LICENSE_URL = "https://spdx.org/licenses/MIT.html"   # the repo's LICENSE
+DATASET_KEYWORDS = ("benchmark", "leaderboard", "sports video", "film review", "video understanding",
+                    "vision language model", "coding agent", "synthetic video", "ground truth")
+DATASET_TECHNIQUE = ("The tool draws each task video from numbers, so the ground truth is exact (no human labels, no "
+                     "judge model). An agent watches the videos and writes its answers; bench score compares them "
+                     "with the truth task by task, and bench validate re-scores every result file in CI.")
+DATASET_TECHNIQUE_ZH = ("视频是工具按数字画出来的，所以真实值是精确的（没有人工标注，也没有评审模型）。agent 看视频写下回答；"
+                        "bench score 逐题把回答和真实值比对，CI 里 bench validate 会重新给每个结果文件打分。")
+
+
+def newest_date(rows: list[dict]) -> str | None:
+    """The newest `date` (YYYY-MM-DD) over the result files, the blind baselines included; None when none has one."""
+    dates = []
+    for r in rows:
+        try:
+            dates.append(dt.date.fromisoformat(str(r.get("date") or "")).isoformat())
+        except ValueError:
+            continue
+    return max(dates, default=None)
+
+
+def dataset_description(rows: list[dict], lang: str = "en") -> str:
+    """The Dataset's description: what the files hold and how many, counted as leaderboard.json counts them."""
+    from . import export     # imports this module, so not at the top
+    board = export.leaderboard(rows)
+    contenders = sum(len(b["contenders"]) for b in board["boards"])
+    floors = sum(1 for r in rows if is_baseline(r))
+    suites = ", ".join(export.suite_order({str(r.get("suite") or SUITE) for r in rows}))
+    tracks = ", ".join(sorted({track_of(r) for r in rows}))
+    if lang == "zh":
+        return (f"体育视频复盘基准测试的结果文件：编程 agent 和视觉模型看工具按数字画出的合成训练视频，回答次数、比率、事件"
+                f"时间点和投篮结果，每题和真实值比对打分。{len(rows)} 个结果文件：{board['runs']} 次计分运行和 {floors} 个"
+                f"盲猜基线；{contenders} 个参赛者（agent、模型和设置，按套件和赛道分）分布在 {len(board['boards'])} 张"
+                f"榜上。套件：{suites}。赛道：{tracks}。每个文件有 agent 的回答、每题分数和总分；超出盲猜分以照抄题目示例"
+                "答案的盲猜为起点。")
+    return (f"Result files of a sports film review benchmark: coding agents and vision models watch synthetic drill "
+            f"videos the tool draws from numbers and answer counts, rates, event timestamps and made/missed outcomes, "
+            f"each scored against the exact truth. {len(rows)} result files: {board['runs']} scored runs and {floors} "
+            f"blind baselines; {contenders} contenders (agent, model and settings, counted per suite and track) on "
+            f"{len(board['boards'])} boards. Suites: {suites}. Tracks: {tracks}. Each file holds the agent's answers, "
+            "the per-task scores and the total; above chance is measured from a blind guess that copies the example "
+            "answers in the task text.")
+
+
+def dataset_ld(rows: list[dict], lang: str = "en") -> str:
+    """The schema.org Dataset block (Google Dataset Search) of the result files ('' without runs). Every number in
+    it comes from the result files; dateModified is the newest file's date, not the build time."""
+    if not any(not is_baseline(r) for r in rows):
+        return ""
+    from . import export     # imports this module, so not at the top
+    variables = [{"@type": "PropertyValue", "name": k, "description": f"{t(what, lang)} {t(rule, lang)}"}
+                 for k, what, rule in KINDS]
+    total = "总分：各题分数的平均值，0 到 1。" if lang == "zh" else "The mean of the task scores, 0 to 1."
+    variables += [{"@type": "PropertyValue", "name": "total", "description": total, "minValue": 0, "maxValue": 1},
+                  {"@type": "PropertyValue", "name": "above chance", "description": t(ABOVE, lang),
+                   "minValue": 0, "maxValue": 1}]
+    ld = {"@context": "https://schema.org", "@type": "Dataset", "name": t(TITLE, lang),
+          "description": dataset_description(rows, lang), "url": URLS[lang], "sameAs": REPO_URL,
+          "license": LICENSE_URL, "isAccessibleForFree": True,
+          "creator": {"@type": "Person", "name": OWNER, "url": f"https://github.com/{OWNER}"},
+          "keywords": list(DATASET_KEYWORDS), "inLanguage": TAGS[lang],
+          "measurementTechnique": DATASET_TECHNIQUE_ZH if lang == "zh" else DATASET_TECHNIQUE, "variableMeasured": variables,
+          "distribution": [
+              {"@type": "DataDownload", "name": export.NAME, "encodingFormat": "application/json",
+               "contentUrl": f"{PAGE_URL}{export.NAME}"},
+              {"@type": "DataDownload", "name": "benchmark/results (one JSON result file per run, on GitHub)",
+               "encodingFormat": "application/json", "contentUrl": RESULTS_URL}]}
+    date = newest_date(rows)
+    if date:
+        ld["dateModified"] = date
+    # result files feed the description (suite and track names), so every "<" is escaped: no "</script" or "<!--"
+    text = json.dumps(ld, ensure_ascii=False).replace("<", "\\u003c")
+    return f'<script type="application/ld+json">{text}</script>'
+
+
 CLIP_ALT_ZH = ("短片：程序画的一段颠小球视频，接着是 agent 在一次快速连续两触前后看到的静帧（放大），最后是真实触球数和各个"
                "模型的回答。")
 
@@ -1229,6 +1305,7 @@ def render(rows: list[dict], notes: list[str], card=(), clip: bool = False, lang
 <meta name="description" content="{esc(WHAT)}">
 {alternates("en")}
 {social(card)}
+{dataset_ld(rows)}
 <style>{CSS}</style>
 </head>
 <body>
@@ -1312,6 +1389,7 @@ def render_zh(rows: list[dict], notes: list[str], card=(), clip: bool = False, c
 <meta name="description" content="{esc(t(WHAT, lang))}">
 {alternates(lang)}
 {social(card, lang)}
+{dataset_ld(rows, lang)}
 <style>{CSS}</style>
 </head>
 <body>
@@ -1368,6 +1446,17 @@ CI 会用 <code>bench validate</code> 重新打分。</li>
 """
 
 
+def sitemap(rows: list[dict], out: Path) -> bool:
+    """When `out` is the benchmark folder of the demo site (whose sitemap.xml `demo --site` wrote one level up),
+    rewrite that sitemap with the benchmark pages' lastmod = the newest result file's date. True when rewritten."""
+    path, date = out.parent / "sitemap.xml", newest_date(rows)
+    if not date or not path.is_file() or f"<loc>{PAGE_URL}</loc>" not in path.read_text(encoding="utf8"):
+        return False
+    from .. import demo   # the site's page list lives there
+    path.write_text(demo.sitemap_xml({u: date for u in demo.SITE_PAGES if u.startswith(PAGE_URL)}), encoding="utf8")
+    return True
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="sports-video-coach bench page", description=__doc__.split("\n\n")[0])
     ap.add_argument("results_dir", help="folder of result files (benchmark/results)")
@@ -1399,6 +1488,8 @@ def main(argv: list[str]) -> int:
     findings.write(rows, out, card, effort)
     from . import export     # imports this module, so not at the top
     export.write(rows, out, notes)
+    if sitemap(rows, out):
+        print(f"[bench page] {(out.parent / 'sitemap.xml').as_posix()}: lastmod {newest_date(rows)} on the benchmark pages")
     for n in notes:
         print(f"[bench page] skipped {n}")
     runs = sum(1 for r in rows if not is_baseline(r))

@@ -21,6 +21,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - The game `periods` step cuts its stills with `sports-video-coach frames` instead of a raw ffmpeg command.
 
 ### Added
+- The benchmark page and its Chinese twin carry schema.org `Dataset` structured data (for Google Dataset Search):
+  the result files' counts, the task metrics, `leaderboard.json` and `benchmark/results` as downloads, MIT, and
+  `dateModified` = the newest result file's date; `bench page` also sets that date as `<lastmod>` on the
+  benchmark pages in the demo site's sitemap.
 - `bench page` also writes `leaderboard.json` next to the leaderboard (`/benchmark/leaderboard.json`,
   `bench/export.py`): the same boards, ranks and numbers as the page, for scripts and lists of leaderboards.
 - A findings article next to the leaderboard (`/benchmark/findings/`, Chinese at `/benchmark/zh/findings/`,
