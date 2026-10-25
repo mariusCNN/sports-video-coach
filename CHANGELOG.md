@@ -21,6 +21,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - The game `periods` step cuts its stills with `sports-video-coach frames` instead of a raw ffmpeg command.
 
 ### Added
+- Rerun the benchmark with no local install: `.devcontainer/` (GitHub Codespaces or VS Code Dev Containers) brings
+  Python 3.11, uv, ffmpeg, the light core and the Claude Code and Codex CLIs, pinned. An "Open in GitHub
+  Codespaces" link sits next to the rerun command in README, docs/benchmark.md and the /benchmark/ page; you bring
+  your own agent login or key. CI builds the container and runs `bench --help` and the blind baseline in it.
 - The benchmark page and its Chinese twin carry schema.org `Dataset` structured data (for Google Dataset Search):
   the result files' counts, the task metrics, `leaderboard.json` and `benchmark/results` as downloads, MIT, and
   `dateModified` = the newest result file's date; `bench page` also sets that date as `<lastmod>` on the

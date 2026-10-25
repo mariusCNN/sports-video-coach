@@ -35,6 +35,7 @@ REPO_URL = f"https://github.com/{OWNER}/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
+CODESPACES_URL = f"https://codespaces.new/{OWNER}/sports-video-coach"   # .devcontainer/: uv, ffmpeg, agent CLIs
 WANTED_URL = f"{REPO_URL}/issues/7"   # open issue: run an untested preset against the real CLI, send the row
 PAGE_URL = "https://mariusding.github.io/sports-video-coach/benchmark/"   # where the demo-site CI publishes it
 DEMO_URL = "https://mariusding.github.io/sports-video-coach/demo/"        # the coaching page the demo builds
@@ -180,6 +181,11 @@ ZH = {
                                "CLI），再给答案打分。",
     "Another agent: prepare the stills, let it fill {} by eye, then score it with {}.":
         "其他 agent：先准备好静帧，让它用眼睛填好 {}，再用 {} 打分。",
+    "No local install: {} has uv, ffmpeg and the Claude Code and Codex CLIs ready, on your own GitHub account's free "
+    "hours. Log in to your agent there, then put {} in front of the command.":
+        "不想在本机安装：{} 里已装好 uv、ffmpeg 以及 Claude Code 和 Codex CLI，用的是你自己 GitHub 账号的免费时长。"
+        "在里面登录你的 agent，再在命令前面加上 {}。",
+    "Open in GitHub Codespaces": "在 GitHub Codespaces 中打开",
     # first screen
     "Latest run {}": "最近一次运行 {}", "Frames-only board ({})": "静帧榜（{}）", "Code-track board": "代码赛道榜",
     "Rerun it in one command": "一条命令重跑", "Code on GitHub": "GitHub 上的代码", "On this page": "本页导航",
@@ -842,11 +848,15 @@ def frames_board(rows: list[dict], lang: str = "en", effort=()) -> str:
     prep = "sports-video-coach bench prepare --out bench-frames --suite svc-bench-3 --track frames"
     one = t("Rerun it in one command: it prepares the suite, runs Claude Code headless with no code tools (or any "
             "CLI with {}), and scores the answers.", lang).format('<code>--agent cmd --cmd "... {prompt}"</code>')
+    cloud = t("No local install: {} has uv, ffmpeg and the Claude Code and Codex CLIs ready, on your own GitHub "
+              "account's free hours. Log in to your agent there, then put {} in front of the command.", lang).format(
+        f'<a href="{CODESPACES_URL}">{esc(t("Open in GitHub Codespaces", lang))}</a>', "<code>uv run</code>")
     other = t("Another agent: prepare the stills, let it fill {} by eye, then score it with {}.", lang).format(
         "<code>bench-frames/answers.json</code>", "<code>bench score bench-frames</code>")
     return (f'<h2 id="frames">{t("Frames-only track (eyes)", lang)}</h2><p>{esc(t(FRAMES, lang))}</p>'
             f"<p>{one}</p>"
             f'<pre id="rerun"><code>{esc(run)}</code></pre>'
+            f'<p id="codespaces">{cloud}</p>'
             f"<p>{other}</p>"
             f"<pre><code>{esc(prep)}</code></pre>{body}")
 

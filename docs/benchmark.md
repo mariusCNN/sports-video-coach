@@ -405,6 +405,20 @@ other setting, each on its own seed, so this is not a variance estimate):
 - **No hand edits.** `score` and `total` are written by `bench score` only.
 - Name what you changed in `settings` (effort, prompts, extra tools). Defaults: leave it empty.
 
+## Rerun it in the browser
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+
+No local install needed. A codespace (or VS Code Dev Containers on your own machine, from `.devcontainer/`) comes
+with Python 3.11, uv, ffmpeg, the light core (no torch, no GPU) and the Claude Code and Codex CLIs.
+
+| | |
+|---|---|
+| **Cost** | Your own GitHub account and its free Codespaces hours. Stop the codespace when you are done. |
+| **Your agent** | Log in in the terminal (`claude`, or `codex login --device-auth`), or add `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` as [Codespaces secrets](https://docs.github.com/en/codespaces/managing-your-codespaces/managing-your-account-specific-secrets-for-github-codespaces). Nothing of yours goes in the repo. |
+| **Run** | `uv run sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames` |
+| **No key at all** | `uv run sports-video-coach bench baseline --suite svc-bench-3 --track frames --out /tmp/blind.json` scores the blind floor |
+
 ## Add your agent in one command
 
 ```bash
