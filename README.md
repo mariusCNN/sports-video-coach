@@ -46,7 +46,7 @@ Drawn drills, scored against the exact truth the tool drew in. No judge model.
   add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f
+uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
@@ -75,7 +75,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 
 ```text
 Coach me on my sports video <path to your video>. Show me the exact install command and wait for my OK.
-Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f` (it needs ffmpeg).
+Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187` (it needs ffmpeg).
 Run `sports-video-coach run <video> --sport soccer --lang en`, do each step it hands you (exit code 3)
 until it exits 0, then show me the coaching page.
 ```
@@ -94,7 +94,7 @@ agent plan.
 A synthetic drill with a pre-written review, rendered end to end:
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f   # needs ffmpeg on PATH
+uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187   # needs ffmpeg on PATH
 sports-video-coach demo
 ```
 
@@ -144,16 +144,16 @@ how the pipeline fits together is in [docs/architecture.md](https://github.com/m
 - **Any Agent Skills client** (Codex, Cursor ...): `npx skills add mariusDing/sports-video-coach`, or copy
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md).
 - **The CLI alone:**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@dcda37ee26643e3ce1b70d129578ca44d501a17f`
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187`
   (about 60 MB, no torch; ffmpeg on PATH), then `sports-video-coach plugins` and
   `sports-video-coach run <video> --sport <sport>`.
 - **Fork or write a plugin:** `git clone https://github.com/mariusDing/sports-video-coach`, then in it
-  `git checkout dcda37ee26643e3ce1b70d129578ca44d501a17f` (or a branch you choose) and
+  `git checkout ac27030efdd1c7008e3174650ff16f81f7c41187` (or a branch you choose) and
   `uv sync --no-group basketball` (Python 3.11, no torch). Prefix commands with `uv run`; `uv run pytest -q` works.
 - **Basketball tracking from a clone:** the same clone and checkout, then `uv sync` (Python 3.11, CUDA torch, several
   GB), and prefix commands with `uv run`.
 - Every install command names one commit, so you install what you read. The release notes say when it moves.
-- No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/dcda37ee26643e3ce1b70d129578ca44d501a17f.zip`.
+- No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/ac27030efdd1c7008e3174650ff16f81f7c41187.zip`.
 - `command not found`: `uv tool update-shell` and a new terminal; in Git Bash, write `C:/...` PATH entries as `/c/...` (e.g. `/c/Users/<you>/.local/bin`).
 
 </details>

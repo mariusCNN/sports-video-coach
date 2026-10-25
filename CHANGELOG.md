@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Fixed
+- Every install line (`INSTALL_REF`: README, AGENTS.md, SKILL.md, the docs and the benchmark page) now pins
+  ac27030 instead of dcda37e: the old pin predated the OpenCode preset's `--dir` / `--print-logs` fixes and its
+  stop at the free usage limit, so an OpenCode run from the pinned install worked in the wrong folder and could
+  hang, while the docs described the fixed preset.
 - The README's benchmark rerun (both languages) now gives the pinned install next to the command and adds
   `--seed`, as the benchmark page's headline box does: without it a reader landing on that section found no
   install line, and the command drew the published `svc-bench-3`, so the row went to the fixed board instead of
