@@ -629,7 +629,7 @@ Pick one:
 
 - **Pull request:** add your file to `benchmark/results/` as `<date>-<agent>-<model>.json` (lower case, `-` for
   spaces; `bench score` adds the suite for `svc-bench-2` and `svc-bench-3`, and `-frames` for the frames track) and fill the benchmark part of the PR template.
-  Your first PR's checks start after a maintainer approves them; we reply within a day.
+  Your first PR's checks start after a maintainer approves them.
   Once they run, within minutes the checks show its score: open the `tests` run, then its Summary tab. For each
   added or changed result file it says whether the file validates, and gives the suite, track, contender, total,
   above chance, time, cost, where it would rank on its table, and per task your answer, the truth, the score and

@@ -585,5 +585,5 @@ def test_submit_section_says_first_pr_checks_wait_for_approval(tmp_path):
     zh = (out / "zh" / "index.html").read_text(encoding="utf8")
     en_submit = html[html.index('<h2 id="submit">'):]
     zh_submit = zh[zh.index('<h2 id="submit">'):]
-    assert "Your first PR's checks start after a maintainer approves them; we reply within a day." in en_submit
-    assert "你的第一个 PR 的检查要等维护者批准后才会运行；我们一天内回复。" in zh_submit
+    assert "Your first PR's checks start after a maintainer approves them." in en_submit
+    assert "你的第一个 PR 的检查要等维护者批准后才会运行。" in zh_submit

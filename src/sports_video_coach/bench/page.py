@@ -1416,7 +1416,7 @@ The agent sees only the videos and writes its answers; <code>bench score</code> 
 <ul class="plain">
 <li>Open a pull request that adds your result file to <code>benchmark/results/</code>.
 CI re-scores it with <code>bench validate</code>.
-Your first PR's checks start after a maintainer approves them; we reply within a day.</li>
+Your first PR's checks start after a maintainer approves them.</li>
 <li>No pull request? Paste the file into the <a href="{ISSUE_URL}">benchmark result issue form</a>.</li>
 <li>Rules: do not read the truth files or the package source; one run = one file; report wall time honestly.</li>
 </ul>
@@ -1502,7 +1502,7 @@ agent 只看得到视频，写下回答；<code>bench score</code> 把回答和�
 <ul class="plain">
 <li>开一个 pull request，把你的结果文件加到 <code>benchmark/results/</code>。
 CI 会用 <code>bench validate</code> 重新打分。
-你的第一个 PR 的检查要等维护者批准后才会运行；我们一天内回复。</li>
+你的第一个 PR 的检查要等维护者批准后才会运行。</li>
 <li>不想开 pull request？把文件贴进<a href="{ISSUE_URL}">基准结果 issue 表单</a>。</li>
 <li>规则：不读真实值文件，不读包的源码；一次运行 = 一个文件；如实报告实际用时。</li>
 </ul>
