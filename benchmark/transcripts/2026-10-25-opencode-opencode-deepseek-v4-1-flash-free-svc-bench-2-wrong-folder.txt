@@ -1,0 +1,108 @@
+# OpenCode run, b2. Before the --dir fix: OpenCode worked in the folder bench run was started from (the repo), searched the machine for TASKS.md, then found the run folder. Excerpt: the private folder listings in between are left out.
+## stdout (what bench run saves as transcript.txt)
+
+## stderr (OpenCode prints its tool calls here)
+
+> build · deepseek-v4.1-flash-free
+
+$ ls -la
+total 445
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:35 .
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 ..
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 .claude
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 .claude-plugin
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 .devcontainer
+-rw-r--r-- 1 <user> 197609     87 Oct 25 15:33 .git
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 .github
+-rw-r--r-- 1 <user> 197609    558 Oct 25 15:33 .gitignore
+-rw-r--r-- 1 <user> 197609      6 Oct 25 15:33 .python-version
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:35 .venv
+-rw-r--r-- 1 <user> 197609   9400 Oct 25 15:33 AGENTS.md
+-rw-r--r-- 1 <user> 197609  79450 Oct 25 15:33 CHANGELOG.md
+-rw-r--r-- 1 <user> 197609   1027 Oct 25 15:33 CITATION.cff
+-rw-r--r-- 1 <user> 197609    644 Oct 25 15:33 CLAUDE.md
+-rw-r--r-- 1 <user> 197609   5725 Oct 25 15:33 CODE_OF_CONDUCT.md
+-rw-r--r-- 1 <user> 197609   5704 Oct 25 15:33 CONTRIBUTING.md
+-rw-r--r-- 1 <user> 197609   1088 Oct 25 15:33 LICENSE
+-rw-r--r-- 1 <user> 197609  12412 Oct 25 15:33 README.md
+-rw-r--r-- 1 <user> 197609  13026 Oct 25 15:33 README.zh.md
+-rw-r--r-- 1 <user> 197609    583 Oct 25 15:33 SECURITY.md
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 benchmark
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 docs
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 examples
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 prompts
+-rw-r--r-- 1 <user> 197609   3380 Oct 25 15:33 pyproject.toml
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 skills
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 src
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 templates
+drwxr-xr-x 1 <user> 197609      0 Oct 25 15:33 tests
+-rw-r--r-- 1 <user> 197609 214422 Oct 25 15:33 uv.lock
+
+✗ Read <repo>/TASKS.md failed
+Error: File not found: <repo>\TASKS.md
+✗ Read <repo>/answers.json failed
+Error: File not found: <repo>\answers.json
+
+$ ls benchmark; find . -maxdepth 4 -name "TASKS.md" -o -maxdepth 4 -name "answers.json" | head -50
+results
+transcripts
+
+[... lines 46-365 of 2836 left out ...]
+<scratch>/run184/max-scratch/run-seed604284533/TASKS.md
+<scratch>/run237/86827d/haiku-high-1/TASKS.md
+<scratch>/run237/86827d/sonnet-high-2/TASKS.md
+<scratch>/run237/86827d/sonnet-high-3/TASKS.md
+<run folder>/TASKS.md
+
+$ ls -la <run folder>; echo ---; ls -la <scratch>/run272
+total 3133
+drwxr-xr-x 1 <user> 197609       0 Oct 25 15:36 .
+drwxr-xr-x 1 <user> 197609       0 Oct 25 15:36 ..
+-rw-r--r-- 1 <user> 197609     717 Oct 25 15:36 PROMPT.txt
+-rw-r--r-- 1 <user> 197609    4679 Oct 25 15:36 TASKS.md
+-rw-r--r-- 1 <user> 197609     199 Oct 25 15:36 answers.json
+-rw-r--r-- 1 <user> 197609 1069236 Oct 25 15:36 cadence-change.mp4
+-rw-r--r-- 1 <user> 197609  372366 Oct 25 15:36 cone-touches-pan.mp4
+-rw-r--r-- 1 <user> 197609  681409 Oct 25 15:36 dribble-count.mp4
+-rw-r--r-- 1 <user> 197609  618237 Oct 25 15:36 shot-outcomes-hard.mp4
+-rw-r--r-- 1 <user> 197609  376572 Oct 25 15:36 squat-reps.mp4
+-rw-r--r-- 1 <user> 197609   23635 Oct 25 15:38 stderr.log
+-rw-r--r-- 1 <user> 197609       0 Oct 25 15:36 transcript.txt
+---
+total 60
+drwxr-xr-x 1 <user> 197609   0 Oct 25 15:34 .
+drwxr-xr-x 1 <user> 197609   0 Oct 25 15:33 ..
+drwxr-xr-x 1 <user> 197609   0 Oct 25 15:35 A
+drwxr-xr-x 1 <user> 197609   0 Oct 25 15:36 B
+-rwxr-xr-x 1 <user> 197609 748 Oct 25 15:34 wait.sh
+
+→ Read TASKS.md
+→ Read answers.json
+→ Read PROMPT.txt
+
+$ python -c "import cv2, numpy; print(cv2.__version__, numpy.__version__)" 2>&1; ffmpeg -version 2>&1 | head -2
+5.0.0 2.4.6
+ffmpeg version 9.0.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
+built with gcc 16.2.0 (Rev3, Built by MSYS2 project)
+
+$ for f in *.mp4; do echo "$f"; ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate,nb_frames,duration -of default=nw=1 "$f"; done
+cadence-change.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=40.000000
+nb_frames=1000
+cone-touches-pan.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=28.000000
+nb_frames=700
+dribble-count.mp4
+width=640
+height=360
+r_frame_rate=25/1
+duration=38.000000
+[... lines 421-2836 of 2836 left out ...]
+## OpenCode's own log, errors in this run
+(none)

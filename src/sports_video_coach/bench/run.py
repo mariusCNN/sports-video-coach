@@ -34,7 +34,8 @@ AGENTS = {"claude": "Claude Code", "codex": "Codex"}
 @dataclass(frozen=True)
 class Preset:
     """A headless command line for one more agent CLI, built only from its own docs. In `argv`, PROMPT_ARG and
-    PROMPT_FILE_ARG become the prompt text / the file holding it, MODEL_ARG becomes `model_flag <model>` or nothing."""
+    PROMPT_FILE_ARG become the prompt text / the file holding it, RUN_DIR_ARG the run folder, MODEL_ARG becomes
+    `model_flag <model>` or nothing."""
     name: str
     argv: tuple[str, ...]
     model_flag: str
@@ -43,12 +44,14 @@ class Preset:
     config: str = "runner's own config"   # how much of the runner's own agent config it loads
     note: str = ""
     checked: str = ""             # the CLI version whose own --help confirmed every flag (on HELP_CHECKED)
+    ran: str = ""                 # the maintainer's own run on a task: CLI version, model, date; empty = never run
 
 
-PROMPT_ARG, PROMPT_FILE_ARG, MODEL_ARG = "{prompt}", "{prompt_file}", "{model}"
+PROMPT_ARG, PROMPT_FILE_ARG, MODEL_ARG, RUN_DIR_ARG = "{prompt}", "{prompt_file}", "{model}", "{run_dir}"
 DOCS_READ = "2026-10-25"
 HELP_CHECKED = "2026-10-25"
 UNTESTED = "preset, not run by the maintainer"
+RAN = "preset, run by the maintainer"
 # Every flag below is from the linked docs, read on DOCS_READ, and was then checked against the real CLI's --help
 # (and its version command) on HELP_CHECKED, version in `checked`. Only --help and the version command were run:
 # no preset was run on a task (that needs an account), so the tests still use fake binaries. None of them
@@ -87,9 +90,13 @@ PRESETS = {
     # https://opencode.ai/docs/cli/ : `opencode run [message]` is the non-interactive mode, --auto auto-approves
     # permissions that are not explicitly denied, -m/--model provider/model, -v/--version. Checked against opencode
     # 1.19.4 `run --help` on 2026-10-25: [message..] positional, --auto, -m/--model, -v/--version listed.
-    "opencode": Preset("OpenCode", ("opencode", "run", "--auto", MODEL_ARG, PROMPT_ARG), "--model",
-                       ("opencode", "--version"), "https://opencode.ai/docs/cli/",
-                       note="--model takes provider/model", checked="1.19.4"),
+    # Run on a task on 2026-10-25 (1.19.4, free opencode/deepseek-v4.1-flash-free, no account): OpenCode ignored
+    # the process's working folder and worked in the folder `bench run` was started from, so `--dir` ("directory
+    # to run in", in `run --help`) now names the run folder.
+    "opencode": Preset("OpenCode", ("opencode", "run", "--auto", "--dir", RUN_DIR_ARG, MODEL_ARG, PROMPT_ARG),
+                       "--model", ("opencode", "--version"), "https://opencode.ai/docs/cli/",
+                       note="--model takes provider/model", checked="1.19.4",
+                       ran="OpenCode 1.19.4, opencode/deepseek-v4.1-flash-free, 2026-10-25"),
     # https://cursor.com/docs/cli/reference/parameters : the CLI is `agent`; -p/--print for scripts, --force (alias
     # --yolo) applies changes and allows commands not explicitly denied, --trust trusts the folder (headless only),
     # --output-format text, --model, -v/--version. Headless use: https://cursor.com/docs/cli/headless. Checked
@@ -263,7 +270,8 @@ def command(agent: str, text: str, prompt_file: Path, model: str = "", template:
             if tok == MODEL_ARG:
                 out += [p.model_flag, model] if model else []
             else:
-                out.append(text if tok == PROMPT_ARG else str(prompt_file) if tok == PROMPT_FILE_ARG else tok)
+                out.append(text if tok == PROMPT_ARG else str(prompt_file) if tok == PROMPT_FILE_ARG else
+                           str(prompt_file.parent) if tok == RUN_DIR_ARG else tok)
         return out
     if agent == "codex":
         argv = ["codex", "exec", "-c", "check_for_update_on_startup=false", "--skip-git-repo-check",
@@ -434,7 +442,8 @@ def shown(agent: str) -> str:
     """A preset's command line for people: the prompt as <prompt>, the model flag in brackets."""
     p = PRESETS[agent]
     return " ".join(f"[{p.model_flag} M]" if t == MODEL_ARG else "<prompt>" if t == PROMPT_ARG else
-                    "<prompt file>" if t == PROMPT_FILE_ARG else t for t in p.argv)
+                    "<prompt file>" if t == PROMPT_FILE_ARG else "<run folder>" if t == RUN_DIR_ARG else t
+                    for t in p.argv)
 
 
 def agent_version(argv0: str, args: tuple[str, ...] = ("--version",)) -> str:
@@ -471,7 +480,8 @@ def settings_text(agent: str, track: str, my_config: bool, given: str = "", stat
     if agent == "cmd":
         iso = ""            # a custom command runs as given: isolating it from the runner's config is the runner's job
     elif agent in PRESETS:
-        iso = f"{UNTESTED} (--agent {agent}); {PRESETS[agent].config}"
+        p = PRESETS[agent]
+        iso = f"{RAN if p.ran else UNTESTED} (--agent {agent}); {p.config}"
     elif agent == "codex":
         iso = CODEX_OWN     # never isolated: that would mean copying its login
     elif my_config:
@@ -513,8 +523,8 @@ def main(argv=None) -> int:
     ap.add_argument("--agent", required=True, choices=["claude", "codex", *PRESETS, "cmd", "openai"],
                     help="claude (Claude Code), codex (Codex CLI), a preset for another CLI (" +
                          ", ".join(f"{k}: {p.name}" for k, p in PRESETS.items()) + "; built from each CLI's docs, "
-                         "flags checked against its --help, but NOT run by the maintainer on a task; code track "
-                         "only), "
+                         "flags checked against its --help, but NOT run by the maintainer on a task, except " +
+                         ", ".join(f"{k} ({p.ran})" for k, p in PRESETS.items() if p.ran) + "; code track only), "
                          "cmd (any other CLI, with --cmd), or openai (any vision model behind an OpenAI-compatible "
                          "chat-completions endpoint, with --base-url and --model; frames track only)")
     ap.add_argument("--model", default="", help="passed to the agent CLI as --model (and {model} in --cmd)")
@@ -588,8 +598,8 @@ def main(argv=None) -> int:
         room = "custom command: it runs as given, so keeping your own agent config out is up to you"
     elif a.agent in PRESETS:
         p = PRESETS[a.agent]
-        room = (f"{p.name} {UNTESTED} on a task (flags from {p.docs}, checked against the --help of version "
-                f"{p.checked} on {HELP_CHECKED}); {p.config}"
+        room = (f"{p.name} {RAN + ' on a task (' + p.ran if p.ran else UNTESTED + ' on a task ('}; flags from "
+                f"{p.docs}, checked against the --help of version {p.checked} on {HELP_CHECKED}); {p.config}"
                 + (f"; {p.note}" if p.note else ""))
     elif a.agent == "codex":
         room = "Codex runs with your own config (~/.codex): not isolated, so credentials stay where they are"

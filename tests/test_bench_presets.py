@@ -73,7 +73,8 @@ def test_each_preset_runs_its_documented_command_and_scores(tmp_path, fake_bin, 
     assert res["total"] == 1.0
     assert res["contender"]["agent"] == p.name and res["contender"]["model"] == "m-1"
     assert res["contender"]["agent_version"] == "9.8.7"                            # read with the preset's command
-    assert res["contender"]["settings"].startswith(f"preset, not run by the maintainer (--agent {agent})")
+    said = "run by the maintainer" if p.ran else "not run by the maintainer"
+    assert res["contender"]["settings"].startswith(f"preset, {said} (--agent {agent})")
     assert (out / "transcript.txt").read_text(encoding="utf8").strip() == "fake agent ran"
 
 
@@ -85,7 +86,8 @@ def test_preset_prompt_placement_and_no_model(tmp_path):
     aider = R.command("aider", "P", pf)
     assert aider[aider.index("--message-file") + 1] == str(pf) and aider[-1] == "answers.json"
     assert "P" not in aider and "--yes-always" in aider and "--no-git" in aider
-    assert R.command("opencode", "P", pf) == ["opencode", "run", "--auto", "P"]
+    # OpenCode 1.19.4 worked in the folder `bench run` was started from, not the process's working folder
+    assert R.command("opencode", "P", pf) == ["opencode", "run", "--auto", "--dir", str(tmp_path), "P"]
     assert R.command("cursor", "P", pf)[:4] == ["agent", "-p", "--force", "--trust"]
     assert R.command("copilot", "P", pf) == ["copilot", "-p", "P", "--allow-all-tools", "--no-ask-user", "-s"]
     assert R.command("goose", "P", pf, "g") == ["goose", "run", "--no-session", "--model", "g", "-t", "P"]
@@ -112,8 +114,10 @@ def test_dry_run_prints_the_preset_command_and_says_untested(tmp_path, capsys):
     dry = tmp_path / "dry"
     assert bench.main(["run", "--agent", "opencode", "--model", "p/m", "--out", str(dry), "--dry-run"]) == 0
     printed = capsys.readouterr().out
-    assert "opencode run --auto --model p/m" in printed and "You are a contender" in printed
-    assert "not run by the maintainer" in printed and "https://opencode.ai/docs/cli/" in printed
+    assert f"opencode run --auto --dir {dry.resolve()} --model p/m" in printed and "You are a contender" in printed
+    assert "run by the maintainer on a task (OpenCode 1.19.4" in printed and "https://opencode.ai/docs/cli/" in printed
+    assert bench.main(["run", "--agent", "goose", "--out", str(dry), "--dry-run"]) == 0
+    assert "not run by the maintainer" in capsys.readouterr().out
     assert not dry.exists()
 
 
@@ -122,12 +126,19 @@ def test_help_says_presets_are_untested(capsys):
         R.main(["--help"])
     help_ = " ".join(capsys.readouterr().out.split())
     assert "NOT run by the maintainer" in help_ and all(k in help_ for k in R.PRESETS)
+    assert "except opencode (OpenCode 1.19.4" in help_
 
 
 def test_settings_name_the_preset():
     assert R.settings_text("qwen", "code", False) == ("preset, not run by the maintainer (--agent qwen); --safe-mode: "
                                                       "no context files, hooks, extensions, skills or MCP servers")
     assert R.settings_text("gemini", "code", False, "effort high").endswith("runner's own config; effort high")
+    assert R.settings_text("opencode", "code", False).startswith("preset, run by the maintainer (--agent opencode)")
+
+
+def test_only_presets_run_on_a_task_say_so():
+    assert {k for k, p in R.PRESETS.items() if p.ran} == {"opencode"}
+    assert R.shown("opencode") == "opencode run --auto --dir <run folder> [--model M] <prompt>"
 
 
 def test_presets_name_the_cli_version_their_flags_were_checked_against():
@@ -155,7 +166,8 @@ def test_docs_table_and_page_list_every_preset():
     for key, p in R.PRESETS.items():
         row = [line for line in doc.splitlines() if line.startswith(f"| `--agent {key}`")]
         assert len(row) == 1, key
-        assert p.docs in row[0] and R.shown(key) in row[0] and "not run by the maintainer" in row[0]
+        assert p.docs in row[0] and R.shown(key) in row[0]
+        assert ("run by the maintainer on a task" if p.ran else "not run by the maintainer") in row[0], key
         assert f"--agent {key}</code> {p.name}" in html     # the page links the docs table, not outside sites
     assert R.DOCS_READ in doc
     assert re.search(r"not run by the maintainer", html)

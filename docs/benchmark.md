@@ -436,7 +436,7 @@ sports-video-coach bench run --agent claude --model claude-sonnet-5-5 --suite sv
 |---|---|
 | `--agent claude` | Claude Code: `claude -p --safe-mode --setting-sources project --strict-mcp-config --output-format stream-json --verbose --dangerously-skip-permissions` |
 | `--agent codex` | Codex CLI: `codex exec --skip-git-repo-check -s workspace-write`, with your own Codex config (not isolated, see below) |
-| `--agent <preset>` (`gemini`, `qwen`, `aider`, `opencode`, `cursor`, `copilot`, `goose`) | A preset for another agent CLI, built from its docs but **not run by the maintainer** (table below); code track only |
+| `--agent <preset>` (`gemini`, `qwen`, `aider`, `opencode`, `cursor`, `copilot`, `goose`) | A preset for another agent CLI, built from its docs but **not run by the maintainer** (table below), except OpenCode (run once with a free model, see [below](#opencode-run-once-2026-10-25)); code track only |
 | `--agent cmd --cmd "..."` | Any other CLI. `{prompt}` becomes the prompt text, `{prompt_file}` a file holding it, `{model}` the model. It runs as given: keeping your own agent config out is up to you. |
 | `--agent openai --base-url URL --model M` | Any vision model behind an OpenAI-compatible chat-completions endpoint (Ollama, LM Studio, vLLM, llama.cpp server, OpenRouter, ...); frames track only, see [below](#any-vision-model-behind-an-openai-compatible-api) |
 | `--use-my-config` | Run Claude Code with your own agent config instead of the clean room (see below); `settings` then says so. Codex always runs with yours. |
@@ -461,7 +461,7 @@ sports-video-coach bench run --agent gemini --model <model> --suite svc-bench-3
 Each preset runs the command below in the run folder (stdin closed, killed at the timeout, `<prompt>` is the
 prompt text, `<prompt file>` is `PROMPT.txt`). The flags come from each CLI's own docs, read on 2026-10-25, and
 were then checked against the real CLI's `--help` and version command on 2026-10-25 (versions below). **The
-maintainer has no account for these CLIs and never ran them on a task**: only `--help` and the version command were
+maintainer has no account for these CLIs and never ran them on a task**, except OpenCode (a free model, no account, [below](#opencode-run-once-2026-10-25)): only `--help` and the version command were
 run, and the presets are tested against fake binaries that record their arguments. A flag may change in a later
 version; `--dry-run` prints the exact command, and `--agent cmd --cmd "..."` runs your own. The result's `settings` starts with `preset, not run
 by the maintainer (--agent <name>)`; the version is read with the CLI's own version command.
@@ -475,7 +475,7 @@ of each preset: send the result row, or the error if a flag is wrong (or fix the
 | `--agent gemini` | Gemini CLI | `gemini --approval-mode yolo [--model M] -p <prompt>` | [docs](https://geminicli.com/docs/cli/cli-reference/) | not run by the maintainer; your own config; Google moved individual users to Antigravity CLI on 2026-06-18; API-key and Code Assist users keep Gemini CLI |
 | `--agent qwen` | Qwen Code | `qwen --safe-mode --approval-mode yolo [--model M] <prompt>` | [docs](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/) | not run by the maintainer; --safe-mode: no context files, hooks, extensions, skills or MCP servers |
 | `--agent aider` | Aider | `aider --yes-always --no-git --no-check-update --no-pretty --no-stream [--model M] --read TASKS.md --message-file <prompt file> answers.json` | [docs](https://aider.chat/docs/config/options.html) | not run by the maintainer; your own config; it edits answers.json; whether --yes-always also runs the shell commands it suggests is not stated in the docs |
-| `--agent opencode` | OpenCode | `opencode run --auto [--model M] <prompt>` | [docs](https://opencode.ai/docs/cli/) | not run by the maintainer; your own config; --model takes provider/model |
+| `--agent opencode` | OpenCode | `opencode run --auto --dir <run folder> [--model M] <prompt>` | [docs](https://opencode.ai/docs/cli/) | run by the maintainer on a task (OpenCode 1.19.4, opencode/deepseek-v4.1-flash-free, 2026-10-25, [below](#opencode-run-once-2026-10-25)); your own config; --model takes provider/model |
 | `--agent cursor` | Cursor CLI | `agent -p --force --trust --output-format text [--model M] <prompt>` | [docs](https://cursor.com/docs/cli/reference/parameters) | not run by the maintainer; your own config |
 | `--agent copilot` | GitHub Copilot CLI | `copilot -p <prompt> --allow-all-tools --no-ask-user -s [--model M]` | [docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically) | not run by the maintainer; your own config |
 | `--agent goose` | Goose | `goose run --no-session [--model M] -t <prompt>` | [docs](https://goose-docs.ai/docs/guides/goose-cli-commands) | not run by the maintainer; your own config; tool approval follows your GOOSE_MODE (Autonomous by default) |
@@ -487,12 +487,13 @@ Flags checked against each CLI's own `--help` on 2026-10-25 (installed without a
 | `gemini` | Gemini CLI 0.65.0 | every flag listed in `--help` |
 | `qwen` | Qwen Code 0.26.1 | fixed: `-p` is deprecated in favour of the positional prompt, so the prompt is now positional; other flags listed |
 | `aider` | Aider 0.86.2 | every flag listed in `--help` |
-| `opencode` | OpenCode 1.19.4 | every flag listed in `opencode run --help` |
+| `opencode` | OpenCode 1.19.4 | every flag listed in `opencode run --help`; fixed after a real run: `--dir <run folder>` added |
 | `cursor` | Cursor CLI 2026.10.22-27dcf5f | every flag listed in `agent --help` |
 | `copilot` | GitHub Copilot CLI 1.0.103 | every flag listed in `--help`; `copilot version` works |
 | `goose` | Goose 1.56.0 | every flag listed in `goose run --help` |
 
-Whether each run then finishes the task (auth, approvals, tool use on Windows) is still unchecked.
+Whether each run then finishes the task (auth, approvals, tool use on Windows) is still unchecked, except for
+OpenCode (below).
 
 - Code track only: none of these CLIs documents a way to be limited to reading files (as Claude Code's `--tools
   Read` is), so `--track frames` with a preset stops with a message. Gemini CLI's plan mode is not read-only
@@ -501,6 +502,35 @@ Whether each run then finishes the task (auth, approvals, tool use on Windows) i
 - Not added: Antigravity CLI (`agy`), Gemini CLI's successor for individual users: its pages read on that date
   showed no headless prompt flag or auto-approve flag.
 - `cost_usd` stays `null` for presets; the model is whatever `--model` says (empty without it).
+
+### OpenCode, run once (2026-10-25)
+
+The first preset run on a task: OpenCode 1.19.4 (npm `opencode-ai`, empty config, no login, no key) with
+`opencode/deepseek-v4.1-flash-free`, one of the 10 free OpenCode Zen models `opencode models` lists on a fresh
+install. A one-word prompt worked with no account. Code track, default 1200 s timeout. A board row must
+measure the contender, not our harness or a quota outage, so only one of the three runs is on the board:
+
+| Suite | Run | Total | Above chance | Wall | What happened | On the board | Transcript |
+|---|---|---|---|---|---|---|---|
+| `svc-bench-2` | before the fix | 0.000 | 0.000 | 1200 s (killed) | worked in the wrong folder at first (below); no answer written | no: our preset bug (wrong folder), not the model | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-2-wrong-folder.txt) |
+| `svc-bench-2` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | 87 tool calls; scripts on 4 of the 5 videos (not the shots); no answer written; free limit hit about 1130 s in | yes: the model worked 1130 s of the 1200 s limit | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-2.txt) |
+| `svc-bench-3` | with `--dir` | 0.000 | 0.000 | 1200 s (killed) | free limit already reached: first request failed, then no output and no exit | no: free quota used up, the model never replied | [txt](../benchmark/transcripts/2026-10-25-opencode-opencode-deepseek-v4-1-flash-free-svc-bench-3.txt) |
+
+- **Preset fix.** OpenCode ignored the process's working folder and worked in the folder `bench run` was started
+  from: its first `ls` listed the repo, then it searched the machine for `TASKS.md` until it found the run folder
+  (it listed result file names and read none). The preset now passes `--dir <run folder>` ("directory to run in",
+  in `opencode run --help`); a check with `pwd` gave the caller's folder without it and the run folder with it.
+  Setting `PWD` did not help.
+- **No answers is not a model verdict.** With `--dir` it said "Task 1 analysis done (56)" (the truth is 56) and
+  went on to the squats, cadence and cones, but kept the answers in its head: `answers.json` was still all null
+  when the timeout killed it.
+- **The free tier ran out.** OpenCode's own log: `Free usage limit reached. Free models work in OpenCode
+  (https://opencode.ai); subscribe to OpenCode Go to keep going`. The runs and a few short checks used about
+  44 minutes of it. How long the limit lasts is unclear. After that error OpenCode printed nothing more and did not
+  exit, so the run waited for the timeout.
+- OpenCode prints its tool calls to stderr; `transcript.txt` holds only its replies. The redacted transcripts
+  (stdout, stderr and the log errors) are in `benchmark/transcripts/` (the first run as an excerpt); the two runs
+  not on the board keep their transcripts there as evidence, with no result file in `benchmark/results/`.
 
 Any other CLI, with its own non-interactive, auto-approve flags:
 

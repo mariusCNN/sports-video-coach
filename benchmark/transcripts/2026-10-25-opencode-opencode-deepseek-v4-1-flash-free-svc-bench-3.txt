@@ -1,0 +1,9 @@
+# OpenCode run, b3. With --dir <run folder>.
+## stdout (what bench run saves as transcript.txt)
+
+## stderr (OpenCode prints its tool calls here)
+
+> build · deepseek-v4.1-flash-free
+
+## OpenCode's own log, errors in this run
+timestamp=2026-10-25T05:19:59.388Z level=ERROR run=3a072ee8 message="stream error" providerID=opencode modelID=deepseek-v4.1-flash-free session.id=ses_e8e7fad56ffeJqM55cLomgZA5w small=false agent=build mode=primary error.error="AI_APICallError: Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go ...
