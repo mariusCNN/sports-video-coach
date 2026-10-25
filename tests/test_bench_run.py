@@ -220,7 +220,8 @@ def test_codex_run_gets_the_runner_codex_home_and_never_touches_it(tmp_path, mon
                       (shutil, "rmtree"), (os, "replace"), (os, "rename"), (os, "remove"), (os, "unlink")):
         monkeypatch.setattr(mod, name, watch(getattr(mod, name)))
     seen = []
-    monkeypatch.setattr(R, "execute", lambda argv, cwd, tr, err, timeout, env: (seen.append(env), (0, 1.0))[1])
+    monkeypatch.setattr(R, "execute", lambda argv, cwd, tr, err, timeout, env, limits=():
+                        (seen.append(env), (0, 1.0, ""))[1])
     for home_env in (None, str(user)):          # CODEX_HOME unset (Codex uses ~/.codex), or set by the runner
         if home_env is None:
             monkeypatch.delenv("CODEX_HOME", raising=False)

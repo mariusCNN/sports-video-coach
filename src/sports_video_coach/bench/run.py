@@ -45,6 +45,7 @@ class Preset:
     note: str = ""
     checked: str = ""             # the CLI version whose own --help confirmed every flag (on HELP_CHECKED)
     ran: str = ""                 # the maintainer's own run on a task: CLI version, model, date; empty = never run
+    limits: tuple[str, ...] = ()  # text in its output that means the provider's usage limit ended the run
 
 
 PROMPT_ARG, PROMPT_FILE_ARG, MODEL_ARG, RUN_DIR_ARG = "{prompt}", "{prompt_file}", "{model}", "{run_dir}"
@@ -92,11 +93,15 @@ PRESETS = {
     # 1.19.4 `run --help` on 2026-10-25: [message..] positional, --auto, -m/--model, -v/--version listed.
     # Run on a task on 2026-10-25 (1.19.4, free opencode/deepseek-v4.1-flash-free, no account): OpenCode ignored
     # the process's working folder and worked in the folder `bench run` was started from, so `--dir` ("directory
-    # to run in", in `run --help`) now names the run folder.
-    "opencode": Preset("OpenCode", ("opencode", "run", "--auto", "--dir", RUN_DIR_ARG, MODEL_ARG, PROMPT_ARG),
+    # to run in", in `run --help`) now names the run folder. At its free usage limit it wrote "Free usage limit
+    # reached" only to its own log file, then printed nothing and never exited: `--print-logs` ("print logs to
+    # stderr") with `--log-level ERROR` (both in `run --help`) puts its ERROR lines on stderr, where `limits` stops it.
+    "opencode": Preset("OpenCode", ("opencode", "run", "--auto", "--print-logs", "--log-level", "ERROR",
+                                    "--dir", RUN_DIR_ARG, MODEL_ARG, PROMPT_ARG),
                        "--model", ("opencode", "--version"), "https://opencode.ai/docs/cli/",
                        note="--model takes provider/model", checked="1.19.4",
-                       ran="OpenCode 1.19.4, opencode/deepseek-v4.1-flash-free, 2026-10-25"),
+                       ran="OpenCode 1.19.4, opencode/deepseek-v4.1-flash-free, 2026-10-25",
+                       limits=("Free usage limit reached",)),
     # https://cursor.com/docs/cli/reference/parameters : the CLI is `agent`; -p/--print for scripts, --force (alias
     # --yolo) applies changes and allows commands not explicitly denied, --trust trusts the folder (headless only),
     # --output-format text, --model, -v/--version. Headless use: https://cursor.com/docs/cli/headless. Checked
@@ -321,23 +326,75 @@ def agent_env(base: dict | None = None) -> dict:
     return env
 
 
+ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+POLL = 0.5          # seconds between looks at the agent's output for a usage-limit line
+
+
+def limit_hit(text: str, limits: tuple[str, ...]) -> str:
+    """The first line of `text` holding one of `limits`, quoted from that text on (colours dropped, at most 200
+    characters); "" when none does."""
+    for line in text.splitlines():
+        line = ANSI.sub("", line)
+        for lim in limits:
+            if lim in line:
+                return line[line.index(lim):].strip().rstrip('"')[:200].rstrip()
+    return ""
+
+
 def execute(argv: list[str], cwd: Path, transcript: Path, stderr: Path | None, timeout: float,
-            env: dict | None = None, stdin: Path | None = None) -> tuple[int | None, float]:
+            env: dict | None = None, stdin: Path | None = None,
+            limits: tuple[str, ...] = ()) -> tuple[int | None, float, str]:
     """Run argv in cwd with stdin closed, or reading the file `stdin` up to its end; stderr to its own file, or into
-    the transcript when `stderr` is None. (exit code, or None if killed at the timeout; wall seconds)."""
+    the transcript when `stderr` is None. While it runs, its output files are read every POLL seconds: a line
+    holding one of `limits` (the provider's usage limit) kills it at once. (exit code, or None if killed at the
+    timeout or at a limit line; wall seconds; the limit line, or "")."""
     kw = {"start_new_session": True} if os.name != "nt" else {}
     t0 = time.monotonic()
+    watched = [transcript] + ([stderr] if stderr else [])
+    seen = {f: 0 for f in watched}     # bytes already read; a partial last line is read again next time
+
+    def look() -> str:
+        for f in watched:
+            try:
+                with open(f, "rb") as fh:
+                    fh.seek(seen[f])
+                    chunk = fh.read()
+            except OSError:
+                continue
+            whole = chunk[:chunk.rfind(b"\n") + 1]
+            seen[f] += len(whole)
+            hit = limit_hit(whole.decode("utf8", errors="replace"), limits)
+            if hit:
+                return hit
+        return ""
+
+    hit = ""
     with open(transcript, "wb") as out, open(stderr or os.devnull, "wb") as err, \
             open(stdin or os.devnull, "rb") as inp:
         proc = subprocess.Popen(argv, cwd=cwd, stdin=inp if stdin else subprocess.DEVNULL, stdout=out,
                                 stderr=err if stderr else subprocess.STDOUT,
                                 env=agent_env() if env is None else env, **kw)
+        while True:
+            left = t0 + timeout - time.monotonic()
+            try:
+                code = proc.wait(timeout=max(0.0, min(POLL, left) if limits else left))
+                break
+            except subprocess.TimeoutExpired:
+                pass
+            hit = look() if limits else ""
+            if hit:
+                print(f"stopping {Path(argv[0]).stem}: the provider's usage limit was reached (\"{hit}\")",
+                      flush=True)
+            if hit or time.monotonic() >= t0 + timeout:
+                kill_tree(proc)
+                code = None
+                break
+    for f in watched if limits and not hit else []:     # it may have printed the line and then exited on its own
         try:
-            code = proc.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            kill_tree(proc)
-            code = None
-    return code, round(time.monotonic() - t0, 1)
+            hit = hit or limit_hit(f.read_text(encoding="utf8", errors="replace"), limits)
+        except OSError:
+            pass
+    return code, round(time.monotonic() - t0, 1), hit
 
 
 def claude_stats(transcript: Path) -> dict:
@@ -647,6 +704,7 @@ def main(argv=None) -> int:
     if a.agent != "openai":      # its per-task prompts are in the transcript, as sent
         media.write_text_atomic(prompt_file, text + "\n")
     print(f"running {name} (timeout {a.timeout:g} s; {room}) ...", flush=True)
+    limit = ""      # the provider's usage-limit line that ended the run
     if a.agent == "openai":
         t0 = time.monotonic()
         info = A.run(out, a.suite, seed, a.base_url, a.model, key, a.timeout, a.temperature, a.max_tokens,
@@ -655,11 +713,17 @@ def main(argv=None) -> int:
         code = None if info["timed_out"] else 0
         print(f"{info['requests']} requests, {info['failed_requests']} failed")
     elif on_stdin:
-        code, wall = execute(exe, out, transcript, None, a.timeout, agent_env(), stdin=prompt_file)
+        code, wall, limit = execute(exe, out, transcript, None, a.timeout, agent_env(), stdin=prompt_file)
     else:
-        code, wall = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env())
-    status = f"killed at the {a.timeout:g} s timeout" if code is None else f"exit code {code}"
+        code, wall, limit = execute(exe, out, transcript, out / "stderr.log", a.timeout, agent_env(),
+                                    limits=PRESETS[a.agent].limits if a.agent in PRESETS else ())
+    stopped = bool(limit) and code is None
+    status = ("stopped at the provider's usage limit" if stopped else
+              f"killed at the {a.timeout:g} s timeout" if code is None else f"exit code {code}")
     print(f"agent finished in {wall:g} s, {status}; transcript {transcript}")
+    if limit:
+        print(f"the provider's usage limit ended this run (\"{limit}\"), so its score says nothing about the model: "
+              "rerun after the quota resets")
     if transcript.exists():
         from .transcript import default_dst, redact
         try:
@@ -671,6 +735,8 @@ def main(argv=None) -> int:
              else codex_stats(transcript if on_stdin else out / "stderr.log") if a.agent == "codex" else {})
     model = a.model or stats.get("model", "")
     settings = settings_text(a.agent, a.track, a.use_my_config, a.settings, stats, a.effort)
+    if limit:
+        settings += f"; stopped early by the provider's usage limit: \"{limit}\""
     if a.agent == "openai":       # how the model was asked is always recorded; --settings adds to it
         settings = "; ".join(x for x in (A.settings(info, server, a.temperature, a.max_tokens, a.image_max_side),
                                          a.settings.strip()) if x)
@@ -688,8 +754,8 @@ def main(argv=None) -> int:
                    int(wall) if wall == int(wall) else wall, a.evidence.strip(), suite=a.suite, track=a.track,
                    seed=seed)
     res["cost_usd"] = stats.get("cost_usd")
-    run_info = {"exit_code": code, "timed_out": code is None, "timeout_seconds": a.timeout,
-                **(codex_commands(transcript) if on_stdin else {})}
+    run_info = {"exit_code": code, "timed_out": code is None and not stopped, "timeout_seconds": a.timeout,
+                **({"usage_limit": limit} if limit else {}), **(codex_commands(transcript) if on_stdin else {})}
     if a.agent == "openai":
         run_info = {"timed_out": info["timed_out"], "timeout_seconds": a.timeout, "endpoint": info["endpoint"],
                     "requests": info["requests"], "failed_requests": info["failed_requests"],
