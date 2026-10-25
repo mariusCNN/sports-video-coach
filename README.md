@@ -4,6 +4,15 @@
 
 ### Your coding agent reviews your sports video and coaches you.
 
+**Also a benchmark** of which agent reads sports film best: Codex gpt-6-astra 1.000, Claude Opus 5.5 0.997,
+Claude Sonnet 5.5 0.419 at default effort and 0.919 at high.<br>
+<sub>Fresh-seed board: mean score above a blind guess, 1 = perfect · 1–3 runs per setting, all by the author ·
+[leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/)</sub>
+
+**Try it:** [demo page, no install](https://mariusding.github.io/sports-video-coach/demo/) ·
+[open in Codespaces](https://codespaces.new/mariusDing/sports-video-coach) ·
+[rerun the benchmark in one command](#benchmark-which-agent-reads-sports-film-best)
+
 [![release](https://img.shields.io/github/v/release/mariusDing/sports-video-coach)](https://github.com/mariusDing/sports-video-coach/releases)
 [![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)
