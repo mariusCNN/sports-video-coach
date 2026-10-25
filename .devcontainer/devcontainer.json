@@ -1,0 +1,36 @@
+// One-click environment for rerunning the benchmark: GitHub Codespaces or VS Code Dev Containers.
+// It installs the light core (no basketball extra: no torch, no CUDA), ffmpeg and two agent CLIs. No secrets live
+// here: log in to your agent in the terminal, or add ANTHROPIC_API_KEY / OPENAI_API_KEY as Codespaces secrets.
+// Then: uv run sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
+{
+  "name": "sports-video-coach bench",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
+  "containerEnv": {
+    // the venv lives outside the workspace, so a host checkout's own .venv (Windows, macOS) is left alone
+    "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv-svc",
+    // `uv run` syncs the default groups; this keeps the basketball group (torch, CUDA wheels) out
+    "UV_NO_GROUP": "basketball",
+    "UV_LINK_MODE": "copy"
+  },
+  "postCreateCommand": "npm install -g @anthropic-ai/claude-code@2.1.310 @openai/codex@0.164.0 && uv sync --locked --no-group basketball && uv run sports-video-coach bench --help > /dev/null && echo 'Ready: log in to your agent (claude, or codex login --device-auth), then uv run sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames'",
+  "secrets": {
+    "ANTHROPIC_API_KEY": {
+      "description": "Optional: your own Anthropic API key for --agent claude (or log in with `claude` in the terminal).",
+      "documentationUrl": "https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser"
+    },
+    "OPENAI_API_KEY": {
+      "description": "Optional: your own OpenAI API key for --agent codex (or `codex login --device-auth`).",
+      "documentationUrl": "https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser"
+    }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": ["docs/benchmark.md"] },
+    "vscode": {
+      "extensions": ["ms-python.python"],
+      "settings": { "python.defaultInterpreterPath": "/home/vscode/.venv-svc/bin/python" }
+    }
+  }
+}

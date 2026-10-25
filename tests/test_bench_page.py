@@ -122,7 +122,8 @@ def test_no_external_urls_but_repo_and_evidence(tmp_path):
     _, html = render(tmp_path, results)
     html = re.sub(r'<script type="application/ld\+json">.*?</script>', "", html, flags=re.S)  # data, not fetched
     urls = set(re.findall(r"""(?:https?:)?//[^\s"'<>)]+""", html))
-    allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL, page.DEMO_URL)
+    allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL, page.DEMO_URL,
+               page.CODESPACES_URL)
     assert urls and all(u.startswith(allowed) for u in urls), urls
     assert "<script" not in html                            # self-contained: no stylesheet or script fetched
     assert set(re.findall(r"<link rel=\"([^\"]+)\"", html)) == {"canonical", "alternate"}
@@ -397,6 +398,19 @@ def test_first_screen_links_boards_rerun_repo_and_demo(tmp_path):
     assert '"#leaderboard"' in nav and '"#rerun"' in nav and f'"{page.REPO_URL}"' in nav
     assert f'href="{page.DEMO_URL}"' in top and "your own sports video" in top
     assert page_check.problems(out) == []                                      # every jump target exists
+
+
+def test_rerun_section_links_codespaces_in_both_languages(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    out, html = render(tmp_path, results)
+    zh = (out / "zh" / "index.html").read_text(encoding="utf8")
+    assert page.CODESPACES_URL == "https://codespaces.new/mariusDing/sports-video-coach"
+    for doc, label in ((html, "Open in GitHub Codespaces"), (zh, "在 GitHub Codespaces 中打开")):
+        para = doc[doc.index('<p id="codespaces">'):]
+        para = para[:para.index("</p>")]
+        assert doc.index('<pre id="rerun">') < doc.index(para)                 # right under the rerun command
+        assert f'<a href="{page.CODESPACES_URL}">{label}</a>' in para and "<code>uv run</code>" in para
 
 
 def test_first_screen_links_without_runs(tmp_path):

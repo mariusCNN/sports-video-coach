@@ -38,6 +38,10 @@
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
 ```
 
+- 不想在本机安装：[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+  （用你自己 GitHub 账号的免费时长；在里面登录你的 agent，再在命令前面加上 `uv run`；
+  [说明](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)，英文）。
+
 <details><summary>别的 agent CLI，或自己显卡上的视觉模型</summary>
 
 - 任何接在 OpenAI 兼容接口后面的视觉模型（Ollama、LM Studio、vLLM、OpenRouter），用自己的显卡免费跑：同一条命令，换成

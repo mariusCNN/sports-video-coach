@@ -39,6 +39,10 @@ Drawn drills, scored against the exact truth the tool drew in. No judge model.
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames
 ```
 
+- No local install: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+  (your own GitHub account's free hours; log in to your agent there, then put `uv run` in front;
+  [how](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)).
+
 <details><summary>Another agent CLI, or a vision model on your own GPU</summary>
 
 - Any vision model behind an OpenAI-compatible API (Ollama, LM Studio, vLLM, OpenRouter), free on your own GPU: the same command with
