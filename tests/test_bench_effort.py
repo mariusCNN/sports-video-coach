@@ -57,7 +57,7 @@ def test_chart_data_equals_the_result_files():
     sd = bar(data, "claude-sonnet-5-5", effort.DEFAULT)
     assert (sd["n"], sd["lo"], sd["hi"]) == (2, 0.413, 0.426)
     sh = bar(data, "claude-sonnet-5-5", "high")
-    assert (sh["n"], sh["above"], sh["lo"], sh["hi"]) == (3, 0.919, 0.856, 0.994)
+    assert (sh["n"], sh["above"], sh["lo"], sh["hi"]) == (4, 0.931, 0.856, 0.994)
     hh = bar(data, "claude-haiku-5-5", "high")
     assert (hh["n"], hh["above"]) == (1, 0.564)
     assert bar(data, "claude-opus-5-5", "low")["above"] == 0.778

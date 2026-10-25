@@ -60,6 +60,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - The game `periods` step cuts its stills with `sports-video-coach frames` instead of a raw ffmpeg command.
 
 ### Added
+- A fourth fresh-seed Sonnet 5.5 effort high row (seed 395804731, 0.974 total, 0.969 above chance, 165 s, $0.70),
+  run by the maintainer from the pinned install as a rehearsal of the README rerun, with its transcript. Sonnet 5.5
+  at effort high is now 0.931 above chance over four runs (0.856-0.994; was 0.919 over three) in the README (both
+  languages) and docs/benchmark.md; the page, findings, effort chart and `leaderboard.json` follow the result files.
 - Rerun the benchmark with no local install: `.devcontainer/` (GitHub Codespaces or VS Code Dev Containers) brings
   Python 3.11, uv, ffmpeg, the light core and the Claude Code and Codex CLIs, pinned. An "Open in GitHub
   Codespaces" link sits next to the rerun command in README, docs/benchmark.md and the /benchmark/ page; you bring

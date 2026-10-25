@@ -306,7 +306,7 @@ sports-video-coach bench run --agent claude --model claude-opus-5-5 --suite svc-
 
 Fresh-seed rows (frames track, 2026-10-25; Claude Code in the clean room at default effort unless the row names an
 effort set with `bench run --effort`, Codex with the runner's own config at reasoning effort xhigh; each run drew
-its own random seed with `bench run --seed`; three runs for Sonnet at effort high, two each for Opus and Sonnet at
+its own random seed with `bench run --seed`; four runs for Sonnet at effort high, two each for Opus and Sonnet at
 default effort and for Sonnet at effort max, one each for Haiku (default and effort high), Codex and Opus at effort
 low, each run on its own seed):
 
@@ -321,6 +321,7 @@ low, each run on its own seed):
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 208632171) | 0.995 | 0.994 | 0.980 | 1.000 | 1.000 | 1.000 | 256 s | $0.94 |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 288038083) | 0.917 | 0.906 | 0.667 | 1.000 | 1.000 | 1.000 | 257 s | $0.99 |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 633675701) | 0.875 | 0.856 | 0.500 | 1.000 | 1.000 | 0.998 | 184 s | $0.73 |
+| Claude Code 2.1.310 | claude-sonnet-5-5, effort high (seed 395804731) | 0.974 | 0.969 | 0.977 | 1.000 | 0.917 | 1.000 | 165 s | $0.70 |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort max (seed 280902796) | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 1200 s (killed at the timeout) | not reported |
 | Claude Code 2.1.310 | claude-sonnet-5-5, effort max (seed 604284533) | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 2401 s (killed at the timeout) | not reported |
 | Claude Code 2.1.310 | claude-opus-5-5, effort low (seed 959964891) | 0.879 | 0.778 | 0.976 | 0.538 | 1.000 | 1.000 | 70 s | $0.45 |
@@ -359,17 +360,21 @@ low, each run on its own seed):
   0.125 / 0.273 / 0.153 / 0.639, seed 911623366 0.106 / 0.308 / 0.153 / 0.112 (published: 0.106 / 0.500 /
   0.167 / 0.551).
 
-**What effort changed** (`bench run --effort`; three runs for Sonnet at high, two for Sonnet at max, one for each
+**What effort changed** (`bench run --effort`; four runs for Sonnet at high, two for Sonnet at max, one for each
 other setting, each on its own seed, so this is not a variance estimate):
 
-- **Sonnet at effort high came close to Opus in three runs, but not on the juggling.** Above chance it scored
-  0.994, 0.906 and 0.856 (mean 0.919, a spread of 0.138), against 0.413 and 0.426 at its default effort and 0.994
-  and 1.000 for Opus at its default. Each run opened most of the sheets (54 of 72, 65 of 72 and 58 of 73, in 87, 82
-  and 65 Reads) and took 184-257 s for $0.73-0.99, against 4 sheets, 16-19 s and $0.06-0.07 at its default.
-- **The shots, passes and stroke rate held in all three; the juggling only in the first.** All three runs called
-  every shot (13 of 13 each), put every release within 0.5 s and the stroke rate within 2 %. The touch counts were
-  50 against 49, 56 against 42 and 60 against 40: the second and third runs said their count came from a touch
-  rate, not one by one (the third skipped 8 of the juggling sheets and extrapolated).
+- **Sonnet at effort high came close to Opus in four runs, but not always on the juggling.** Above chance it
+  scored 0.994, 0.906, 0.856 and 0.969 (mean 0.931, a spread of 0.138), against 0.413 and 0.426 at its default
+  effort and 0.994 and 1.000 for Opus at its default. Each run opened most of the sheets (54 of 72, 65 of 72, 58 of
+  73 and 63 of 70, in 87, 82, 65 and 64 Reads) and took 165-257 s for $0.70-0.99, against 4 sheets, 16-19 s and
+  $0.06-0.07 at its default. The fourth run (seed 395804731) was the maintainer's rehearsal of the README rerun,
+  from the pinned install.
+- **The shots and stroke rate held in all four, the passes in three, the juggling in two.** All four runs called
+  every shot (13 of 13 in the first three, 12 of 12 in the fourth) and put the stroke rate within 2 %; the first
+  three put every release within 0.5 s, the fourth 11 of 12 (it missed the one at 1.36 s). The touch counts were
+  50 against 49, 56 against 42, 60 against 40 and 45 against 44: the second, third and fourth runs said their
+  count came from a touch rate, not one by one (the third skipped 8 of the juggling sheets and extrapolated; the
+  fourth called its 45 "an estimate and not a careful count").
 - **Sonnet at effort max ran out of time.** It traced the juggling frame by frame (56 of 72 sheets, 570 full-size
   frames, 628 Reads), was on the third task when the 1200 s timeout killed it, and never wrote its answer block,
   so every task scores 0.000. Its last status message listed the 13 shot outcomes as they are in the truth, but an
@@ -392,7 +397,7 @@ other setting, each on its own seed, so this is not a variance estimate):
 - Blind floors of these seeds (juggle / shots / passes / rate): seed 208632171 0.102 / 0.538 / 0.182 / 0.695,
   seed 288038083 0.119 / 0.538 / 0.144 / 0.074, seed 633675701 0.125 / 0.462 / 0.164 / 0.438, seed 280902796
   0.102 / 0.615 / 0.141 / 0.413, seed 604284533 0.104 / 0.417 / 0.153 / 0.313, seed 959964891 0.122 / 0.462 /
-  0.167 / 0.738, seed 778572209 0.114 / 0.462 / 0.167 / 0.225.
+  0.167 / 0.738, seed 778572209 0.114 / 0.462 / 0.167 / 0.225, seed 395804731 0.114 / 0.417 / 0.154 / 0.225.
 
 ## Rules
 

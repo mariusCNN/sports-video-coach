@@ -872,7 +872,7 @@ def headline(rows: list[dict], lang: str = "en") -> str:
     files = [f for b in bars for f in b["files"]]
     owner = all(str(by[f].get("submitted_by") or "").lower() == OWNER.lower() for f in files)
 
-    def said(b: dict) -> str:   # "high 0.919 (n=3, 0.856–0.994)"
+    def said(b: dict) -> str:   # "high 0.931 (n=4, 0.856–0.994)"
         e = t("default", lang) if b["effort"] == effort_chart.DEFAULT else b["effort"]
         if b["n"] == b["no_answer"]:
             why = "{}: no answer, timed out, scored 0 (n={})" if b["timed_out"] == b["n"] else \

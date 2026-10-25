@@ -5,8 +5,8 @@
 ### 你的 AI agent 看你的运动录像，像教练一样给你指导。
 
 **还带一个基准测试**，看哪个 agent 看运动录像最准：Codex gpt-6-astra 1.000，Claude Opus 5.5 0.997，
-Claude Sonnet 5.5 默认 effort 0.419，high 时 0.919。<br>
-<sub>新种子榜：比盲猜高出的部分取平均，1 = 全对 · 每个设置跑一到三次，都是作者自己跑的 ·
+Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
+<sub>新种子榜：比盲猜高出的部分取平均，1 = 全对 · 每个设置跑一到四次，都是作者自己跑的 ·
 [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/)</sub>
 
 **试一下：**[demo 网页，不用安装](https://mariusding.github.io/sports-video-coach/demo/) ·
@@ -37,9 +37,9 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.919。<br>
 程序画的练习视频，按工具自己画进去的精确真值打分。不用评审模型。
 
 - **新种子榜**（只看静帧，每次运行用一个没公开过的新种子，分数是比盲猜高出的部分取平均，1 = 全对）：
-  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997（low effort 时 0.778）· Claude Sonnet 5.5 默认 effort 0.419，high 时 0.919（3 次，0.856–0.994；max 超时）·
+  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997（low effort 时 0.778）· Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931（4 次，0.856–0.994；max 超时）·
   本地显卡上的 qwen3-vl 4B 0.000。
-  每个设置跑了一到三次；目前所有运行都是作者自己跑的。
+  每个设置跑了一到四次；目前所有运行都是作者自己跑的。
 - [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/#frames-svc-bench-3-fresh) · [自己数一数触球](https://mariusding.github.io/sports-video-coach/benchmark/zh/#count) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）
 - 重跑新种子榜：先安装（需要 ffmpeg），再跑一条命令（`--seed` 抽一个新种子；
   加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：

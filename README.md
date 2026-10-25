@@ -5,8 +5,8 @@
 ### Your coding agent reviews your sports video and coaches you.
 
 **Also a benchmark** of which agent reads sports film best: Codex gpt-6-astra 1.000, Claude Opus 5.5 0.997,
-Claude Sonnet 5.5 0.419 at default effort and 0.919 at high.<br>
-<sub>Fresh-seed board: mean score above a blind guess, 1 = perfect · 1–3 runs per setting, all by the author ·
+Claude Sonnet 5.5 0.419 at default effort and 0.931 at high.<br>
+<sub>Fresh-seed board: mean score above a blind guess, 1 = perfect · 1–4 runs per setting, all by the author ·
 [leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/)</sub>
 
 **Try it:** [demo page, no install](https://mariusding.github.io/sports-video-coach/demo/) ·
@@ -39,8 +39,8 @@ Drawn drills, scored against the exact truth the tool drew in. No judge model.
 
 - **Fresh-seed board** (frames only, a new unseen seed per run, mean score above a blind guess, 1 = perfect):
   Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 (0.778 at low effort) · Claude Sonnet 5.5 0.419 at default effort,
-  0.919 at high (3 runs, 0.856–0.994; max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
-  One to three runs per setting; all runs so far are the author's.
+  0.931 at high (4 runs, 0.856–0.994; max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
+  One to four runs per setting; all runs so far are the author's.
 - [Leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariusding.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)
 - Rerun the fresh-seed board: install (needs ffmpeg), then one command (`--seed` draws a new seed;
   add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
