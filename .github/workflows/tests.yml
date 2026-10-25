@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.5"   # pinned so result PRs build the same way; the uv of the last green master run
       # the generic plugin and film tests cut synthetic video; apt hung here for 8 minutes on 2026-10-22
       - name: ffmpeg, a static build from GitHub
         timeout-minutes: 5
@@ -50,6 +52,8 @@ jobs:
         with:
           fetch-depth: 2      # the pull request's merge commit and its first parent, the base branch
       - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.5"   # pinned so result PRs build the same way; the uv of the last green master run
       - name: Light install, as in the README
         run: uv tool install .
       - name: Score the added or changed result files into the job summary

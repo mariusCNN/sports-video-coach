@@ -17,6 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.5"   # pinned so result PRs build the same way; the uv of the last green master run
       - name: The ref is a release tag that matches the version in pyproject.toml
         run: |
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)

@@ -29,6 +29,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.5"   # pinned so result PRs build the same way; the uv of the last green master run
       - name: ffmpeg, a static build from GitHub (apt hung or failed on these runners several times)
         timeout-minutes: 5
         run: |
