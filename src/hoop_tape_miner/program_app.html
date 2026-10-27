@@ -326,6 +326,19 @@ details.fold>summary{cursor:pointer;font-weight:600;color:var(--pri)}
 .dc:hover{border-color:var(--p35)}
 .dc .dd{font-size:11px;line-height:1.1;color:var(--mute)}
 .dc .dn{font-size:10px;line-height:1.2;color:color-mix(in oklch,var(--fg) 78%,transparent);text-align:center;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;padding:0 2px}
+.dc .fx{font-size:10px;line-height:1;font-weight:700;color:var(--pri)}
+/* fixture table: date, opponent (time · court under it), result; three columns also on a phone */
+.fxt{width:100%;border-collapse:collapse;font-size:13.5px}
+.fxt th{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--mute);text-align:left;padding:10px 10px 6px;border-bottom:1px solid var(--p15)}
+.fxt td{padding:9px 10px;border-bottom:1px solid color-mix(in oklch,var(--line) 60%,transparent);vertical-align:top;line-height:1.4}
+.fxt tr:last-child td{border-bottom:0}
+.fxt td.d{width:52px;white-space:nowrap}
+.fxt td.d span{display:block;font-size:11px;color:var(--mute)}
+.fxt .t{font-weight:700}
+.fxt .m{font-size:12px;color:var(--mute);margin-top:2px}
+.fxt td.r,.fxt th.r{width:72px;text-align:right;white-space:nowrap}
+.fxt tr.bye td{padding-top:6px;padding-bottom:6px}
+.fxt tr.nx td{background:var(--p8)}
 .dc .ok{position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:50%;background:var(--ok);color:oklch(0.14 0 0);display:flex;align-items:center;justify-content:center}
 .dc .ok .ic{width:9px;height:9px}
 .dc .ok .ic svg{stroke-width:3.5}
@@ -395,6 +408,9 @@ audio.loop{display:none}
 .aplay .at{display:flex;flex-direction:column;line-height:1.35;min-width:0}
 .aplay .at b{font-size:15.5px}
 .aplay .as{font-size:12.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+/* car talk: the selected day's session mp3 above the day, played once (outside todayBox, so a re-render never
+   stops it) */
+#carBox .aplay{margin:0 0 10px}
 .actl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 4px}
 .actl .k{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--mute);margin:0 2px 0 4px}
 .actl .k:not(:first-child){margin-left:10px}
@@ -419,6 +435,7 @@ audio.loop{display:none}
 <div class="topbar"><span class="brand" id="brand"></span><span class="rt"><span class="sync local" id="syncChip"></span><span class="dt" id="topDate"></span></span></div>
 
 <section data-panel="today" id="today">
+<div id="carBox"><!--CAR--></div>
 <div id="todayBox"></div>
 </section>
 
@@ -586,6 +603,15 @@ function weekOf(d){
 const sessOf = d => (PLAN.special || {})[iso(d)] || PLAN.weekdays[d.getDay()];
 const dayOf = ds => DAYS.find(x => iso(x) === ds);
 const isGame = code => !!(SESS[code] && SESS[code].game);
+/* fixture: the league draw by date, a game ({time, vs, court, score: [ours, theirs]}) or a bye */
+const FX = PLAN.fixture || {}, FIX = Object.fromEntries((FX.games||[]).map(g=>[g.date, g]));
+const fixRes = g => !g.score ? "" : (g.score[0]>g.score[1] ? "赢 " : g.score[0]<g.score[1] ? "输 " : "平 ") + g.score.join("–");
+const fixLine = g => [g.time, g.vs && "对 "+g.vs, g.court].filter(Boolean).map(esc).join(" · ");
+function fixNote(ds){
+  const g = FIX[ds]; if (!g) return "";
+  if (g.bye) return `<div class="note"><b>本轮轮空</b>：这一轮没有你们队的比赛。</div>`;
+  return `<div class="note"><b>联赛</b> ${fixLine(g)}${g.score?` · <b>${fixRes(g)}</b>`:""}</div>`;
+}
 const letterOf = code => (SESS[code] && SESS[code].letter) || code[0];
 const colorOf = code => (SESS[code] && SESS[code].color) || "var(--pri)";
 let todayIso = iso(new Date());
@@ -675,13 +701,21 @@ function renderToday(){
     </div>
     <div class="pbar"><i style="width:${n?Math.round(100*dn/n):0}%"></i></div>
    </div>
-   <div class="wstrip">${strip}</div>${back}${note}${reviewCard(sess)}${readyCard(sess)}` +
+   <div class="wstrip">${strip}</div>${back}${note}${fixNote(selD)}${reviewCard(sess)}${readyCard(sess)}` +
    blocks.map(b=>`<div class="gcard glass grain"><div class="ghead">${ic("dumbbell")}<span>${esc(b.t||"今天")}</span></div><div class="gbody">${b.items.map(it=>exCard(it)).join("")}</div></div>`).join("");
   const fb = document.getElementById("finBtn");
   if (isGame(code)) fb.innerHTML = `${ic("pen")}打完了：去记录`;
   else fb.innerHTML = fin ? `${ic("check")}已完成 · 用力 ${fin.rpe||"–"}/10（点这里修改）` : `${ic("check")}完成训练`;
   fb.classList.toggle("did", !!fin && !isGame(code));
+  carShow();
 }
+/* the car talk of the selected day's session; one still playing stays until it is paused */
+function carShow(){
+  const code = sessOf(dayOf(selD));
+  document.querySelectorAll("#carBox .carp").forEach(p => {
+    p.hidden = !p.dataset.codes.split(" ").includes(code) && p.querySelector("audio").paused; });
+}
+document.querySelectorAll("#carBox audio").forEach(a => a.addEventListener("pause", carShow));
 /* a session with "review" opens with the last game's log: which decision tree went worst, the counters */
 function reviewCard(sess){
   if (!sess.review) return "";
@@ -775,14 +809,14 @@ function renderCal(){
     const cells = '<span class="dc pad"></span>'.repeat((days[0].getDay()+6)%7) + days.map(d=>{
       const ds=iso(d), c=sessOf(d), done=dayDone(ds), past=ds<todayIso;
       return `<button class="dc ${ds===todayIso?"today":""} ${done?"done":""} ${past&&!done?"past":""}" data-act="day" data-d="${ds}" aria-label="${md(d)} 周${WD[d.getDay()]} ${esc(SESS[c].title)}${done?"，已完成":""}">
-        <span class="dd">${md(d)}</span>${badge(c)}<span class="dn">${esc(SHORT[c]||SESS[c].title)}</span>${done?`<span class="ok">${ic("check")}</span>`:""}</button>`; }).join("");
+        <span class="dd">${md(d)}</span>${badge(c)}<span class="dn">${esc(SHORT[c]||SESS[c].title)}</span>${FIX[ds]?`<span class="fx">${FIX[ds].bye?"轮空":esc(FIX[ds].time||"联赛")}</span>`:""}${done?`<span class="ok">${ic("check")}</span>`:""}</button>`; }).join("");
     return `<div class="gcard glass grain"><div class="ghead">${ic("cal")}<span>第 ${w} 周 · ${PLAN.phases[w]}</span><span class="rt">${dn}/${days.length} 天</span></div>
       <div class="cgrid">${head}${cells}</div></div>`;
   }).join("");
   const seen = {};
   DAYS.forEach(d=>{ const c=sessOf(d), l=letterOf(c); (seen[l] = seen[l] || {c, names:[]}); const nm = SHORT[c]||SESS[c].title; if(!seen[l].names.includes(nm)) seen[l].names.push(nm); });
   const legend = `<div class="legend">${Object.values(seen).map(x=>`<span>${badge(x.c)}${esc(x.names.join(" / "))}</span>`).join("")}<span class="lg-today">今天</span><span class="lg-done">${ic("check")}练完</span></div>`;
-  document.getElementById("calBox").innerHTML = legend + grid;
+  document.getElementById("calBox").innerHTML = legend + grid + fixTable();
   document.getElementById("weekBox").innerHTML = (PLAN.week||[]).length ? `<div class="gcard glass grain"><div class="ghead">${ic("list")}<span>每周结构</span></div>
    <table class="wtab"><thead><tr><th>天</th><th>课</th><th>主要内容</th><th>为什么</th></tr></thead><tbody>` +
    PLAN.week.map(({wd,code,title,why})=>{ const s=SESS[code]; return `<tr>
@@ -791,6 +825,21 @@ function renderCal(){
     <td class="f" data-l="练什么">${s.focus||""}</td>
     <td class="y" data-l="为什么">${why||""}</td></tr>`; }).join("") +
    `</tbody></table></div>${PLAN.calNote?`<p class="small mute">${PLAN.calNote}</p>`:""}` : "";
+}
+
+/* the whole season's draw, past the plan's last day too: date, time, opponent and court, result */
+function fixTable(){
+  const gs = (FX.games||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  if (!gs.length) return "";
+  const win = gs.filter(g=>g.score && g.score[0]>g.score[1]).length, loss = gs.filter(g=>g.score && g.score[0]<g.score[1]).length;
+  const next = (gs.find(g=>!g.bye && !g.score && g.date>=todayIso) || {}).date;
+  return `<div class="gcard glass grain" id="fixture"><div class="ghead">${ic("trophy")}<span>赛程${FX.team?" · "+esc(FX.team):""}</span><span class="rt">${win} 胜 ${loss} 负</span></div>
+   <table class="fxt"><thead><tr><th>日期</th><th>对手</th><th class="r">结果</th></tr></thead><tbody>` +
+   gs.map(g=>{ const d = pd(g.date);
+    return `<tr class="${g.date===next?"nx":""} ${g.bye?"bye":""}"><td class="d"><b>${md(d)}</b><span>周${WD[d.getDay()]}</span></td>
+     <td>${g.bye?`<span class="mute">轮空</span>`:`<div class="t">${esc(g.vs)}</div><div class="m">${[g.time,g.court].filter(Boolean).map(esc).join(" · ")}</div>`}</td>
+     <td class="r">${g.score?`<b>${fixRes(g)}</b>`:g.date===next?`<span class="tag o">下一场</span>`:""}</td></tr>`; }).join("") +
+   `</tbody></table>${FX.source?`<p class="small mute" style="margin:8px 12px">来源：<a href="${esc(FX.source)}" target="_blank" rel="noopener">联赛赛程页</a>（改期以官网为准）</p>`:""}</div>`;
 }
 
 /* ---------- game tab: pre-game briefing ---------- */
@@ -808,7 +857,7 @@ function renderGame(){
   <div class="hero grain">
    <div class="eyebrow">下一场 · ${ds===todayIso?"今天":md(d)+" 周"+WD[d.getDay()]}</div>
    <h1>${sess.game==="league"?"联赛":"Pickup"}</h1>
-   <div class="sub">第 ${w} 周 · ${PLAN.phases[w]}</div>
+   <div class="sub">${FIX[ds]&&!FIX[ds].bye?fixLine(FIX[ds])+"<br>":""}第 ${w} 周 · ${PLAN.phases[w]}</div>
    ${mission?`<div class="focus">本周任务：${mission}</div>`:""}
    <div class="chips">${TARGETS.slice(0,3).map((t,j)=>`<span class="chip">${ic(icons[j])}${esc(t.label)} <b>${esc(t.value)}</b></span>`).join("")}</div>
   </div>
@@ -1097,7 +1146,7 @@ function aSession(a){
   } catch (e) {}
 }
 function aApply(){
-  players.forEach(a => { a.loop = apref.loop; a.playbackRate = apref.rate; a.defaultPlaybackRate = apref.rate; a.preservesPitch = true; });
+  players.forEach(a => { a.loop = apref.loop && !a.classList.contains("car"); a.playbackRate = apref.rate; a.defaultPlaybackRate = apref.rate; a.preservesPitch = true; });
   document.querySelectorAll(".actl [data-rate]").forEach(b => b.classList.toggle("on", +b.dataset.rate === apref.rate));
   document.querySelectorAll(".actl [data-loop]").forEach(b => b.classList.toggle("on", (b.dataset.loop === "1") === apref.loop));
   players.forEach(a => a.dispatchEvent(new Event("pause-draw")));
@@ -1109,7 +1158,7 @@ players.forEach(a => {
   st.className = "as"; b.lastChild.append(st); a.before(b);
   let n = 1, last = 0;
   const draw = () => { b.classList.toggle("on", !a.paused);
-    const mode = (apref.loop ? "单曲循环" : "播一遍") + (apref.rate !== 1 ? ` · ${apref.rate}×` : "");
+    const mode = (a.loop ? "单曲循环" : "播一遍") + (apref.rate !== 1 ? ` · ${apref.rate}×` : "");
     st.textContent = a.paused ? `${a.duration ? mmss(a.duration) + " · " : ""}${mode}`
                               : `播放中 · 第 ${n} 遍 · ${mmss(a.currentTime)} / ${mmss(a.duration)} · ${mode}`; };
   a.addEventListener("timeupdate", () => { if (a.currentTime < last - 1) n++; last = a.currentTime; draw(); });
@@ -1131,7 +1180,8 @@ if (players.length){
   const ctl = document.createElement("div");
   ctl.className = "actl";
   ctl.innerHTML = `<span class="k">速度</span>${RATES.map(r => `<button type="button" data-rate="${r}">${r}×</button>`).join("")}` +
-    `<span class="k">循环</span><button type="button" data-loop="1">单曲循环</button><button type="button" data-loop="0">播一遍</button>`;
+    (players.some(a => !a.classList.contains("car")) ?
+      `<span class="k">提示音循环</span><button type="button" data-loop="1">单曲循环</button><button type="button" data-loop="0">播一遍</button>` : "");
   players[players.length - 1].after(ctl);
   ctl.addEventListener("click", e => {
     const t = e.target.closest("button"); if (!t) return;

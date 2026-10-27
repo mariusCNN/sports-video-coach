@@ -11,7 +11,11 @@ url]]}}, keys listed in an exercise's "r"), and optional HTML fragments cal.html
 decide.html / lib.html placed into the matching tab as they are (static text, no scripts; the 决策 and 资料 tabs
 show only when their fragment exists). An `<audio class="loop" src="x.mp3" title="...">` in a fragment becomes a
 big looping play button (e.g. a cue track from `sports-video-coach narrate --script x.zh.md --chime`); publish
-copies the mp3 next to the page.
+copies the mp3 next to the page. A session's "car" (an mp3 file name in the folder, or {"src", "title"}) is the
+talk for the drive to the court: the today tab shows it as a play-once button on every day of that session.
+An optional "fixture" ({"team", "source", "games": [{"date", "time", "vs", "court", "score": [ours, theirs]} or
+{"date", "bye": true}]}) is the league draw: the today and game tabs show that day's game or bye, the calendar
+marks the dates and lists the whole season with results, also past the plan's last day.
 
 The page is the engine program_app.html with that data inlined. Ticks, finished workouts and the game log are
 saved in the browser (localStorage). `hoop-tape-miner publish <program folder> --deploy` gives it a random
@@ -31,6 +35,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import re
 import sys
 import time
 import urllib.request
@@ -71,9 +76,71 @@ def validate(plan: dict) -> list[str]:
         for i, it in enumerate(s.get("items") or []):
             if it.get("ex") not in ex:
                 errors.append(f"sessions[{code}].items[{i}]: unknown exercise {it.get('ex')!r}")
+    for code, s in sess.items():
+        if "car" in s and car_src(s["car"]) is None:
+            errors.append(f"sessions[{code}].car: give an mp3 file name in the program folder")
+    fixture = plan.get("fixture")
+    if fixture is not None and not isinstance(fixture, dict):
+        errors.append("fixture: must be an object")
+        fixture = {}
+    games = (fixture or {}).get("games", [])
+    if not isinstance(games, list):
+        errors.append("fixture.games: must be a list")
+        games = []
+    dates = set()
+    for i, g in enumerate(games):
+        if not isinstance(g, dict):
+            errors.append(f"fixture.games[{i}]: must be an object")
+            continue
+        day = g.get("date")
+        try:
+            if not isinstance(day, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+                raise ValueError
+            date.fromisoformat(day)
+        except ValueError:
+            errors.append(f"fixture.games[{i}]: date must be a valid YYYY-MM-DD")
+        else:
+            if day in dates:
+                errors.append(f"fixture.games[{i}]: duplicate date {day}")
+            dates.add(day)
+        if "bye" in g and not isinstance(g["bye"], bool):
+            errors.append(f"fixture.games[{i}].bye: must be true or false")
+        if not g.get("bye") and not g.get("vs"):
+            errors.append(f"fixture.games[{i}]: give the opponent (vs) or bye: true")
+        score = g.get("score")
+        if score is not None and not (isinstance(score, list) and len(score) == 2
+                                      and all(type(x) is int and x >= 0 for x in score)):
+            errors.append(f"fixture.games[{i}].score: give [ours, theirs] as non-negative integers")
     if not plan["phases"]:
         errors.append("phases is empty")
     return errors
+
+
+def car_src(car) -> str | None:
+    """The mp3 file name of a session's "car" (a name or {"src", "title"}); None when it is not a plain file name."""
+    src = car.get("src") if isinstance(car, dict) else car
+    if (not isinstance(src, str) or not src.endswith(".mp3") or Path(src).name != src
+            or src.startswith(".") or any(c in src for c in "/\\:")):
+        return None
+    return src
+
+
+def car_players(plan: dict, folder: Path) -> str:
+    """One hidden <div class="carp" data-codes> with a play-once <audio> per car mp3 (sessions sharing a file share
+    the player); the page shows the one of the selected day. Static src= attributes, so publish copies the files."""
+    files: dict[str, dict] = {}
+    for code, s in plan["sessions"].items():
+        if "car" in s:
+            car = s["car"] if isinstance(s["car"], dict) else {}
+            f = files.setdefault(car_src(s["car"]), {"codes": [], "title": None})
+            f["codes"].append(code)
+            f["title"] = f["title"] or car.get("title")  # the first title given names the shared player
+    for src in files:
+        if not (folder / src).exists():
+            print(f"[program] warning: {src} is missing in {folder}, its car player will not play", file=sys.stderr)
+    return "".join(f'<div class="carp" data-codes="{html.escape(" ".join(f["codes"]))}" hidden><audio class="loop car" '
+                   f'src="{html.escape(src)}" title="{html.escape(f["title"] or "车上听 · 去球场的路上")}" preload="metadata"></audio></div>'
+                   for src, f in files.items())
 
 
 def script_json(data) -> str:
@@ -97,6 +164,7 @@ def page(folder: Path) -> str:
     for name in FRAGMENTS:
         frag = folder / f"{name}.html"
         out = out.replace(f"<!--{name.upper()}-->", frag.read_text(encoding="utf8") if frag.exists() else "", 1)
+    out = out.replace("<!--CAR-->", car_players(plan, folder), 1)
     # data last, so text inside the fragments can never be taken for a placeholder
     for marker, data in (("/*PLAN*/", plan), ("/*VIDEOS*/", videos), ("/*REFS*/", refs)):
         out = out.replace(marker, script_json(data), 1)

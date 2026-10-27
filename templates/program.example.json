@@ -64,6 +64,13 @@
   "gobletsq": {"n": "Goblet squat", "en": "goblet squat", "v": [], "r": [], "how": "Hold a dumbbell at the chest; sit down between the heels, stand up tall.", "cue": "Chest up", "why": "Leg strength for braking, landing and jumping.", "fix": "", "tips": ["3 s down", "Knees follow the toes", "Same depth each rep"]},
   "z2": {"n": "Zone 2", "en": "zone 2 cardio", "v": [], "r": [], "how": "Bike, jog or row at a talking pace.", "cue": "Can talk", "why": "Aerobic base for late-game legs.", "fix": "", "tips": ["Nose breathing if you can", "Same pace start to end", "Heart rate about 60–70% of max"]}
  },
+ "fixture": {"team": "Our Team", "source": "https://example.com/draw", "games": [
+  {"date": "2025-03-08", "time": "7:00 PM", "vs": "Team A", "court": "Court 1", "score": [42, 38]},
+  {"date": "2025-03-15", "time": "8:00 PM", "vs": "Team B", "court": "Court 2"},
+  {"date": "2025-03-22", "bye": true},
+  {"date": "2025-03-29", "time": "7:00 PM", "vs": "Team C", "court": "Court 1"},
+  {"date": "2025-04-05", "time": "9:00 PM", "vs": "Team A", "court": "Court 1"}
+ ]},
  "calNote": "Test days replace that day's session.",
  "endNote": "The program has ended. Export your log, or run `hoop-tape-miner program pull` to plan the next month."
 }

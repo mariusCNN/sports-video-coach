@@ -11,6 +11,13 @@ All notable changes to this project are documented here. The format follows [Kee
   swim example measures a rate), tested on drawn video against the exact count.
 
 ### Fixed
+- Team pages now follow every player-table source (`box.json`, either `official.json`, and the review's
+  `plusminus.json`), so changing or adding one makes the HTML step run again. Relative run paths are resolved
+  from the game folder. Invalid film counts fail with a file-specific error instead of showing missing or zero.
+- `program check` rejects invalid calendar dates, duplicate fixture dates, malformed fixture entries and
+  negative or boolean scores before building the app; car audio paths must be plain file names on every OS.
+- A plan with only play-once car audio no longer shows loop controls that cannot affect it; when cue audio is
+  present, the loop controls name the cues explicitly.
 - Zoom sheets: the zoom command in the generic review step, its guide and `frames --help` now fills one whole
   sheet (`--end` is exclusive: `--start 0:12 --end 0:14.4 --every 0.2` is 12 tiles; the old `--end 0:15` gave 15,
   a second sheet of 3 tiles and 9 black cells) and names one `--out` folder per zoom. `frames` says when a window
@@ -125,6 +132,18 @@ All notable changes to this project are documented here. The format follows [Kee
   the result files' counts, the task metrics, `leaderboard.json` and `benchmark/results` as downloads, MIT, and
   `dateModified` = the newest result file's date; `bench page` also sets that date as `<lastmod>` on the
   benchmark pages in the demo site's sitemap.
+- Training-plan app: a session's `"car"` mp3 (a file name, or `{"src", "title"}`) is a talk for the drive to the
+  court. The today tab shows it above the day as a play-once button on every day of that session; `program check`
+  rejects a car file outside the program folder and `publish` copies it next to the page.
+- Training-plan app: an optional `"fixture"` (the league draw: date, time, opponent, court, score, or a bye). The
+  today tab notes that day's game or bye, the game tab names the opponent, and the calendar marks game days and
+  lists the whole season with results; `program check` validates it.
+- Basketball team page: a per-player table (`hoop-tape-miner box`) under the Four Factors: points and fouls from the
+  league, plus-minus while seen on court (with the time seen), and rebounds, assists and steals counted on the film
+  (`box.json`; `box --draft` lists the moments to check from the review). A jersey that could not be read counts as
+  "unclear", never for a player; a legend says where each number comes from.
+- Film: a `stats:` scene, the report's key numbers as one board in rows of three
+  (`![Key numbers](stats:9–21 first half | 22–4 the run)`).
 - `bench page` also writes `leaderboard.json` next to the leaderboard (`/benchmark/leaderboard.json`,
   `bench/export.py`): the same boards, ranks and numbers as the page, for scripts and lists of leaderboards.
 - A findings article next to the leaderboard (`/benchmark/findings/`, Chinese at `/benchmark/zh/findings/`,
@@ -295,6 +314,8 @@ All notable changes to this project are documented here. The format follows [Kee
   wait, then fails with a message naming the file; no temp file is left behind.
 - Film `--dry` also warns about a short arrow between two tracked players (it only measured x,y spots), at the
   same length (a tenth of the frame) below which the drawing drops the arrow's second ring.
+- `page-check` no longer reads a plugin panel's `<style>` / `<script>` inside a report as text, so the CSS of the
+  Four Factors or player-numbers table is no longer flagged as English left in a Chinese report.
 - The Chinese benchmark pages' link previews showed English images: `/benchmark/zh/` now points `og:image` at a
   Chinese share card (`card-zh.png`, drawn from the same numbers when a CJK font is installed, as on the demo
   site's runner) and `/benchmark/zh/findings/` at `effort-zh.png`; every benchmark page also states `og:locale`
@@ -375,6 +396,14 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 - CI pins uv 0.13.5 (the version the last green master run used) in every `setup-uv` step, so result pull requests
   build the same way.
+- Report pages: the play buttons (the listen bar and the clip player) are white on the dark band, an outline while
+  playing, instead of the yellow accent; the seek bar is white too.
+- Key-number tiles (`::: keys`) go in rows of three (six = 3 + 3, two or four in rows of two) and a short last row
+  stretches, so no empty grey cell shows.
+- Matchups table: each defender is a row with the number, a bar and the share, readable on a phone; an unread
+  defender says "no number".
+- Four Factors panel and the season page explain each term (eFG%, TOV%, ORB%, FT rate, possessions, PPP) in plain
+  words.
 - README (English and Chinese): the benchmark block is now a short section with the fresh-seed board's numbers (with the effort level where it changed the score),
   links to the leaderboard and "count it yourself", and the rerun command in its own code block; the other agents
   and the OpenAI-compatible path moved into a fold. Fixes the Chinese "基准测试" label that GitHub showed with

@@ -133,6 +133,73 @@ def test_publish_copies_the_loop_audio_of_a_fragment(tmp_path, monkeypatch):
     assert "i.ytimg.com/vi/${yid}" in page  # the app's own script is left as it is
 
 
+def test_car_audio_of_sessions_is_one_player_per_file_and_published(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path))
+    folder = plan_folder(tmp_path)
+    plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
+    plan["sessions"]["G"]["car"] = "car.G.zh.mp3"
+    plan["sessions"]["TS"]["car"] = {"src": "car.G.zh.mp3", "title": "Game day <drive>"}
+    plan["sessions"]["L"]["car"] = "car.L.zh.mp3"
+    (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
+    (folder / "car.G.zh.mp3").write_bytes(b"ID3")
+    (folder / "car.L.zh.mp3").write_bytes(b"ID3")
+    page = program.page(folder)
+    assert page.count('class="carp"') == 2 and "<!--CAR-->" not in page
+    assert '<div class="carp" data-codes="G TS" hidden><audio class="loop car" src="car.G.zh.mp3"' in page
+    assert 'title="Game day &lt;drive&gt;"' in page  # a title given by any session sharing the file
+    publish.main([str(folder)])
+    tok = json.loads((tmp_path / "publish.json").read_text(encoding="utf8"))["programs"]["players/p0/program/2026-11-02"]
+    assert sorted(f.name for f in (tmp_path / "site" / "p" / tok).iterdir()) == ["car.G.zh.mp3", "car.L.zh.mp3",
+                                                                                 "index.html"]
+
+
+def test_validate_rejects_car_audio_outside_the_folder():
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    plan["sessions"]["G"]["car"] = "../secret.mp3"
+    plan["sessions"]["L"]["car"] = {"title": "no file"}
+    errors = program.validate(plan)
+    assert any("sessions[G].car" in e for e in errors) and any("sessions[L].car" in e for e in errors)
+
+
+def test_validate_checks_fixture_games():
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    assert plan["fixture"]["games"]  # the example shows the schema
+    plan["fixture"]["games"] += [{"date": "8/3/2025", "vs": "X"}, {"date": "2025-03-09"},
+                                 {"date": "2025-03-10", "vs": "Y", "score": "42-38"}]
+    errors = program.validate(plan)
+    assert any("fixture.games[5]: date" in e for e in errors)
+    assert any("fixture.games[6]: give the opponent" in e for e in errors)
+    assert any("fixture.games[7].score" in e for e in errors)
+
+
+def test_page_shows_the_fixture_on_today_calendar_and_game_tabs(tmp_path):
+    page = program.page(plan_folder(tmp_path))
+    assert '"vs": "Team B"' in page or '"vs":"Team B"' in page
+    for hook in ("${fixNote(selD)}", "grid + fixTable()", "fixLine(FIX[ds])"):
+        assert hook in page
+
+
+@pytest.mark.parametrize("fixture,issue", [
+    ([], "fixture: must be an object"),
+    ({"games": {}}, "fixture.games: must be a list"),
+    ({"games": [None]}, "fixture.games[0]: must be an object"),
+    ({"games": [{"date": "2025-02-30", "vs": "A"}]}, "date must be a valid"),
+    ({"games": [{"date": "2025-03-01", "bye": "false"}]}, ".bye: must be true or false"),
+    ({"games": [{"date": "2025-03-01", "vs": "A", "score": [True, 2]}]}, "non-negative integers"),
+    ({"games": [{"date": "2025-03-01", "vs": "A", "score": [-1, 2]}]}, "non-negative integers"),
+    ({"games": [{"date": "2025-03-01", "vs": "A"}, {"date": "2025-03-01", "bye": True}]}, "duplicate date"),
+])
+def test_fixture_errors_are_reported_before_rendering(fixture, issue):
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    plan["fixture"] = fixture
+    assert any(issue in error for error in program.validate(plan))
+
+
+@pytest.mark.parametrize("src", ["../car.mp3", "..\\car.mp3", "sub\\car.mp3", "C:car.mp3"])
+def test_car_audio_requires_a_plain_filename_on_every_platform(src):
+    assert program.car_src(src) is None
+
+
 def test_worker_config_binds_sync_kv(tmp_path):
     cfg = json.loads(publish.worker_config(tmp_path / "site", "team-film", tmp_path / "w", "abc123")
                      .read_text(encoding="utf8"))

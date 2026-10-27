@@ -199,14 +199,14 @@ UI = {
     "zh": dict(title="对位与出手防守", shots="按最近防守人距离的出手", bin="距离", us="我们", them="对手",
                att="出手", made="命中 / 看清", tight=f"贴身（< {TIGHT_M} 米）", contested=f"有干扰（{TIGHT_M}–{OPEN_M} 米）",
                open=f"空位（≥ {OPEN_M} 米）", unknown="不明", match="对位（按时间）", player="球员",
-               by="最常防他的人", guarded="他最常防的人", free="身边没人",
+               by="最常防他的人", guarded="他最常防的人", free="身边没人", noid="号码看不清",
                note="出手瞬间离投篮人最近的对手的距离（位置追踪，误差约半米）；投篮人或防守人没追踪到就记为不明，不猜。"
                     "对位 = 每一帧离进攻球员最近的防守人，按时间累计；{g} 米内没人算身边没人。"),
     "en": dict(title="Matchups and shot defence", shots="Shots by nearest defender", bin="Distance", us="Us",
                them="Them", att="Att", made="Made / seen", tight=f"tight (< {TIGHT_M} m)",
                contested=f"contested ({TIGHT_M}–{OPEN_M} m)", open=f"open (≥ {OPEN_M} m)", unknown="unknown",
                match="Matchups (by time)", player="Player", by="Guarded most by", guarded="Guarded most",
-               free="no one near",
+               free="no one near", noid="no number",
                note="Distance from the shooter to the nearest opponent at the shot (position tracking, about half a "
                     "metre of error); unknown when the shooter or the defenders are not tracked, never guessed. "
                     "Matchup = the nearest defender in every frame, added up over time; nobody within {g} m counts as "
@@ -214,8 +214,25 @@ UI = {
 }
 
 
+# one row per person: number, a bar of the share, the percentage (a comma list of "#9 14%" was unreadable)
+STYLE = ("<style>.mu{display:grid;grid-template-columns:minmax(4.5rem,auto) minmax(3rem,1fr) 2.8rem;align-items:center;"
+         "gap:.55rem;font-variant-numeric:tabular-nums;line-height:1.9}.mu b{white-space:nowrap}"
+         ".mu b.noid{font-weight:400;color:var(--muted);font-size:.85em}"
+         ".mu .mu-bar{height:.5rem;background:var(--rule);border-radius:999px;overflow:hidden}"
+         ".mu .mu-bar i{display:block;height:100%;background:var(--ink-soft);border-radius:999px}"
+         ".mu .pc{text-align:right;font-weight:600}td.mus{min-width:11rem}"
+         # the player column stays put when the table scrolls sideways on a phone
+         ".mus-t td,.mus-t th{vertical-align:middle}.mus-t td:first-child,.mus-t th:first-child{position:sticky;left:0;"
+         "z-index:1;background:var(--sheet);font-weight:700}</style>")
+
+
 def _who(entries: list[dict], u: dict) -> str:
-    return ", ".join(f"{'#' + e['defender'] if e['defender'] else '?'} {round(100 * e['share'])}%" for e in entries) or "–"
+    rows = []
+    for e in entries:
+        pc = round(100 * e["share"])
+        who = f"<b>#{html.escape(e['defender'])}</b>" if e["defender"] else f'<b class="noid">{u["noid"]}</b>'
+        rows.append(f'<div class="mu">{who}<span class="mu-bar"><i style="width:{pc}%"></i></span><span class="pc">{pc}%</span></div>')
+    return "".join(rows) or "–"
 
 
 def _guarded_most(m_them: dict, n: str) -> list[dict]:
@@ -254,16 +271,16 @@ def tables_html(doc: dict, focus: str | None, lang: str) -> str:
             cnt = {b: sum((r["bin"] or "unknown") == b for r in mine) for b in (*BINS, "unknown")}
             parts.append(f"<h3>{u['shots']}</h3><p>" + " · ".join(f"{u[b]}: {n}" for b, n in cnt.items() if n) + "</p>")
     if players:
-        rows = "".join(f"<tr><td>#{html.escape(n)}</td><td>{_who(m_us[n]['by'], u)}</td>"
-                       f"<td>{_who(_guarded_most(m_them, n), u)}</td>"
+        rows = "".join(f"<tr><td>#{html.escape(n)}</td><td class=\"mus\">{_who(m_us[n]['by'], u)}</td>"
+                       f"<td class=\"mus\">{_who(_guarded_most(m_them, n), u)}</td>"
                        f"<td>{round(100 * m_us[n]['unguarded_s'] / m_us[n]['total_s']) if m_us[n]['total_s'] else 0}%</td></tr>"
                        for n in players)
-        parts.append(f'<h3>{u["match"]}</h3><div class="table-wrap"><table><thead><tr><th>{u["player"]}</th>'
+        parts.append(f'<h3>{u["match"]}</h3><div class="table-wrap"><table class="mus-t"><thead><tr><th>{u["player"]}</th>'
                      f'<th>{u["by"]}</th><th>{u["guarded"]}</th><th>{u["free"]}</th></tr></thead><tbody>{rows}</tbody>'
                      f'</table></div>')
     if not parts:
         return ""
-    return "".join(parts) + f'<p class="fi-note">{html.escape(u["note"].format(g=GUARD_M))}</p>'
+    return STYLE + "".join(parts) + f'<p class="fi-note">{html.escape(u["note"].format(g=GUARD_M))}</p>'
 
 
 def main(argv=None):

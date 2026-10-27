@@ -44,6 +44,7 @@ The chart shows where the game turned.
   - `## Title`: a chapter card over blurred game footage, left-aligned under an accent bar. ` · ` splits a long title into lines that come in one after another, e.g. three cues for the sign-off card. `## 第一件事：…` shows the part before the colon as a small kicker above the title.
   - `![caption](clip:mm:ss-mm:ss)`: our video, in video time; the caption is a banner at the top.
   - `![caption](stat:12)`: a big number that counts up, its caption below, over blurred footage. Use it for the two or three numbers that matter. A goal `stat:≤4` / `stat:≥8` shows "at most" / "at least" in words over the number.
+  - `![本场关键数字](stats:9–21 上半场 | 22–4 被打的一波 | 17 快攻得分)`: the report's key numbers as one board, in rows of three (six = 3 + 3), each number with its label under it. Use it once, after the opening, with the same numbers as the README's `::: keys` block.
   - `![caption](court:plays/x.json)`: an animated court diagram.
   - `![caption](picture.png)`: a figure from the folder, fitted to the frame. An empty caption shows no banner.
 - The paragraphs after a visual line are read over it. Blank lines separate paragraphs (short pause). Paragraphs before the first visual go over the title card.

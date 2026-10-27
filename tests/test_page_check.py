@@ -72,6 +72,12 @@ def test_bold_that_did_not_render_is_a_warning(tmp_path):
     assert PC.warnings(tmp_path) == []
 
 
+def test_styles_and_scripts_inside_a_report_are_not_report_text(tmp_path):
+    page(tmp_path, '<article class="report" lang="zh-CN"><style>.box td small{border:1px solid var(--rule)}</style>'
+                   '<script>const show = (a, b) => a;</script><p>第 4 次挥拍击球点偏低。</p></article>')
+    assert PC.warnings(tmp_path) == []
+
+
 def test_scripts_are_checked_for_leftover_english_mojibake_and_french_quotes(tmp_path, monkeypatch):
     monkeypatch.setattr(PC, "playable_s", lambda p: 4.0)
     page(tmp_path, '<article class="report" lang="fr-FR"><p>Le service tombe court.</p></article>')

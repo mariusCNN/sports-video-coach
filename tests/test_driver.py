@@ -504,11 +504,11 @@ def test_film_script_with_an_unknown_scene_prefix_waits_before_the_film_render(u
     step = next(s for s in P.tail_steps(lambda g: g.folder / "v.mp4", "listen", "qa", "write {folder}/film.zh.md")
                 if s.name == "film-script")
     script = unit / "film.zh.md"
-    script.write_text("开场。\n\n![罚球](stats:9 12)\n犯规太多。\n\n![快攻](clip:0:01-0:04)\n跑起来。\n", encoding="utf8")
+    script.write_text("开场。\n\n![罚球](reel:9 12)\n犯规太多。\n\n![快攻](clip:0:01-0:04)\n跑起来。\n", encoding="utf8")
     assert P.drive(Unit.load(unit), [step]) == P.WAITING
     out = capsys.readouterr().out
     assert "[run] waiting for the agent: film-script" in out
-    assert f"{script.as_posix()}: line 3: unknown scene prefix 'stats:' (known here: clip:, stat:" in out
-    script.write_text(script.read_text(encoding="utf8").replace("stats:9 12", "stat:9"), encoding="utf8")
+    assert f"{script.as_posix()}: line 3: unknown scene prefix 'reel:' (known here: clip:, stat:" in out
+    script.write_text(script.read_text(encoding="utf8").replace("reel:9 12", "stats:9 罚球 | 12 犯规"), encoding="utf8")
     assert P.drive(Unit.load(unit), [step]) == 0
     assert "unknown scene prefix" not in capsys.readouterr().out

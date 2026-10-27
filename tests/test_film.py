@@ -332,6 +332,22 @@ def test_a_stat_counts_up_and_a_goal_says_at_most_in_words():
     assert at_least[0][3].endswith("At least")
 
 
+def test_a_stats_board_puts_six_numbers_in_two_rows_of_three():
+    sc = film.parse_script("![本场关键数字](stats:9–21 上半场 | 22–4 被打的一波 | 17 快攻 | 10–2 罚球 | 16–11 犯规 | 14–7 回追)\n")[0]
+    assert sc.kind == "stats" and film.check([sc], Path("."), None, None) == []
+    ev = film.scene_events(sc, 6, 0, 0, [], "zh", "", 720)
+    nums = [e for e in ev if e[2] == "Big"]
+    assert [n[3].rsplit("}", 1)[1] for n in nums] == ["9–21", "22–4", "17", "10–2", "16–11", "14–7"]
+    pos = [tuple(map(int, re.search(r"\\pos\((\d+),(\d+)\)", n[3]).groups())) for n in nums]
+    assert len({y for _, y in pos}) == 2 and [x for x, _ in pos[:3]] == [x for x, _ in pos[3:]]  # 3 + 3, aligned
+    assert ev[0][2] == "Kicker" and ev[0][3].endswith("本场关键数字")
+    assert sum(e[2] == "Caption" for e in ev) == 6
+    assert [film.stats_cols(n) for n in (1, 2, 3, 4, 5, 6)] == [1, 2, 3, 2, 3, 3]
+    five = [e for e in film.stats_events("1 a | 2 b | 3 c | 4 d | 5 e", "", 5, "en", 720, 1280, 720) if e[2] == "Big"]
+    xs = [int(re.search(r"\\pos\((\d+),", e[3])[1]) for e in five]
+    assert (xs[3] + xs[4]) / 2 == pytest.approx(640, abs=2)  # a short last row is centred
+
+
 def test_an_animated_freeze_zooms_in_builds_the_marks_and_clears_before_the_play():
     marks = fd.parse_freeze_line('> 00:04 0.4,0.6 0.5,0.62 0.4,0.6->0.5,0.62 "two"')[1]
     zoom = fd.freeze_zoom(marks, 4.0, None, 1280, 720, (0, 0, 1280, 720))
@@ -470,7 +486,7 @@ def test_unknown_scene_prefix_names_the_known_ones(tmp_path):
     assert "unknown scene prefix 'court:'" in str(e.value) and "clip:, stat:" in str(e.value)
     probs = film.check(film.parse_script("![p](court:plays/p.json)\n![x](reel:a.mp4)\n"), tmp_path, None, None,
                        kinds=SCENES)
-    assert probs == ["scene 2: unknown scene prefix 'reel:' (known here: clip:, stat:, court:; a plugin adds more)"]
+    assert probs == ["scene 2: unknown scene prefix 'reel:' (known here: clip:, stat:, stats:, court:; a plugin adds more)"]
     sc = film.parse_script("Intro.\n\n![x](reel:a.mp4)\n")[1]
     assert sc.line == 3 and film.prefix_problem(sc, SCENES) == probs[0].removeprefix("scene 2: ")
 

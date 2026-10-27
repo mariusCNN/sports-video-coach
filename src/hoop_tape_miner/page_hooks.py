@@ -185,13 +185,23 @@ def _ff_pct(v) -> str:
 
 def summary_paths(folder: Path) -> list[Path]:
     """Where a team report folder's summary.json may be (game.json in the folder itself): the folder's own, then
-    <run>/<review_dir or review_v1>/summary.json; [] without game.json. Also the page's html inputs."""
+    <run>/<review_dir or review_v1>/summary.json; [] without a team game.json."""
     gj = folder / "game.json"
     if not gj.exists():
         return []
     game = json.loads(gj.read_text(encoding="utf8"))
-    run = Path(game["run"]) if game.get("run") else folder / "run"
+    from . import film_index
+    run = film_index.run_dir(folder.resolve())
+    if run is None:
+        return []
+    run = run.resolve()
     return [folder / "summary.json", run / (game.get("review_dir") or "review_v1") / "summary.json"]
+
+
+def page_inputs(folder: Path) -> list[Path]:
+    """Summary and player-table sources, including paths that may be written on a later run."""
+    from . import box
+    return summary_paths(folder) + box.inputs(folder)
 
 
 def four_factors_summary(folder: Path) -> dict | None:
@@ -211,6 +221,7 @@ def four_factors_summary(folder: Path) -> dict | None:
 def four_factors_panel(folder: Path, names: dict | None = None, langs: list[tuple] | None = None) -> str:
     """Small two-team table (zh + en blocks, one shown at a time) with the Four Factors, PPP by trip type and the
     deciding-factor line; empty string when the review has no four_factors yet."""
+    from .coach_summary import FACTOR_HELP
     allv = four_factors_summary(folder)
     if not allv:
         return ""
@@ -225,6 +236,7 @@ def four_factors_panel(folder: Path, names: dict | None = None, langs: list[tupl
     blocks = []
     for c, attr, *_ in langs:
         t = FF_UI[c]
+        hp = FACTOR_HELP.get(c, FACTOR_HELP["en"])
 
         def tov(s):
             if s.get("tov_pct") is None:
@@ -254,11 +266,12 @@ def four_factors_panel(folder: Path, names: dict | None = None, langs: list[tupl
             w = 0 if v is None else round(100 * v / top)
             return (f'<span class="ff-val {side}"><span class="ff-bar" style="width:{w}%"></span>'
                     f'<span class="ff-num">{cell}</span></span>')
-        bars = [(t["efg"], "efg_pct", _ff_pct(us.get("efg_pct")), _ff_pct(them.get("efg_pct")), ""),
-                (t["tov"], "tov_pct", tov(us), tov(them), t["lower"]),
-                (t["orb"], "orb_pct", orb(us), orb(them), ""),
-                (t["ft"], "ft_rate_pct", _ff_pct(us.get("ft_rate_pct")), _ff_pct(them.get("ft_rate_pct")), "")]
-        rows = [(t["poss"], poss(us), poss(them)), (t["ppp"], num(us.get("ppp")), num(them.get("ppp")))]
+        bars = [(t["efg"], "efg_pct", _ff_pct(us.get("efg_pct")), _ff_pct(them.get("efg_pct")), hp["efg"]),
+                (t["tov"], "tov_pct", tov(us), tov(them), hp["tov"]),
+                (t["orb"], "orb_pct", orb(us), orb(them), hp["orb"]),
+                (t["ft"], "ft_rate_pct", _ff_pct(us.get("ft_rate_pct")), _ff_pct(them.get("ft_rate_pct")), hp["ft"])]
+        rows = [(f'{t["poss"]}<small class="ff-help">{hp["poss"]}</small>', poss(us), poss(them)),
+                (f'{t["ppp"]}<small class="ff-help">{hp["ppp"]}</small>', num(us.get("ppp")), num(them.get("ppp")))]
         rows += [(t[k], ppp_cell("us", k), ppp_cell("them", k))
                  for k in ("transition", "half_court", "second_chance", "after_live_turnover") if pp]
         d = ff.get("decided") or {}
@@ -292,15 +305,18 @@ def four_factors_panel(folder: Path, names: dict | None = None, langs: list[tupl
              ".ff-bars{border-top:2px solid var(--ink);background:var(--sheet)}"
              ".ff-row{display:grid;grid-template-columns:minmax(8rem,1.1fr) 1fr 1fr;gap:.25rem .75rem;align-items:center;"
              "padding:.6rem .7rem;border-bottom:1px solid var(--rule)}"
-             ".ff-label{font-size:.88rem;line-height:1.35}.ff-label small{display:block;color:var(--muted);font-size:.78rem}"
+             ".ff-label{font-size:.88rem;line-height:1.35}.ff-label small{display:block;color:var(--ink-soft);font-size:.78rem}"
              ".ff-val{position:relative;display:block;min-height:1.9rem;background:var(--paper);border-radius:2px;overflow:hidden}"
              ".ff-bar{position:absolute;inset:0 auto 0 0;background:var(--us);opacity:.3}.ff-val.them .ff-bar{background:var(--them)}"
              ".ff-num{position:relative;display:block;padding:0 .5rem;font:700 1.05rem/1.9rem var(--display);"
              "font-variant-numeric:tabular-nums;color:var(--ink)}"
-             ".ff-num small{font:500 .78rem var(--display);color:var(--ink-soft)}"
+             # a breakdown (live · dead turnovers) gets its own line, so both bars of a row keep one height
+             ".ff-num small{display:block;margin-top:-.45rem;padding-bottom:.25rem;font:500 .78rem/1.3 var(--display);"
+             "color:var(--ink-soft)}"
              ".factors td,.factors th{white-space:nowrap;font-variant-numeric:tabular-nums}"
              ".factors td:first-child{white-space:normal}.factors small{color:inherit}"
              ".factors-note{color:var(--muted);font-size:.8rem}"
+             ".factors .ff-help{display:block;color:var(--muted);font-size:.78rem;line-height:1.35}"
              "@media (max-width:560px){.ff-row{grid-template-columns:1fr 1fr}.ff-label{grid-column:1/-1}"
              ".factors table{font-size:.8rem}.factors td,.factors th{padding:.4rem .45rem}}"
              "</style>")
@@ -367,10 +383,14 @@ def band(sb: dict, lab) -> str:
 
 
 def intro(folder: Path, sb: dict, langs: list[tuple]) -> str:
-    """Four Factors panel inside a game report, before section 1 (not on training, movement or season pages)."""
-    return "" if sb.get("training") or sb.get("season") else four_factors_panel(folder, sb, langs)
+    """Four Factors panel and the per-player table (box) inside a team report, before section 1 (not on training,
+    movement or season pages)."""
+    if sb.get("training") or sb.get("season"):
+        return ""
+    from . import box  # the per-player table goes under the Four Factors
+    return four_factors_panel(folder, sb, langs) + (box.table_html(folder, langs) if (folder / "game.json").exists() else "")
 
 
 PAGE = render_html.PageHooks(ui=UI, board=scoreboard, band=band, intro=intro, sections=sections,
-                             inputs=summary_paths)
+                             inputs=page_inputs)
 

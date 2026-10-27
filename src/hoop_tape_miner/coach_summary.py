@@ -59,6 +59,21 @@ def _foul_team(x, f):
 WEIGHTS = {"efg": 0.4, "tov": 0.25, "orb": 0.2, "ft": 0.15}
 FACTOR_NAMES = {"efg": "shooting (eFG%)", "tov": "turnovers (TOV%)", "orb": "offensive rebounding (ORB%)",
                 "ft": "free throws (FT rate)"}
+# plain-language meaning of each factor for readers who do not know the abbreviations (pages show it under the label)
+FACTOR_HELP = {
+    "zh": {"efg": "投篮命中率，投进三分按 1.5 个算。越高越好",
+           "tov": "每 100 个回合丢球几次。越低越好",
+           "orb": "自己投丢的球，抢回来几成。越高越好",
+           "ft": "每出手 100 次，罚进几个。越高越好",
+           "poss": "一队拿球进攻一次算一个回合",
+           "ppp": "平均每次进攻得几分"},
+    "en": {"efg": "Field-goal %, a made three counts as 1.5 makes. Higher is better",
+           "tov": "Turnovers per 100 possessions. Lower is better",
+           "orb": "Share of our own misses we got back. Higher is better",
+           "ft": "Free throws made per 100 shots. Higher is better",
+           "poss": "One trip down the floor with the ball",
+           "ppp": "Points scored per trip, on average"},
+}
 TRANSITION_S = 8.0     # our rule: first shot / foul within 8 s of the trip start t0 = transition, later = half-court
 MIN_POSS = 15          # fewer possessions for a side: the deciding factor is "unclear"
 MIN_WEIGHTED_GAP = 1.0  # a top weighted gap below 1 point is too small to name

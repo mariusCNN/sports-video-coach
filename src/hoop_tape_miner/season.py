@@ -530,6 +530,11 @@ def readme(season: dict, games: list[dict], lang: str, charts: dict[str, str]) -
             out.append(f"| {g['date']} | " + " | ".join(cell) + f" | {_fmt(ff['us']['poss'])} / {_fmt(ff['them']['poss'])}"
                        f" | {_fmt(ff['us']['ppp'], 2)} / {_fmt(ff['them']['ppp'], 2)} |")
         out.append("")
+        from .coach_summary import FACTOR_HELP  # what each column means, for readers who do not know the terms
+        hp = FACTOR_HELP.get(lang, FACTOR_HELP["en"])
+        sep = "：" if lang.startswith(("zh", "ja")) else ": "
+        out += [f"- **{a}**{sep}{hp[k]}" for a, k in (("eFG%", "efg"), ("TOV%", "tov"), ("ORB%", "orb"), ("FT", "ft"),
+                                                     ("Poss", "poss"), ("PPP", "ppp"))] + [""]
         for k, _ in FACTORS:
             if k in charts:
                 out += [f"![{L[k]}]({charts[k]})", ""]

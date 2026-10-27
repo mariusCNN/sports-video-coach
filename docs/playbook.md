@@ -190,6 +190,8 @@ uv run hoop-tape-miner plusminus --lineup "$RUN/review_v1/lineup_intervals.json"
 
    CV lineups are fragmentary. For the focus player, write `film_stints.json` (same shape, `{"us#<N>": [[t0, t1], ...]}`) from substitutions seen in the memos and notes; later `--lineup` files override earlier ones. `--event-times` maps feed times to the real basket times when the feed lags.
 
+   Per-player table (team page): the league sheet has only made shots and fouls, so rebounds, assists and steals are counted on the film. `uv run hoop-tape-miner box <game folder> --draft` writes `box.draft.json`, one entry per missed shot (rebound), made basket of ours (possible assist) and live turnover of theirs (steal), with its time. Read each on the film (`sports-video-coach frames` around the time; helpers by half, at most 3), fill `who` with the jersey only when it is clearly readable (else null: it shows as "unclear", never given to a player), drop entries that did not happen, save as `box.json`, then `hoop-tape-miner box <game folder>` checks it and prints the table. Plus-minus comes from `$RUN/<review>/plusminus.json` (all players, the first command above).
+
 5. Coaching insights, then a separate critic (run steps `insights` and `critic`). Launch the writer subagent with `prompts/coach_insights.md` and the review folder: it reads the trips, `summary.json`, `plusminus.json`, `official.json`, `features.json` (if present), `prompts/coach_kb.md` and the memos, and writes `$RUN/review_v1/insights.json` (3-6 team insights and 1-3 per focus player, each a pattern on at least two trips with a KB mechanism, a rule, a drill and a measurable target). The writer's check:
 
 ```
@@ -405,7 +407,27 @@ The next session: film it, run `train <videos>` again. Its `targets` come from t
 
 A month-long program the player follows on their phone (`hoop-tape-miner program`, engine `src/hoop_tape_miner/program_app.html`).
 
-- **Folder**: `workspace/players/<player>/program/<start date>/` with `program.json` (copy `templates/program.example.json`; sessions, exercises with how / cue / why / three coach tips, weekday template, special days, game-day plan and targets, tests). Optional: `videos.json` (`{"videos": {key: [{url, title, verified}]}}`, only verified ones are shown), `refs.json`, and static HTML fragments `cal.html`, `game.html`, `tests.html`, `decide.html` (the 决策 tab, shown only when present), `lib.html` for each tab. A fragment's `<audio class="loop" src="cues.zh.mp3" title="…">` becomes a looping play button (make the mp3 with `sports-video-coach narrate --script cues.zh.md --chime --gap 2 --loud`); `publish` copies it next to the page.
+- **Folder**: `workspace/players/<player>/program/<start date>/` with `program.json` (copy
+  `templates/program.example.json`). It defines sessions, exercises with how / cue / why / three coach tips,
+  a weekday template, special days, the game-day plan, targets and tests.
+- **Optional content**: `videos.json` (`{"videos": {key: [{url, title, verified}]}}`, only verified ones are shown),
+  `refs.json`, and static HTML fragments `cal.html`, `game.html`, `tests.html`, `decide.html`, `lib.html`.
+  The 决策 tab appears only when its fragment exists.
+- **Cue audio**: a fragment's `<audio class="loop" src="cues.zh.mp3" title="…">` becomes a looping play button.
+  Make the mp3 with `sports-video-coach narrate --script cues.zh.md --chime --gap 2 --loud`;
+  `publish` copies it next to the page.
+- **Car audio**: a session's `"car": "car.G.zh.mp3"` (or `{"src", "title"}`) appears above the selected day and
+  plays once; sessions may share a file. Use an mp3 file name inside the program folder.
+  Write a coach talking from the passenger seat (`你`, short spoken sentences, one to three points,
+  no week-specific numbers), then render with
+  `sports-video-coach narrate --script car.G.zh.md --gap 0.6 --tight --loud`.
+- **Fixture**: an optional `"fixture"` holds `{"team", "source", "games": [...]}`. Each game has a `"date"`
+  (`YYYY-MM-DD`), `"time"`, `"vs"`, `"court"`, and an optional `"score": [ours, theirs]`;
+  a bye is `{"date": "2025-03-22", "bye": true}`.
+  - Today shows that day's game; the game tab names the next opponent in the plan.
+    The calendar marks dates and lists the season with results.
+  - Use valid, distinct dates and non-negative integer scores. On a bye, give that date a session without
+    `"game"` in `special`.
 - **Write it**: base the program on the player's knowledge base (`workspace/players/<player>/`), their last game and training pages, and `prompts/skill_kb.md`. Keep fixed days fixed (game nights, childcare days). Each exercise card follows the formatting rules in `AGENTS.md`.
 - **Check and build**: `program check <folder>`, then `program build <folder>` writes `index.html`. Opened as a local file, YouTube refuses embeds without a referrer (error 153), so the page shows a thumbnail that opens YouTube; the published link plays them inline.
 - **Publish**: `publish <folder> --deploy`. The first deploy with a program creates the KV namespace `<project>-sync` and binds it as `SYNC`. The link is `<site>/p/<token>/`, stable across re-publishes; `--new-link` also starts an empty log.

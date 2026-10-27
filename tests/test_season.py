@@ -198,6 +198,7 @@ def test_main_writes_bilingual_page_and_charts(ws, capsys):
     assert "Last game's targets checked" in en and "**met**" in en and "not measurable" in en
     assert "transition-defence (recurring)" in en and "small sample" in en
     assert "Our rule" in en and "我们的规则" in zh
+    assert "- **TOV%**：每 100 个回合丢球几次" in zh and "- **PPP**: " in en  # the factor columns explained
     svg = (out / "ff_efg.en.svg").read_text(encoding="utf8")
     assert svg.startswith("<svg") and "<script" not in svg and svg.count("<circle") == 4  # 2 games x us/them
     page = (out / "index.html").read_text(encoding="utf8")

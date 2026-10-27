@@ -101,6 +101,9 @@ def test_page_tables():
                         "them": {"5": {"total_s": 80.0, "unguarded_s": 0.0, "by": [{"defender": "7", "s": 50.0, "share": 0.62}]}}}}
     team = M.tables_html(doc, None, "en")
     assert "#5" in team and "60%" in team and "3/4" in team
+    # the share bar must not reuse the page's title-bar class (.bar has padding: the fill came out 0 px wide)
+    assert '<span class="mu-bar"><i style="width:60%">' in team and 'class="bar"' not in team
+    assert 'class="mus-t"' in team and "position:sticky" in team  # the player column stays when scrolled sideways
     me = M.tables_html(doc, "7", "en")
     assert "#7" in me and "#5" in me
     assert M.tables_html(doc, "30", "en") == ""
@@ -129,7 +132,7 @@ def test_pages_show_load_and_matchup_sections(tmp_path):
     assert ">Matchups and shot defence</h2>" in team and ">对位与出手防守</h2>" in team
     assert "Running load per stint" not in team  # the load table is a player-page section
     me = render_html.page(folder / "player-4")
-    assert ">Running load per stint</h2>" in me and "410" in me and "#11 60%" in me
+    assert ">Running load per stint</h2>" in me and "410" in me and "<b>#11</b>" in me and ">60%<" in me
     import re
     toc = dict((t, int(n)) for n, t in re.findall(r'href="#en-s(\d+)">([^<]+)</a>', me))
     assert toc["Running load per stint"] + 1 == toc["Matchups and shot defence"], toc  # contents: load, then matchups

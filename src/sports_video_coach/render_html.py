@@ -582,11 +582,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .play svg {{ fill: currentColor; }}
 .play .i-pause, .play.playing .i-play {{ display: none; }}
 .play.playing .i-pause {{ display: inline; }}
-.play.big {{ width: 4.25rem; height: 4.25rem; background: var(--marker); color: var(--ink); }}
+/* white on the dark band; while playing it turns into an outline so the state reads at a glance */
+.play.big {{ width: 4.25rem; height: 4.25rem; background: #fff; color: var(--ink); }}
 .play.big svg {{ width: 2rem; height: 2rem; }}
-.play.big:hover {{ box-shadow: 0 0 0 6px rgba(242, 191, 58, .25); }}
-.play.big.playing {{ background: #fff; }}
-.play.mini {{ width: 2.1rem; height: 2.1rem; background: var(--marker); color: var(--ink); }}
+.play.big:hover {{ box-shadow: 0 0 0 6px rgba(255, 255, 255, .16); }}
+.play.big.playing, .play.mini.playing {{ background: transparent; color: #fff; box-shadow: inset 0 0 0 2px #fff; }}
+.play.mini {{ width: 2.1rem; height: 2.1rem; background: #fff; color: var(--ink); }}
 .play.mini svg {{ width: 1.1rem; height: 1.1rem; }}
 .listen {{ display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; max-width: 36rem; margin: 1.1rem auto 0; padding: .75rem 1rem;
   border: 1px solid #383b58; border-radius: 6px; background: rgba(255,255,255,.04); }}
@@ -597,7 +598,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .listen-track {{ display: flex; align-items: center; gap: .75rem; margin-top: .45rem; }}
 .listen audio[controls] {{ flex-basis: 100%; width: 100%; }}
 .no-js .play, .no-js .listen-track {{ display: none; }}
-.seek {{ flex: 1; min-width: 0; accent-color: var(--marker); }}
+.seek {{ flex: 1; min-width: 0; accent-color: #fff; }}
 .clock {{ font: 600 1rem var(--display); font-variant-numeric: tabular-nums; color: var(--band-text); min-width: 3.2rem; text-align: right; }}
 .speed {{ font: 600 .95rem/1 var(--display); color: var(--band-text); background: none; border: 1px solid #4a4d6b; border-radius: 999px;
   padding: .35rem .6rem; cursor: pointer; min-width: 3.2rem; }}
@@ -646,8 +647,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .block.verdict {{ margin: 1rem 0 1.25rem; }}
 .block.verdict p {{ font: 600 clamp(1.2rem, 2.8vw, 1.5rem)/1.5 var(--head-cjk); max-width: 40rem; }}
 .block.verdict p + p {{ font: 400 1rem/1.75 var(--body); color: var(--ink-soft); }}
-.block.keys ul {{ list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 1px;
+.block.keys ul {{ list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px;
   background: var(--rule); border: 1px solid var(--rule); }}
+/* rows of three (6 tiles = 3 + 3); 2 or 4 tiles go in rows of two; a short last row stretches, so no empty cell shows */
+.block.keys ul:has(> li:nth-child(2):last-child), .block.keys ul:has(> li:nth-child(4):last-child) {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+.block.keys ul:has(> li:only-child) {{ grid-template-columns: 1fr; }}
+.block.keys li:nth-child(3n+1):last-child {{ grid-column: 1 / -1; }}
+.block.keys li:nth-child(3n+2):last-child {{ grid-column: span 2; }}
+.block.keys ul:has(> li:nth-child(2):last-child) li:last-child,
+.block.keys ul:has(> li:nth-child(4):last-child) li:last-child {{ grid-column: auto; }}
 .block.keys li {{ margin: 0; padding: .6rem .75rem .7rem; background: var(--sheet); font-size: .86rem; line-height: 1.45; color: var(--ink-soft); max-width: none; }}
 .block.keys li strong:first-child {{ display: block; font: 700 1.8rem/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; margin-bottom: .35rem; }}
 .block.do, .report blockquote {{ margin: 1.5rem 0; padding: 1rem 1.15rem; background: var(--marker-wash); border-left: 6px solid var(--marker); border-radius: 0 4px 4px 0; }}
@@ -704,7 +712,6 @@ td:first-child {{ white-space: nowrap; font-weight: 600; }}
   .score {{ margin-top: .75rem; }}
   .halves {{ margin-top: .6rem; }}
   .play.big {{ width: 3.6rem; height: 3.6rem; }}
-  .block.keys ul {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }}
   .block.keys li {{ padding: .5rem .55rem .6rem; font-size: .78rem; line-height: 1.35; }}
   .block.keys li strong:first-child {{ font-size: 1.45rem; margin-bottom: .25rem; }}
   .report h2 {{ margin-top: 3rem; }}

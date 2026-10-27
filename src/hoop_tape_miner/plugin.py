@@ -43,6 +43,7 @@ STAGES = {
     "report": ("hoop_tape_miner.report", "pass 6: figures + stats.json"),
     "official": ("hoop_tape_miner.official", "league box score + score flow + video alignment"),
     "plusminus": ("hoop_tape_miner.plusminus", "on-court plus-minus per player from lineups + official score flow"),
+    "box": ("hoop_tape_miner.box", "per-player box score: league points/fouls, plus-minus, film-counted rebounds/assists/steals"),
     "momentum": ("hoop_tape_miner.momentum", "score-margin figure with scoring runs and on-court lanes"),
     "replay": ("hoop_tape_miner.replay", "2D tactics-board replay (mp4) of possessions from CV tracks"),
     "posters": ("hoop_tape_miner.posters", "telestrate clip posters: ring the players a clip is about, arrow fouler -> fouled"),

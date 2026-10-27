@@ -11,6 +11,8 @@ scene:
     >                                                      (alone) the clip plays on; what follows is read over it
     ![Score margin](momentum.png)                          a picture from the folder, fitted to the frame
     ![fouls in the 4th quarter](stat:9)                    a big number with its caption
+    ![Key numbers](stats:9–21 first half | 22–4 the run)  a board of numbers in rows of three (6 = 3 + 3), each
+                                                           `<number> <label>`, items split by " | "
     ![Get back on defence](court:plays/safety.json)        a plugin scene kind (`<prefix>:`, Plugin.scenes;
                                                            basketball: an animated court diagram)
 
@@ -107,7 +109,7 @@ CLIP_RE = re.compile(rf"^({TIME})-({TIME})$")
 TIME_RE = re.compile(rf"^{TIME}$")
 VISUAL_RE = re.compile(r"^!\[(.*)\]\((.+)\)$")
 PREFIX_RE = re.compile(r"^([a-z][a-z0-9_-]+):(?!//)")  # `clip:`, `stat:`, a plugin's `court:` (not C:/ or http://)
-BUILTIN = ("clip", "stat")  # the scene prefixes every folder has; a picture has none
+BUILTIN = ("clip", "stat", "stats")  # the scene prefixes every folder has; a picture has none
 MARK_HELP = '0.4,0.6, A->B, "label"'
 DEFAULT_ACCENT, DEFAULT_SECOND = "#6250d6", "#e0e0e0"
 
@@ -242,7 +244,7 @@ def parse_script(text: str, hooks: FilmHooks | None = None) -> list[Scene]:
 
 
 def prefix_problem(sc: Scene, kinds: dict[str, SceneKind]) -> str | None:
-    """`unknown scene prefix 'stats:' (known here: ...)` for a scene whose prefix neither the core nor the folder's
+    """`unknown scene prefix 'reel:' (known here: ...)` for a scene whose prefix neither the core nor the folder's
     plugin knows, else None: check() stops the render on it, the run's film-script step waits on it."""
     if sc.kind in ("title", "card", "image", *BUILTIN, *kinds):
         return None
@@ -397,7 +399,7 @@ def timing(kind: str, voice_s: float, clip_s: float = 0.0) -> tuple[float, float
         if need <= clip_s + 1.0:  # a short overrun just holds the last frame
             return max(clip_s, need), 0.0
         return need, min(clip_s / SLOW, need - clip_s)
-    base = CARD_S if kind in ("title", "card", "stat") else IMAGE_S
+    base = CARD_S if kind in ("title", "card", "stat") else IMAGE_S  # stats: IMAGE_S, more to read
     return (max(base, LEAD + voice_s + TAIL) if voice_s else base), 0.0
 
 
@@ -588,6 +590,8 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
         ev += card_events(sc.text, length, lang, h, fw, fh)
     elif sc.kind == "stat":
         ev += stat_events(sc.src, sc.text, length, lang, h, fw, fh)
+    elif sc.kind == "stats":
+        ev += stats_events(sc.src, sc.text, length, lang, h, fw, fh)
     elif sc.text:  # what the clip is about, while it starts; then the picture is the players'
         ev.append((0, min(length, BANNER_S, BANNER_S if banner_to is None else banner_to), "Banner", "{\\fad(250,300)}" + wrap(sc.text, (fw - 2.5 * side) / small)))
     if slow:
@@ -661,6 +665,46 @@ def stat_events(src: str, text: str, length: float, lang: str, h: int, fw: int, 
     if text:
         cap = "\\N".join(ass_escape(y) for y in fit(text, (fw - 2 * round(h * 0.08)) / round(h * 0.045), lang))
         ev.append((0.3, length, "Caption", f"{{\\an8\\pos({cx},{round(cy + h * 0.035)})\\fad(300,250)}}" + cap))
+    return ev
+
+
+def stats_items(src: str) -> list[tuple[str, str]]:
+    """(number, label) per ` | `-separated item of a stats: scene; the number is the first word."""
+    return [tuple((x.split(None, 1) + [""])[:2]) for x in (y.strip() for y in src.split("|")) if x]
+
+
+def stats_cols(n: int) -> int:
+    """Columns of a stats board, as the page's key tiles: rows of three; 2 or 4 numbers in rows of two."""
+    return 1 if n == 1 else 2 if n in (2, 4) else 3
+
+
+def stats_events(src: str, text: str, length: float, lang: str, h: int, fw: int, fh: int) -> list[tuple]:
+    """A board of key numbers in rows of three (6 = 3 + 3, a short last row centred), the caption as a kicker
+    over it; the numbers come in one after another, each with its label muted under it."""
+    items = stats_items(src)
+    if not items:
+        return []
+    cols = stats_cols(len(items))
+    rows = math.ceil(len(items) / cols)
+    x0, cw = fw * 0.08, fw * 0.84 / cols
+    top = fh * (0.27 if text else 0.18)
+    rh = min(h * 0.3, (fh * 0.86 - top) / rows)
+    num, lab = round(h * min(0.11, rh / h * 0.42)), round(h * 0.036)
+    ev = []
+    if text:
+        ev.append((0.0, length, "Kicker", f"{{\\an8\\pos({round(fw / 2)},{round(fh * 0.13)})\\fs{round(h * 0.05)}"
+                   f"\\fad(250,250)}}" + ass_escape(text)))
+    for i, (n, label) in enumerate(items):
+        r, c = divmod(i, cols)
+        left = len(items) - r * cols
+        shift = (cols - left) * cw / 2 if left < cols else 0  # centre a short last row
+        cx, y = round(x0 + shift + (c + 0.5) * cw), round(top + r * rh)
+        t0 = 0.2 + i * 0.15
+        ev.append((t0, length, "Big", f"{{\\an8\\pos({cx},{y})\\fs{num}\\fad(250,250)}}" + ass_escape(n)))
+        if label:
+            cap = "\\N".join(ass_escape(z) for z in fit(label, cw * 0.9 / lab, lang)[:2])
+            ev.append((t0 + 0.1, length, "Caption", f"{{\\an8\\pos({cx},{round(y + num * 1.12)})\\fs{lab}"
+                       f"\\fad(300,250)}}" + cap))
     return ev
 
 
@@ -811,7 +855,7 @@ def scene_cmd(sc: Scene, length: float, slow: float, w: int, h: int, folder: Pat
     elif frames:
         args = ["-f", "concat", "-safe", "0", "-i", frames]
         graph.append(f"[0:v]scale={w}:{h},setsar=1,fps={FPS},{hold}[c]")
-    else:  # title, card, stat: over the game itself, blurred and darkened, when there is footage to use
+    else:  # title, card, stat, stats: over the game itself, blurred and darkened, when there is footage to use
         if bg is not None and video:
             args = ["-ss", f"{bg:.3f}", "-t", f"{length:.3f}", "-i", str(video)]
             # heavily blurred and dark, so the card reads calm (no blobs of the venue's logos showing through)
@@ -1011,7 +1055,7 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
             if i in objs:
                 frames = kinds[sc.kind].render(objs[i], ctx, step_at, length, tmp / f"c{i:03d}") \
                     .relative_to(tmp).as_posix()
-            bg = backdrop(scenes, i - 1) if sc.kind in ("title", "card", "stat") and has_video else None
+            bg = backdrop(scenes, i - 1) if sc.kind in ("title", "card", "stat", "stats") and has_video else None
             seg = f"s{i:03d}.mp4"
             ffmpeg(*scene_cmd(sc, length, slow, w, h, folder, video, game_audio, [(v[0], st) for v, st in voiced],
                               ass_name, accent, seg, segs=segs, bg=bg, frames=frames, crf=crf, zooms=zooms),
@@ -1032,7 +1076,7 @@ def inputs(folder: Path, lang: str, video: Path | None) -> list[Path]:
     script = folder / f"film.{lang}.md"
     scenes = parse_script(script.read_text(encoding="utf8"), hooks_for(folder)[0]) if script.exists() else []
     out = [script, *([video] if video and any(sc.kind == "clip" for sc in scenes) else [])]
-    return out + [folder / sc.src for sc in scenes if sc.kind not in ("title", "card", "clip", "stat") and sc.src]
+    return out + [folder / sc.src for sc in scenes if sc.kind not in ("title", "card", "clip", "stat", "stats") and sc.src]
 
 
 def up_to_date(out: Path, ins: list[Path], slack: float = 2.0) -> bool:
