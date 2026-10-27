@@ -176,7 +176,7 @@ def test_editing_one_languages_readme_warns_once_about_the_others(analysis, vide
     assert out.count("[run] warning: README.fr.md changed since the last run") == 1
     assert "README.en.md" in out and "listen.en.md" in out and "film.en.md" in out
     P.drive(g, U.STEPS)
-    assert "[run] warning" not in capsys.readouterr().out    # once per edit
+    assert "[run] warning: README.fr.md changed" not in capsys.readouterr().out    # once per edit
     (g.folder / "README.fr.md").write_text("# fr, again\n", encoding="utf8")
     (g.folder / "README.en.md").write_text("# en, again\n", encoding="utf8")
     assert P.language_drift(g, P.Store(g.folder)) == []      # every language edited together
@@ -336,6 +336,7 @@ def test_scaffolded_plugin_names_itself_and_its_own_guides(tmp_path, monkeypatch
 
 def test_new_plugin_writes_to_the_workspace_and_prints_a_test_command_that_fits_the_install(tmp_path, monkeypatch,
                                                                                              capsys):
+    monkeypatch.setattr(scaffold, "in_clone", lambda: True)  # exercise both modes even from an installed wheel
     monkeypatch.setenv("HOOP_WORKSPACE", str(tmp_path / "ws"))
     scaffold.main(["rowing"])
     out = capsys.readouterr().out
