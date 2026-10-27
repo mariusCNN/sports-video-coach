@@ -227,6 +227,68 @@ def test_core_run_from_a_video_starts_and_stops_at_review(video, tmp_path, monke
     assert (folder / "run" / "frames" / "frames.json").exists()
 
 
+def test_quick_run_builds_only_page_artifacts_and_defaults_to_one_language(video, tmp_path, monkeypatch):
+    monkeypatch.setenv("SVC_WORKSPACE", str(tmp_path / "ws"))
+    with pytest.raises(SystemExit) as e:
+        run.main([str(video), "--quick", "--plugin", "generic"])
+    assert e.value.code == P.WAITING
+    [folder] = list((tmp_path / "ws" / "analysis").glob("*/*"))
+    data = json.loads((folder / "analysis.json").read_text(encoding="utf8"))
+    assert data["languages"] == ["en"] and data["artifacts"] == ["html"]
+    with pytest.raises(SystemExit) as e:
+        run.main([str(folder), "--quick", "--lang", "zh"])
+    assert e.value.code == P.WAITING
+    data = json.loads((folder / "analysis.json").read_text(encoding="utf8"))
+    assert data["languages"] == ["zh"] and set(data["artifacts"]) == {"html", "clips", "qa"}
+    assert not list(folder.glob("*.mp3"))
+
+
+@pytest.mark.parametrize("option", ["--artifacts", "--artifacts=film", "--publish"])
+def test_quick_rejects_conflicting_artifact_or_publish_options(option):
+    with pytest.raises(SystemExit, match="--quick"):
+        run.quick_options(["missing.mp4", "--quick", option])
+
+
+def test_schema_two_accepts_one_evidenced_moment_and_rejects_bad_confidence(analysis):
+    analysis.review.mkdir(parents=True)
+    review = dict(schema=2, status="reviewed", summary="One clear turn.", moments=[dict(
+        start="00:01", end="00:03", what="Turns at the cone", why="unclear",
+        tag="context", confidence="seen")])
+    path = analysis.review / "review.json"
+    path.write_text(json.dumps(review), encoding="utf8")
+    assert U.review_errors(analysis) == []
+    review["moments"][0]["confidence"] = "certain"
+    path.write_text(json.dumps(review), encoding="utf8")
+    assert any("confidence" in e for e in U.review_errors(analysis))
+
+
+def test_insufficient_evidence_completes_without_new_artifacts(analysis, video, capsys):
+    frames.build(video, analysis.run / "frames", every=2)
+    analysis.review.mkdir(parents=True, exist_ok=True)
+    path = analysis.review / "review.json"
+    review = dict(schema=2, status="insufficient_evidence", summary="No athlete is visible.",
+                  next_steps="Film a repetition with the athlete in view.", moments=[])
+    path.write_text(json.dumps(review), encoding="utf8")
+    assert U.review_errors(analysis) == []
+    calls = []
+    assert P.drive(analysis, U.STEPS, runner=lambda *a, **k: calls.append(a)) == 0
+    assert not calls and not (analysis.folder / "index.html").exists()
+    assert not (analysis.folder / "README.en.md").exists()
+    assert "completed: insufficient evidence" in capsys.readouterr().out
+    review.pop("next_steps")
+    path.write_text(json.dumps(review), encoding="utf8")
+    assert any("next_steps" in e for e in U.review_errors(analysis))
+
+
+@pytest.mark.parametrize("moment", [False, "not a moment", {"start": "NaN", "end": "Infinity"},
+                                   {"start": "-1", "end": "2"}])
+def test_malformed_review_moments_return_errors(analysis, moment):
+    analysis.review.mkdir(parents=True)
+    (analysis.review / "review.json").write_text(json.dumps(dict(
+        schema=2, summary="test", moments=[moment])), encoding="utf8")
+    assert U.review_errors(analysis)
+
+
 def test_scaffolded_plugin_loads_and_owns_its_units(tmp_path, video, monkeypatch):
     out = scaffold.scaffold("tennis", tmp_path / "plugins", "tennis")
     assert 'NAME = "tennis"' in (out / "__init__.py").read_text(encoding="utf8")

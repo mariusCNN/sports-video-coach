@@ -2,16 +2,10 @@
 
 # sports-video-coach
 
-### 你的 AI agent 看你的运动录像，像教练一样给你指导。
+### 让你的编程 agent 把训练视频变成带片段的复盘和练习建议。
 
-**还带一个基准测试**，看哪个 agent 看运动录像最准：Codex gpt-6-astra 1.000，Claude Opus 5.5 0.997，
-Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
-<sub>新种子榜：比盲猜高出的部分取平均，1 = 全对 · 每个设置跑一到四次，都是作者自己跑的 ·
-[中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/)</sub>
-
-**试一下：**[demo 网页，不用安装](https://mariusding.github.io/sports-video-coach/demo/) ·
-[在 Codespaces 里打开](https://codespaces.new/mariusDing/sports-video-coach) ·
-[一条命令重跑基准](#基准测试哪个-agent-看运动录像最准)
+**先看真实投篮演示：**[作者本人训练的一次运行](https://mariusding.github.io/sports-video-coach/case-study/) ·
+[试自己的视频](#试一下) · [合成示例报告，无需安装](https://mariusding.github.io/sports-video-coach/demo/)
 
 [![release](https://img.shields.io/github/v/release/mariusDing/sports-video-coach)](https://github.com/mariusDing/sports-video-coach/releases)
 [![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
@@ -23,7 +17,7 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
 <img alt="作者自己投篮练习的真实运行：原片、agent 的看片复盘在出手后收手定住的地方暂停，然后是教练网页" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
 <sub>作者自己投篮练习的一次真实运行：你的视频 → agent 看片复盘 → 你的教练网页。
-不用安装就能看完整示例：<a href="https://mariusding.github.io/sports-video-coach/demo/">demo 网页</a>（程序画的练习）。</sub>
+<a href="https://mariusding.github.io/sports-video-coach/case-study/">查看这段真实演示的说明</a>；另有可交互的合成示例报告。</sub>
 
 </div>
 
@@ -32,42 +26,9 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
 你拿回一个手机网页：关键片段、每个问题的练习方法和目标、报告的语音版，还有一段讲解视频。
 工具在你自己的电脑上跑；agent 看的帧会发给它的模型服务商，和你给它看的其他东西一样。免费，MIT 协议。
 
-## 基准测试：哪个 agent 看运动录像最准
-
-程序画的练习视频，按工具自己画进去的精确真值打分。不用评审模型。
-
-- **新种子榜**（只看静帧，每次运行用一个没公开过的新种子，分数是比盲猜高出的部分取平均，1 = 全对）：
-  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997（low effort 时 0.778）· Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931（4 次，0.856–0.994；max 超时）·
-  本地显卡上的 qwen3-vl 4B 0.000。
-  每个设置跑了一到四次；目前所有运行都是作者自己跑的。
-- [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/#frames-svc-bench-3-fresh) · [自己数一数触球](https://mariusding.github.io/sports-video-coach/benchmark/zh/#count) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）
-- 重跑新种子榜：先安装（需要 ffmpeg），再跑一条命令（`--seed` 抽一个新种子；
-  加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：
-
-```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187
-sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
-```
-
-- 不想在本机安装：[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
-  （用你自己 GitHub 账号的免费时长；在里面登录你的 agent，再在命令前面加上 `uv run`；
-  [说明](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)，英文）。
-
-<details><summary>别的 agent CLI，或自己显卡上的视觉模型</summary>
-
-- 任何接在 OpenAI 兼容接口后面的视觉模型（Ollama、LM Studio、vLLM、OpenRouter），用自己的显卡免费跑：同一条命令，换成
-  `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
-- Gemini CLI、Qwen Code、Aider、Cursor CLI、Copilot CLI、Goose：这些预设的参数已对照各 CLI 的 `--help` 核对，但还没人用真 CLI 跑过题目。
-  OpenCode 用免费模型、不登录跑过：计入一次，0.000，到时限被杀时还没写答案（快结束时免费额度用完）；另有三次不计入（我们预设的 bug，以及两次免费额度用完）（[详情](docs/benchmark.md#opencode-run-once-2026-10-25)）。
-  [跑一次，把结果发来（issue #7）](https://github.com/mariusDing/sports-video-coach/issues/7)。
-
-</details>
-
-<a href="https://mariusding.github.io/sports-video-coach/benchmark/zh/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="基准测试短片：程序画的颠球视频，agent 看到的一次快速连续两触的静帧，再对比真实触球数（47）和各个模型的回答"></a>
-
 ## 试一下
 
-**1. 先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
+**1. 先看成品，不用安装：**[真实投篮演示](https://mariusding.github.io/sports-video-coach/case-study/)，再打开 [合成示例的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
 （[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。
 
 **2. 对你的 agent 说**（粘贴到 Claude Code、Codex 或任何编程 agent；把运动和语言换成你的）：
@@ -75,9 +36,13 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 ```text
 给我的运动视频 <你的视频路径> 做教练复盘。安装前先把完整的安装命令给我看，我同意后再装。
 安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187`（需要 ffmpeg）。
-运行 `sports-video-coach run <视频> --sport badminton --lang zh`，它交给你的每一步（退出码 3）都做完，
+先运行 `sports-video-coach doctor` 检查环境。
+运行 `sports-video-coach run <视频> --quick --sport basketball --lang zh`，它交给你的每一步（退出码 3）都做完，
 直到退出码 0，再把教练网页给我看。
 ```
+
+第一次建议用一段 15–40 秒的练习录像。`--quick` 先生成本地网页、片段和 QA，不生成新的语音或讲解视频；agent 仍会使用你的模型额度。
+环境检查不会安装软件，也不会连接模型服务商。需要 [uv](https://docs.astral.sh/uv/getting-started/installation/) 和 [ffmpeg/ffprobe](https://ffmpeg.org/download.html)。
 
 不需要 GPU。比赛里可以指定看谁：`--focus "穿红衣服的球员"`，或者球衣号码。
 只要网页和片段（不要音频、不要讲解视频，也不会把任何内容发给语音合成服务）：加 `--artifacts html`。
@@ -87,13 +52,14 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 给多个视频时，按给出的顺序拼成一条时间线；同一组动作的两个机位，目前最好分成两个单元各跑一次。
 我们的测试里，一段 40 秒的视频约 3 分钟、5 个 agent 步骤跑完；整场比赛更久，也更耗 agent 额度。
 
-<details><summary>在自己电脑上跑 demo（约一分钟，不需要 agent，也不需要你的视频）</summary>
+<details><summary>在自己电脑上跑 demo（离线，不需要 agent，也不需要你的视频）</summary>
 
 程序画的练习视频，复盘是预先写好的，从头渲染到尾：
 
 ```bash
 uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187   # PATH 上要有 ffmpeg
-sports-video-coach demo --lang zh en
+sports-video-coach doctor
+sports-video-coach demo --offline --lang zh en
 ```
 
 </details>
@@ -173,6 +139,39 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 项目最初是 `hoop-tape-miner`，给一支业余篮球队用的看片室（[docs/basketball.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)）。
 
 </details>
+
+## 基准测试：哪个 agent 看运动录像最准
+
+程序画的练习视频，按工具自己画进去的精确真值打分。不用评审模型。
+
+- **新种子榜**（只看静帧，每次运行用一个没公开过的新种子，分数是比盲猜高出的部分取平均，1 = 全对）：
+  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997（low effort 时 0.778）· Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931（4 次，0.856–0.994；max 超时）·
+  本地显卡上的 qwen3-vl 4B 0.000。
+  每个设置跑了一到四次；目前所有运行都是作者自己跑的。
+- [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/#frames-svc-bench-3-fresh) · [自己数一数触球](https://mariusding.github.io/sports-video-coach/benchmark/zh/#count) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）
+- 重跑新种子榜：先安装（需要 ffmpeg），再跑一条命令（`--seed` 抽一个新种子；
+  加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：
+
+```bash
+uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187
+sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
+```
+
+- 不想在本机安装：[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+  （用你自己 GitHub 账号的免费时长；在里面登录你的 agent，再在命令前面加上 `uv run`；
+  [说明](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)，英文）。
+
+<details><summary>别的 agent CLI，或自己显卡上的视觉模型</summary>
+
+- 任何接在 OpenAI 兼容接口后面的视觉模型（Ollama、LM Studio、vLLM、OpenRouter），用自己的显卡免费跑：同一条命令，换成
+  `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
+- Gemini CLI、Qwen Code、Aider、Cursor CLI、Copilot CLI、Goose：这些预设的参数已对照各 CLI 的 `--help` 核对，但还没人用真 CLI 跑过题目。
+  OpenCode 用免费模型、不登录跑过：计入一次，0.000，到时限被杀时还没写答案（快结束时免费额度用完）；另有三次不计入（我们预设的 bug，以及两次免费额度用完）（[详情](docs/benchmark.md#opencode-run-once-2026-10-25)）。
+  [跑一次，把结果发来（issue #7）](https://github.com/mariusDing/sports-video-coach/issues/7)。
+
+</details>
+
+<a href="https://mariusding.github.io/sports-video-coach/benchmark/zh/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="基准测试短片：程序画的颠球视频，agent 看到的一次快速连续两触的静帧，再对比真实触球数（47）和各个模型的回答"></a>
 
 ## 状态与贡献
 

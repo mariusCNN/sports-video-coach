@@ -13,6 +13,7 @@ import sys
 from . import plugin
 
 CORE = {
+    "doctor": ("sports_video_coach.doctor", "check Python, media tools and workspace before a first run (no install or model call)"),
     "plugins": ("sports_video_coach.cli", "list the installed plugins (what each analyses, when to use it, its stages)"),
     "run": ("sports_video_coach.run", "drive one unit end to end: a unit folder, a target a plugin claims, or new videos"),
     "demo": ("sports_video_coach.demo", "every deliverable in about a minute: a drawn video, a pre-written review, no agent"),

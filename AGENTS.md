@@ -19,6 +19,9 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    folder from the videos and drives it. Later runs take that folder: `sports-video-coach run <folder>`. `--status`
    lists every step; `run --help` lists every option. `--lang` takes `zh en ja ko es fr de pt` (one or several;
    basketball units: zh and en).
+   First use: `sports-video-coach doctor` checks the environment without installing anything or calling a provider.
+   `run <video> --quick` selects a local page, clips and QA in English by default (`--lang` overrides it), without
+   new narration, explained video or publishing. The agent still writes the review and report.
 3. Exit codes:
    - `3` an agent step is waiting: the output names the step and says exactly what to write and with which guide
      (`sports-video-coach guide <name>` prints a guide). Do it, then run again.
@@ -56,6 +59,10 @@ league or no GPU goes to `generic` with `--sport basketball`.
   names a step, the files to write and a guide; do only that. Publish only when your user asked for `--publish`.
 - Every claim in a report must be seen in the film or come from a measured number. Never invent a result; write
   "unclear" or "likely" instead (in a Chinese report: 看不清 / 可能).
+  For generic reviews, use schema 2 with a confidence/tag on each moment; one supported moment is enough for a
+  short clip. If the footage cannot support a review, write `status: "insufficient_evidence"`, an empty moments
+  list, a summary and next_steps, as the guide shows. Exit 0 then means the limitation was recorded, not that a
+  coaching page was created. Do not request a star for an insufficient-evidence result.
 - Browser checks and screenshots: delegate to a separate helper if available. No browser at all:
   `sports-video-coach page-check --strict --write-qa <folder>` checks links, anchors, media and the text of the
   page and scripts (not layout or playback) and drafts `qa.md`, which says what was not checked.

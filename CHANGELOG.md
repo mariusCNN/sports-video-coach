@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### First-run experience
+- The README and site lead with the author's existing real shooting walkthrough. A public `case-study/` page
+  explains what it shows; the synthetic sample report and the counting/timing benchmark remain separate entries.
+- `sports-video-coach doctor [--json] [--agent codex]` checks Python, the light dependencies, ffmpeg/ffprobe and
+  workspace write access. It installs nothing and makes no provider calls; agent authentication is not probed.
+- `run <video or folder> --quick` builds a local page, clips and QA, with English as the default language. Explicit
+  `--lang` is kept; `--artifacts` and `--publish` conflict with quick mode. Existing artifacts are retained.
+- Schema-2 generic reviews accept one evidenced moment, validate confidence/tag values and reject non-finite or
+  negative times. A validated `insufficient_evidence` result completes without generating new coaching artifacts.
+  Legacy reviews keep their schema-1 behavior; existing files are not migrated automatically.
+- A first-run CI job builds a light wheel and renders the offline demo on Windows and Linux.
+- Atomic JSON/text writes retry transient Windows destination locks using the existing bounded media-write retry.
+- `docs/launch.md` contains ready-to-use launch copy, a ten-person first-run checklist and a measurement log.
+
 ### Added
 - The demo site's landing, benchmark and findings pages can count visits per referrer and `?ref=` campaign with
   GoatCounter (no cookies): set the repository variable `GOATCOUNTER_CODE` to the site code; unset, no counter.

@@ -77,18 +77,19 @@ def write_qa(g: U.Analysis) -> None:
 
 SITE_URL = "https://mariusding.github.io/sports-video-coach/"
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
-TAGLINE = "Your AI agent watches your game film and coaches you."
-PITCH = ("Drop in a phone video of a game or workout. Claude Code or Codex reviews it like a coach and gives back a "
-         "phone page with clips, audio narration, drills and a target for next time. Runs on your machine.")
-CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next time."),
-         ("Coaches", "One game in: a team page and a page per player, with clips and audio, shared as private links."),
-         ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "
-                        "validator per agent step. A new sport plugin is one command."))
-TRY = (INSTALL, "sports-video-coach demo")   # needs ffmpeg on PATH
+TAGLINE = "Turn your training video into coaching clips and drills."
+PITCH = ("Already use Claude Code or Codex? Give your agent a short phone video. It reviews timestamped frames; "
+         "sports-video-coach cuts the supporting clips and builds a coaching page you can watch on your phone.")
+CARDS = (("Your video", "Start with a short training clip and tell your agent who to watch. No GPU for the generic workflow."),
+         ("Evidence you can replay", "Read each observation beside its clip. The agent can zoom in when a moment is unclear."),
+         ("A drill for next time", "Get a practice suggestion and a target to check in your next session."))
+TRY = (INSTALL, "sports-video-coach doctor", "sports-video-coach demo --offline")
+REAL_GIF = "https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif"
+CASE_URL = f"{SITE_URL}case-study/"
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
 BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site
-SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/", BENCH_URL, f"{BENCH_URL}zh/",   # zh/: the Chinese leaderboard
+SITE_PAGES = (SITE_URL, CASE_URL, f"{SITE_URL}demo/", BENCH_URL, f"{BENCH_URL}zh/",   # zh/: the Chinese leaderboard
               f"{BENCH_URL}findings/", f"{BENCH_URL}zh/findings/")       # the findings article, en and zh
 
 
@@ -223,7 +224,7 @@ def landing(films: list[str]) -> str:
 {json_ld()}
 <meta property="og:title" content="sports-video-coach: {TAGLINE}">
 <meta property="og:description" content="{PITCH}">
-{f'<meta property="og:image" content="{SITE_URL}film.en.jpg">' if "film.en.jpg" in films else ""}
+<meta property="og:image" content="{REAL_GIF}">
 <meta property="og:url" content="{SITE_URL}">
 <meta name="twitter:card" content="summary_large_image">
 <style>
@@ -232,6 +233,10 @@ main {{ max-width: 46rem; margin: 0 auto; padding: 2rem 1.1rem 3rem; }}
 h1 {{ font-size: clamp(1.6rem, 5vw, 2.3rem); line-height: 1.2; margin: .2rem 0 .8rem; }}
 .name {{ font-weight: 700; color: #5c5a86; margin: 0; }}
 video {{ width: 100%; border-radius: 10px; background: #221f45; margin: 1.2rem 0 .4rem; }}
+.walkthrough {{ margin: 1.2rem 0; }}
+.walkthrough img {{ display: block; width: 100%; height: auto; border-radius: 10px; }}
+figcaption {{ font-size: .9rem; color: #5c5a86; margin-top: .5rem; }}
+summary {{ cursor: pointer; font-weight: 600; }}
 .cards {{ display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); margin: 1.4rem 0; }}
 .cards section {{ background: #fff; border-radius: 10px; padding: .9rem 1rem; box-shadow: 0 1px 3px #0001; }}
 .cards h2 {{ font-size: 1.05rem; margin: 0 0 .3rem; }}
@@ -251,13 +256,22 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <p class="name">sports-video-coach</p>
 <h1>{TAGLINE}</h1>
 <p>{PITCH}</p>
-{video}
+<p class="go"><a href="case-study/">Watch a real shooting session</a><a href="{REPO_URL}#try-it">Try your own video</a></p>
+<figure class="walkthrough"><a href="case-study/"><img src="{REAL_GIF}" width="720" height="480"
+alt="The author's real shooting drill, an agent review moment, and the resulting coaching page"></a>
+<figcaption>A real run on the author's own shooting drill. <a href="case-study/">See what this walkthrough shows</a>.</figcaption></figure>
 <div class="cards">{cards}</div>
 <p class="go"><a href="demo/">Open the demo coaching page</a><a href="{REPO_URL}">Get it on GitHub</a></p>
-<h2 class="try">Try it (needs ffmpeg)</h2>
+<p>The interactive demo uses a drawn drill and a pre-written review. No install or account needed to view it.</p>
+<h2 class="try">Check your setup, then try a local demo</h2>
 <pre><code>{try_it}</code></pre>
+<p>Needs ffmpeg and ffprobe. The offline demo uses no agent or online speech service.
+For your own video, ask your agent to run <code>sports-video-coach run &lt;video&gt; --quick</code>:
+one English page with clips and QA first; use <code>--lang</code> for another language. Your agent plan is used for the review.</p>
 <p>Your sport needs more than frames? <a href="{PLUGINS_URL}">Write a plugin for your sport</a>.</p>
-<p>Which coding agent reviews sports film best? See the <a href="{BENCH_URL}">benchmark leaderboard</a>.</p>
+<p>Interested in model evaluation? <a href="{BENCH_URL}#count">Try the counting challenge</a> or read the
+<a href="{BENCH_URL}">synthetic video benchmark</a>. It measures counting and timing, not real-world coaching quality.</p>
+<details><summary>See the synthetic demo's explained video</summary>{video}</details>
 <small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
 no person appears. {("Other languages: " + other) if other else ""}{version_note(ver)}</small>
 </main>
@@ -265,6 +279,50 @@ no person appears. {("Other languages: " + other) if other else ""}{version_note
 </body>
 </html>
 """
+
+
+def case_study() -> str:
+    """A public walkthrough of the author's already-published GIF, without exposing additional session data."""
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A real shooting session — sports-video-coach</title>{canonical(CASE_URL)}
+<meta name="description" content="Watch the author's shooting drill become an agent review and a coaching page.">
+<meta property="og:title" content="My coding agent reviews my shooting drill">
+<meta property="og:image" content="{REAL_GIF}"><meta property="og:url" content="{CASE_URL}">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+body {{ margin:0; font:17px/1.55 system-ui,sans-serif; color:#1d1b38; background:#f6f5fb; }}
+main {{ max-width:46rem; margin:auto; padding:1.5rem 1.1rem 3rem; }}
+h1 {{ font-size:clamp(1.8rem,5vw,2.5rem); line-height:1.15; }}
+h2 {{ font-size:1.2rem; }} img {{ width:100%; height:auto; border-radius:12px; }}
+figure {{ margin:1.5rem 0; }} figcaption,small {{ color:#5c5a86; font-size:.9rem; }}
+section {{ background:white; border-radius:12px; padding:1rem 1.2rem; margin:1rem 0; }}
+a {{ color:#403586; }} .action {{ display:inline-block; padding:.7rem 1rem; background:#221f45;
+color:white; border-radius:999px; text-decoration:none; margin:.4rem .4rem .4rem 0; }}
+li {{ margin:.4rem 0; }} summary {{ cursor:pointer; font-weight:600; }}
+</style></head><body><main>
+<a href="../">sports-video-coach</a><h1>My coding agent reviews my shooting drill.</h1>
+<p>A real run on the author's own phone video: the drill, a review moment, then the coaching page.</p>
+<figure><img src="{REAL_GIF}" width="720" height="480"
+alt="The author's shooting drill, the agent's review pausing on the held finish, then the coaching page">
+<figcaption>The existing, publicly shared real-session walkthrough from this repository.</figcaption></figure>
+<section><h2>Follow the video into the report</h2><ol>
+<li><strong>The source:</strong> the author's own shooting practice.</li>
+<li><strong>The review:</strong> the agent looks at timestamped frames and identifies moments to revisit.</li>
+<li><strong>The result:</strong> a coaching page brings the observations and relevant clips together.</li>
+</ol></section>
+<section><h2>Try it on a short clip of your own</h2>
+<p>Start with one drill, keep the athlete in view, and say who the agent should watch.
+The quick workflow builds a page and clips before adding narration or an explained video.</p>
+<a class="action" href="{REPO_URL}#try-it">Open the quick-start instructions</a>
+<a href="../demo/">Explore the synthetic sample report</a></section>
+<details><summary>What this walkthrough establishes</summary>
+<p>It shows a real session's workflow and output. It is an edited walkthrough, not a controlled test of coaching
+accuracy or improvement. The complete source video, full review and model billing record are not published here.</p>
+<p>The interactive sample report uses synthetic footage and a pre-written review; the
+<a href="{BENCH_URL}">benchmark</a> separately tests counting and timing on generated drills.</p></details>
+<p><a href="{REPO_URL}">View the source on GitHub</a> · MIT · Alpha</p>
+</main>{site_counter.tag()}</body></html>"""
 
 
 def build_site(folder: Path, site: Path) -> list[str]:
@@ -295,6 +353,8 @@ def build_site(folder: Path, site: Path) -> list[str]:
     for f in films:
         shutil.copy2(f, site / f.name)
     (site / "index.html").write_text(landing([f.name for f in films]), encoding="utf8")
+    (site / "case-study").mkdir(exist_ok=True)
+    (site / "case-study" / "index.html").write_text(case_study(), encoding="utf8")
     (site / "robots.txt").write_text(robots_txt(), encoding="utf8")
     (site / "sitemap.xml").write_text(sitemap_xml(), encoding="utf8")
     (site / INDEXNOW_KEY_FILE).write_text(INDEXNOW_KEY, encoding="utf8")  # IndexNow ownership proof, public

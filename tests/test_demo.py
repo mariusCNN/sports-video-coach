@@ -80,6 +80,10 @@ def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
     assert (site / "sitemap.xml").read_text(encoding="utf8") == demo.sitemap_xml()
     assert (site / demo.INDEXNOW_KEY_FILE).read_text(encoding="utf8") == demo.INDEXNOW_KEY
     assert page_check.problems(site) == [] and page_check.problems(site / "demo") == []
+    case = (site / "case-study" / "index.html").read_text(encoding="utf8")
+    assert demo.REAL_GIF in home
+    assert demo.REAL_GIF in case and "not a controlled test" in case
+    assert page_check.problems(site / "case-study") == []
 
 
 def test_search_engine_files_and_structured_data():
@@ -90,7 +94,7 @@ def test_search_engine_files_and_structured_data():
     assert f"Sitemap: {demo.SITE_URL}sitemap.xml" in robots
     ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     locs = [e.text for e in ET.fromstring(demo.sitemap_xml().encode()).findall("s:url/s:loc", ns)]
-    assert locs == [demo.SITE_URL, demo.SITE_URL + "demo/", demo.SITE_URL + "benchmark/",
+    assert locs == [demo.SITE_URL, demo.CASE_URL, demo.SITE_URL + "demo/", demo.SITE_URL + "benchmark/",
                     demo.SITE_URL + "benchmark/zh/", demo.SITE_URL + "benchmark/findings/",
                     demo.SITE_URL + "benchmark/zh/findings/"]
     assert all(u.startswith("https://") for u in locs)

@@ -151,7 +151,10 @@ def write_text_atomic(path: Path, text: str) -> None:
     path = Path(path)
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(text, encoding="utf8")
-    os.replace(tmp, path)
+    try:
+        replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def write_json_atomic(path: Path, data, indent: int | None = 2) -> None:
