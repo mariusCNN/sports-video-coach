@@ -35,7 +35,7 @@
 
 ```text
 给我的运动视频 <你的视频路径> 做教练复盘。安装前先把完整的安装命令给我看，我同意后再装。
-安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187`（需要 ffmpeg）。
+安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@ef4fb792e8a37ee4f27d5d189c03157468757520`（需要 ffmpeg）。
 先运行 `sports-video-coach doctor` 检查环境。
 运行 `sports-video-coach run <视频> --quick --sport basketball --lang zh`，它交给你的每一步（退出码 3）都做完，
 直到退出码 0，再把教练网页给我看。
@@ -57,7 +57,7 @@
 程序画的练习视频，复盘是预先写好的，从头渲染到尾：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187   # PATH 上要有 ffmpeg
+uv tool install git+https://github.com/mariusDing/sports-video-coach@ef4fb792e8a37ee4f27d5d189c03157468757520   # PATH 上要有 ffmpeg
 sports-video-coach doctor
 sports-video-coach demo --offline --lang zh en
 ```
@@ -104,15 +104,15 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 - **任何支持 Agent Skills 的客户端**（Codex、Cursor 等）：`npx skills add mariusDing/sports-video-coach`，或复制
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md)。
 - **只装命令行：**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187`
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@ef4fb792e8a37ee4f27d5d189c03157468757520`
   （约 60 MB，不含 torch；PATH 上要有 ffmpeg），然后 `sports-video-coach plugins` 和
   `sports-video-coach run <视频> --sport <运动>`。
 - **改代码、写插件：**`git clone https://github.com/mariusDing/sports-video-coach`，进目录后
-  `git checkout ac27030efdd1c7008e3174650ff16f81f7c41187`（或你选的分支），
+  `git checkout ef4fb792e8a37ee4f27d5d189c03157468757520`（或你选的分支），
   再 `uv sync --no-group basketball`（Python 3.11，不装 torch），命令前加 `uv run`。`uv run pytest -q` 照常能跑。
 - **从克隆做篮球跟踪：**同样克隆并 checkout 后 `uv sync`（Python 3.11，CUDA torch，几 GB），命令前加 `uv run`。
 - 每条安装命令都固定到同一个提交，装的就是你读过的代码；换版本时更新日志会写明。
-- 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/ac27030efdd1c7008e3174650ff16f81f7c41187.zip` 安装。
+- 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/ef4fb792e8a37ee4f27d5d189c03157468757520.zip` 安装。
 - 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里 PATH 中的 `C:/...` 要写成 `/c/...`（例如 `/c/Users/<you>/.local/bin`）。
 
 </details>
@@ -153,7 +153,7 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
   加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187
+uv tool install git+https://github.com/mariusDing/sports-video-coach@ef4fb792e8a37ee4f27d5d189c03157468757520
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
