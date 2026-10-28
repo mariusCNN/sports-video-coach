@@ -54,7 +54,7 @@ Drawn drills, scored against the exact truth the tool drew in. No judge model.
   add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187
+uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
@@ -83,7 +83,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 
 ```text
 Coach me on my sports video <path to your video>. Show me the exact install command and wait for my OK.
-Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187` (it needs ffmpeg).
+Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a` (it needs ffmpeg).
 Run `sports-video-coach run <video> --sport soccer --lang en`, do each step it hands you (exit code 3)
 until it exits 0, then show me the coaching page.
 ```
@@ -102,7 +102,7 @@ agent plan.
 A synthetic drill with a pre-written review, rendered end to end:
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187   # needs ffmpeg on PATH
+uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a   # needs ffmpeg on PATH
 sports-video-coach demo
 ```
 
@@ -152,9 +152,9 @@ not a promise of improved accuracy.** In one 45-frame diagnostic, SAHI improved 
 22/35 while increasing false-positive frames from 11 to 13 and inference cost by about 4.2×; WASB missed most
 visible balls, and KaliCalib remained unsuitable for automatic calibration. [Method, results, setup and licenses](docs/perception-lab.md).
 
-The install examples elsewhere in this README retain the previous pinned release. For these new adapters use a
-current checkout containing `hoop-tape-miner perception-lab --help`; the [setup guide](docs/perception-lab.md) lists
-the exact upstream revisions and additional dependencies.
+The install examples pin a tested implementation containing these adapters. Basketball vision needs the
+tracking environment; the [setup guide](docs/perception-lab.md) lists the exact upstream revisions and optional
+dependencies. Check availability with `hoop-tape-miner perception-lab --help`.
 
 ### The run loop
 
@@ -183,16 +183,16 @@ how the pipeline fits together is in [docs/architecture.md](https://github.com/m
 - **Any Agent Skills client** (Codex, Cursor ...): `npx skills add mariusDing/sports-video-coach`, or copy
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md).
 - **The CLI alone:**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187`
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
   (about 60 MB, no torch; ffmpeg on PATH), then `sports-video-coach plugins` and
   `sports-video-coach run <video> --sport <sport>`.
 - **Fork or write a plugin:** `git clone https://github.com/mariusDing/sports-video-coach`, then in it
-  `git checkout ac27030efdd1c7008e3174650ff16f81f7c41187` (or a branch you choose) and
+  `git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a` (or a branch you choose) and
   `uv sync --no-group basketball` (Python 3.11, no torch). Prefix commands with `uv run`; `uv run pytest -q` works.
 - **Basketball tracking from a clone:** the same clone and checkout, then `uv sync` (Python 3.11, CUDA torch, several
   GB), and prefix commands with `uv run`.
 - Every install command names one commit, so you install what you read. The release notes say when it moves.
-- No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/ac27030efdd1c7008e3174650ff16f81f7c41187.zip`.
+- No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a.zip`.
 - `command not found`: `uv tool update-shell` and a new terminal; in Git Bash, write `C:/...` PATH entries as `/c/...` (e.g. `/c/Users/<you>/.local/bin`).
 
 </details>
