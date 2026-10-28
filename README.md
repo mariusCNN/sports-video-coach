@@ -28,6 +28,11 @@ Claude Sonnet 5.5 0.419 at default effort and 0.931 at high.<br>
 
 **English** · [中文](https://github.com/mariusDing/sports-video-coach/blob/master/README.zh.md)
 
+**New: [watch a real training review in 43 seconds](https://mariusding.github.io/sports-video-coach/#training-example).**
+Original footage → freeze-frame cues → two selected attempts → a next-practice suggestion.
+[English landscape and vertical videos](https://github.com/mariusDing/sports-video-coach/releases/tag/showcase-2026-10-29).
+<sub>A selected, agent-reviewed example edited for length; not a before/after improvement claim or an accuracy measurement.</sub>
+
 <img alt="A real run on the author's shooting drill: the clip, the agent's film review pausing where the finish is held, then the coaching page" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
 <sub>A real run on the author's own shooting drill: your video → the agent's film review → your coaching page.
