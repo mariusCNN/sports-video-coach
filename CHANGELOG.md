@@ -5,12 +5,24 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- Optional `perception-lab` commands to prepare source frames, run WASB heatmaps, SAHI sliced RF-DETR
+  and KaliCalib court proposals, evaluate independent labels, and render interactive HTML and a four-way MP4.
+  Source/model hashes, false-positive accounting, pixel-radius sensitivity and geometric rejection keep
+  experiments reviewable. Mixed first-diagnostic results and setup are documented in `docs/perception-lab.md`.
+- English/Chinese README capability tables, a complete feature/command catalog and `llms.txt` agent navigation.
+- Installation examples and agent setup hints now pin the tested implementation containing the perception adapters.
+- Optional OpenHoopVision basketball perception backend with finalized JSONL import, shot/pass/dribble/rebound/
+  possession-change candidates, OCR and identity evidence, existing FIBA calibration projection, review conflicts,
+  bilingual validation cards, source clips, an annotated validation reel and independent labelled-window
+  evaluation of attempts, outcomes and team attribution. Unknown point values stay unknown;
+  automatic candidates never replace official statistics or reviewed trips. See `docs/perception.md`.
 - The demo site's landing, benchmark and findings pages can count visits per referrer and `?ref=` campaign with
   GoatCounter (no cookies): set the repository variable `GOATCOUNTER_CODE` to the site code; unset, no counter.
 - `examples/plugins/jump-rope/`: a second worked example plugin that counts jump-rope skips (a count, where the
   swim example measures a rate), tested on drawn video against the exact count.
 
 ### Fixed
+- Language switches preserve named report anchors and pause plugin-supplied videos as well as standard clips.
 - Team pages now follow every player-table source (`box.json`, either `official.json`, and the review's
   `plusminus.json`), so changing or adding one makes the HTML step run again. Relative run paths are resolved
   from the game folder. Invalid film counts fail with a file-specific error instead of showing missing or zero.

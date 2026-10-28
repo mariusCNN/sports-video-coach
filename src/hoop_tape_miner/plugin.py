@@ -28,6 +28,8 @@ STAGES = {
     "ball-track": ("hoop_tape_miner.ball", "smoothed ball track from the detections + ball-to-rim distances"),
     "rim-scan": ("hoop_tape_miner.rim_scan", "ball-sized movers in the air at each rim (video pass, CPU)"),
     "shot-proposals": ("hoop_tape_miner.shots", "shot attempts from rim arcs; made / likely miss from the official chart"),
+    "perception": ("hoop_tape_miner.perception", "optional OpenHoopVision: analyze, import evidence, clips and validation reel"),
+    "perception-lab": ("hoop_tape_miner.perception_lab", "optional WASB, SAHI and KaliCalib: local inference and independent ball/court evaluation"),
     "track-eval": ("hoop_tape_miner.track_eval", "tracking quality: label-free proxies from a run; HOTA / IDF1 vs labelled MOT clips"),
     "review": ("hoop_tape_miner.review", "pass 5: annotated possession sheets for event review"),
     "coach-sheets": ("hoop_tape_miner.coach_review", "film-review sheets + lineup intervals for the coach review"),

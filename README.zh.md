@@ -4,6 +4,14 @@
 
 ### 你的 AI agent 看你的运动录像，像教练一样给你指导。
 
+**面向球员、教练和 coding agent 的开源运动视频分析、篮球分析与 AI 教练工具。**
+录像 → 带时间戳的复盘 → 双语教练报告、片段、语音和讲解视频。
+可选球员/球跟踪、投篮图、联赛统计、训练计划，以及带独立人工验证的视觉模型。
+
+[完整功能与优势](docs/features.md) · [篮球插件](docs/basketball.zh.md) ·
+[OpenHoopVision 接入](docs/perception.md) · [WASB / SAHI / KaliCalib 实验](docs/perception-lab.md) ·
+[Agent 入口](llms.txt)
+
 **还带一个基准测试**，看哪个 agent 看运动录像最准：Codex gpt-6-astra 1.000，Claude Opus 5.5 0.997，
 Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
 <sub>新种子榜：比盲猜高出的部分取平均，1 = 全对 · 每个设置跑一到四次，都是作者自己跑的 ·
@@ -45,7 +53,7 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
   加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187
+uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
@@ -74,7 +82,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 
 ```text
 给我的运动视频 <你的视频路径> 做教练复盘。安装前先把完整的安装命令给我看，我同意后再装。
-安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187`（需要 ffmpeg）。
+安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`（需要 ffmpeg）。
 运行 `sports-video-coach run <视频> --sport badminton --lang zh`，它交给你的每一步（退出码 3）都做完，
 直到退出码 0，再把教练网页给我看。
 ```
@@ -92,7 +100,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 程序画的练习视频，复盘是预先写好的，从头渲染到尾：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187   # PATH 上要有 ffmpeg
+uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a   # PATH 上要有 ffmpeg
 sports-video-coach demo --lang zh en
 ```
 
@@ -114,6 +122,36 @@ sports-video-coach demo --lang zh en
 <br clear="right">
 
 ## 怎么工作
+
+### 为什么用这个项目
+
+| 能力 | 带来的价值 |
+|---|---|
+| **完整教练流程** | 一次可恢复运行，串起复盘、改进动作、训练方法、量化目标、证据片段、语音报告和讲解视频。 |
+| **Agent 可直接操作** | Claude Code、Codex 等通过退出码、JSON、写作指南和 `AGENTS.md` 接力，不依赖专有 agent 编排服务。 |
+| **任何运动 + 篮球深度分析** | 通用流程不需要 GPU；篮球插件增加球队/球员报告、联赛数据、四要素、回合、阵容、投篮图和对手分析。 |
+| **证据可核验** | 原视频时间戳、人工复核状态、标定质量门槛、源文件/权重哈希、独立标签评估；自动候选与已确认事实分开。 |
+| **覆盖比赛与训练** | 投篮训练、动作复盘、训练计划、场上提示音频、赛季汇总、对手档案、战术回放和手机竖屏片段。 |
+| **可扩展、可复现** | 运动插件、本地模型适配、阶段缓存，以及有精确真值的合成录像理解基准。 |
+
+[完整功能与命令目录](docs/features.md) 列出了各项能力的条件和限制。
+
+### 可选篮球视觉增强
+
+- **OpenHoopVision**：投篮、传球、运球、篮板和球权变化候选；姿态、球衣号码/OCR、身份线索；复核冲突、证据片段和双语验证卡片。
+- **SAHI**：同一篮球 RF-DETR 权重上的重叠切片检测、坐标还原和去重；与全图检测一起测召回、误检和耗时。
+- **WASB**：三帧篮球热图定位，输出原视频坐标；没有可靠观测时明确留空。
+- **KaliCalib**：学习球场关键点，生成 FIBA 球场映射候选，经过几何门槛和独立交点验证；失败时不回退到默认球场。
+
+这些适配器已接入并在私有业余比赛录像上实测，**仍为可选实验功能，不保证提升准确率**。
+一次 45 帧诊断中，SAHI 将最高分球候选命中从 20/35 提高至 22/35，同时误检帧从 11 增至 13，推理约慢 4.2 倍。
+WASB 漏掉了大部分可见球，KaliCalib 尚不适合自动替换标定。[方法、实测结果、安装与许可](docs/perception-lab.md)。
+
+本 README 的安装示例已固定到包含新适配器的已测实现。篮球视觉需要跟踪环境；
+[接入指南](docs/perception-lab.md) 给出上游固定版本和可选依赖。
+运行 `hoop-tape-miner perception-lab --help` 可以检查入口。
+
+### 运行循环
 
 1. **工具把视频切成帧拼图**，能量的先量出来（篮球插件还会跟踪球员和球）。
 2. **你的 agent 写复盘和报告**。需要眼睛或文字时工具就停下（退出码 3），说清楚要写什么：先是看片复盘，再是报告。
@@ -138,15 +176,15 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 - **任何支持 Agent Skills 的客户端**（Codex、Cursor 等）：`npx skills add mariusDing/sports-video-coach`，或复制
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md)。
 - **只装命令行：**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187`
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
   （约 60 MB，不含 torch；PATH 上要有 ffmpeg），然后 `sports-video-coach plugins` 和
   `sports-video-coach run <视频> --sport <运动>`。
 - **改代码、写插件：**`git clone https://github.com/mariusDing/sports-video-coach`，进目录后
-  `git checkout ac27030efdd1c7008e3174650ff16f81f7c41187`（或你选的分支），
+  `git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`（或你选的分支），
   再 `uv sync --no-group basketball`（Python 3.11，不装 torch），命令前加 `uv run`。`uv run pytest -q` 照常能跑。
 - **从克隆做篮球跟踪：**同样克隆并 checkout 后 `uv sync`（Python 3.11，CUDA torch，几 GB），命令前加 `uv run`。
 - 每条安装命令都固定到同一个提交，装的就是你读过的代码；换版本时更新日志会写明。
-- 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/ac27030efdd1c7008e3174650ff16f81f7c41187.zip` 安装。
+- 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a.zip` 安装。
 - 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里 PATH 中的 `C:/...` 要写成 `/c/...`（例如 `/c/Users/<you>/.local/bin`）。
 
 </details>
@@ -177,6 +215,12 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 ## 状态与贡献
 
 早期（alpha）：作者在自己的比赛、训练和合成测试上开发和测试。
+
+- [x] 通用运动复盘、多语言报告、片段、语音和讲解视频。
+- [x] 篮球比赛、个人训练、球队/球员流程和赛季工具。
+- [x] OpenHoopVision 证据接入，以及可选 WASB / SAHI / KaliCalib 对照适配器。
+- [ ] 扩大不同球馆、机位的独立验证，再决定是否将实验模型作为默认流程。
+
 欢迎贡献你熟悉的运动的插件、提示词、修复和文档：
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md)、
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。

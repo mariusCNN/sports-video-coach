@@ -1,5 +1,5 @@
 """Tests for the jump-rope plugin. In a clone: `uv run pytest <this folder>`; after `uv tool install`:
-`uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach@ac27030efdd1c7008e3174650ff16f81f7c41187 pytest <this folder>`
+`uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a pytest <this folder>`
 (the revision new-plugin was run from, so the tests see the core this plugin was written against)."""
 import importlib
 import json

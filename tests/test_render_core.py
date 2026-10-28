@@ -10,7 +10,8 @@ FIXTURE = Path(__file__).parent / "fixtures" / "report_min"
 # page(FIXTURE) rendered by hoop_tape_miner.render_html before it moved into the core (commit 65734f0); since then
 # only the language registry changed it (CJK / Japanese / Korean CSS, a language-free switch script) and the
 # 2026-10 film-room style system (stylesheet, web fonts, no-referrer meta; the markup stayed the same) and white
-# narration play buttons (2026-10-25, owner found the yellow odd).
+# narration play buttons (2026-10-25, owner found the yellow odd), and named language anchors / plugin-video
+# playback coordination (2026-10-28).
 GOLDEN = Path(__file__).parent / "fixtures" / "report_min.page.html"
 
 

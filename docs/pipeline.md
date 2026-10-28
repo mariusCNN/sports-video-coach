@@ -14,6 +14,14 @@ So we reuse the good parts (SigLIP+UMAP+KMeans team recipe, ByteTrack, RF-DETR) 
 
 ## Stack
 
+The optional [perception lab](perception-lab.md) compares WASB ball heatmaps, SAHI sliced RF-DETR and
+KaliCalib court proposals against independent labels. It exports diagnostic HTML/video without changing
+the production ball tracks, camera calibration or official statistics.
+
+Optional [OpenHoopVision perception](perception.md) adds continuous visual event,
+identity, OCR and pose evidence to this stack. Enable it per game; its candidates
+feed review and validation pages without changing confirmed game statistics.
+
 | Concern | Choice |
 |---|---|
 | Person detection | RF-DETR-L (COCO, class person) |
