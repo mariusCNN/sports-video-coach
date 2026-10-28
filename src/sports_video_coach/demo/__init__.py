@@ -78,12 +78,20 @@ def write_qa(g: U.Analysis) -> None:
 SITE_URL = "https://mariusding.github.io/sports-video-coach/"
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 TAGLINE = "Your AI agent watches your game film and coaches you."
-PITCH = ("Drop in a phone video of a game or workout. Claude Code or Codex reviews it like a coach and gives back a "
-         "phone page with clips, audio narration, drills and a target for next time. Runs on your machine.")
+PITCH = ("Open-source sports video analysis and basketball analytics for athletes, coaches and AI agents. "
+         "Turn your game or workout into a coaching page, source clips, narration, drills and an explained video.")
 CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next time."),
-         ("Coaches", "One game in: a team page and a page per player, with clips and audio, shared as private links."),
+         ("Coaches", "A team report and focus-player deep dive, with clips, audio and optional unlisted sharing links."),
          ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "
                         "validator per agent step. A new sport plugin is one command."))
+FEATURES = (
+    ("Watch, read or listen", "Timestamped reviews, mobile reports, source clips and narrated MP4s. Generic reports support eight languages; basketball supports English and Chinese."),
+    ("Basketball game analysis", "Player and ball tracking, shot charts, league statistics, Four Factors, possessions and lineups. Measurements and reviewed evidence support team and player coaching."),
+    ("Practice and prepare", "Personal shooting sessions, movement review, training plans, cue audio, opponent scouting, season summaries, tactics replays and phone reels."),
+    ("Built for coding agents", "Claude Code, Codex and other agents use JSON artifacts, writing guides and explicit exit codes. Resume completed stages or extend the workflow with a sport plugin."),
+    ("OpenHoopVision evidence", "Optional shot, pass, dribble, rebound and possession-change candidates, plus pose and jersey evidence. Review decisions and source clips keep automatic suggestions inspectable."),
+    ("Vision experiments you can check", "Compare WASB ball heatmaps, SAHI sliced detection and KaliCalib court proposals against independent labels. Interactive HTML and comparison videos expose misses, false positives and cost."),
+)
 TRY = (INSTALL, "sports-video-coach demo")   # needs ffmpeg on PATH
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
@@ -109,6 +117,7 @@ def json_ld() -> str:
         "license": "https://opensource.org/licenses/MIT",
         "operatingSystem": "Windows, Linux",
         "applicationCategory": "MultimediaApplication",
+        "featureList": [title for title, _ in FEATURES],
         "isAccessibleForFree": True,
     }
     # "</" cannot appear in the JSON (only URLs and plain text), so the script element cannot be closed early
@@ -212,6 +221,7 @@ def landing(films: list[str]) -> str:
         video = f'<video controls playsinline preload="none"{poster} src="film.en.mp4"></video>'
     other = " ".join(f'<a href="{f}">{f}</a>' for f in films if f.endswith(".mp4") and f != "film.en.mp4")
     cards = "".join(f"<section><h2>{t}</h2><p>{d}</p></section>" for t, d in CARDS)
+    features = "".join(f"<section><h3>{t}</h3><p>{d}</p></section>" for t, d in FEATURES)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -235,7 +245,10 @@ video {{ width: 100%; border-radius: 10px; background: #221f45; margin: 1.2rem 0
 .cards {{ display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); margin: 1.4rem 0; }}
 .cards section {{ background: #fff; border-radius: 10px; padding: .9rem 1rem; box-shadow: 0 1px 3px #0001; }}
 .cards h2 {{ font-size: 1.05rem; margin: 0 0 .3rem; }}
+.cards h3 {{ font-size: 1.05rem; margin: 0 0 .3rem; }}
 .cards p {{ margin: 0; font-size: .95rem; }}
+.feature-title {{ margin: 2rem 0 .5rem; font-size: 1.4rem; }}
+.note {{ background: #eae7f4; border-radius: 10px; padding: .9rem 1rem; font-size: .95rem; }}
 .go {{ display: flex; flex-wrap: wrap; gap: .6rem; }}
 .go a {{ padding: .6rem 1rem; border-radius: 999px; background: #221f45; color: #fff; font-weight: 600;
         text-decoration: none; }}
@@ -254,6 +267,17 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 {video}
 <div class="cards">{cards}</div>
 <p class="go"><a href="demo/">Open the demo coaching page</a><a href="{REPO_URL}">Get it on GitHub</a></p>
+<h2 class="feature-title">From game film to the next practice</h2>
+<div class="cards">{features}</div>
+<p><a href="{REPO_URL}/blob/master/docs/features.md">Explore every feature and command</a> ·
+<a href="{REPO_URL}/blob/master/README.zh.md">中文介绍</a> ·
+<a href="{REPO_URL}/blob/master/llms.txt">Agent documentation index</a></p>
+<p class="note"><strong>Choose the depth you need.</strong> Generic film review needs no GPU. Basketball vision
+needs its tracking dependencies and usable footage. WASB, SAHI and KaliCalib are opt-in experiments, with mixed
+results in the first diagnostic; they do not automatically replace official stats or reviewed calibration.
+<a href="{REPO_URL}/blob/master/docs/perception-lab.md">Read the measured results and limitations</a>.</p>
+<p>Vision runs locally. Frames your agent views go to its model provider; narration uses online text-to-speech.
+Publishing is optional. <a href="{REPO_URL}/blob/master/docs/privacy.md">Privacy and sharing</a>.</p>
 <h2 class="try">Try it (needs ffmpeg)</h2>
 <pre><code>{try_it}</code></pre>
 <p>Your sport needs more than frames? <a href="{PLUGINS_URL}">Write a plugin for your sport</a>.</p>
