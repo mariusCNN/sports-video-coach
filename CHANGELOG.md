@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- The public landing page now presents the complete coaching, basketball, training and optional perception
+  capabilities, links the feature/agent guides, and includes matching structured feature metadata.
 - Optional `perception-lab` commands to prepare source frames, run WASB heatmaps, SAHI sliced RF-DETR
   and KaliCalib court proposals, evaluate independent labels, and render interactive HTML and a four-way MP4.
   Source/model hashes, false-positive accounting, pixel-radius sensitivity and geometric rejection keep
