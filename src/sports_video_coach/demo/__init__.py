@@ -77,6 +77,7 @@ def write_qa(g: U.Analysis) -> None:
 
 SITE_URL = "https://mariusding.github.io/sports-video-coach/"
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
+TRAINING_MEDIA = f"{REPO_URL}/releases/download/showcase-2026-10-29"
 TAGLINE = "Your AI agent watches your game film and coaches you."
 PITCH = ("Open-source sports video analysis and basketball analytics for athletes, coaches and AI agents. "
          "Turn your game or workout into a coaching page, source clips, narration, drills and an explained video.")
@@ -264,6 +265,16 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <p class="name">sports-video-coach</p>
 <h1>{TAGLINE}</h1>
 <p>{PITCH}</p>
+<section id="training-example">
+<h2 class="feature-title">A real training review in 43 seconds</h2>
+<video controls playsinline preload="none" poster="{TRAINING_MEDIA}/poster-en-wide.jpg"
+ src="{TRAINING_MEDIA}/sports-video-coach-en-wide.mp4" aria-label="English basketball training review showcase"></video>
+<p>Original footage, freeze-frame cues, two selected attempts, and a next-practice suggestion.
+This agent-reviewed example is edited for length; it does not measure improvement or shooting accuracy.</p>
+<p><a href="{TRAINING_MEDIA}/sports-video-coach-en-vertical.mp4">Watch the vertical version</a> ·
+<a href="{REPO_URL}/releases/tag/showcase-2026-10-29">Video files and context</a></p>
+</section>
+<h2 class="feature-title">Explore a complete coaching-page demo</h2>
 {video}
 <div class="cards">{cards}</div>
 <p class="go"><a href="demo/">Open the demo coaching page</a><a href="{REPO_URL}">Get it on GitHub</a></p>
@@ -282,7 +293,7 @@ Publishing is optional. <a href="{REPO_URL}/blob/master/docs/privacy.md">Privacy
 <pre><code>{try_it}</code></pre>
 <p>Your sport needs more than frames? <a href="{PLUGINS_URL}">Write a plugin for your sport</a>.</p>
 <p>Which coding agent reviews sports film best? See the <a href="{BENCH_URL}">benchmark leaderboard</a>.</p>
-<small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
+<small>The coaching-page demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
 no person appears. {("Other languages: " + other) if other else ""}{version_note(ver)}</small>
 </main>
 {site_counter.tag()}

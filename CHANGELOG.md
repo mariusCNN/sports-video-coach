@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- A real training-review showcase on the homepage and in both READMEs, with English landscape/vertical
+  video downloads and explicit limits on what the selected example demonstrates. Media is hosted separately.
 - The public landing page now presents the complete coaching, basketball, training and optional perception
   capabilities, links the feature/agent guides, and includes matching structured feature metadata.
 - Optional `perception-lab` commands to prepare source frames, run WASB heatmaps, SAHI sliced RF-DETR

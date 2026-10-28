@@ -28,6 +28,11 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
 
 [English](https://github.com/mariusDing/sports-video-coach/blob/master/README.md) · **中文**
 
+**新增：[43 秒真实训练复盘展示](https://mariusding.github.io/sports-video-coach/#training-example)。**
+原片 → 定格圈注 → 两次动作对照 → 下次练习建议。
+[英文横版与竖版视频](https://github.com/mariusDing/sports-video-coach/releases/tag/showcase-2026-10-29)。
+<sub>经过 agent 复核、为展示而节选的案例；不代表训练前后改善，也不是命中率测量。</sub>
+
 <img alt="作者自己投篮练习的真实运行：原片、agent 的看片复盘在出手后收手定住的地方暂停，然后是教练网页" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
 <sub>作者自己投篮练习的一次真实运行：你的视频 → agent 看片复盘 → 你的教练网页。
