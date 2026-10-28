@@ -100,3 +100,11 @@ Context:
 - The fact-check reviewer reads only one `event_NN.md` and its sheets, answers the narrow questions (who shot, made, 2/3/FT, foul by/on/type) in `event_NN.answer.json`, and leaves the coaching fields alone.
 - The official facts tell you how many points each team scored in the window, never who scored. The thick yellow box with "?" is a guess (that team's player nearest a rim), not a fact: read the jersey or write "unclear".
 - Answers are merged into the v2 trips (`shot`, `fts`, `foul`) by `hoop-tape-miner coach-sheets event-merge --review {review_dir} --events {review_dir}/event_sheets --out <new review folder>`; an answer overrides the part reviewer only with confidence high or medium and at least one `evidence_t` frame time.
+# Optional perception evidence
+
+Some possession records contain `perception_candidates` from OpenHoopVision. These
+are unreviewed search cues, not facts. Re-open the cited video interval before
+accepting a shot, outcome, passer, receiver, rebound type or jersey number. Model
+team attribution can be wrong even when the event time is right. A missing model
+event does not mean no event occurred. Unknown outcomes remain unknown. Never use
+upstream NBA coordinates or fallback point values to decide FIBA shot values.

@@ -201,7 +201,12 @@ def summary_paths(folder: Path) -> list[Path]:
 def page_inputs(folder: Path) -> list[Path]:
     """Summary and player-table sources, including paths that may be written on a later run."""
     from . import box
-    return summary_paths(folder) + box.inputs(folder)
+    from .perception import evidence_path
+    evidence = evidence_path(folder)
+    return (summary_paths(folder) + box.inputs(folder)
+            + ([evidence, folder / "perception" / "media.json"] if evidence else [])
+            + ([folder / "perception-lab" / name for name in ("evaluation.json", "index.html")]
+               if (folder / "game.json").exists() else []))
 
 
 def four_factors_summary(folder: Path) -> dict | None:
@@ -358,7 +363,11 @@ def sections(folder: Path, lang: str, embed: bool, first: int) -> tuple[str, lis
     from . import film_index
     film, film_heads = film_index.sections(folder, lang, embed, first)
     track, track_heads = tracking_sections(folder, lang, first + len(film_heads))
-    return film + track, film_heads + track_heads, film_index.ASSETS if film else ""
+    from . import perception_page
+    evidence, evidence_heads = perception_page.sections(folder, lang, first + len(film_heads) + len(track_heads), embed)
+    from .perception_lab_page import report_section
+    lab, lab_heads = ("", []) if embed else report_section(folder, lang, first + len(film_heads) + len(track_heads) + len(evidence_heads))
+    return film + track + evidence + lab, film_heads + track_heads + evidence_heads + lab_heads, film_index.ASSETS if film else ""
 
 
 def band(sb: dict, lab) -> str:

@@ -723,6 +723,10 @@ def main(argv=None):
         (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
         (out / "lineup_intervals.json").write_text(
             json.dumps({k: [[round(x) for x in s] for s in v] for k, v in lineup.items()}, indent=0))
+    from .perception_review import attach_manifest
+    attach_manifest(manifest, run / "perception" / "evidence.json")
+    from sports_video_coach.media import write_json_atomic
+    write_json_atomic(out / "manifest.json", manifest)
     print(len(manifest), "possessions", sum(len(m["sheets"]) for m in manifest), "sheets")
 
     parts = split_parts(manifest, a.parts)

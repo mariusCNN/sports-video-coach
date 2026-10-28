@@ -4,6 +4,14 @@
 
 ### 你的 AI agent 看你的运动录像，像教练一样给你指导。
 
+**面向球员、教练和 coding agent 的开源运动视频分析、篮球分析与 AI 教练工具。**
+录像 → 带时间戳的复盘 → 双语教练报告、片段、语音和讲解视频。
+可选球员/球跟踪、投篮图、联赛统计、训练计划，以及带独立人工验证的视觉模型。
+
+[完整功能与优势](docs/features.md) · [篮球插件](docs/basketball.zh.md) ·
+[OpenHoopVision 接入](docs/perception.md) · [WASB / SAHI / KaliCalib 实验](docs/perception-lab.md) ·
+[Agent 入口](llms.txt)
+
 **还带一个基准测试**，看哪个 agent 看运动录像最准：Codex gpt-6-astra 1.000，Claude Opus 5.5 0.997，
 Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
 <sub>新种子榜：比盲猜高出的部分取平均，1 = 全对 · 每个设置跑一到四次，都是作者自己跑的 ·
@@ -115,6 +123,35 @@ sports-video-coach demo --lang zh en
 
 ## 怎么工作
 
+### 为什么用这个项目
+
+| 能力 | 带来的价值 |
+|---|---|
+| **完整教练流程** | 一次可恢复运行，串起复盘、改进动作、训练方法、量化目标、证据片段、语音报告和讲解视频。 |
+| **Agent 可直接操作** | Claude Code、Codex 等通过退出码、JSON、写作指南和 `AGENTS.md` 接力，不依赖专有 agent 编排服务。 |
+| **任何运动 + 篮球深度分析** | 通用流程不需要 GPU；篮球插件增加球队/球员报告、联赛数据、四要素、回合、阵容、投篮图和对手分析。 |
+| **证据可核验** | 原视频时间戳、人工复核状态、标定质量门槛、源文件/权重哈希、独立标签评估；自动候选与已确认事实分开。 |
+| **覆盖比赛与训练** | 投篮训练、动作复盘、训练计划、场上提示音频、赛季汇总、对手档案、战术回放和手机竖屏片段。 |
+| **可扩展、可复现** | 运动插件、本地模型适配、阶段缓存，以及有精确真值的合成录像理解基准。 |
+
+[完整功能与命令目录](docs/features.md) 列出了各项能力的条件和限制。
+
+### 可选篮球视觉增强
+
+- **OpenHoopVision**：投篮、传球、运球、篮板和球权变化候选；姿态、球衣号码/OCR、身份线索；复核冲突、证据片段和双语验证卡片。
+- **SAHI**：同一篮球 RF-DETR 权重上的重叠切片检测、坐标还原和去重；与全图检测一起测召回、误检和耗时。
+- **WASB**：三帧篮球热图定位，输出原视频坐标；没有可靠观测时明确留空。
+- **KaliCalib**：学习球场关键点，生成 FIBA 球场映射候选，经过几何门槛和独立交点验证；失败时不回退到默认球场。
+
+这些适配器已接入并在私有业余比赛录像上实测，**仍为可选实验功能，不保证提升准确率**。
+一次 45 帧诊断中，SAHI 将最高分球候选命中从 20/35 提高至 22/35，同时误检帧从 11 增至 13，推理约慢 4.2 倍。
+WASB 漏掉了大部分可见球，KaliCalib 尚不适合自动替换标定。[方法、实测结果、安装与许可](docs/perception-lab.md)。
+
+本 README 其他安装示例仍固定在此前发布版本。新适配器请使用包含
+`hoop-tape-miner perception-lab --help` 的当前源码；[接入指南](docs/perception-lab.md) 给出上游固定版本和额外依赖。
+
+### 运行循环
+
 1. **工具把视频切成帧拼图**，能量的先量出来（篮球插件还会跟踪球员和球）。
 2. **你的 agent 写复盘和报告**。需要眼睛或文字时工具就停下（退出码 3），说清楚要写什么：先是看片复盘，再是报告。
    校验器会告诉 agent 答案还缺什么。
@@ -177,6 +214,12 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 ## 状态与贡献
 
 早期（alpha）：作者在自己的比赛、训练和合成测试上开发和测试。
+
+- [x] 通用运动复盘、多语言报告、片段、语音和讲解视频。
+- [x] 篮球比赛、个人训练、球队/球员流程和赛季工具。
+- [x] OpenHoopVision 证据接入，以及可选 WASB / SAHI / KaliCalib 对照适配器。
+- [ ] 扩大不同球馆、机位的独立验证，再决定是否将实验模型作为默认流程。
+
 欢迎贡献你熟悉的运动的插件、提示词、修复和文档：
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md)、
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。

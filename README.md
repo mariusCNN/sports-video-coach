@@ -4,6 +4,14 @@
 
 ### Your coding agent reviews your sports video and coaches you.
 
+**Open-source sports video analysis, basketball analytics and AI coaching for players, coaches and coding agents.**
+Video → timestamped film review → bilingual coaching pages, clips, narration and explained MP4s.
+Optional player/ball tracking, shot charts, league stats, training plans and independently evaluated vision backends.
+
+[All features and advantages](docs/features.md) · [Basketball](docs/basketball.md) ·
+[OpenHoopVision integration](docs/perception.md) · [WASB / SAHI / KaliCalib experiments](docs/perception-lab.md) ·
+[Agent entry points](llms.txt)
+
 **Also a benchmark** of which agent reads sports film best: Codex gpt-6-astra 1.000, Claude Opus 5.5 0.997,
 Claude Sonnet 5.5 0.419 at default effort and 0.931 at high.<br>
 <sub>Fresh-seed board: mean score above a blind guess, 1 = perfect · 1–4 runs per setting, all by the author ·
@@ -119,6 +127,37 @@ agent plan.
 
 ## How it works
 
+### Why use this project
+
+| Capability | What it gives you |
+|---|---|
+| **A complete coaching workflow** | Film review, actions, drills, targets, source clips, narrated reports and explained videos in one resumable run. |
+| **Works with your coding agent** | Claude Code, Codex and other agents use explicit exit codes, JSON artifacts, writing guides and `AGENTS.md`; no proprietary agent orchestration service required. |
+| **Any sport, optional basketball depth** | The generic workflow needs no GPU. Basketball adds team/player reports, tracking, league stats, Four Factors, possessions, lineups, shot charts and scouting. |
+| **Evidence you can inspect** | Timestamped source footage, review states, calibration quality gates, source/model hashes and independent labelled evaluation; automatic guesses stay separate from reviewed facts. |
+| **More than a game report** | Personal shooting sessions, movement review, practice plans, cue audio, season summaries, opponent dossiers, tactics replays and phone reels. |
+| **Extensible and reproducible** | Sport plugins, local model adapters, cached stages and a synthetic film-review benchmark with exact ground truth. |
+
+See the [complete feature and command catalog](docs/features.md) for requirements and limitations.
+
+### Optional basketball perception
+
+- **OpenHoopVision:** shot, pass, dribble, rebound and possession-change candidates; pose, jersey/OCR and identity evidence; review conflicts, clips and bilingual validation cards.
+- **SAHI:** overlapping sliced inference using the same local basketball RF-DETR weights, coordinate restoration and duplicate suppression; compare recall, false positives and cost against full-frame detection.
+- **WASB:** an optional three-frame basketball heatmap model with source-coordinate observations and explicit missing detections.
+- **KaliCalib:** FIBA court homography proposals from learned landmarks, with geometric rejection and independent landmark checks. Rejected fits never become a default camera estimate.
+
+These adapters are implemented and have been exercised on private amateur footage. **They are opt-in experiments,
+not a promise of improved accuracy.** In one 45-frame diagnostic, SAHI improved top-1 ball recall from 20/35 to
+22/35 while increasing false-positive frames from 11 to 13 and inference cost by about 4.2×; WASB missed most
+visible balls, and KaliCalib remained unsuitable for automatic calibration. [Method, results, setup and licenses](docs/perception-lab.md).
+
+The install examples elsewhere in this README retain the previous pinned release. For these new adapters use a
+current checkout containing `hoop-tape-miner perception-lab --help`; the [setup guide](docs/perception-lab.md) lists
+the exact upstream revisions and additional dependencies.
+
+### The run loop
+
 1. **The tool cuts your video into frame sheets** and measures what it can (the basketball plugin also tracks
    players and the ball).
 2. **Your agent writes the review and the report.** Whenever the tool needs eyes or words it stops (exit code 3) and says what to
@@ -184,6 +223,12 @@ the project began as `hoop-tape-miner`, a film room for an amateur basketball te
 ## Status and contributing
 
 Early (alpha): built and tested by its author on their own games and training, and on synthetic runs.
+
+- [x] Generic sports review, multilingual reports, clips, narration and explained videos.
+- [x] Basketball games, personal training, team/player workflows and season tools.
+- [x] OpenHoopVision evidence integration and opt-in WASB / SAHI / KaliCalib comparison adapters.
+- [ ] Broader independent validation across gyms/cameras before promoting experimental models to defaults.
+
 Plugins for a sport you know, prompts, fixes and docs are welcome:
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md),
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).

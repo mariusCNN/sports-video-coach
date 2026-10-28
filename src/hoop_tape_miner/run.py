@@ -22,6 +22,8 @@ from typing import Callable
 from sports_video_coach import pipeline
 
 from . import game_config, workspace
+from . import perception
+from . import perception_media
 from sports_video_coach.pipeline import (LANGS, QA_STAMP, WAITING, Step, Unit, clips_done, film_done, html_done,  # noqa: F401
                        listen_done, localised, profile_langs, published, qa_done, qa_hash, readme, reports_done,
                        tail_steps)
@@ -374,6 +376,20 @@ STEPS = [
                     + (["--official", str(g.official)] if g.official.exists() else [])],
          inputs=lambda g: [g.run / "rim_scan.pkl", *([g.official] if g.official.exists() else [])],
          after=("analyze",)),
+    Step("perception", "cmd", perception.analysis_done,
+         perception.analysis_commands, long=True,
+         inputs=lambda g: [g.video] if perception.enabled(g) else [],
+         params=lambda g: g.game.get("perception") or {}),
+    Step("perception-import", "cmd", perception.import_done,
+         perception.import_commands, long=True,
+         inputs=lambda g: perception.source_inputs(g) if perception.enabled(g) else [],
+         params=lambda g: {"config": g.game.get("perception"), "rosters": g.game.get("rosters")},
+         after=("perception",)),
+    Step("perception-media", "cmd", perception_media.done, perception_media.commands, long=True,
+         inputs=lambda g: [g.run / "perception" / "evidence.json", g.video] if perception.enabled(g) else [],
+         params=lambda g: {"limit": (g.game.get("perception") or {}).get("media_limit", 12),
+                           "renderer": perception_media.RENDER_VERSION},
+         after=("perception-import",)),
     Step("coach-sheets", "cmd", lambda g: (g.review / "manifest.json").exists() and parts_listed(g),
          lambda g: [["coach-sheets", "--run", str(g.run), "--game", str(g.gj), "--out", str(g.review), "--parts", "6",
                      "--video", _v(g)]], long=True,

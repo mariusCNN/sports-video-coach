@@ -85,6 +85,10 @@ themselves, never published).
   `docs/playbook.md` "Personal training sessions" describes (Claude Code: `/train <videos>`). A session =
   `workspace/players/<player>/training/<date>/`. Movement clips: `hoop-tape-miner move` (`/move`).
 - Procedure and each step: `docs/playbook.md`. Stage details: `docs/pipeline.md`. Overview: `docs/basketball.md`.
+- Capability/command catalog: `docs/features.md`; concise agent navigation: `llms.txt`.
+- Optional perception: `perception` integrates OpenHoopVision candidate evidence (`docs/perception.md`).
+  `perception-lab` prepares frames, runs WASB/SAHI/KaliCalib, evaluates independent labels and renders
+  comparison HTML/video (`docs/perception-lab.md`). Experiments never replace reviewed facts or calibration.
 - Team profile (our team, focus player, league secrets file, languages): `workspace/team.json`, from
   `templates/team.example.json`.
 - Writing: the guides in `prompts/` (film review brief, coach report, player deep dive, narration, explained video).
