@@ -111,6 +111,15 @@ def test_atomic_writes_leave_no_temp_file(tmp_path):
     assert sorted(x.name for x in tmp_path.iterdir()) == ["x.json", "y.md"]
 
 
+def test_atomic_json_retries_a_transient_windows_lock(tmp_path, monkeypatch):
+    target = tmp_path / ".hoop-steps.json"
+    target.write_text('{"old": true}', encoding="utf8")
+    calls, _ = _locked(monkeypatch, 2)
+    media.write_json_atomic(target, {"updated": True})
+    assert json.loads(target.read_text(encoding="utf8")) == {"updated": True}
+    assert len(calls) == 3 and not target.with_name(target.name + ".tmp").exists()
+
+
 def test_binaries_honour_the_environment(tmp_path, monkeypatch):
     monkeypatch.delenv("FFMPEG", raising=False)
     monkeypatch.delenv("FFPROBE", raising=False)

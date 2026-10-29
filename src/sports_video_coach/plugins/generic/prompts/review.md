@@ -42,6 +42,8 @@ between two tiles faster than they can move, zoom in on those seconds before coa
 
 ```json
 {
+  "schema": 2,
+  "status": "reviewed",
   "summary": "One or two sentences: what the video shows overall and the biggest thing to fix.",
   "moments": [
     {"start": "01:12", "end": "01:20", "what": "Second serve: toss drifts behind the head, ball lands short.",
@@ -61,12 +63,22 @@ between two tiles faster than they can move, zoom in on those seconds before coa
 - `why`: the cause, as far as the frames show it. Write "unclear" (in the review's language) when they do not.
 - `tag`: `fix` (a habit to change), `good` (keep doing it), `context` (score, drill change, rest).
 - `confidence`: `seen` (clear in the frames), `likely`, or `unclear`. Never invent what the frames do not show.
-- At least 3 moments; a 10-minute game usually has 10-25. Patterns beat one-offs: when the same thing happens
+- Schema 2 needs at least one supported moment, with a `tag` and `confidence` on each. Do not pad a short clip
+  to reach three. Older reviews without a schema keep their existing three-moment check.
+  A 10-minute game usually has 10-25. Patterns beat one-offs: when the same thing happens
   again, add the moment and say "again" in `what`. A repeated drill has fewer: one moment per distinct habit, plus
   one or two repeats that show it is a habit (say in `what` how many reps show it), not one per rep.
 
-When there is nothing to coach (no athlete in view, the wrong file, a video too dark or too short to judge), do
-not invent moments to pass the check: stop and tell your user what the video shows and what video would work.
+When there is nothing to coach (no athlete in view, the wrong file, a video too dark or too short to judge), write
+the following result in the review's language, then run again. It completes successfully without generating new
+reports, audio or video. Tell the user that this is an evidence limitation, not a coaching assessment:
+
+```json
+{"schema": 2, "status": "insufficient_evidence", "summary": "The athlete is too small to see the movement.",
+ "next_steps": "Film one repetition from the side with the whole athlete in view.", "moments": []}
+```
+
+Do not invent moments to pass the check.
 If they still want a report on it (a test run, drawn or screen-recorded footage), review only what is visible
 (positions, timing, counts) and say in `summary` that no athlete's technique can be judged from it.
 

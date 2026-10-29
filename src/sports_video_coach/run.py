@@ -41,6 +41,21 @@ def add_lang_arg(ap: argparse.ArgumentParser, allowed=langs.CODES) -> None:
                          f"what a new one needs and keeps the rest): {', '.join(allowed)}")
 
 
+def quick_options(argv: list[str]) -> list[str]:
+    """--quick chooses the page and clips, with one language by default; explicit conflicting artifacts fail."""
+    if "--quick" not in argv:
+        return argv
+    argv = [arg for arg in argv if arg != "--quick"]
+    if any(arg == "--artifacts" or arg.startswith("--artifacts=") for arg in argv):
+        raise SystemExit("--quick chooses html (with clips and QA); omit --artifacts or omit --quick")
+    if any(arg == "--publish" or arg.startswith("--publish=") for arg in argv):
+        raise SystemExit("--quick builds locally; omit --publish or omit --quick")
+    # Put the generated nargs options last, so they cannot swallow a video path.
+    if not any(arg == "--lang" or arg.startswith("--lang=") for arg in argv):
+        argv += ["--lang", "en"]
+    return [*argv, "--artifacts", "html"]
+
+
 def choose_artifacts(folder: Path, kind: plugin.Kind, rest: list[str]) -> list[str]:
     """Take `--artifacts ...` and `--lang ...` out of `rest` and write them to the unit json (artifacts with what
     they imply, languages checked against what the unit's plugin knows); the other options go on to the driver."""
@@ -113,6 +128,8 @@ HELP = """usage: sports-video-coach run <videos...> [--plugin NAME] [start optio
        sports-video-coach run <url> [--plugin NAME]
 
 Turns your sports video into a film review, a coaching page with narration and clips, and an explained video.
+First run: add --quick for a local page, clips and QA, in English unless --lang is given. No new narration,
+explained video or publishing; files from an earlier run are kept. Your agent still writes the review and report.
 The first run starts a folder from the videos; later runs take that folder and go on where it stopped. A later
 run's --artifacts or --lang changes what the folder builds (e.g. `--lang en zh` adds Chinese: only the new
 language's scripts, audio and film are made, the English ones are kept).
@@ -160,6 +177,7 @@ def main(argv=None):
         name = argv[argv.index("--plugin") + 1] if "--plugin" in argv[:-1] else None
         print(help_text(name))
         sys.exit(0 if argv else 1)
+    argv = quick_options(list(argv))
     name = None
     if "--plugin" in argv:
         i = argv.index("--plugin")

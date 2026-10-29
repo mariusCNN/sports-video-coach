@@ -17,7 +17,7 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
 <sub>新种子榜：比盲猜高出的部分取平均，1 = 全对 · 每个设置跑一到四次，都是作者自己跑的 ·
 [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/)</sub>
 
-**试一下：**[demo 网页，不用安装](https://mariusding.github.io/sports-video-coach/demo/) ·
+**试一下：**[真实投篮演示](https://mariusding.github.io/sports-video-coach/case-study/) · [demo 网页，不用安装](https://mariusding.github.io/sports-video-coach/demo/) ·
 [在 Codespaces 里打开](https://codespaces.new/mariusDing/sports-video-coach) ·
 [一条命令重跑基准](#基准测试哪个-agent-看运动录像最准)
 
@@ -58,7 +58,7 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
   加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
+uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
@@ -80,17 +80,21 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 
 ## 试一下
 
-**1. 先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
+**1. 先看成品，不用安装：**[真实投篮演示](https://mariusding.github.io/sports-video-coach/case-study/)，再打开 [合成示例的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
 （[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。
 
 **2. 对你的 agent 说**（粘贴到 Claude Code、Codex 或任何编程 agent；把运动和语言换成你的）：
 
 ```text
 给我的运动视频 <你的视频路径> 做教练复盘。安装前先把完整的安装命令给我看，我同意后再装。
-安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`（需要 ffmpeg）。
-运行 `sports-video-coach run <视频> --sport badminton --lang zh`，它交给你的每一步（退出码 3）都做完，
+安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f`（需要 ffmpeg）。
+先运行 `sports-video-coach doctor` 检查环境。
+运行 `sports-video-coach run <视频> --quick --sport badminton --lang zh`，它交给你的每一步（退出码 3）都做完，
 直到退出码 0，再把教练网页给我看。
 ```
+
+第一次建议用一段 15–40 秒的练习录像。`--quick` 先生成本地网页、片段和 QA，不生成新的语音或讲解视频；agent 仍会使用你的模型额度。
+环境检查不会安装软件，也不会连接模型服务商。需要 [uv](https://docs.astral.sh/uv/getting-started/installation/) 和 [ffmpeg/ffprobe](https://ffmpeg.org/download.html)。
 
 不需要 GPU。比赛里可以指定看谁：`--focus "穿红衣服的球员"`，或者球衣号码。
 只要网页和片段（不要音频、不要讲解视频，也不会把任何内容发给语音合成服务）：加 `--artifacts html`。
@@ -100,13 +104,14 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 给多个视频时，按给出的顺序拼成一条时间线；同一组动作的两个机位，目前最好分成两个单元各跑一次。
 我们的测试里，一段 40 秒的视频约 3 分钟、5 个 agent 步骤跑完；整场比赛更久，也更耗 agent 额度。
 
-<details><summary>在自己电脑上跑 demo（约一分钟，不需要 agent，也不需要你的视频）</summary>
+<details><summary>在自己电脑上跑 demo（离线，不需要 agent，也不需要你的视频）</summary>
 
 程序画的练习视频，复盘是预先写好的，从头渲染到尾：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a   # PATH 上要有 ffmpeg
-sports-video-coach demo --lang zh en
+uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f   # PATH 上要有 ffmpeg
+sports-video-coach doctor
+sports-video-coach demo --offline --lang zh en
 ```
 
 </details>
@@ -181,15 +186,15 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 - **任何支持 Agent Skills 的客户端**（Codex、Cursor 等）：`npx skills add mariusDing/sports-video-coach`，或复制
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md)。
 - **只装命令行：**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f`
   （约 60 MB，不含 torch；PATH 上要有 ffmpeg），然后 `sports-video-coach plugins` 和
   `sports-video-coach run <视频> --sport <运动>`。
 - **改代码、写插件：**`git clone https://github.com/mariusDing/sports-video-coach`，进目录后
-  `git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`（或你选的分支），
+  `git checkout 934030b9f05f3b65f4d690b6f1cc7eb953119c7f`（或你选的分支），
   再 `uv sync --no-group basketball`（Python 3.11，不装 torch），命令前加 `uv run`。`uv run pytest -q` 照常能跑。
 - **从克隆做篮球跟踪：**同样克隆并 checkout 后 `uv sync`（Python 3.11，CUDA torch，几 GB），命令前加 `uv run`。
 - 每条安装命令都固定到同一个提交，装的就是你读过的代码；换版本时更新日志会写明。
-- 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a.zip` 安装。
+- 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/934030b9f05f3b65f4d690b6f1cc7eb953119c7f.zip` 安装。
 - 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里 PATH 中的 `C:/...` 要写成 `/c/...`（例如 `/c/Users/<you>/.local/bin`）。
 
 </details>

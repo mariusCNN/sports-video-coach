@@ -1,0 +1,58 @@
+name: first run
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  light-install:
+    name: Light wheel install (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.5"
+      - name: ffmpeg and ffprobe (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          curl -fsSL --retry 3 https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz | tar -xJ -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/ffmpeg-master-latest-linux64-gpl/bin" >> "$GITHUB_PATH"
+      - name: ffmpeg and ffprobe (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'ffmpeg.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'ffmpeg'
+          Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip' -OutFile $archive -TimeoutSec 180
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          $binary = Get-ChildItem -LiteralPath $destination -Filter ffmpeg.exe -Recurse | Select-Object -First 1
+          $binary.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+      - name: Build and install the light wheel
+        shell: bash
+        run: |
+          uv build --wheel
+          uv venv --python 3.11
+          uv pip install dist/*.whl pytest
+      - name: Check setup and render an offline demo
+        shell: bash
+        run: |
+          uv run --no-sync sports-video-coach doctor --json
+          uv run --no-sync sports-video-coach demo --offline --out first-run-demo --site first-run-site
+          uv run --no-sync sports-video-coach page-check first-run-site first-run-site/case-study first-run-site/demo
+      - name: Exercise the first-run workflow
+        shell: bash
+        run: uv run --no-sync pytest -q tests/test_doctor.py tests/test_generic_plugin.py tests/test_demo.py tests/test_core_independence.py

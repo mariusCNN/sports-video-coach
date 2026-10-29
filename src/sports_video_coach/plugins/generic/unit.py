@@ -10,6 +10,7 @@ Steps: frames (cmd) -> review (agent: review.json) -> report (agent: README per 
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -38,6 +39,14 @@ class Analysis(P.Session):
                     focus=P.quoted(self.game["focus"]) if self.game.get("focus") else "the main athlete in the video")
 
     def finished(self):
+        if insufficient(self):
+            review = json.loads((self.review / "review.json").read_text(encoding="utf8"))
+            print("[analysis] completed: insufficient evidence; no new coaching artifacts generated.")
+            print(f"[analysis] reason: {P.line(review['summary'])}")
+            print(f"[analysis] next: {P.line(review['next_steps'])}")
+            print(f"[analysis] result: {P.slash(self.review / 'review.json')}")
+            print("[analysis] any older artifacts in this folder are retained; they do not describe this result.")
+            return
         clips = sorted((self.folder / "clips").glob("*.mp4"))
         got, old = P.kept(self, html=[self.folder / "index.html"],
                           film=[self.folder / f"film.{l}.mp4" for l in self.langs],
@@ -85,9 +94,10 @@ def merge_parts(g: Analysis) -> Path | None:
     parts = sorted(g.review.glob("part*.json")) if g.review.is_dir() else []
     if p.exists() or not parts:
         return None
-    moments, summaries = [], []
+    moments, summaries, schemas = [], [], []
     for part in parts:
         data = json.loads(part.read_text(encoding="utf8"))
+        schemas.append(data.get("schema", 1))
         moments += data.get("moments") or []
         if str(data.get("summary") or "").strip():
             summaries.append(str(data["summary"]).strip())
@@ -98,7 +108,10 @@ def merge_parts(g: Analysis) -> Path | None:
         except (KeyError, TypeError, ValueError):
             return 0.0
     moments.sort(key=at)
-    media.write_text_atomic(p, json.dumps({"summary": " ".join(summaries), "moments": moments},
+    merged = {"summary": " ".join(summaries), "moments": moments}
+    if schemas and all(schema == 2 for schema in schemas):
+        merged.update(schema=2, status="reviewed")
+    media.write_text_atomic(p, json.dumps(merged,
                                           ensure_ascii=False, indent=1) + "\n")
     print(f"merged {len(parts)} part(s) into {P.slash(p)}: {len(moments)} moments. The summary joins the parts' "
           "summaries: rewrite it as one or two sentences for the whole video.")
@@ -118,33 +131,65 @@ def review_errors(g: Analysis) -> list[str]:
         data = json.loads(p.read_text(encoding="utf8"))
     except json.JSONDecodeError as e:
         return [f"{p}: not valid JSON ({e})"]
+    if not isinstance(data, dict):
+        return [f"{p}: review must be a JSON object"]
     errs = []
-    moments = data.get("moments") if isinstance(data, dict) else None
-    if not isinstance(moments, list) or len(moments) < MIN_MOMENTS:
-        return [f"{p}: needs a `moments` list with at least {MIN_MOMENTS} entries"]
+    schema = data.get("schema", 1)
+    if type(schema) is not int or schema not in (1, 2):
+        return [f"{p}: schema must be 1 or 2"]
+    status = data.get("status", "reviewed")
+    if status not in ("reviewed", "insufficient_evidence"):
+        return [f"{p}: status must be reviewed or insufficient_evidence"]
+    if not isinstance(data.get("summary"), str) or not data["summary"].strip():
+        errs.append("`summary` is empty: one or two sentences on what the video shows overall")
+    moments = data.get("moments")
+    if status == "insufficient_evidence":
+        if moments != []:
+            errs.append("insufficient_evidence needs an empty `moments` list")
+        if not isinstance(data.get("next_steps"), str) or not data["next_steps"].strip():
+            errs.append("insufficient_evidence needs `next_steps`: what footage would make a review possible")
+        return errs
+    minimum = 1 if schema == 2 else MIN_MOMENTS
+    if not isinstance(moments, list) or len(moments) < minimum:
+        return [f"{p}: needs a `moments` list with at least {minimum} entries"]
     frames = g.run / "frames" / "frames.json"
     dur = json.loads(frames.read_text(encoding="utf8")).get("duration_s") if frames.exists() else None
     for i, m in enumerate(moments, 1):
+        if not isinstance(m, dict):
+            errs.append(f"moment {i}: must be an object")
+            continue
         try:
             t0, t1 = seconds(m["start"]), seconds(m["end"])
         except (KeyError, TypeError, ValueError):
             errs.append(f"moment {i}: `start` and `end` must be mm:ss")
             continue
-        if t1 <= t0:
+        if not (math.isfinite(t0) and math.isfinite(t1)) or t0 < 0:
+            errs.append(f"moment {i}: times must be finite and non-negative")
+        elif t1 <= t0:
             errs.append(f"moment {i}: end {P.quoted(m['end'])} is not after start {P.quoted(m['start'])}")
         if dur is not None and t1 > dur + 1:
             errs.append(f"moment {i}: end {P.quoted(m['end'])} is after the video ends ({dur:.0f} s)")
         for k in ("what", "why"):
-            if not str(m.get(k) or "").strip():
+            if not isinstance(m.get(k), str) or not m[k].strip():
                 errs.append(f"moment {i}: `{k}` is empty")
-    if not str(data.get("summary") or "").strip():
-        errs.append("`summary` is empty: one or two sentences on what the video shows overall")
+        for key, choices in (("confidence", ("seen", "likely", "unclear")), ("tag", ("fix", "good", "context"))):
+            if (schema == 2 or key in m) and m.get(key) not in choices:
+                errs.append(f"moment {i}: `{key}` must be one of {', '.join(choices)}")
     return errs
+
+
+def insufficient(g: Analysis) -> bool:
+    """Only a validated refusal can finish the run without artifacts."""
+    p = g.review / "review.json"
+    return (p.exists() and not review_errors(g) and
+            json.loads(p.read_text(encoding="utf8")).get("status") == "insufficient_evidence")
 
 
 def review_ok(g: Analysis) -> str:
     """The line once review.json passes: 'review-check: OK, 7 moments'."""
     data = json.loads((g.review / "review.json").read_text(encoding="utf8"))
+    if data.get("status") == "insufficient_evidence":
+        return "review-check: OK, insufficient evidence (no coaching claim)"
     return f"review-check: OK, {len(data['moments'])} moments"
 
 
@@ -157,7 +202,7 @@ STEPS = [
            lambda g: [["frames", str(g.video), "--out", str(g.run / "frames"),
                        "--every", str(g.game.get("every_s", 2))]],
            inputs=lambda g: [g.video], params=lambda g: {"every_s": g.game.get("every_s", 2)}),
-    P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors, passed=review_ok,
+    P.Step("review", "agent", lambda g: not review_errors(g), errors=review_errors, passed=review_ok, terminal=insufficient,
            how="Film review: open every sheet in {run}/frames (frames.json lists them in time order) and write "
                "{review}/review.json as the review guide says (`sports-video-coach guide review --unit {folder}` "
                "prints it; sport: {sport}; focus: {focus}). More than 10 sheets: delegate them to helpers "

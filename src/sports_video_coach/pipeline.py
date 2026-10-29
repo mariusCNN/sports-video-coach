@@ -212,6 +212,7 @@ class Step:
     needs_all: bool = False                     # done only while every step before it is done (QA checks them)
     passed: Callable[[Unit], str] | None = None  # agent: the line a run prints when its output passes the check
     auto: Callable[[Unit], bool] | None = None  # agent: done by the run itself if it can (True: it tried; then rechecked)
+    terminal: Callable[[Unit], bool] | None = None  # a valid result that finishes without downstream artifacts
 
 
 def newer(out: Path, *inputs: Path, slack: float = 2.0) -> bool:
@@ -858,6 +859,10 @@ def walk(g: Unit, steps: list[Step], until: str | None, redo: str | None, publis
                 store.save()
             if s.passed and not dry:
                 print(f"[run] {s.passed(g)}")
+            if s.terminal and not dry and s.terminal(g):
+                g.finished()
+                stamp()
+                return 0
             if s.name == until:
                 print(f"[run] paused after {until} (--until; it was already done)")
                 return 0

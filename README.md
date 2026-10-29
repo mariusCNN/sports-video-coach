@@ -17,7 +17,7 @@ Claude Sonnet 5.5 0.419 at default effort and 0.931 at high.<br>
 <sub>Fresh-seed board: mean score above a blind guess, 1 = perfect · 1–4 runs per setting, all by the author ·
 [leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/)</sub>
 
-**Try it:** [demo page, no install](https://mariusding.github.io/sports-video-coach/demo/) ·
+**Try it:** [a real shooting walkthrough](https://mariusding.github.io/sports-video-coach/case-study/) · [demo page, no install](https://mariusding.github.io/sports-video-coach/demo/) ·
 [open in Codespaces](https://codespaces.new/mariusDing/sports-video-coach) ·
 [rerun the benchmark in one command](#benchmark-which-agent-reads-sports-film-best)
 
@@ -59,7 +59,7 @@ Drawn drills, scored against the exact truth the tool drew in. No judge model.
   add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
+uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
@@ -81,17 +81,22 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 
 ## Try it
 
-**1. See what you get, no install:** the [demo coaching page](https://mariusding.github.io/sports-video-coach/demo/) and its explained video
+**1. See what you get, no install:** the [real shooting walkthrough](https://mariusding.github.io/sports-video-coach/case-study/), then explore the [synthetic sample coaching page](https://mariusding.github.io/sports-video-coach/demo/) and its explained video
 ([English](https://mariusding.github.io/sports-video-coach/film.en.mp4), [中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)).
 
 **2. Tell your agent** (paste into Claude Code, Codex or any coding agent; set your sport and language):
 
 ```text
 Coach me on my sports video <path to your video>. Show me the exact install command and wait for my OK.
-Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a` (it needs ffmpeg).
-Run `sports-video-coach run <video> --sport soccer --lang en`, do each step it hands you (exit code 3)
+Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f` (it needs ffmpeg).
+Run `sports-video-coach doctor` to check the setup first.
+Run `sports-video-coach run <video> --quick --sport soccer --lang en`, do each step it hands you (exit code 3)
 until it exits 0, then show me the coaching page.
 ```
+
+Start with a 15–40 second drill. `--quick` builds a local page, clips and QA first; it creates no new narration or explained video.
+Your agent still writes the review and report using your agent plan. The setup check installs nothing and contacts no model provider.
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) and [ffmpeg/ffprobe](https://ffmpeg.org/download.html).
 
 No GPU needed. In a game, say who to watch: `--focus "the player in red"` or a jersey number.
 For just the page and clips (no audio, no explained video, nothing sent to the text-to-speech service): `--artifacts html`.
@@ -102,13 +107,14 @@ as two units for now.
 In one of our runs a 40-second clip took about 3 minutes and 5 agent steps; a full game takes longer and more of your
 agent plan.
 
-<details><summary>Run the demo on your machine (about a minute, no agent or video needed)</summary>
+<details><summary>Run the demo on your machine (offline, no agent or video needed)</summary>
 
 A synthetic drill with a pre-written review, rendered end to end:
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a   # needs ffmpeg on PATH
-sports-video-coach demo
+uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f   # needs ffmpeg on PATH
+sports-video-coach doctor
+sports-video-coach demo --offline
 ```
 
 </details>
@@ -188,16 +194,16 @@ how the pipeline fits together is in [docs/architecture.md](https://github.com/m
 - **Any Agent Skills client** (Codex, Cursor ...): `npx skills add mariusDing/sports-video-coach`, or copy
   [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md).
 - **The CLI alone:**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f`
   (about 60 MB, no torch; ffmpeg on PATH), then `sports-video-coach plugins` and
   `sports-video-coach run <video> --sport <sport>`.
 - **Fork or write a plugin:** `git clone https://github.com/mariusDing/sports-video-coach`, then in it
-  `git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a` (or a branch you choose) and
+  `git checkout 934030b9f05f3b65f4d690b6f1cc7eb953119c7f` (or a branch you choose) and
   `uv sync --no-group basketball` (Python 3.11, no torch). Prefix commands with `uv run`; `uv run pytest -q` works.
 - **Basketball tracking from a clone:** the same clone and checkout, then `uv sync` (Python 3.11, CUDA torch, several
   GB), and prefix commands with `uv run`.
 - Every install command names one commit, so you install what you read. The release notes say when it moves.
-- No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a.zip`.
+- No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/934030b9f05f3b65f4d690b6f1cc7eb953119c7f.zip`.
 - `command not found`: `uv tool update-shell` and a new terminal; in Git Bash, write `C:/...` PATH entries as `/c/...` (e.g. `/c/Users/<you>/.local/bin`).
 
 </details>

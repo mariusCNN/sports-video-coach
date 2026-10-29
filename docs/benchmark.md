@@ -7,7 +7,7 @@ so every number is measured, not judged.
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
 - **Commands:** `sports-video-coach bench run | prepare | score | validate | page | baseline`
 - **Install** (needs ffmpeg on PATH; the command pins one commit, so you install what you read):
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`,
+  `uv tool install git+https://github.com/mariusDing/sports-video-coach@934030b9f05f3b65f4d690b6f1cc7eb953119c7f`,
   then [run your agent in one command](#add-your-agent-in-one-command).
 - **Findings in short:** <https://mariusding.github.io/sports-video-coach/benchmark/findings/> (what effort changed, the blind floor, local models, cost)
 
