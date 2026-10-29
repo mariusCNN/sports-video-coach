@@ -8,7 +8,7 @@ in plugins (see `plugin.py`): basketball (`hoop_tape_miner`) and the built-in `g
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 # The revision every install command in the docs, the skill and the demo site pins (tests/test_install_pin.py
 # checks they all name this one, and that it is a commit of this repo). Move it to a release tag when one is cut.
-INSTALL_REF = "ef4fb792e8a37ee4f27d5d189c03157468757520"
+INSTALL_REF = "6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a"
 INSTALL = f"uv tool install git+{REPO_URL}@{INSTALL_REF}"
 CLONE = f"git clone {REPO_URL} && cd sports-video-coach && git checkout {INSTALL_REF}"
 

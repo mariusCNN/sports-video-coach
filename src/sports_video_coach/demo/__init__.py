@@ -77,12 +77,22 @@ def write_qa(g: U.Analysis) -> None:
 
 SITE_URL = "https://mariusding.github.io/sports-video-coach/"
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
-TAGLINE = "Turn your training video into coaching clips and drills."
-PITCH = ("Already use Claude Code or Codex? Give your agent a short phone video. It reviews timestamped frames; "
-         "sports-video-coach cuts the supporting clips and builds a coaching page you can watch on your phone.")
-CARDS = (("Your video", "Start with a short training clip and tell your agent who to watch. No GPU for the generic workflow."),
-         ("Evidence you can replay", "Read each observation beside its clip. The agent can zoom in when a moment is unclear."),
-         ("A drill for next time", "Get a practice suggestion and a target to check in your next session."))
+TRAINING_MEDIA = f"{REPO_URL}/releases/download/showcase-2026-10-29"
+TAGLINE = "Your AI agent watches your game film and coaches you."
+PITCH = ("Open-source sports video analysis and basketball analytics for athletes, coaches and AI agents. "
+         "Turn your game or workout into a coaching page, source clips, narration, drills and an explained video.")
+CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next time."),
+         ("Coaches", "A team report and focus-player deep dive, with clips, audio and optional unlisted sharing links."),
+         ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "
+                        "validator per agent step. A new sport plugin is one command."))
+FEATURES = (
+    ("Watch, read or listen", "Timestamped reviews, mobile reports, source clips and narrated MP4s. Generic reports support eight languages; basketball supports English and Chinese."),
+    ("Basketball game analysis", "Player and ball tracking, shot charts, league statistics, Four Factors, possessions and lineups. Measurements and reviewed evidence support team and player coaching."),
+    ("Practice and prepare", "Personal shooting sessions, movement review, training plans, cue audio, opponent scouting, season summaries, tactics replays and phone reels."),
+    ("Built for coding agents", "Claude Code, Codex and other agents use JSON artifacts, writing guides and explicit exit codes. Resume completed stages or extend the workflow with a sport plugin."),
+    ("OpenHoopVision evidence", "Optional shot, pass, dribble, rebound and possession-change candidates, plus pose and jersey evidence. Review decisions and source clips keep automatic suggestions inspectable."),
+    ("Vision experiments you can check", "Compare WASB ball heatmaps, SAHI sliced detection and KaliCalib court proposals against independent labels. Interactive HTML and comparison videos expose misses, false positives and cost."),
+)
 TRY = (INSTALL, "sports-video-coach doctor", "sports-video-coach demo --offline")
 REAL_GIF = "https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif"
 CASE_URL = f"{SITE_URL}case-study/"
@@ -110,6 +120,7 @@ def json_ld() -> str:
         "license": "https://opensource.org/licenses/MIT",
         "operatingSystem": "Windows, Linux",
         "applicationCategory": "MultimediaApplication",
+        "featureList": [title for title, _ in FEATURES],
         "isAccessibleForFree": True,
     }
     # "</" cannot appear in the JSON (only URLs and plain text), so the script element cannot be closed early
@@ -213,6 +224,7 @@ def landing(films: list[str]) -> str:
         video = f'<video controls playsinline preload="none"{poster} src="film.en.mp4"></video>'
     other = " ".join(f'<a href="{f}">{f}</a>' for f in films if f.endswith(".mp4") and f != "film.en.mp4")
     cards = "".join(f"<section><h2>{t}</h2><p>{d}</p></section>" for t, d in CARDS)
+    features = "".join(f"<section><h3>{t}</h3><p>{d}</p></section>" for t, d in FEATURES)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -240,7 +252,10 @@ summary {{ cursor: pointer; font-weight: 600; }}
 .cards {{ display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); margin: 1.4rem 0; }}
 .cards section {{ background: #fff; border-radius: 10px; padding: .9rem 1rem; box-shadow: 0 1px 3px #0001; }}
 .cards h2 {{ font-size: 1.05rem; margin: 0 0 .3rem; }}
+.cards h3 {{ font-size: 1.05rem; margin: 0 0 .3rem; }}
 .cards p {{ margin: 0; font-size: .95rem; }}
+.feature-title {{ margin: 2rem 0 .5rem; font-size: 1.4rem; }}
+.note {{ background: #eae7f4; border-radius: 10px; padding: .9rem 1rem; font-size: .95rem; }}
 .go {{ display: flex; flex-wrap: wrap; gap: .6rem; }}
 .go a {{ padding: .6rem 1rem; border-radius: 999px; background: #221f45; color: #fff; font-weight: 600;
         text-decoration: none; }}
@@ -256,23 +271,39 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <p class="name">sports-video-coach</p>
 <h1>{TAGLINE}</h1>
 <p>{PITCH}</p>
-<p class="go"><a href="case-study/">Watch a real shooting session</a><a href="{REPO_URL}#try-it">Try your own video</a></p>
-<figure class="walkthrough"><a href="case-study/"><img src="{REAL_GIF}" width="720" height="480"
-alt="The author's real shooting drill, an agent review moment, and the resulting coaching page"></a>
-<figcaption>A real run on the author's own shooting drill. <a href="case-study/">See what this walkthrough shows</a>.</figcaption></figure>
+<section id="training-example">
+<h2 class="feature-title">A real training review in 43 seconds</h2>
+<video controls playsinline preload="none" poster="{TRAINING_MEDIA}/poster-en-wide.jpg"
+ src="{TRAINING_MEDIA}/sports-video-coach-en-wide.mp4" aria-label="English basketball training review showcase"></video>
+<p>Original footage, freeze-frame cues, two selected attempts, and a next-practice suggestion.
+This agent-reviewed example is edited for length; it does not measure improvement or shooting accuracy.</p>
+<p><a href="{TRAINING_MEDIA}/sports-video-coach-en-vertical.mp4">Watch the vertical version</a> ·
+<a href="{REPO_URL}/releases/tag/showcase-2026-10-29">Video files and context</a> ·
+<a href="case-study/">A shooting-drill walkthrough</a></p>
+</section>
+<h2 class="feature-title">Explore a complete coaching-page demo</h2>
+{video}
 <div class="cards">{cards}</div>
 <p class="go"><a href="demo/">Open the demo coaching page</a><a href="{REPO_URL}">Get it on GitHub</a></p>
-<p>The interactive demo uses a drawn drill and a pre-written review. No install or account needed to view it.</p>
+<h2 class="feature-title">From game film to the next practice</h2>
+<div class="cards">{features}</div>
+<p><a href="{REPO_URL}/blob/master/docs/features.md">Explore every feature and command</a> ·
+<a href="{REPO_URL}/blob/master/README.zh.md">中文介绍</a> ·
+<a href="{REPO_URL}/blob/master/llms.txt">Agent documentation index</a></p>
+<p class="note"><strong>Choose the depth you need.</strong> Generic film review needs no GPU. Basketball vision
+needs its tracking dependencies and usable footage. WASB, SAHI and KaliCalib are opt-in experiments, with mixed
+results in the first diagnostic; they do not automatically replace official stats or reviewed calibration.
+<a href="{REPO_URL}/blob/master/docs/perception-lab.md">Read the measured results and limitations</a>.</p>
+<p>Vision runs locally. Frames your agent views go to its model provider; narration uses online text-to-speech.
+Publishing is optional. <a href="{REPO_URL}/blob/master/docs/privacy.md">Privacy and sharing</a>.</p>
 <h2 class="try">Check your setup, then try a local demo</h2>
 <pre><code>{try_it}</code></pre>
 <p>Needs ffmpeg and ffprobe. The offline demo uses no agent or online speech service.
 For your own video, ask your agent to run <code>sports-video-coach run &lt;video&gt; --quick</code>:
 one English page with clips and QA first; use <code>--lang</code> for another language. Your agent plan is used for the review.</p>
 <p>Your sport needs more than frames? <a href="{PLUGINS_URL}">Write a plugin for your sport</a>.</p>
-<p>Interested in model evaluation? <a href="{BENCH_URL}#count">Try the counting challenge</a> or read the
-<a href="{BENCH_URL}">synthetic video benchmark</a>. It measures counting and timing, not real-world coaching quality.</p>
-<details><summary>See the synthetic demo's explained video</summary>{video}</details>
-<small>The demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
+<p>Which coding agent reviews sports film best? See the <a href="{BENCH_URL}">benchmark leaderboard</a>.</p>
+<small>The coaching-page demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
 no person appears. {("Other languages: " + other) if other else ""}{version_note(ver)}</small>
 </main>
 {site_counter.tag()}

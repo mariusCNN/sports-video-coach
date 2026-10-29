@@ -356,7 +356,7 @@ td:first-child { white-space: nowrap; font-weight: 600; }
   Object.values(audios).forEach(a => a && a.addEventListener("error", () => showNative(a)));
 
   // clips: one thing plays at a time (narration or one clip); the slow-mo button halves the speed
-  const videos = document.querySelectorAll(".clip video");
+  const videos = document.querySelectorAll("video");
   videos.forEach(v => {
     toBlob(v, "video/mp4");
     v.addEventListener("play", () => {
@@ -387,31 +387,38 @@ td:first-child { white-space: nowrap; font-weight: 600; }
     if (!titles[next]) next = Object.keys(titles)[0];  // the report's first language
     const section = keepPlace ? currentSection() : 0;
     if (next !== lang && audios[lang]) audios[lang].pause();  // the two narrations are different scripts
-    document.querySelectorAll(".clip video").forEach(v => v.pause());
+    videos.forEach(v => v.pause());
     lang = next;
     document.querySelectorAll("[data-lang]").forEach(el => { el.hidden = el.dataset.lang !== lang; });
     buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)));
     playBtns.forEach(b => b.setAttribute("aria-label", ui[lang].play));
     seek?.setAttribute("aria-label", ui[lang].seek);
     speedBtn?.setAttribute("aria-label", ui[lang].speed);
-    document.querySelector(".lang").setAttribute("aria-label", ui[lang].switch);
+    document.querySelector(".lang")?.setAttribute("aria-label", ui[lang].switch);
     document.documentElement.lang = document.querySelector('.report[data-lang="' + lang + '"]')?.lang || lang;
     document.title = titles[lang];
     try { localStorage.setItem("report-lang", lang); } catch (e) {}
     const url = new URL(location.href); url.searchParams.set("lang", lang);
-    if (keepPlace && /^#([a-z]{2,3})-s\d+$/.test(url.hash)) url.hash = section ? lang + "-s" + section : "";
+    const linked = url.hash.match(/^#([a-z]{2,3})-(.+)$/);
+    if (keepPlace && linked && titles[linked[1]]) {
+      if (/^s[0-9]+$/.test(linked[2])) url.hash = section ? lang + "-s" + section : "";
+      else {
+        const translated = lang + "-" + linked[2];
+        url.hash = document.getElementById(translated) ? translated : "";
+      }
+    }
     history.replaceState(null, "", url);
     if (section) document.getElementById(lang + "-s" + section)?.scrollIntoView();
     syncAudio();
   }
   buttons.forEach(b => b.addEventListener("click", () => setLang(b.dataset.setLang, true)));
-  const fromHash = location.hash.match(/^#([a-z]{2,3})-s\d+$/);
-  let start = fromHash ? fromHash[1] : new URLSearchParams(location.search).get("lang");
+  const fromHash = location.hash.match(/^#([a-z]{2,3})-(.+)$/);
+  let start = fromHash && titles[fromHash[1]] ? fromHash[1] : new URLSearchParams(location.search).get("lang");
   if (!start) { try { start = localStorage.getItem("report-lang"); } catch (e) {} }
   const nav = (navigator.language || "").slice(0, 2).toLowerCase();  // the reader's language, else English
   if (!start) start = titles[nav] ? nav : "en";
   setLang(start || Object.keys(titles)[0], false);
-  if (fromHash) document.querySelector(location.hash)?.scrollIntoView();  // target was hidden at load
+  if (fromHash) document.getElementById(location.hash.slice(1))?.scrollIntoView();  // target was hidden at load
   const clipHash = location.hash.match(/^#clip-([0-9_-]+)$/);  // language-free link to a clip
   if (clipHash) document.getElementById(lang + "-clip-" + clipHash[1])?.scrollIntoView();
 })();

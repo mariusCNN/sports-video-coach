@@ -1,0 +1,40 @@
+# sports-video-coach
+
+> Open-source, agent-first sports video analysis and basketball analytics. Turn a game or training video into
+> timestamped film review, coaching reports with clips/narration, drills and explained MP4s.
+
+## Start here
+
+- [README](README.md): overview, demo, setup and limitations.
+- [Chinese README](README.zh.md): Chinese overview and setup.
+- [AGENTS.md](AGENTS.md): repository and runtime contract for coding agents.
+- [Full capability catalog](docs/features.md): implemented features, commands, prerequisites and advantages.
+- [Documentation index](docs/README.md): detailed guides.
+
+## Runtime entry points
+
+- `sports-video-coach plugins --json`: discover installed plugins and requirements.
+- `sports-video-coach run <video> --sport <sport> --lang en`: generic sports coaching; no GPU required.
+- `hoop-tape-miner run <league-link-or-game-folder>`: basketball game workflow.
+- `hoop-tape-miner train <videos-or-session-folder>`: basketball training review.
+- `hoop-tape-miner move <session-input>`: movement-session workflow; inspect `--help` for inputs.
+- Exit 3 requests a named agent artifact and guide; complete it and resume the same unit. Exit 0 means done.
+
+## Basketball and perception
+
+- [Basketball guide](docs/basketball.md): team/player pages, tracking, stats, shots and coaching.
+- [Playbook](docs/playbook.md): exact end-to-end procedures.
+- [OpenHoopVision](docs/perception.md): optional candidate evidence, reviews and validation media.
+- [WASB, SAHI and KaliCalib](docs/perception-lab.md): optional local model adapters, independent evaluation,
+  measured limitations and reproducibility. Run `hoop-tape-miner perception-lab --help`.
+
+## Extend and evaluate
+
+- [Architecture](docs/architecture.md): sport-independent core and plugin hooks.
+- [Plugins](docs/plugins.md): scaffolding and examples for new sports.
+- [Benchmark](docs/benchmark.md): synthetic film-review tasks with exact ground truth.
+- [Privacy](docs/privacy.md): local workspace, model-provider boundaries and deliberate sharing.
+- [Contributing](CONTRIBUTING.md): tests, PR workflow and no real player data in public contributions.
+
+Automatic detections are candidates. Never promote model scores to official results, invent unseen actions,
+or publish private video/report data without authorization. This index aids navigation; it is not a search-ranking guarantee.

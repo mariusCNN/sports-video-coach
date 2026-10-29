@@ -77,7 +77,7 @@
 ```bash
 git clone https://github.com/mariusDing/sports-video-coach.git    # 或者你的 fork
 cd sports-video-coach
-git checkout ef4fb792e8a37ee4f27d5d189c03157468757520
+git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
 uv sync
 uv run hoop-tape-miner          # 列出所有步骤
 ```

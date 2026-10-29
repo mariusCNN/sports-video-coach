@@ -6,6 +6,9 @@ Start with the [project README](../README.md) ([中文](../README.zh.md)) and, f
 
 | Doc | For | What's in it |
 |---|---|---|
+| [features.md](features.md) | users and agents | Complete feature catalog, advantages, commands and limitations |
+| [perception.md](perception.md) | basketball users and researchers | OpenHoopVision candidate evidence, reviews and validation media |
+| [perception-lab.md](perception-lab.md) | vision researchers and agents | WASB, SAHI and KaliCalib, independent evaluation and measured limitations |
 | [architecture.md](architecture.md) | contributors | The core, the step driver, plugins, artifacts, the CLI |
 | [plugins.md](plugins.md) | plugin authors | Writing a plugin for a new sport: template, contract, steps, hooks, tests |
 | [basketball.md](basketball.md) ([中文](basketball.zh.md)) | basketball users | What the basketball plugin gives, quick start, commands, FAQ |

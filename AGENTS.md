@@ -10,8 +10,8 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
 
 ## The run loop (every plugin)
 
-1. Install: `uv tool install git+https://github.com/mariusDing/sports-video-coach@ef4fb792e8a37ee4f27d5d189c03157468757520`
-   (light, ffmpeg on PATH), or in a clone checked out at that commit (`git checkout ef4fb792e8a37ee4f27d5d189c03157468757520`)
+1. Install: `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
+   (light, ffmpeg on PATH), or in a clone checked out at that commit (`git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`)
    `uv sync` and prefix every command with `uv run` (needed for basketball tracking). Show your user the exact
    command and wait for their OK before you install anything. Then
    `sports-video-coach plugins` lists the plugins, what each analyses and when to use it (`--json` for you).
@@ -19,9 +19,6 @@ first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / pl
    folder from the videos and drives it. Later runs take that folder: `sports-video-coach run <folder>`. `--status`
    lists every step; `run --help` lists every option. `--lang` takes `zh en ja ko es fr de pt` (one or several;
    basketball units: zh and en).
-   First use: `sports-video-coach doctor` checks the environment without installing anything or calling a provider.
-   `run <video> --quick` selects a local page, clips and QA in English by default (`--lang` overrides it), without
-   new narration, explained video or publishing. The agent still writes the review and report.
 3. Exit codes:
    - `3` an agent step is waiting: the output names the step and says exactly what to write and with which guide
      (`sports-video-coach guide <name>` prints a guide). Do it, then run again.
@@ -59,10 +56,6 @@ league or no GPU goes to `generic` with `--sport basketball`.
   names a step, the files to write and a guide; do only that. Publish only when your user asked for `--publish`.
 - Every claim in a report must be seen in the film or come from a measured number. Never invent a result; write
   "unclear" or "likely" instead (in a Chinese report: 看不清 / 可能).
-  For generic reviews, use schema 2 with a confidence/tag on each moment; one supported moment is enough for a
-  short clip. If the footage cannot support a review, write `status: "insufficient_evidence"`, an empty moments
-  list, a summary and next_steps, as the guide shows. Exit 0 then means the limitation was recorded, not that a
-  coaching page was created. Do not request a star for an insufficient-evidence result.
 - Browser checks and screenshots: delegate to a separate helper if available. No browser at all:
   `sports-video-coach page-check --strict --write-qa <folder>` checks links, anchors, media and the text of the
   page and scripts (not layout or playback) and drafts `qa.md`, which says what was not checked.
@@ -92,6 +85,10 @@ themselves, never published).
   `docs/playbook.md` "Personal training sessions" describes (Claude Code: `/train <videos>`). A session =
   `workspace/players/<player>/training/<date>/`. Movement clips: `hoop-tape-miner move` (`/move`).
 - Procedure and each step: `docs/playbook.md`. Stage details: `docs/pipeline.md`. Overview: `docs/basketball.md`.
+- Capability/command catalog: `docs/features.md`; concise agent navigation: `llms.txt`.
+- Optional perception: `perception` integrates OpenHoopVision candidate evidence (`docs/perception.md`).
+  `perception-lab` prepares frames, runs WASB/SAHI/KaliCalib, evaluates independent labels and renders
+  comparison HTML/video (`docs/perception-lab.md`). Experiments never replace reviewed facts or calibration.
 - Team profile (our team, focus player, league secrets file, languages): `workspace/team.json`, from
   `templates/team.example.json`.
 - Writing: the guides in `prompts/` (film review brief, coach report, player deep dive, narration, explained video).
