@@ -5,6 +5,9 @@
 
 ## Start here
 
+- [START.md](START.md): the step-by-step path for an agent whose user pasted the one prompt ("Coach me on my
+  sports video: <path>. Clone this repo and follow its START.md."): check tools, ask once, install pinned, run to
+  exit 0, hand over, next step, star ask.
 - [README](README.md): overview, demo, setup and limitations.
 - [Chinese README](README.zh.md): Chinese overview and setup.
 - [AGENTS.md](AGENTS.md): repository and runtime contract for coding agents.

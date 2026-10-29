@@ -8,6 +8,23 @@
 录像 → 带时间戳的复盘 → 双语教练报告、片段、语音和讲解视频。
 可选球员/球跟踪、投篮图、联赛统计、训练计划，以及带独立人工验证的视觉模型。
 
+</div>
+
+## 一句话开始
+
+把这段话粘贴到 Claude Code、Codex 或其他编程 agent：
+
+```text
+帮我分析我的运动视频：<视频路径>
+克隆 https://github.com/mariusDing/sports-video-coach ，按里面的 START.md 一步步做。
+```
+
+**接下来会发生什么**：你的 agent 克隆仓库，照着 [START.md](START.md) 做。装任何东西之前先把命令给你看，你同意才装；
+要问的一次问完；然后看你的视频，直到教练网页和讲解视频做好，最后问你要不要排下次训练的计划。
+<sub>跑在你自己的电脑上，视频不用上传到任何 App。AI 分析走你自己的 agent 账号。</sub>
+
+<div align="center">
+
 [完整功能与优势](docs/features.md) · [篮球插件](docs/basketball.zh.md) ·
 [OpenHoopVision 接入](docs/perception.md) · [WASB / SAHI / KaliCalib 实验](docs/perception-lab.md) ·
 [Agent 入口](llms.txt)
@@ -83,7 +100,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 **1. 先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
 （[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。
 
-**2. 对你的 agent 说**（粘贴到 Claude Code、Codex 或任何编程 agent；把运动和语言换成你的）：
+**2. 或者把每一步写清楚交给 agent**（[一句话开始](#一句话开始)会替你做完这些；把运动和语言换成你的）：
 
 ```text
 给我的运动视频 <你的视频路径> 做教练复盘。安装前先把完整的安装命令给我看，我同意后再装。
@@ -230,6 +247,13 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md)、
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
 不要在 issue 或 PR 里附上真实球员的视频、帧或名字。
-如果它帮到了你，点个 star，能让更多运动员找到它。
+
+## 支持
+
+[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach)
+
+免费开源，是一个打业余联赛的球员用空闲时间做的。
+觉得有用，就去 GitHub 点个 ☆ star。看到 star，我就知道它真帮到了人，也能让更多打球的人找到它。
+分析顺利跑完后，你的 agent 只会问你一次，你点头它才会帮你点。
 
 [MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)。运行时下载的模型保留各自的许可证。

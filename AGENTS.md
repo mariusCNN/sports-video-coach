@@ -8,6 +8,9 @@ Sports come as plugins. `generic` (built in) works for any sport with no compute
 first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / player workflow. Add your own with
 `sports-video-coach new-plugin <name>` (see `docs/plugins.md`).
 
+A user who pasted the one prompt (clone this repo and follow `START.md`): follow [START.md](START.md), the
+step-by-step path from nothing installed to the deliverables; it applies the rules below.
+
 ## The run loop (every plugin)
 
 1. Install: `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`

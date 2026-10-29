@@ -4,7 +4,8 @@ Open-source sports video analysis, basketball analytics, computer vision and AI 
 amateur teams, volunteer coaches and coding agents. This catalog describes implemented capabilities;
 availability depends on the selected sport, installed dependencies, footage and reviewed evidence.
 
-[English README](../README.md) · [中文 README](../README.zh.md) · [Agent contract](../AGENTS.md)
+[English README](../README.md) · [中文 README](../README.zh.md) · [Agent contract](../AGENTS.md) ·
+[One-prompt start](../START.md)
 
 ## Video to coaching, for any sport
 

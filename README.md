@@ -8,6 +8,24 @@
 Video → timestamped film review → bilingual coaching pages, clips, narration and explained MP4s.
 Optional player/ball tracking, shot charts, league stats, training plans and independently evaluated vision backends.
 
+</div>
+
+## Start in one prompt
+
+Paste this into Claude Code, Codex or another coding agent:
+
+```text
+Coach me on my sports video: <path to your video>
+Clone https://github.com/mariusDing/sports-video-coach and follow its START.md.
+```
+
+**What happens next:** your agent clones the repo and follows [START.md](START.md). It shows you every install
+command and waits for your OK, asks its questions in one message, reviews your video until the coaching page and
+the explained video are ready, then offers a plan for your next practice.
+<sub>Runs on your computer; your video is never uploaded to an app. The AI step uses your own agent account.</sub>
+
+<div align="center">
+
 [All features and advantages](docs/features.md) · [Basketball](docs/basketball.md) ·
 [OpenHoopVision integration](docs/perception.md) · [WASB / SAHI / KaliCalib experiments](docs/perception-lab.md) ·
 [Agent entry points](llms.txt)
@@ -84,7 +102,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 **1. See what you get, no install:** the [demo coaching page](https://mariusding.github.io/sports-video-coach/demo/) and its explained video
 ([English](https://mariusding.github.io/sports-video-coach/film.en.mp4), [中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)).
 
-**2. Tell your agent** (paste into Claude Code, Codex or any coding agent; set your sport and language):
+**2. Or spell out each step for your agent** (the [one prompt](#start-in-one-prompt) does all this for you; set your sport and language):
 
 ```text
 Coach me on my sports video <path to your video>. Show me the exact install command and wait for my OK.
@@ -238,6 +256,13 @@ Plugins for a sport you know, prompts, fixes and docs are welcome:
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md),
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 Never attach real players' videos, frames or names to issues or pull requests.
-If it helped your game, a star helps other athletes find it.
+
+## Support
+
+[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach)
+
+Free and open source, built by a rec-league player in spare time.
+If it helped your game, leave a ☆ star. A star is how I know it helped, and it helps other players find it.
+After a good run your agent asks about it once, and stars the repo only if you say yes.
 
 [MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE). Models downloaded at run time keep their own licences.

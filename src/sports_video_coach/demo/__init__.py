@@ -12,6 +12,7 @@ usage: sports-video-coach demo [--out <folder>] [--lang en zh] [--no-film] [--of
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import shutil
@@ -21,7 +22,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from .. import INSTALL, media, page_check, pipeline as P, workspace
+from .. import INSTALL, ONE_PROMPT, media, page_check, pipeline as P, workspace
 from .. import site_counter
 from ..plugins.generic import new, unit as U
 
@@ -94,6 +95,7 @@ FEATURES = (
     ("Vision experiments you can check", "Compare WASB ball heatmaps, SAHI sliced detection and KaliCalib court proposals against independent labels. Interactive HTML and comparison videos expose misses, false positives and cost."),
 )
 TRY = (INSTALL, "sports-video-coach demo")   # needs ffmpeg on PATH
+START_URL = f"{REPO_URL}/blob/master/START.md"   # what the one prompt makes the agent follow
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
 BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site
@@ -254,6 +256,11 @@ video {{ width: 100%; border-radius: 10px; background: #221f45; margin: 1.2rem 0
 .go a {{ padding: .6rem 1rem; border-radius: 999px; background: #221f45; color: #fff; font-weight: 600;
         text-decoration: none; }}
 .go a + a {{ background: #fff; color: #221f45; border: 1px solid #221f45; }}
+.prompt {{ background: #0b0f14; color: #f5f5f0; border-radius: 24px; padding: 1rem 1.2rem; margin: .4rem 0 .6rem;
+          white-space: pre-wrap; overflow-wrap: anywhere; font: .95rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }}
+.prompt::before {{ content: "> "; color: #ff6b1a; font-weight: 700; }}
+.star {{ display: inline-block; padding: .5rem .9rem; border-radius: 999px; border: 1px solid #221f45;
+        color: #221f45; font-weight: 600; text-decoration: none; background: #fff; margin: 0 .4rem .3rem 0; }}
 small {{ display: block; margin-top: 1.4rem; color: #5c5a86; }}
 h2.try {{ font-size: 1.1rem; margin: 1.6rem 0 .4rem; }}
 pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1rem; overflow-x: auto;
@@ -265,6 +272,15 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <p class="name">sports-video-coach</p>
 <h1>{TAGLINE}</h1>
 <p>{PITCH}</p>
+<section id="one-prompt">
+<h2 class="feature-title">Start in one prompt</h2>
+<p>Paste this into Claude Code, Codex or another coding agent:</p>
+<pre class="prompt"><code>{html.escape(ONE_PROMPT["en"])}</code></pre>
+<p>Your agent clones the repo, shows you the install commands and waits for your OK, asks what the video cannot
+tell it, then runs the review until your coaching page and explained video are ready.
+<a href="{START_URL}">What it follows: START.md</a></p>
+<p><a class="star" href="{REPO_URL}">&#9734; Star on GitHub</a>If it helped, a star is how I know.</p>
+</section>
 <section id="training-example">
 <h2 class="feature-title">A real training review in 43 seconds</h2>
 <video controls playsinline preload="none" poster="{TRAINING_MEDIA}/poster-en-wide.jpg"

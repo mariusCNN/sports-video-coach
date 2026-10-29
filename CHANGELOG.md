@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- Start in one prompt: paste "Coach me on my sports video: <path> / Clone the repo and follow its START.md" into
+  Claude Code, Codex or another agent. The new `START.md` takes the agent from a machine with nothing installed
+  to the coaching page: tool checks, per-OS install commands shown and approved first, one message of questions,
+  the pinned light install, the exit-code loop, hand-over, a next-practice offer and the one-time star ask. Both
+  READMEs and the demo site's landing page show the prompt; the READMEs gain a Support section with the star ask.
 - A real training-review showcase on the homepage and in both READMEs, with English landscape/vertical
   video downloads and explicit limits on what the selected example demonstrates. Media is hosted separately.
 - The public landing page now presents the complete coaching, basketball, training and optional perception

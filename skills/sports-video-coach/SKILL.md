@@ -11,6 +11,9 @@ deliverables. It stops with exit code 3 whenever it needs you to watch or write,
 
 ## Setup (once)
 
+A user who pasted the one prompt ("clone ... and follow its START.md"): follow `START.md` in the clone; it covers
+the steps below from a machine with nothing installed.
+
 - `sports-video-coach --help` works: skip this.
 - Otherwise: `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
   (needs `uv` and `ffmpeg`).
