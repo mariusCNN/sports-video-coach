@@ -8,7 +8,7 @@ from sports_video_coach import cli, pipeline, plugin, units
 
 LOCAL = '''from sports_video_coach.plugin import Kind, Plugin
 PLUGIN = Plugin(name="{name}", summary="test plugin", stages={{"fetch": ("json", "same name as basketball"),
-                                                              "serve": ("json", "only here")}},
+                                                              "rally": ("json", "only here")}},
                 kinds=[Kind("drill", "drill.json", "x:Y", "x:Z")])
 '''
 
@@ -47,7 +47,7 @@ def test_local_folder_plugin_loads_and_a_broken_one_is_reported(local):
 def test_resolve_order(local):
     assert cli.resolve("tennis:fetch") == ("json", "tennis:fetch")
     assert cli.resolve("fetch", default="basketball")[0] == "hoop_tape_miner.fetch"
-    assert cli.resolve("serve") == ("json", "serve")      # unique across plugins
+    assert cli.resolve("rally") == ("json", "rally")      # unique across plugins
     assert cli.resolve("clips")[0] == "sports_video_coach.clips"   # core
     with pytest.raises(SystemExit, match="several plugins"):
         cli.resolve("fetch")

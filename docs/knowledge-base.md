@@ -50,6 +50,11 @@ Two markers keep our own choices apart from what the sources say:
 3. Checks and critics reject a claim whose symptom is not in the data (the team critic wants it in at least two
    trips). Pain and injury questions never get a drill: they go to a physiotherapist or doctor.
 
+**The one-prompt start ([START.md](../START.md)), basketball on the `generic` plugin:** the agent reads the team,
+skill and movement KBs from the clone before it writes the report. It bases each fix and drill on the entry whose
+symptom it saw in the film and names that entry; when no entry fits, it says the advice is its own. The entries
+guide the advice only: this path does no tracking or measuring, so every claim still comes from what the agent saw.
+
 ## Sources and copyright
 
 - Paraphrase in your own words. At most one short quoted sentence per entry.

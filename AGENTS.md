@@ -59,7 +59,9 @@ league or no GPU goes to `generic` with `--sport basketball`.
   names a step, the files to write and a guide; do only that. Publish only when your user asked for `--publish`.
 - Every claim in a report must be seen in the film or come from a measured number. Never invent a result; write
   "unclear" or "likely" instead (in a Chinese report: 看不清 / 可能).
-- Browser checks and screenshots: delegate to a separate helper if available. No browser at all:
+- Browser checks and screenshots: delegate to a separate helper if available. Serve the folder with
+  `sports-video-coach serve <folder>` (a free port from 18080, `--port N` to start elsewhere; it prints the URL and
+  the page title: check the browser shows that title, since another server may hold a busy port). No browser at all:
   `sports-video-coach page-check --strict --write-qa <folder>` checks links, anchors, media and the text of the
   page and scripts (not layout or playback) and drafts `qa.md`, which says what was not checked.
 

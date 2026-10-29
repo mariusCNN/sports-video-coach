@@ -40,10 +40,11 @@ sports-video-coach --help
 
 Send one message, then wait for the reply. It holds:
 
-1. **The plan, in three lines:** install a small command-line tool (about 60 MB, no GPU); it cuts the video into
+1. **The plan, in three lines:** install a command-line tool (about 170 MB, no GPU); it cuts the video into
    timed frame sheets; you (the agent) review them and write the report; the tool renders a phone page with clips,
-   a spoken version and an explained video. In one of our runs a 40-second clip took about 3 minutes and 5 agent
-   steps; longer videos take longer and more of their agent plan.
+   a spoken version and an explained video. In one of our test runs a 40-second clip took about 2-3 minutes of
+   tool time and 5 agent steps (review, report, narration script, QA, film script); your own writing time comes on
+   top, and longer videos take longer.
 2. **What leaves their computer:** the frames you look at go to your model provider, like anything else they show
    you; the narration text goes to Microsoft's online text-to-speech. To skip the audio and the explained video
    they can say "page only" (`--artifacts html`).
@@ -72,7 +73,8 @@ page instead: <https://mariusding.github.io/sports-video-coach/demo/>.
 
 After installing: a new tool may not be on PATH in your current shell. Run `uv tool update-shell` and open a new
 terminal, or call the tool by its full path (`~/.local/bin/sports-video-coach`; Windows
-`%USERPROFILE%\.local\bin\sports-video-coach.exe`). If `ffmpeg` is still not found after winget, a new terminal
+`%USERPROFILE%\.local\bin\sports-video-coach.exe`; when `$UV_TOOL_BIN_DIR` is set, the tool is in that folder:
+`uv tool dir --bin` prints it). If `ffmpeg` is still not found after winget, a new terminal
 (or restarting the agent session) picks it up. Check with `sports-video-coach plugins` before going on.
 
 ## 3. Choose the plugin and the language
@@ -80,8 +82,15 @@ terminal, or call the tool by its full path (`~/.local/bin/sports-video-coach`; 
 - `sports-video-coach plugins --json` lists the plugins and when to use each.
 - A first run is almost always `generic` with `--sport <sport>`: running, the gym, HYROX, soccer, any other sport, a
   phone clip, a drill, a pickup game, basketball shooting practice (`--sport basketball`). The generic plugin is
-  your film review with general coaching guides; it has no sport-specific tracking or knowledge base. The `basketball` plugin is for league games with a stats link
-  or for the heavy tracking install (step 6).
+  your film review with general coaching guides; it has no sport-specific tracking or knowledge base. The
+  `basketball` plugin is for league games with a stats link or for the heavy tracking install (step 6).
+- **Basketball on `generic`: use the repo's coaching knowledge.** Before you write the report, read
+  [prompts/coach_kb.md](prompts/coach_kb.md) (team play), [prompts/skill_kb.md](prompts/skill_kb.md) (one
+  player's skills) and [prompts/movement_kb.md](prompts/movement_kb.md) (running, layups, stops) in this clone.
+  Base each fix and drill on the entry whose symptom you saw in the film, and name that entry in the report (e.g.
+  `KB-arc-short-long`). When no entry fits, say the advice is your own. The entries guide the advice; this path
+  does no tracking or measuring, so every claim still comes from what you saw
+  ([docs/knowledge-base.md](docs/knowledge-base.md)).
 - `--lang`: the user's chat language if it is one of `zh en ja ko es fr de pt`, else `en`. Two are fine
   (`--lang zh en`).
 
@@ -99,7 +108,9 @@ session: list them all, they are joined in that order. Read the exit code (`$?` 
 PowerShell) and the tail of the log (`tail -n 40 workspace/logs/svc.log`; PowerShell:
 `Get-Content workspace/logs/svc.log -Tail 40`, which also reads the UTF-16 file Windows PowerShell 5.1 may write).
 The first run prints the unit folder; every later run takes that folder:
-`sports-video-coach run <folder> > workspace/logs/svc.log 2>&1`.
+`sports-video-coach run <folder> > workspace/logs/svc.log 2>&1`. `svc.log` is only the run's console output: the
+tool writes its own stage logs to `<workspace>/logs` (`$SVC_WORKSPACE/logs` when that is set) and prints their
+paths.
 
 Loop on the exit code exactly as [AGENTS.md](AGENTS.md) "The run loop" step 3 says:
 
@@ -117,8 +128,8 @@ guide says so. Many sheets: give sheet ranges to helpers if your tool has them, 
 
 Exit 0 lists the deliverables. Give the user, in their language:
 
-- the coaching page `index.html` (offer to open it: Windows `start "" "<path>"`, macOS `open "<path>"`, Linux
-  `xdg-open "<path>"`);
+- the coaching page `index.html` (offer to open it: Windows PowerShell `Start-Process "<path>"`, cmd
+  `start "" "<path>"`; macOS `open "<path>"`; Linux `xdg-open "<path>"`);
 - the explained video `film.<lang>.mp4`;
 - the top fixes, one line each with its drill, taken from the report. Do not paste the whole report.
 

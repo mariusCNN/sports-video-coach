@@ -262,7 +262,9 @@ Never attach real players' videos, frames or names to issues or pull requests.
 
 The advice in the basketball reports comes from four knowledge bases with 58 entries (team play, individual skills,
 movement, fuel and recovery). They are written in our own words from public FIBA / Jr. NBA coaching material and
-sports-science studies, and every entry names its source. [What is in them and how to add to them](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md).
+sports-science studies, and every entry names its source. With the one prompt, your agent bases a basketball
+report's fixes and drills on these entries and names the one it used, or says when the advice is its own. The
+entries guide the advice; the quick start does no tracking or measuring. [What is in them and how to add to them](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md).
 
 - **Any sport: try it and help build it.** Running, the gym, HYROX, soccer: run your own sport through the
   [one prompt](#start-in-one-prompt). The generic plugin reviews the film for any sport, but these sports have no

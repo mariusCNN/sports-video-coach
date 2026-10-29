@@ -25,6 +25,7 @@ availability depends on the selected sport, installed dependencies, footage and 
 | Incremental rebuilds | Update affected outputs after source/report changes | Stage input tracking, stale-step checks, per-language scripts |
 | Concurrent-run protection | Avoid two writers corrupting one unit | OS run lock and checkout-version checks |
 | Static page QA | Detect broken anchors, missing assets and script/text issues | `page-check --strict --write-qa`; layout/playback still need a browser |
+| Serve for a browser check | A report folder over http on a free port, with the URL and page title printed | `serve <folder> [--port N]` |
 | Optional unlisted publishing | Stable report links for deliberate sharing | `publish` / `--publish`, Cloudflare account; links are not access control |
 | Synthetic demo | Inspect all deliverables without private footage or an agent | `sports-video-coach demo` |
 

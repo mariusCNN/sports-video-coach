@@ -470,7 +470,8 @@ STEPS = [
         lambda g: g.video,
         listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} and {folder}/player-{focus} "
                    "(playbook step 11, prompts/narration.md).",
-        qa_how="QA (playbook step 13): have the browser-check subagent serve {folder} over http and check both pages "
+        qa_how="QA (playbook step 13): have the browser-check subagent serve {folder} over http "
+               "(`sports-video-coach serve {folder}`: a free port, the URL, the page title) and check both pages "
                "in both languages, the audio and every clip. Write the result to {folder}/qa.md, first "
                "word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished team "

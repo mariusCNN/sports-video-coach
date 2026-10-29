@@ -252,6 +252,8 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 
 篮球报告里的建议来自四个知识库，共 58 条（团队打法、个人技术、跑动与发力、饮食与恢复）。
 内容参考公开的 FIBA / Jr. NBA 教练资料和运动科学研究，用我们自己的话写成，每条都注明出处。
+用一句话开始分析篮球视频时，agent 会按这些条目给出改进点和练习，并写明用的是哪一条；没有合适的条目，就说明这是它自己的建议。
+条目只用来指导建议；快速开始不做跟踪，也不做测量。
 [知识库里有什么、怎么补充](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md)。
 
 - **什么运动都行：先用起来，再一起补充**。跑步、健身、HYROX、足球，都可以用[一句话开始](#一句话开始)跑一遍。

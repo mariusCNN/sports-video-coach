@@ -52,3 +52,11 @@ def test_landing_page_shows_the_prompt_start_md_and_a_star_button():
     assert html.escape(svc.ONE_PROMPT["en"]) in home
     assert f'href="{demo.START_URL}"' in home and (ROOT / "START.md").exists()
     assert f'class="star" href="{svc.REPO_URL}"' in home
+
+
+def test_start_md_points_basketball_on_generic_at_the_three_kbs():
+    """The one-prompt basketball path bases its fixes on the repo's KB entries (and says when it does not)."""
+    for kb in ("prompts/coach_kb.md", "prompts/skill_kb.md", "prompts/movement_kb.md"):
+        assert f"]({kb})" in START and (ROOT / kb).exists(), kb
+    assert "name that entry" in START and "advice is your own" in START
+    assert "does no tracking or measuring" in START

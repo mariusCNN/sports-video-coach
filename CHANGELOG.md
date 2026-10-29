@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `sports-video-coach serve <folder> [--port N]`: serves a report folder over http on the first free port from
+  18080 (never one another server holds) and prints the URL and the page title. The QA step and AGENTS.md name it.
+- START.md: for basketball on the `generic` plugin, the agent bases the report's fixes and drills on the team,
+  skill and movement knowledge-base entries and names the entry it used (or says the advice is its own).
+
 - `docs/knowledge-base.md`: the four basketball coaching knowledge bases (58 entries, based on public FIBA /
   Jr. NBA coaching material and sports-science studies), how an entry is built and used in a run, the source and
   copyright rules, and how to contribute an entry or a KB for another sport. New issue form "Coaching knowledge:
@@ -33,6 +38,13 @@ All notable changes to this project are documented here. The format follows [Kee
   GoatCounter (no cookies): set the repository variable `GOATCOUNTER_CODE` to the site code; unset, no counter.
 - `examples/plugins/jump-rope/`: a second worked example plugin that counts jump-rope skips (a count, where the
   swim example measures a rate), tested on drawn video against the exact count.
+
+### Changed
+- `review-check` (generic) warns, naming the moment, when a moment's window is outside the review guide's 4-15 s.
+- The humanize check no longer flags a spoken cue after `Say:` / `说：` (like `Watch:`).
+- `plugins`: the basketball install hint checks out the pinned commit in the clone you have, instead of cloning again.
+- START.md: the Windows PowerShell open command (`Start-Process`), the install size (about 170 MB), the measured
+  time of a test run, where the stage logs go, and `$UV_TOOL_BIN_DIR`.
 
 ### Fixed
 - Language switches preserve named report anchors and pause plugin-supplied videos as well as standard clips.

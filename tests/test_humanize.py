@@ -59,3 +59,10 @@ def test_every_plugin_has_the_humanize_guide():
     bb = plugin.get("basketball")
     if bb.prompts and Path(bb.prompts).is_dir():
         assert guide.guides(bb)["humanize"].name == "humanize.md"
+
+
+def test_a_spoken_cue_after_say_is_not_a_slide_label():
+    """R1 cold test: "Say: side hand stays quiet." is a cue a coach says, like "Watch:"."""
+    assert humanize.findings("Hold the release. Say: side hand stays quiet.", "en", spoken=True) == []
+    assert humanize.findings("出手停住。说：辅助手别动。", "zh", spoken=True) == []
+    assert humanize.findings("Hold it. Goal: ten in a row.", "en", spoken=True)   # a real label still counts
