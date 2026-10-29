@@ -264,10 +264,11 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 
 ## 支持
 
-[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach)
+[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach) [![Buy me a coffee](https://img.shields.io/badge/buy%20me%20a-coffee-ffdd00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/<handle>)
 
 免费开源，是一个打业余联赛的球员用空闲时间做的。
 觉得有用，就去 GitHub 点个 ☆ star。看到 star，我就知道它真帮到了人，也能让更多打球的人找到它。
 分析顺利跑完后，你的 agent 只会问你一次，你点头它才会帮你点。
+也可以请我喝杯咖啡。
 
 [MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)。运行时下载的模型保留各自的许可证。

@@ -276,10 +276,11 @@ entries guide the advice; the quick start does no tracking or measuring. [What i
 
 ## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach)
+[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach) [![Buy me a coffee](https://img.shields.io/badge/buy%20me%20a-coffee-ffdd00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/<handle>)
 
 Free and open source, built by a rec-league player in spare time.
 If it helped your game, leave a ☆ star. A star is how I know it helped, and it helps other players find it.
 After a good run your agent asks about it once, and stars the repo only if you say yes.
+Or buy me a coffee.
 
 [MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE). Models downloaded at run time keep their own licences.

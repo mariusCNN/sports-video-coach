@@ -1,0 +1,5 @@
+# Shows the "Sponsor" button on the repo page. Fill in before merging:
+# - buy_me_a_coffee: the handle from https://buymeacoffee.com/<handle> (the owner's account).
+# - custom: optional, the owner's 爱发电 page, e.g. https://afdian.com/a/<id>; delete the line if unused.
+buy_me_a_coffee: <handle>
+custom: ["https://afdian.com/a/<id>"]
