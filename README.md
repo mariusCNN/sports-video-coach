@@ -58,7 +58,8 @@ No install needed to see a full example: <a href="https://mariusding.github.io/s
 
 </div>
 
-Film yourself with a phone: a game, a drill, a workout, any sport.
+Film yourself with a phone: a game, a drill, a workout, any sport (running, the gym, HYROX, soccer ... and
+basketball, the deepest plugin).
 Your coding agent (Claude Code, Codex, Cursor ...) reviews it from timestamped frame sheets, and can ask for a
 denser sheet of a fast moment. You get back a phone page with the clips that matter, a drill and a target for each fix, a spoken
 version of the report, and an explained video. The tool runs on your machine; the frames your agent looks at go to
@@ -114,7 +115,7 @@ until it exits 0, then show me the coaching page.
 No GPU needed. In a game, say who to watch: `--focus "the player in red"` or a jersey number.
 For just the page and clips (no audio, no explained video, nothing sent to the text-to-speech service): `--artifacts html`.
 
-A match, a drill or a workout: soccer, tennis, badminton, running, the gym, basketball ...
+A run, a gym or HYROX session, a soccer match, a drill: running, the gym, HYROX, soccer, tennis, basketball ...
 Several videos are joined in the order given into one timeline; two camera angles of the same set are better run
 as two units for now.
 In one of our runs a 40-second clip took about 3 minutes and 5 agent steps; a full game takes longer and more of your
@@ -195,7 +196,7 @@ how the pipeline fits together is in [docs/architecture.md](https://github.com/m
 
 | Plugin | For |
 |---|---|
-| `generic` (built in) | any sport; the advice depends on what the frames show (pickup basketball too: `--sport basketball`) |
+| `generic` (built in) | any sport: running, the gym, HYROX, soccer, tennis ...; the agent reviews the film, with no sport-specific tracking or knowledge base yet (pickup basketball too: `--sport basketball`) |
 | `basketball` | league games with a stats link, or tracking from a clone with a GPU: team and player pages, shot charts ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)) |
 | yours | `sports-video-coach new-plugin <your-sport>` writes a working plugin to start from ([guide](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)) |
 
@@ -256,6 +257,20 @@ Plugins for a sport you know, prompts, fixes and docs are welcome:
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md),
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 Never attach real players' videos, frames or names to issues or pull requests.
+
+## Coaching knowledge base: open to contributions
+
+The advice in the basketball reports comes from four knowledge bases with 58 entries (team play, individual skills,
+movement, fuel and recovery). They are written in our own words from public FIBA / Jr. NBA coaching material and
+sports-science studies, and every entry names its source. [What is in them and how to add to them](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md).
+
+- **Any sport: try it and help build it.** Running, the gym, HYROX, soccer: run your own sport through the
+  [one prompt](#start-in-one-prompt). The generic plugin reviews the film for any sport, but these sports have no
+  tracking or knowledge base of their own yet. Tell us what a coach of your sport looks for. A
+  [coaching knowledge issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml) is enough; no code needed.
+- Corrections, newer studies and better drills for the basketball entries are welcome the same way.
+
+<sub>Not endorsed by FIBA, the NBA or any author cited.</sub>
 
 ## Support
 

@@ -57,7 +57,7 @@ Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931。<br>
 
 </div>
 
-用手机拍下自己：一场比赛、一组练习、一次训练，什么运动都行。
+用手机拍下自己：一场比赛、一组练习、一次训练，什么运动都行（跑步、健身、HYROX、足球……篮球的插件做得最深）。
 你的编程 agent（Claude Code、Codex、Cursor 等）看带时间戳的帧拼图来复盘，需要时可以再要一张更密的拼图，看清快动作的那一刻。
 你拿回一个手机网页：关键片段、每个问题的练习方法和目标、报告的语音版，还有一段讲解视频。
 工具在你自己的电脑上跑；agent 看的帧会发给它的模型服务商，和你给它看的其他东西一样。免费，MIT 协议。
@@ -113,7 +113,7 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 只要网页和片段（不要音频、不要讲解视频，也不会把任何内容发给语音合成服务）：加 `--artifacts html`。
 终端提示（退出码 3 的提示、写作指南）是英文的，是写给 agent 看的；交付物按 `--lang` 输出。
 
-比赛、练习、训练都行：足球、网球、羽毛球、跑步、健身房、篮球……
+跑一次步、练一次健身或 HYROX、踢一场球、做一组练习都行：跑步、健身、HYROX、足球、网球、篮球……
 给多个视频时，按给出的顺序拼成一条时间线；同一组动作的两个机位，目前最好分成两个单元各跑一次。
 我们的测试里，一段 40 秒的视频约 3 分钟、5 个 agent 步骤跑完；整场比赛更久，也更耗 agent 额度。
 
@@ -187,7 +187,7 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 
 | 插件 | 适用 |
 |---|---|
-| `generic`（内置） | 任何运动；建议取决于帧里看到的内容（野球也行：`--sport basketball`） |
+| `generic`（内置） | 任何运动：跑步、健身、HYROX、足球、网球……；由 agent 看录像复盘，暂时没有专项跟踪和知识库（野球也行：`--sport basketball`） |
 | `basketball` | 有数据网站链接的联赛比赛，或在克隆的仓库里用 GPU 跟踪：球队和球员页面、投篮分布图（[文档](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)） |
 | 你自己的 | `sports-video-coach new-plugin <your-sport>` 生成一个能跑的插件做起点（[指南](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)） |
 
@@ -204,7 +204,7 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 - **改代码、写插件：**`git clone https://github.com/mariusDing/sports-video-coach`，进目录后
   `git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`（或你选的分支），
   再 `uv sync --no-group basketball`（Python 3.11，不装 torch），命令前加 `uv run`。`uv run pytest -q` 照常能跑。
-- **从克隆做篮球跟踪：**同样克隆并 checkout 后 `uv sync`（Python 3.11，CUDA torch，几 GB），命令前加 `uv run`。
+- **从克隆做篮球跟踪**：同样克隆并 checkout 后 `uv sync`（Python 3.11，CUDA torch，几 GB），命令前加 `uv run`。
 - 每条安装命令都固定到同一个提交，装的就是你读过的代码；换版本时更新日志会写明。
 - 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a.zip` 安装。
 - 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里 PATH 中的 `C:/...` 要写成 `/c/...`（例如 `/c/Users/<you>/.local/bin`）。
@@ -247,6 +247,18 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 [CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md)、
 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
 不要在 issue 或 PR 里附上真实球员的视频、帧或名字。
+
+## 教练知识库：欢迎一起完善
+
+篮球报告里的建议来自四个知识库，共 58 条（团队打法、个人技术、跑动与发力、饮食与恢复）。
+内容参考公开的 FIBA / Jr. NBA 教练资料和运动科学研究，用我们自己的话写成，每条都注明出处。
+[知识库里有什么、怎么补充](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md)。
+
+- **什么运动都行：先用起来，再一起补充**。跑步、健身、HYROX、足球，都可以用[一句话开始](#一句话开始)跑一遍。
+  通用插件什么运动都能看录像复盘，但这些运动还没有自己的跟踪和知识库。告诉我们你这项运动的教练会看什么。提一个[教练知识 issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml)就够了，不用写代码。
+- 篮球条目的纠错、更新的研究、更好的练习方法，也欢迎这样提。
+
+<sub>与 FIBA、NBA 及所引用的作者均无关联，也未获其认可。</sub>
 
 ## 支持
 

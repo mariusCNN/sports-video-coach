@@ -15,8 +15,9 @@ Start with the [project README](../README.md) ([中文](../README.zh.md)) and, f
 | [playbook.md](playbook.md) | basketball users and AI agents | The one-command run and every step from a league link (or a video) to the pages and the explained video |
 | [pipeline.md](pipeline.md) | contributors | Every basketball stage, its inputs and outputs, and the design choices behind them |
 | [review_protocol.md](review_protocol.md) | contributors | The optional possession event review that feeds the shot charts |
+| [knowledge-base.md](knowledge-base.md) | coaches, contributors and agents | The coaching knowledge bases: what each covers, how an entry is built and used, sources, how to add one or a KB for a new sport |
 | [privacy.md](privacy.md) | everyone | What stays in `workspace/`, sharing reports, minors and consent |
 | [research.md](research.md) | contributors | Open-source projects and papers this builds on, and what was adapted |
 | [optimization-backlog.md](optimization-backlog.md) | contributors | Measured speed and cost improvements, done and to do |
 
-Basketball writing guides and the coaching knowledge base the insights cite ([`coach_kb.md`](../prompts/coach_kb.md)) are in [`prompts/`](../prompts/). To contribute, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+Basketball writing guides and the coaching knowledge bases ([knowledge-base.md](knowledge-base.md)) are in [`prompts/`](../prompts/). To contribute, see [CONTRIBUTING.md](../CONTRIBUTING.md).

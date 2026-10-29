@@ -36,6 +36,8 @@
 - [Architecture](docs/architecture.md): sport-independent core and plugin hooks.
 - [Plugins](docs/plugins.md): scaffolding and examples for new sports.
 - [Benchmark](docs/benchmark.md): synthetic film-review tasks with exact ground truth.
+- [Coaching knowledge base](docs/knowledge-base.md): the four basketball KBs (team, skill, movement, fuel and
+  recovery), entry structure, how runs cite them, source rules and how to contribute an entry or a sport KB.
 - [Privacy](docs/privacy.md): local workspace, model-provider boundaries and deliberate sharing.
 - [Contributing](CONTRIBUTING.md): tests, PR workflow and no real player data in public contributions.
 

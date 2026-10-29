@@ -274,7 +274,8 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <p>{PITCH}</p>
 <section id="one-prompt">
 <h2 class="feature-title">Start in one prompt</h2>
-<p>Paste this into Claude Code, Codex or another coding agent:</p>
+<p>Film your run, gym or HYROX session, soccer match or basketball practice on your phone, then paste this into
+Claude Code, Codex or another coding agent:</p>
 <pre class="prompt"><code>{html.escape(ONE_PROMPT["en"])}</code></pre>
 <p>Your agent clones the repo, shows you the install commands and waits for your OK, asks what the video cannot
 tell it, then runs the review until your coaching page and explained video are ready.

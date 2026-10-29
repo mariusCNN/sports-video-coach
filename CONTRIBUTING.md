@@ -77,6 +77,15 @@ sports-video-coach demo indexnow             # POST to api.indexnow.org; 200 or 
 4. Tests on synthetic video (`ffmpeg -f lavfi -i testsrc=...`); no real players.
 5. Ship it in its own repo (topic `sports-video-coach-plugin`) or as a pull request adding `examples/plugins/<sport>/` (models: a rate: `examples/plugins/swim-stroke-rate/`; a count: `examples/plugins/jump-rope/`; the checklist is in [docs/plugins.md](docs/plugins.md#share-it)).
 
+## Coaching knowledge
+
+The coaching advice comes from knowledge bases in `prompts/` (`coach_kb.md`, `skill_kb.md`, `movement_kb.md`,
+`fuel_recovery_kb.md`). New entries, corrections, newer studies and better drills are welcome, for basketball or
+any other sport, and you do not need to write code: open a
+[coaching knowledge issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml). How an entry is built, the source and copyright rules (your own words, a cited
+source, no copied pages or PDFs, never implying endorsement) and how a sport plugin ships its own KB:
+[docs/knowledge-base.md](docs/knowledge-base.md).
+
 ## Pull requests
 
 1. Fork, then branch from `master` (`fix/jersey-crop`, `feat/league-importer-x`).

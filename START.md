@@ -78,8 +78,9 @@ terminal, or call the tool by its full path (`~/.local/bin/sports-video-coach`; 
 ## 3. Choose the plugin and the language
 
 - `sports-video-coach plugins --json` lists the plugins and when to use each.
-- A first run is almost always `generic` with `--sport <sport>`: any sport, a phone clip, a drill, a pickup game,
-  basketball shooting practice (`--sport basketball`). The `basketball` plugin is for league games with a stats link
+- A first run is almost always `generic` with `--sport <sport>`: running, the gym, HYROX, soccer, any other sport, a
+  phone clip, a drill, a pickup game, basketball shooting practice (`--sport basketball`). The generic plugin is
+  your film review with general coaching guides; it has no sport-specific tracking or knowledge base. The `basketball` plugin is for league games with a stats link
   or for the heavy tracking install (step 6).
 - `--lang`: the user's chat language if it is one of `zh en ja ko es fr de pt`, else `en`. Two are fine
   (`--lang zh en`).

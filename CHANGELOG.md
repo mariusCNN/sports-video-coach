@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## Unreleased
 
 ### Added
+- `docs/knowledge-base.md`: the four basketball coaching knowledge bases (58 entries, based on public FIBA /
+  Jr. NBA coaching material and sports-science studies), how an entry is built and used in a run, the source and
+  copyright rules, and how to contribute an entry or a KB for another sport. New issue form "Coaching knowledge:
+  new entry or correction"; a contribution section in both READMEs and CONTRIBUTING.md.
 - Start in one prompt: paste "Coach me on my sports video: <path> / Clone the repo and follow its START.md" into
   Claude Code, Codex or another agent. The new `START.md` takes the agent from a machine with nothing installed
   to the coaching page: tool checks, per-OS install commands shown and approved first, one message of questions,
