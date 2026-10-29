@@ -79,9 +79,10 @@ def write_qa(g: U.Analysis) -> None:
 SITE_URL = "https://mariusding.github.io/sports-video-coach/"
 REPO_URL = "https://github.com/mariusDing/sports-video-coach"
 TRAINING_MEDIA = f"{REPO_URL}/releases/download/showcase-2026-10-29"
-TAGLINE = "Your AI agent watches your game film and coaches you."
-PITCH = ("Open-source sports video analysis and basketball analytics for athletes, coaches and AI agents. "
-         "Turn your game or workout into a coaching page, source clips, narration, drills and an explained video.")
+TAGLINE = "Turn your coding agent into your sports coach."
+PITCH = ("Open-source sports video analysis for adults who train on their own: film a session or a game on your phone "
+         "(basketball, running, the gym ...), and your coding agent gives you a coaching page, clips, drills and an "
+         "explained video.")
 CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next time."),
          ("Coaches", "A team report and focus-player deep dive, with clips, audio and optional unlisted sharing links."),
          ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "

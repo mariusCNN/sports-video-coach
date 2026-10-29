@@ -42,6 +42,9 @@ All notable changes to this project are documented here. The format follows [Kee
   swim example measures a rate), tested on drawn video against the exact count.
 
 ### Changed
+- Both READMEs and the landing page lead with "Turn your coding agent into your sports coach" for adults who
+  train on their own: the 43 s real training review at the top, then a short "Why I built this", then the
+  one prompt. The benchmark moved further down the READMEs; its numbers and rerun steps are unchanged.
 - `review-check` (generic) warns, naming the moment, when a moment's window is outside the review guide's 4-15 s.
 - The humanize check no longer flags a spoken cue after `Say:` / `说：` (like `Watch:`).
 - `plugins`: the basketball install hint checks out the pinned commit in the clone you have, instead of cloning again.

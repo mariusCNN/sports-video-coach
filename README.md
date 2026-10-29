@@ -2,13 +2,31 @@
 
 # sports-video-coach
 
-### Your coding agent reviews your sports video and coaches you.
+### Turn your coding agent into your sports coach.
 
-**Open-source sports video analysis, basketball analytics and AI coaching for players, coaches and coding agents.**
-Video → timestamped film review → bilingual coaching pages, clips, narration and explained MP4s.
-Optional player/ball tracking, shot charts, league stats, training plans and independently evaluated vision backends.
+**English** · [中文](https://github.com/mariusDing/sports-video-coach/blob/master/README.zh.md)
+
+For adults who train on their own: film a session on your phone, and your agent (Claude Code, Codex ...)
+tells you what to fix and how to practise it.
+
+<a href="https://mariusding.github.io/sports-video-coach/#training-example"><img alt="A real training review in 43 seconds: the author's own shooting session, freeze-frame cues, two attempts compared, then the next practice" src="https://github.com/mariusDing/sports-video-coach/releases/download/showcase-2026-10-29/poster-en-wide.jpg" width="720"></a>
+
+**[▶ Watch a real training review (43 s)](https://mariusding.github.io/sports-video-coach/#training-example)** · [vertical version](https://github.com/mariusDing/sports-video-coach/releases/download/showcase-2026-10-29/sports-video-coach-en-vertical.mp4)<br>
+<sub>The author's own session, reviewed by the agent and edited for length. Not a before/after or an accuracy measurement.</sub>
 
 </div>
+
+## Why I built this
+
+I play basketball in an adult rec league. For a long time I trained the same way and didn't get better.
+
+A private coach costs a lot, and most classes are for kids. The few adult ones are expensive or far from home.
+
+I was already filming my games and sessions on my phone, and I already used a coding agent at work.
+So I taught the agent to watch my film the way a coach would: what went wrong and why, one drill to fix it,
+and what to check next time.
+
+I've used it on my own games and training sessions. It's free and open source, and it works for other sports too.
 
 ## Start in one prompt
 
@@ -26,30 +44,15 @@ the explained video are ready, then offers a plan for your next practice.
 
 <div align="center">
 
-[All features and advantages](docs/features.md) · [Basketball](docs/basketball.md) ·
-[OpenHoopVision integration](docs/perception.md) · [WASB / SAHI / KaliCalib experiments](docs/perception-lab.md) ·
-[Agent entry points](llms.txt)
-
-**Also a benchmark** of which agent reads sports film best: Codex gpt-6-astra 1.000, Claude Opus 5.5 0.997,
-Claude Sonnet 5.5 0.419 at default effort and 0.931 at high.<br>
-<sub>Fresh-seed board: mean score above a blind guess, 1 = perfect · 1–4 runs per setting, all by the author ·
-[leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/)</sub>
+[All features](docs/features.md) · [Basketball](docs/basketball.md) · [Agent entry points](llms.txt)
 
 **Try it:** [demo page, no install](https://mariusding.github.io/sports-video-coach/demo/) ·
-[open in Codespaces](https://codespaces.new/mariusDing/sports-video-coach) ·
-[rerun the benchmark in one command](#benchmark-which-agent-reads-sports-film-best)
+[open in Codespaces](https://codespaces.new/mariusDing/sports-video-coach)
 
 [![release](https://img.shields.io/github/v/release/mariusDing/sports-video-coach)](https://github.com/mariusDing/sports-video-coach/releases)
 [![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)
 [![Works with Claude Code and Codex](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex%20%7C%20AGENTS.md-8A2BE2.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md)
-
-**English** · [中文](https://github.com/mariusDing/sports-video-coach/blob/master/README.zh.md)
-
-**New: [watch a real training review in 43 seconds](https://mariusding.github.io/sports-video-coach/#training-example).**
-Original footage → freeze-frame cues → two selected attempts → a next-practice suggestion.
-[English landscape and vertical videos](https://github.com/mariusDing/sports-video-coach/releases/tag/showcase-2026-10-29).
-<sub>A selected, agent-reviewed example edited for length; not a before/after improvement claim or an accuracy measurement.</sub>
 
 <img alt="A real run on the author's shooting drill: the clip, the agent's film review pausing where the finish is held, then the coaching page" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
@@ -64,39 +67,6 @@ Your coding agent (Claude Code, Codex, Cursor ...) reviews it from timestamped f
 denser sheet of a fast moment. You get back a phone page with the clips that matter, a drill and a target for each fix, a spoken
 version of the report, and an explained video. The tool runs on your machine; the frames your agent looks at go to
 its model provider, like anything else you show it. Free and MIT.
-
-## Benchmark: which agent reads sports film best
-
-Drawn drills, scored against the exact truth the tool drew in. No judge model.
-
-- **Fresh-seed board** (frames only, a new unseen seed per run, mean score above a blind guess, 1 = perfect):
-  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 (0.778 at low effort) · Claude Sonnet 5.5 0.419 at default effort,
-  0.931 at high (4 runs, 0.856–0.994; max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
-  One to four runs per setting; all runs so far are the author's.
-- [Leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariusding.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)
-- Rerun the fresh-seed board: install (needs ffmpeg), then one command (`--seed` draws a new seed;
-  add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
-
-```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
-sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
-```
-
-- No local install: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
-  (your own GitHub account's free hours; log in to your agent there, then put `uv run` in front;
-  [how](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)).
-
-<details><summary>Another agent CLI, or a vision model on your own GPU</summary>
-
-- Any vision model behind an OpenAI-compatible API (Ollama, LM Studio, vLLM, OpenRouter), free on your own GPU: the same command with
-  `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
-- Gemini CLI, Qwen Code, Aider, Cursor CLI, Copilot CLI, Goose: presets, flags checked against each CLI's `--help`, not yet run on a task.
-  OpenCode was run with a free model and no account: one counted run, 0.000, killed at the time limit with no answer written (the free limit was reached near the end); three runs not counted (our preset bug, then the free quota used up, twice) ([details](docs/benchmark.md#opencode-run-once-2026-10-25)).
-  [Run one and send the row (issue #7)](https://github.com/mariusDing/sports-video-coach/issues/7).
-
-</details>
-
-<a href="https://mariusding.github.io/sports-video-coach/benchmark/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="Benchmark clip: a drawn juggling video, the stills an agent sees around a quick double touch, then the true touch count (47) against what each model answered"></a>
 
 ## Try it
 
@@ -243,6 +213,39 @@ Architecture: [docs/architecture.md](https://github.com/mariusDing/sports-video-
 the project began as `hoop-tape-miner`, a film room for an amateur basketball team ([docs/basketball.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)).
 
 </details>
+
+## Benchmark: which agent reads sports film best
+
+Drawn drills, scored against the exact truth the tool drew in. No judge model.
+
+- **Fresh-seed board** (frames only, a new unseen seed per run, mean score above a blind guess, 1 = perfect):
+  Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 (0.778 at low effort) · Claude Sonnet 5.5 0.419 at default effort,
+  0.931 at high (4 runs, 0.856–0.994; max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
+  One to four runs per setting; all runs so far are the author's.
+- [Leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariusding.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)
+- Rerun the fresh-seed board: install (needs ffmpeg), then one command (`--seed` draws a new seed;
+  add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
+
+```bash
+uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
+sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
+```
+
+- No local install: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+  (your own GitHub account's free hours; log in to your agent there, then put `uv run` in front;
+  [how](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)).
+
+<details><summary>Another agent CLI, or a vision model on your own GPU</summary>
+
+- Any vision model behind an OpenAI-compatible API (Ollama, LM Studio, vLLM, OpenRouter), free on your own GPU: the same command with
+  `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
+- Gemini CLI, Qwen Code, Aider, Cursor CLI, Copilot CLI, Goose: presets, flags checked against each CLI's `--help`, not yet run on a task.
+  OpenCode was run with a free model and no account: one counted run, 0.000, killed at the time limit with no answer written (the free limit was reached near the end); three runs not counted (our preset bug, then the free quota used up, twice) ([details](docs/benchmark.md#opencode-run-once-2026-10-25)).
+  [Run one and send the row (issue #7)](https://github.com/mariusDing/sports-video-coach/issues/7).
+
+</details>
+
+<a href="https://mariusding.github.io/sports-video-coach/benchmark/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="Benchmark clip: a drawn juggling video, the stills an agent sees around a quick double touch, then the true touch count (47) against what each model answered"></a>
 
 ## Status and contributing
 
