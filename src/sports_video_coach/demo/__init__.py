@@ -96,6 +96,27 @@ FEATURES = (
 )
 TRY = (INSTALL, "sports-video-coach demo")   # needs ffmpeg on PATH
 START_URL = f"{REPO_URL}/blob/master/START.md"   # what the one prompt makes the agent follow
+# an inline icon, so the landing page makes no /favicon.ico request (the site serves none)
+FAVICON = ("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+           "<circle cx='16' cy='16' r='15' fill='%23ff6b1a'/><path d='M12 9l12 7-12 7z' fill='%23fff'/></svg>")
+# Copy buttons for the prompt boxes: shown only when this runs; says "copied" only when the copy worked, else leaves
+# the prompt selected for a manual copy.
+COPY_JS = """
+for (const b of document.querySelectorAll("button.copy")) {
+  b.hidden = false;
+  b.dataset.label = b.textContent;
+  b.addEventListener("click", async () => {
+    const code = document.getElementById(b.dataset.copy);
+    let ok = false;
+    try { await navigator.clipboard.writeText(code.textContent); ok = true; } catch (e) {
+      const r = document.createRange(); r.selectNodeContents(code);
+      getSelection().removeAllRanges(); getSelection().addRange(r);
+      try { ok = document.execCommand("copy"); } catch (e2) {}
+    }
+    if (ok) { b.textContent = b.dataset.done; setTimeout(() => { b.textContent = b.dataset.label; }, 1600); }
+  });
+}
+"""
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
 TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
 BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site
@@ -239,6 +260,7 @@ def landing(films: list[str]) -> str:
 {f'<meta property="og:image" content="{SITE_URL}film.en.jpg">' if "film.en.jpg" in films else ""}
 <meta property="og:url" content="{SITE_URL}">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="{FAVICON}">
 <style>
 body {{ margin: 0; font: 17px/1.55 system-ui, sans-serif; color: #1d1b38; background: #f6f5fb; }}
 main {{ max-width: 46rem; margin: 0 auto; padding: 2rem 1.1rem 3rem; }}
@@ -259,12 +281,17 @@ video {{ width: 100%; border-radius: 10px; background: #221f45; margin: 1.2rem 0
 .prompt {{ background: #0b0f14; color: #f5f5f0; border-radius: 24px; padding: 1rem 1.2rem; margin: .4rem 0 .6rem;
           white-space: pre-wrap; overflow-wrap: anywhere; font: .95rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }}
 .prompt::before {{ content: "> "; color: #ff6b1a; font-weight: 700; }}
-.star {{ display: inline-block; padding: .5rem .9rem; border-radius: 999px; border: 1px solid #221f45;
-        color: #221f45; font-weight: 600; text-decoration: none; background: #fff; margin: 0 .4rem .3rem 0; }}
+.star, .copy {{ display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box;
+        padding: .5rem 1rem; border-radius: 999px; border: 1px solid #221f45; color: #221f45; font: inherit;
+        font-weight: 600; text-decoration: none; background: #fff; margin: 0 .6rem .4rem 0; cursor: pointer; }}
+.copy {{ background: #221f45; color: #fff; }}
+details.zh summary {{ display: flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }}
+.links {{ list-style: none; padding: 0; margin: .4rem 0 1rem; display: flex; flex-wrap: wrap; gap: 0 1.4rem; }}
+.links a {{ display: inline-flex; align-items: center; min-height: 44px; }}
 small {{ display: block; margin-top: 1.4rem; color: #5c5a86; }}
 h2.try {{ font-size: 1.1rem; margin: 1.6rem 0 .4rem; }}
 pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1rem; overflow-x: auto;
-      font-size: .9rem; margin: 0 0 .4rem; }}
+      font-size: .9rem; margin: 0 0 .4rem; white-space: pre-wrap; overflow-wrap: anywhere; }}
 </style>
 </head>
 <body>
@@ -276,11 +303,16 @@ pre {{ background: #221f45; color: #fff; border-radius: 10px; padding: .8rem 1re
 <h2 class="feature-title">Start in one prompt</h2>
 <p>Film your run, gym or HYROX session, soccer match or basketball practice on your phone, then paste this into
 Claude Code, Codex or another coding agent:</p>
-<pre class="prompt"><code>{html.escape(ONE_PROMPT["en"])}</code></pre>
+<pre class="prompt"><code id="prompt-en">{html.escape(ONE_PROMPT["en"])}</code></pre>
+<button class="copy" type="button" data-copy="prompt-en" data-done="Copied" hidden>Copy the prompt</button>
+<details class="zh" lang="zh-CN"><summary>中文提示词</summary>
+<pre class="prompt"><code id="prompt-zh">{html.escape(ONE_PROMPT["zh"])}</code></pre>
+<button class="copy" type="button" data-copy="prompt-zh" data-done="已复制" hidden>复制提示词</button>
+</details>
 <p>Your agent clones the repo, shows you the install commands and waits for your OK, asks what the video cannot
-tell it, then runs the review until your coaching page and explained video are ready.
-<a href="{START_URL}">What it follows: START.md</a></p>
-<p><a class="star" href="{REPO_URL}">&#9734; Star on GitHub</a>If it helped, a star is how I know.</p>
+tell it, then runs the review until your coaching page and explained video are ready.</p>
+<ul class="links"><li><a href="{START_URL}">What it follows: START.md</a></li></ul>
+<p><a class="star" href="{REPO_URL}">&#9734; Star on GitHub</a> If it helped, a star is how I know.</p>
 </section>
 <section id="training-example">
 <h2 class="feature-title">A real training review in 43 seconds</h2>
@@ -288,8 +320,8 @@ tell it, then runs the review until your coaching page and explained video are r
  src="{TRAINING_MEDIA}/sports-video-coach-en-wide.mp4" aria-label="English basketball training review showcase"></video>
 <p>Original footage, freeze-frame cues, two selected attempts, and a next-practice suggestion.
 This agent-reviewed example is edited for length; it does not measure improvement or shooting accuracy.</p>
-<p><a href="{TRAINING_MEDIA}/sports-video-coach-en-vertical.mp4">Watch the vertical version</a> ·
-<a href="{REPO_URL}/releases/tag/showcase-2026-10-29">Video files and context</a></p>
+<ul class="links"><li><a href="{TRAINING_MEDIA}/sports-video-coach-en-vertical.mp4">Watch the vertical version</a></li>
+<li><a href="{REPO_URL}/releases/tag/showcase-2026-10-29">Video files and context</a></li></ul>
 </section>
 <h2 class="feature-title">Explore a complete coaching-page demo</h2>
 {video}
@@ -297,9 +329,9 @@ This agent-reviewed example is edited for length; it does not measure improvemen
 <p class="go"><a href="demo/">Open the demo coaching page</a><a href="{REPO_URL}">Get it on GitHub</a></p>
 <h2 class="feature-title">From game film to the next practice</h2>
 <div class="cards">{features}</div>
-<p><a href="{REPO_URL}/blob/master/docs/features.md">Explore every feature and command</a> ·
-<a href="{REPO_URL}/blob/master/README.zh.md">中文介绍</a> ·
-<a href="{REPO_URL}/blob/master/llms.txt">Agent documentation index</a></p>
+<ul class="links"><li><a href="{REPO_URL}/blob/master/docs/features.md">Explore every feature and command</a></li>
+<li><a href="{REPO_URL}/blob/master/README.zh.md" lang="zh-CN">中文介绍</a></li>
+<li><a href="{REPO_URL}/blob/master/llms.txt">Agent documentation index</a></li></ul>
 <p class="note"><strong>Choose the depth you need.</strong> Generic film review needs no GPU. Basketball vision
 needs its tracking dependencies and usable footage. WASB, SAHI and KaliCalib are opt-in experiments, with mixed
 results in the first diagnostic; they do not automatically replace official stats or reviewed calibration.
@@ -313,6 +345,7 @@ Publishing is optional. <a href="{REPO_URL}/blob/master/docs/privacy.md">Privacy
 <small>The coaching-page demo is synthetic: a drawn drill video (a red block between two cones) and a pre-written review, so
 no person appears. {("Other languages: " + other) if other else ""}{version_note(ver)}</small>
 </main>
+<script>{COPY_JS}</script>
 {site_counter.tag()}
 </body>
 </html>

@@ -54,6 +54,17 @@ def test_landing_page_shows_the_prompt_start_md_and_a_star_button():
     assert f'class="star" href="{svc.REPO_URL}"' in home
 
 
+def test_landing_page_copy_buttons_zh_prompt_and_favicon():
+    home = demo.landing([])
+    assert f'<code id="prompt-zh">{html.escape(svc.ONE_PROMPT["zh"])}</code>' in home
+    for box in ("prompt-en", "prompt-zh"):   # each prompt box has a copy button that targets it
+        assert f'<code id="{box}">' in home and f'data-copy="{box}"' in home
+    assert "navigator.clipboard.writeText(code.textContent)" in home
+    assert f'<link rel="icon" href="{demo.FAVICON}">' in home and "#" not in demo.FAVICON   # '#' would end the URL
+    # link rows are lists of 44 px targets, not links run together with " · "
+    assert "</a> ·" not in home and home.count('<ul class="links">') == 3
+
+
 def test_start_md_points_basketball_on_generic_at_the_three_kbs():
     """The one-prompt basketball path bases its fixes on the repo's KB entries (and says when it does not)."""
     for kb in ("prompts/coach_kb.md", "prompts/skill_kb.md", "prompts/movement_kb.md"):
