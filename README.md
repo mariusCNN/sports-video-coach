@@ -22,7 +22,7 @@ I play basketball in an adult rec league. For a long time I trained the same way
 
 A private coach costs a lot, and most classes are for kids. The few adult ones are expensive or far from home.
 
-I was already filming my games and sessions on my phone, and I already used a coding agent at work.
+My league already films our games, I film my own training on my phone, and I already used a coding agent at work.
 So I taught the agent to watch my film the way a coach would: what went wrong and why, one drill to fix it,
 and what to check next time.
 
