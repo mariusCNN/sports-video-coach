@@ -19,6 +19,17 @@ All notable changes to this project are documented here. The format follows [Kee
   to the coaching page: tool checks, per-OS install commands shown and approved first, one message of questions,
   the pinned light install, the exit-code loop, hand-over, a next-practice offer and the one-time star ask. Both
   READMEs and the demo site's landing page show the prompt; the READMEs gain a Support section with the star ask.
+
+- Film review now resumes from per-part sheet ledgers: saved JSON checkpoints precede read acknowledgements,
+  changed inputs become pending again, and new reviews cannot pass `coach-check` with unread sheets.
+  Regeneration refuses folders containing review checkpoints. Existing reviews remain compatible.
+- The normal basketball run accepts `review.parts` or `review.max_sheets` in game.json and tracks the choice
+  for freshness. `coach-eval --baseline DIR --gate` rejects regressions for either team, including player
+  attribution, total points, fouls and matched events. Official roster conflicts still require film review.
+
+- Opt-in `coach-sheets --max-sheets N` partitions reviews by sheet workload while keeping
+  each possession intact. The default remains six parts pending controlled quality validation.
+  Reviewers now save trips and progress after each possession to support interrupted work.
 - A real training-review showcase on the homepage and in both READMEs, with English landscape/vertical
   video downloads and explicit limits on what the selected example demonstrates. Media is hosted separately.
 - The public landing page now presents the complete coaching, basketball, training and optional perception

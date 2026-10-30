@@ -17,6 +17,7 @@ HANDOFF.md
 CLAUDE.local.md
 # Ralph Loop state (Claude Code plugin)
 .claude/*.local.md
+.claude/settings.local.json
 
 # Playwright MCP scratch logs/snapshots
 .playwright-mcp/
