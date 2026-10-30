@@ -162,7 +162,26 @@ def parts_done(g: Game) -> bool:
 
 
 def parts_listed(g: Game) -> bool:
+    if (g.review / ".sheets-incomplete").exists():
+        return False
     return any(g.review.glob("brief_part*.md")) or any(g.review.glob("coach_part*.json"))
+
+
+def review_partition(g: Game) -> dict:
+    """The normal run and standalone sheet command share the same partition controls."""
+    config = g.game.get("review") or {}
+    if "parts" in config and "max_sheets" in config:
+        raise ValueError("review.parts and review.max_sheets are mutually exclusive")
+    key = "max_sheets" if "max_sheets" in config else "parts"
+    value = config.get(key, 6)
+    if type(value) is not int or value < 1:
+        raise ValueError(f"review.{key} must be a positive integer")
+    return {key: value}
+
+
+def review_partition_args(g: Game) -> list[str]:
+    return [arg for key, value in review_partition(g).items()
+            for arg in ("--" + key.replace("_", "-"), str(value))]
 
 
 def _official(g: Game) -> Path | None:
@@ -391,16 +410,17 @@ STEPS = [
                            "renderer": perception_media.RENDER_VERSION},
          after=("perception-import",)),
     Step("coach-sheets", "cmd", lambda g: (g.review / "manifest.json").exists() and parts_listed(g),
-         lambda g: [["coach-sheets", "--run", str(g.run), "--game", str(g.gj), "--out", str(g.review), "--parts", "6",
-                     "--video", _v(g)]], long=True,
+         lambda g: [["coach-sheets", "--run", str(g.run), "--game", str(g.gj), "--out", str(g.review),
+                     *review_partition_args(g), "--video", _v(g)]], long=True,
          inputs=lambda g: [g.run / "possessions.pkl", g.run / "possession_metrics.pkl"], after=("analyze",),
-         params=lambda g: {"parts": 6}),
+         params=review_partition),
     Step("film-review", "agent", parts_done,
          how="Film review (playbook step 7): launch one subagent per {review}/brief_part<N>.md, at most 3 at once; "
              "each writes coach_part<N>.json, memo_part<N>.md and notes_part<N>.txt there. Do not read the sheets "
              "yourself. A part counts as done when `hoop-tape-miner coach-check --review {review}` passes for it "
              "(schema, every pid of the part covered without gaps over 20 s, scoring and foul jerseys written or "
-             "marked unknown); send a part's errors back to its subagent.",
+             "marked unknown, and all assigned sheets recorded with coach-sheets progress for new reviews); "
+             "resume from each part's progress and saved JSON; send a part's errors back to its subagent.",
          errors=parts_errors),
     # shot spots for the shot chart: grid sheets per reviewed shot, then reviewers read the take-off spot
     Step("locate-sheets", "cmd",

@@ -97,8 +97,24 @@ def events_text(ev: list[dict]) -> str:
                      for e in ev) or "no official scoring in window"
 
 
-def split_parts(manifest: list[dict], n: int) -> list[list[dict]]:
-    """Contiguous parts with roughly equal sheet counts."""
+def split_parts(manifest: list[dict], n: int, *, max_sheets: int | None = None) -> list[list[dict]]:
+    """Contiguous whole possessions, balanced by count or capped by sheets.
+
+    A possession larger than the cap stays intact in its own part. The cap is
+    a workload control, not a guarantee about a model's context consumption.
+    """
+    if n < 1 or (max_sheets is not None and max_sheets < 1):
+        raise ValueError("parts and max_sheets must be positive")
+    if max_sheets is not None:
+        parts, current, count = [], [], 0
+        for m in manifest:
+            size = len(m["sheets"])
+            if current and (count + size > max_sheets or count >= max_sheets):
+                parts.append(current)
+                current, count = [], 0
+            current.append(m)
+            count += size
+        return parts + ([current] if current else [])
     tot = sum(len(m["sheets"]) for m in manifest) or 1
     parts, acc = [[] for _ in range(n)], 0
     for m in manifest:
@@ -665,6 +681,9 @@ def event_main(argv):
 def main(argv=None):
     import sys
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["progress"]:
+        from .review_progress import main as progress_main
+        return progress_main(argv[1:])
     if argv[:1] == ["event"]:
         return event_main(argv[1:])
     if argv[:1] == ["event-merge"]:
@@ -686,17 +705,28 @@ def main(argv=None):
     ap.add_argument("--game", required=True)
     ap.add_argument("--official", help="league stats (default: official.json next to game.json or in --run, if any)")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--parts", type=int, default=6)
+    partition = ap.add_mutually_exclusive_group()
+    partition.add_argument("--parts", type=int, default=6, help="number of balanced parts (default: 6)")
+    partition.add_argument("--max-sheets", type=int,
+                           help="opt-in sheet budget per part; whole possessions are never split")
     ap.add_argument("--video", help="default: game.json 'video', relative to game.json")
     ap.add_argument("--brief", default=str(BRIEF), help="brief template with {placeholders}")
     ap.add_argument("--skip-sheets", action="store_true", help="reuse --out/manifest.json; redo parts + briefs")
     a = ap.parse_args(argv)
+    if a.parts < 1 or (a.max_sheets is not None and a.max_sheets < 1):
+        ap.error("--parts and --max-sheets must be positive")
     run, out, game_path = Path(a.run), Path(a.out), Path(a.game)
+    if any(out.glob("coach_part*.json")) or any(out.glob("read_part*.json")):
+        raise SystemExit("review checkpoints already exist; use a new --out folder to regenerate or repartition "
+                         "(copy manifest.json and its sheets there for --skip-sheets)")
     game = json.loads(game_path.read_text(encoding="utf-8"))
     use_game(game)  # sheet outline colours from us.hex / them.hex
     lay = {**LAYOUT, **game.get("review", {})}
     official = load_official(a.official, game_path, run)
     out.mkdir(parents=True, exist_ok=True)
+    # A crash during generation must not make a partial set of parts look complete.
+    incomplete = out / ".sheets-incomplete"
+    incomplete.write_text("coach-sheets generation in progress\n", encoding="utf8")
 
     if a.skip_sheets:
         manifest = json.loads((out / "manifest.json").read_text())
@@ -729,7 +759,15 @@ def main(argv=None):
     write_json_atomic(out / "manifest.json", manifest)
     print(len(manifest), "possessions", sum(len(m["sheets"]) for m in manifest), "sheets")
 
-    parts = split_parts(manifest, a.parts)
+    parts = split_parts(manifest, a.parts, max_sheets=a.max_sheets)
+    # These are generated files only; reviewed folders were rejected before any mutation.
+    for stale in [*out.glob("part[0-9]*.json"), *out.glob("brief_part[0-9]*.md")]:
+        if re.fullmatch(r"part\d+\.json|brief_part\d+\.md", stale.name):
+            stale.unlink()
+    if a.max_sheets is not None:
+        for pt in parts:
+            if len(pt) == 1 and len(pt[0]["sheets"]) > a.max_sheets:
+                print(f"note: possession {pt[0]['pid']} exceeds --max-sheets; kept intact")
     template = Path(a.brief).read_text(encoding="utf-8") if Path(a.brief).is_file() else None
     base = brief_values(game, official, out) if template else {}
     for i, pt in enumerate(parts, 1):
@@ -741,6 +779,11 @@ def main(argv=None):
             (out / f"brief_part{i}.md").write_text(fill_brief(template, vals, i), encoding="utf-8")
     if not template:
         print("no brief template at", a.brief, "- skipped brief_part*.md")
+    from .review_progress import POLICY
+    write_json_atomic(out / POLICY, {"sheet_coverage": 1})
+    incomplete.unlink()
+    print("After each possession: save coach_part<N>.json, then coach-sheets progress --review", out,
+          "--part N --read <viewed sheet paths>. Resume with progress without --read.")
 
 
 if __name__ == "__main__":
