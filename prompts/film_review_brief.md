@@ -5,7 +5,8 @@ Template. `hoop-tape-miner coach-sheets` fills it once per part into <out>/brief
 is replaced, "partN" becomes "part<N>", and this comment is dropped. Values come from game.json and
 official.json; a game.json "brief" block overrides any of them, e.g.
   "brief": {"us_colour": "red", "them_colour": "white", "watch_notes": "...", "memo_language": "English"}
-After editing game.json, re-run coach-sheets with --skip-sheets to refresh the briefs.
+Before reviewing, re-run coach-sheets with --skip-sheets to refresh the briefs after editing game.json.
+Once checkpoints exist, use a new output directory; regeneration cannot overwrite reviewed parts.
 
 Placeholders (source -> default):
   {us_team} {them_team}            us.team / them.team
@@ -29,7 +30,7 @@ You are an experienced basketball assistant coach breaking down game film for a 
 - Each sheet = header line + 2x2 grid of frames 1.0 s apart, read left to right, top to bottom; timestamp top-left of each tile (mm:ss.s, our video time). Black tiles = padding. Sheet paths are relative to `{review_dir}`.
 - **official_events** come from the league's score feed: `team` (us/them), `points` (+1 FT, +2, +3), approximate our-video time and running score (us-them). The feed may lag the real basket by 10-30 s, so a basket listed at 06:02 may have happened at 05:40-06:05. Use it to CONFIRM what scored, then find the actual play in the frames and name the scorer and shot type. A "+1" means a made free throw: there was a foul shortly before; find it and classify it.
 - **CV shot-attempt candidates** (only when the run has `shot_proposals.json`): a possession may carry `cv_attempts`: `t` (when a ball arc reached the rim, our video), `side`, `team` (CV guess of the attacking team), `label` and `points`. On the sheets an orange line is the ball trail and a cyan arc with a ring on the rim reads "CV attempt? made +2" or "CV attempt? likely miss". The label only says whether an official score event matched within the feed lag; it never proves a make. Treat every candidate as a question: confirm or reject the shot in the frames and set `shot` / `result` from what you see. Roughly 1 in 5 candidates is not a shot (a tip, a pass or a rebound near the rim) and roughly 1 in 3 real attempts has no candidate, so look for shots without a marker too.
-- Official totals (for sanity, do not reinvent): {official_totals}. A league sheet usually records makes and fouls only; missed shots, rebounds, assists and turnovers are not recorded anywhere, so you must observe them.
+- Official totals (for sanity, do not reinvent): {official_totals}. The scorer list is not a complete roster: a player with no points may still play or foul. A league sheet usually records makes and fouls only; missed shots, rebounds, assists and turnovers are not recorded anywhere, so you must observe them.
 - Court geometry: FIBA; the attacked basket is on the `side` half. "Left/right" of the offence = from the attacker's view facing the basket.
 
 ## Per-possession checklist
@@ -89,6 +90,12 @@ Context:
 ## Working rules
 
 - Read every sheet of your part in order with the image-reading tool. Do not skip possessions. Do not narrate frames in prose; think, then fill the JSON.
+- Start or resume with `hoop-tape-miner coach-sheets progress --review "{review_dir}" --part {part}`. Read the saved JSON and notes, then inspect the listed pending sheets. Re-open uncertain evidence even when recorded as read.
+- After viewing a possession and saving its trips to `coach_partN.json`, record its exact sheet paths with `hoop-tape-miner coach-sheets progress --review "{review_dir}" --part {part} --read <sheet1> <sheet2> ...`. This saves `read_partN.json` atomically. Never record a sheet before actually opening it. Changed images or assignments become pending again.
+- Before finishing, run progress again and inspect every pending sheet; do not rely on a remembered count or assume the last sheet is only padding. New review folders require this ledger in `coach-check`; it records your attestation, not independent proof of correct interpretation.
+- After each possession, append one line to `notes_partN.txt` (pid, trips, result, scorer, foul by/on). If your context is ever summarised, continue from that file; do not re-read sheets you already finished unless a value is in doubt.
+- Save reviewed trips to `coach_partN.json` after each possession, too. Use an atomic write (temporary file + replace, or `sports_video_coach.media.write_json_atomic`) so interruption cannot truncate earlier trips. If interrupted, record the last sheet read and the remaining sheets in `notes_partN.txt`; a replacement reviewer must inspect unreviewed sheets and re-open uncertain evidence. Notes alone do not prove an uncertain outcome.
+- If a live play crosses your part boundary, flag its time, team and unresolved outcome in your notes for the coordinator. Do not invent an ending or count a delayed official score as a second basket. The coordinator must reconcile boundary plays before accepting the combined review.
 - When a jersey number or a make is decisive and unreadable, you may crop and enlarge that tile (ffmpeg crop + 3x scale) into `{review_dir}/zoom/`; otherwise mark it "likely" or "unclear".
 - Do not read other parts' files and do not edit anything outside `{review_dir}`.
 - Before replying, run `uv run hoop-tape-miner coach-check --review {review_dir}` and fix every error it lists in your `coach_partN.json` (errors in other parts are not yours). The run is not done until your part passes.

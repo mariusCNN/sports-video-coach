@@ -44,6 +44,20 @@ class CoachReviewTests(unittest.TestCase):
                        {"us_team": "A", "them_team": "B", "part": 2, "n_parts": 6})
         self.assertEqual(s, "Us A vs B, part 2/6; json {\"a\": 1} {other}")
 
+    def test_sheet_budget_preserves_all_possessions_in_order(self):
+        man = [{"pid": i, "sheets": ["x"] * n} for i, n in enumerate([4, 4, 1, 1, 7, 0, 2])]
+        parts = split_parts(man, 6, max_sheets=5)
+        self.assertEqual([[m["pid"] for m in p] for p in parts], [[0], [1, 2], [3], [4], [5, 6]])
+        self.assertEqual([m for p in parts for m in p], man)
+        for part in parts:
+            self.assertTrue(sum(len(m["sheets"]) for m in part) <= 5 or len(part) == 1)
+        self.assertEqual(split_parts([], 6, max_sheets=5), [])
+
+    def test_invalid_partition_budget(self):
+        for n, cap in [(0, None), (-1, None), (6, 0), (6, -1)]:
+            with self.assertRaises(ValueError):
+                split_parts([], n, max_sheets=cap)
+
     def test_brief_values_and_part_names(self):
         game = {"name": "2025-03-08 league game", "us": {"team": "A", "colour": "red", "focus_player": "7"},
                 "them": {"team": "B", "colour": "white"}, "result": {"halftime": {"us": 20, "them": 23}},
@@ -79,6 +93,36 @@ def test_official_is_optional(tmp_path, capsys):
     assert coach_review.load_official(None, game) == {"score_flow": [1]}
     with pytest.raises(SystemExit):
         coach_review.load_official(str(tmp_path / "missing.json"), game)
+
+
+@pytest.mark.parametrize("options", [["--parts", "0"], ["--max-sheets", "-1"],
+                                    ["--parts", "2", "--max-sheets", "5"]])
+def test_partition_cli_rejects_invalid_options_before_io(options, tmp_path):
+    out = tmp_path / "out"
+    with pytest.raises(SystemExit) as exc:
+        coach_review.main(["--run", str(tmp_path), "--game", "missing.json", "--out", str(out), *options])
+    assert exc.value.code == 2
+    assert not out.exists()
+
+
+def test_sheet_budget_cli_reuses_existing_sheets(tmp_path, capsys):
+    import json
+    out = tmp_path / "review"
+    out.mkdir()
+    game = tmp_path / "game.json"
+    game.write_text("{}", encoding="utf-8")
+    manifest = [{"pid": i, "start": i * 20, "end": i * 20 + 19,
+                 "sheets": [f"p{i}_{n}.jpg" for n in range(size)]}
+                for i, size in enumerate([2, 3, 6, 2])]
+    (out / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    coach_review.main(["--run", str(tmp_path), "--game", str(game), "--out", str(out),
+                       "--max-sheets", "5", "--skip-sheets", "--brief", str(tmp_path / "missing.md")])
+    parts = [json.loads(p.read_text()) for p in sorted(out.glob("part*.json"))]
+    assert [[m["pid"] for m in p] for p in parts] == [[0, 1], [2], [3]]
+    assert "possession 2 exceeds --max-sheets; kept intact" in capsys.readouterr().out
+    assert not (out / ".sheets-incomplete").exists()
+    assert (out / "review_policy.json").is_file()
+    assert not list(out.glob("*.jpg"))  # No video or sheet regeneration needed.
 
 
 def _flow(*ts, team="us"):

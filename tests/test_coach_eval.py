@@ -263,3 +263,36 @@ def test_main_warns_on_regression(tmp_path, capsys):
     assert "WARNING" in out and "them pts_recall" in out
     res = json.loads((r / "eval" / "new.json").read_text(encoding="utf8"))
     assert res["previous"] == "old" and res["regressions"]
+
+
+def test_regressions_include_opponents_totals_unknowns_and_missing_metrics():
+    prev, cur = facts(), facts()
+    prev["them"].update(team_pts_abs_err=0, unattributed_pts=2, fouls_abs_err=0,
+                        events_matched={"shots": 3, "fts": 2})
+    cur["them"].update(team_pts_abs_err=1, unattributed_pts=3, fouls_abs_err=1,
+                       player_pts_abs_err=1, player_pf_abs_err=1,
+                       events_matched={"shots": 2, "fts": 1}, pts_precision=None)
+    result = E.regressions(prev, cur)
+    for key in ("team_pts_abs_err", "unattributed_pts", "fouls_abs_err", "player_pts_abs_err",
+                "player_pf_abs_err", "events_matched.shots", "events_matched.fts", "pts_precision"):
+        assert any(f"them {key}" in e for e in result)
+
+
+def test_baseline_gate_rejects_attribution_loss_even_when_point_gate_passes(tmp_path):
+    import shutil
+    r, off = eval_review(tmp_path)
+    data = json.loads(off.read_text())
+    data["score_flow"] = data["score_flow"][:1]
+    off.write_text(json.dumps(data), encoding="utf8")
+    baseline = tmp_path / "baseline"
+    shutil.copytree(r, baseline)
+    args = ["--review", str(r), "--official", str(off), "--baseline", str(baseline), "--gate"]
+    E.main([*args, "--label", "identical"])
+    trips = json.loads((r / "coach_part1.json").read_text())
+    trips[0]["shot"].update(shooter=None, shooter_note="unknown: unreadable fabric")
+    (r / "coach_part1.json").write_text(json.dumps(trips), encoding="utf8")
+    with pytest.raises(SystemExit, match="baseline comparison failed"):
+        E.main([*args, "--label", "worse"])
+    result = json.loads((r / "eval" / "worse.json").read_text())
+    assert result["gate"]["pass"] and not result["baseline"]["pass"]
+    assert any("unattributed_pts" in s for s in result["baseline"]["failed"])
