@@ -31,6 +31,27 @@ VALID_TRIP = {"schema": 2, "pid": 1, "trip": 1, "t0": 1.0, "t1": 9.0, "offence":
               "shot": None, "fts": None, "foul": None, "evidence": {}, "confidence": "low"}
 
 
+@pytest.mark.parametrize("config,expected", [({}, {"parts": 6}), ({"parts": 4}, {"parts": 4}),
+                                           ({"max_sheets": 35}, {"max_sheets": 35})])
+def test_run_uses_review_partition_and_tracks_settings(game, config, expected):
+    g = R.Game.load(game)
+    g.game["review"] = config
+    step = next(s for s in R.STEPS if s.name == "coach-sheets")
+    assert step.params(g) == expected
+    key, value = next(iter(expected.items()))
+    command = step.args(g)[0]
+    assert command[command.index("--" + key.replace("_", "-")) + 1] == str(value)
+
+
+@pytest.mark.parametrize("config", [{"parts": 0}, {"max_sheets": -1}, {"parts": True},
+                                    {"parts": 6, "max_sheets": 35}, {"max_sheets": 1.5}])
+def test_run_rejects_invalid_partition(game, config):
+    g = R.Game.load(game)
+    g.game["review"] = config
+    with pytest.raises(ValueError):
+        R.review_partition(g)
+
+
 VALID_INSIGHT = {"id": "T1", "kb": ["transition-defence"], "claim": "c", "why": "w", "rule": "r", "drill": "d",
                  "target_next_game": "t", "evidence": [{"t": 2.0, "pid": 1, "trip": 1, "what": "a"},
                                                        {"t": 8.0, "pid": 1, "trip": 1, "what": "b"}],

@@ -173,7 +173,42 @@ uv run hoop-tape-miner coach-sheets --run "$RUN" --game "$GJ" --out "$RUN/review
 ```
 
    Writes `p<pid>_<k>.jpg` sheets, `manifest.json`, `part<N>.json`, `lineup_intervals.json` and `brief_part<N>.md` (filled from `prompts/film_review_brief.md`). Read one brief: no `{...}` left, team names and jersey colours right. To fix values, edit `$GJ` and re-run with `--skip-sheets`.
-2. Launch one subagent per part, **at most 3 at once**. Each gets only its `brief_part<N>.md` path. It reads every sheet of its part, writes `coach_part<N>.json`, `memo_part<N>.md`, `notes_part<N>.txt` into `$RUN/review_v1`, and replies in at most 8 lines. Do not read the sheets yourself. Close-ups: `uv run hoop-tape-miner coach-sheets zoom SHEET TILE X Y W H OUT [--scale 3]`.
+   For a controlled workload experiment, replace `--parts 6` with `--max-sheets N`
+   and use a separate output folder. This keeps each possession intact; an oversized
+   possession gets its own part and a warning. It does not cap image tokens or guarantee
+   that a context will not compact. Keep the original resolution and read every sheet.
+   Regeneration refuses a folder with existing coach JSON or read ledgers: their part
+   numbers must keep referring to the same possessions. For a new partition, copy the
+   manifest and its sheets into a new folder, then use `--skip-sheets` there.
+   The default remains six parts. The normal `run` also accepts `"review": {"max_sheets": 35}`
+   or `"review": {"parts": 6}` in game.json (mutually exclusive); changing this setting
+   invalidates the sheet step. Use a new `review_dir` when starting another review.
+
+2. Launch one subagent per part, **at most 3 at once**. Each gets only its `brief_part<N>.md` path. It reads every sheet of its part, writes `coach_part<N>.json`, `memo_part<N>.md`, `notes_part<N>.txt` into `$RUN/review_v1`, and replies in at most 8 lines. Save trips and notes after each possession, including the last sheet read and remaining work when interrupted. Reopen uncertain evidence on resume. Do not read the sheets yourself. Close-ups: `uv run hoop-tape-miner coach-sheets zoom SHEET TILE X Y W H OUT [--scale 3]`.
+
+   Start or resume a part with `coach-sheets progress --review "$RUN/review_v1" --part N`.
+   After viewing a possession and saving its JSON, acknowledge its exact relative paths
+   using the same command with `--read sheet1.jpg sheet2.jpg`. It atomically saves
+   `read_partN.json`; the command lists pending sheets on resume. Part and image hashes
+   invalidate stale acknowledgements. New folders carry `review_policy.json`, so
+   `coach-check` blocks on unread sheets; legacy folders remain compatible.
+   The ledger is the reviewer's attestation, not proof of factual accuracy.
+
+   Before adopting a different partition/model, compare complete reviews of the same
+   footage with the same evaluator: both teams' point recall/precision, missed scoring
+   events, player attribution and fouls, plus an independent review of boundary plays
+   and coaching claims. `coach-check` validates structure and coverage, not factual
+   accuracy. The `coach-eval` pass threshold alone does not prove non-regression;
+   official feeds can lag, and misses/rebounds/turnovers need film-based checking.
+   Record model, sheet resolution, prompts, retries, compactions and peak context;
+   cumulative token use is not peak context. Include all startup and recovery work
+   in cost comparisons. Mixed-model recovery is useful delivery evidence, not a
+   controlled A/B result, and must not justify a default change.
+   Use `coach-eval --review CANDIDATE --baseline BASELINE --official OFFICIAL --label compare --gate`
+   to block on regressions in either team's points, attribution, fouls or matched scoring
+   events, as well as schema/coverage failures. Both reviews use the same official file.
+   A roster mismatch can increase these errors despite a clear jersey on film: retain the
+   observed number, document the conflict and never guess a mapping to make the gate pass.
 3. Check every `coach_part<N>.json` passes `uv run hoop-tape-miner coach-check --review "$RUN/review_v1"` (reviewers run it themselves); `run` waits on `film-review` and lists the errors until it does. It checks trip schema v2 and part coverage (our rule): every pid of `part<N>.json` has a trip, no more than 20 s inside a possession are covered by no trip, and every made shot, made free throw and foul names its jersey or carries `shooter_note` / `by_note` `"unknown: <why>"`. Send a part's errors back to its reviewer. Old v1 reviews: `coach-check --review <v1> --migrate <v2 folder>`.
    Then the shot spots (steps `locate-sheets` and `shot-locate`), so the shot chart can draw each shot where it was taken. `uv run hoop-tape-miner shot-locate sheets --run "$RUN" --review "$RUN/review_v1" --video "$V" --game "$GJ"` writes `review_v1/locate/`: one sheet `s<NN>.jpg` per reviewed shot (six frames from 1.8 s before to 0.3 s after the release, the court lines projected from the calibration in magenta and a labelled 1 m grid on the attacked half; the reviewed zone is not shown; the attacked half is the possession's side unless at least 5 of the 6 shots around it say the other basket, noted as `side_note` in `shots.json`), `shots.json` and `brief_locate_<b>.md` (8 shots per batch, from `prompts/shot_locate.md`). Launch one subagent per brief, at most 3 at once; each reads the floor spot at the last ground contact before take-off and writes `answers_<b>.json` (`xy` in court metres, the tile, confidence, `arc` for feet at the 3-point line, or `"xy": null` with a reason). Then `uv run hoop-tape-miner shot-locate merge --review "$RUN/review_v1"` writes `shot.xy` (high and medium answers only), `shot.xy_src` (tile time, camera time and quality, confidence) or `"xy": null` + `xy_note` into the trips. A located spot sets the zone (and the 2/3 points of a missed shot); the reviewed values stay in `zone_review` / `points_review`. Spots within 0.5 m of a zone line keep the reviewed zone (`zone_flag` "near line"), and a made shot whose spot disagrees on 2 vs 3 points keeps it with `zone_flag` "confirm: ...": look at its sheet, fix the trip if the spot is right, then delete the flag. `locate/merge.md` lists every change and flag; `shot-locate check` lists shots still without a location and open "confirm" flags. To redo a few sheets (a wrong half, a fixed release time) without touching the others: `shot-locate sheets ... --only 32,34` rebuilds just those and writes one more brief; its answers file sorts last and wins in `merge`. The step is skipped without `camera.npz`, with `"shot_locate": false` in `$GJ`, and for games whose pages were built before it (run it by hand, then `run --redo html`).
    Then `run` measures per-trip numbers from the court tracks (step `features`): `uv run hoop-tape-miner coach-features --run "$RUN" --review "$RUN/review_v1"` writes `features.json` and `ball_quality.json`.

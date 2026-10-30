@@ -206,6 +206,7 @@ def facts_eval(trips: list[dict], official: dict, lag: tuple[float, float] = (-4
             "unclear": heads.get("unclear", 0) + heads.get("None", 0),
             "missed": heads.get("missed", 0),
             "team_pts": [review_pts, official_pts],
+            "team_pts_abs_err": abs(review_pts - official_pts) if events else None,
             "official_pts_off_video": sum(e["points"] for e in flow) - official_pts,
             "pts_recall": round(matched / official_pts, 3) if official_pts else None,
             "pts_precision": round(matched / review_pts, 3) if review_pts else None,
@@ -217,6 +218,8 @@ def facts_eval(trips: list[dict], official: dict, lag: tuple[float, float] = (-4
             "unknown_jerseys": sorted(n for n in set(pts) | set(pf) if n not in box),
             "fouls_found": sum(1 for t, _ in fouls if t == side),
             "fouls_official": sum(v.get("PF", 0) for v in box.values()),
+            "fouls_abs_err": abs(sum(1 for t, _ in fouls if t == side) -
+                                 sum(v.get("PF", 0) for v in box.values())) if box else None,
             "player_pf_abs_err": sum(abs(pf[n] - box.get(n, {}).get("PF", 0)) for n in set(box) | set(pf)),
         }
     from .coach_schema import validate_trip  # late import: coach_schema imports this module
@@ -300,7 +303,9 @@ def part_coverage(review: Path, max_gap: float = MAX_GAP) -> list[str]:
     """Errors when a coach_part<N>.json does not cover its part<N>.json: a possession (pid) with no trip, a stretch
     longer than `max_gap` s inside a possession that no trip's [t0, t1] covers, or a null scoring / foul jersey
     with no note. Parts whose coach json is unreadable are left to coach-check's schema errors."""
-    review, errs = Path(review), []
+    from .review_progress import errors as progress_errors
+    review = Path(review)
+    errs = progress_errors(review)
     for p in sorted(review.glob("part*.json")):
         try:
             poss = [x for x in _part_possessions(p) if isinstance(x, dict) and "pid" in x]
@@ -360,9 +365,10 @@ def part_coverage(review: Path, max_gap: float = MAX_GAP) -> list[str]:
 # are recorded as skipped and do not block.
 GATE = {"pts_recall": 0.8, "pts_precision": 0.8}
 # metric, higher is better: compared with the previous eval entry and printed as a warning when it got worse
-TRACKED = [("us", "pts_recall", True), ("us", "pts_precision", True), ("them", "pts_recall", True),
-           ("them", "pts_precision", True), ("us", "player_pts_abs_err", False), ("us", "player_pf_abs_err", False),
-           (None, "invalid_result_share", False)]
+TRACKED = [(side, key, up) for side in ("us", "them") for key, up in
+           (("pts_recall", True), ("pts_precision", True), ("player_pts_abs_err", False),
+            ("player_pf_abs_err", False), ("unattributed_pts", False), ("team_pts_abs_err", False),
+            ("fouls_abs_err", False))] + [(None, "invalid_result_share", False)]
 
 
 def gate(facts: dict) -> dict:
@@ -386,8 +392,14 @@ def regressions(prev: dict | None, cur: dict) -> list[str]:
     for side, k, up in TRACKED:
         a = (prev.get(side, {}) if side else prev).get(k)
         b = (cur.get(side, {}) if side else cur).get(k)
-        if isinstance(a, (int, float)) and isinstance(b, (int, float)) and (b < a if up else b > a):
+        if isinstance(a, (int, float)) and (not isinstance(b, (int, float)) or (b < a if up else b > a)):
             out.append(f"{side + ' ' if side else ''}{k} {a} -> {b}")
+    for side in ("us", "them"):
+        for kind in ("shots", "fts"):
+            a = prev.get(side, {}).get("events_matched", {}).get(kind)
+            b = cur.get(side, {}).get("events_matched", {}).get(kind)
+            if isinstance(a, (int, float)) and (not isinstance(b, (int, float)) or b < a):
+                out.append(f"{side} events_matched.{kind} {a} -> {b}")
     return out
 
 
@@ -417,6 +429,7 @@ def main(argv=None):
                                        "(the numbered conclusion items are linted)")
     ap.add_argument("--label", required=True)
     ap.add_argument("--gate", action="store_true", help="exit 1 when a GATE threshold fails (the run step uses this)")
+    ap.add_argument("--baseline", help="baseline review directory; with --gate also reject metric regressions")
     a = ap.parse_args(argv)
     review = Path(a.review)
     off = Path(a.official) if a.official else review.parent / "official.json"
@@ -428,6 +441,20 @@ def main(argv=None):
     prev = previous_eval(out)
     res["previous"] = prev.get("label") if prev else None
     res["regressions"] = regressions(prev.get("facts") if prev else None, res["facts"])
+    if a.baseline:
+        from .coach_schema import validate_part
+        baseline = Path(a.baseline)
+        comparison_errors = []
+        for folder in (baseline, review):
+            files = list(folder.glob("coach_part*.json"))
+            if not files:
+                comparison_errors.append(f"{folder}: no coach parts")
+            comparison_errors.extend(f"{folder.name}/{p.name}: {e}" for p in files for e in validate_part(p))
+            comparison_errors.extend(f"{folder.name}: {e}" for e in part_coverage(folder))
+        base_facts = facts_eval(load_trips(baseline), json.loads(off.read_text(encoding="utf8")))
+        comparison_errors.extend(regressions(base_facts, res["facts"]))
+        res["baseline"] = {"review": str(baseline.resolve()), "facts": base_facts,
+                           "pass": not comparison_errors, "failed": comparison_errors}
     if a.insights:
         if a.insights.endswith(".json"):
             items = json.loads(Path(a.insights).read_text(encoding="utf8"))
@@ -452,6 +479,12 @@ def main(argv=None):
         print(f"  not computed: {x}")
     for x in res["regressions"]:
         print(f"WARNING: worse than the previous eval ({res['previous']}): {x}")
+    if a.baseline:
+        print(f"baseline comparison: {'PASS' if res['baseline']['pass'] else 'FAIL'}")
+        for x in res["baseline"]["failed"]:
+            print(f"  FAIL {x}")
+        if a.gate and not res["baseline"]["pass"]:
+            sys.exit("coach-eval: baseline comparison failed; inspect the film and roster conflicts before promotion")
     if a.gate and not g["pass"]:
         sys.exit("coach-eval: the review misses or invents too many points; fix the trips (re-review the parts "
                  "around the unmatched official events, or `coach-sheets event` + `event-merge`), then run again")
