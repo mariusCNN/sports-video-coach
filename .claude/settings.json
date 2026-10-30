@@ -1,4 +1,7 @@
 {
   "bashOutputMaxChars": 12000,
-  "autoCompactWindow": 200000
+  "autoCompactWindow": 200000,
+  "env": {
+    "MCP_TOOL_TIMEOUT": "180000"
+  }
 }

@@ -4,7 +4,21 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Changed
+
+- The run asks for the film scripts in the same stop as the narration scripts (both follow the READMEs, not QA),
+  so they can be written at once; publish now waits for them, and the film still renders last.
+- The tracks step reuses the jersey-colour clusters of the montage pass (`run/clusters.npz`), so the team
+  labels match the clusters that were named and the second UMAP + KMeans pass is skipped.
+- QA runs `page-check --strict --write-qa` before the browser check; a browser call that times out counts as not
+  checked. The project settings cap an MCP tool call at 3 minutes (`MCP_TOOL_TIMEOUT`).
+
 ### Added
+
+- `<unit>/.hoop-timing.jsonl`: every run that is not `--dry` logs start and end of each command step and, for
+  agent steps, when they were asked for and how long until they passed.
+- `coach-check --part N` shows only that part's errors, so a film-review helper can check its part while the
+  others are still writing. The brief tells reviewers never to put JSON or notes inside a shell string.
 
 - Film review now resumes from per-part sheet ledgers: saved JSON checkpoints precede read acknowledgements,
   changed inputs become pending again, and new reviews cannot pass `coach-check` with unread sheets.

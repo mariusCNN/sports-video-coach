@@ -519,7 +519,7 @@ def test_progress_matches_only_same_kind(tmp_path):
 def test_move_steps_order():
     from hoop_tape_miner import move_run as MR
     assert MR.NAMES == ["video", "scan", "who", "sheets", "labels", "review", "summary", "report", "clips", "listen-script",
-                        "narrate", "html", "qa", "publish", "film-script", "film"]
+                        "film-script", "narrate", "html", "qa", "publish", "film"]
 
 
 def test_move_driver_skips_labels_without_side_view(tmp_path, monkeypatch, capsys):

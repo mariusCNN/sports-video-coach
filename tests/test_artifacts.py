@@ -31,8 +31,8 @@ def tail_names(g) -> list[str]:
 
 def test_default_is_every_artifact_in_order(tmp_path, ws):
     assert artifacts.selected(unit(tmp_path, {})) == artifacts.NAMES
-    assert tail_names(unit(tmp_path, {})) == ["clips", "listen-script", "narrate", "html", "qa", "publish",
-                                              "film-script", "film"]
+    assert tail_names(unit(tmp_path, {})) == ["clips", "listen-script", "film-script", "narrate", "html",
+                                              "qa", "publish", "film"]
 
 
 def test_html_keeps_qa_and_clips_and_drops_the_rest(tmp_path, ws):
@@ -44,7 +44,7 @@ def test_html_keeps_qa_and_clips_and_drops_the_rest(tmp_path, ws):
 def test_film_keeps_clips(tmp_path, ws):
     g = unit(tmp_path, {"artifacts": ["html", "film"]})  # the example the docs give
     assert artifacts.selected(g) == ("clips", "html", "qa", "film")
-    assert tail_names(g) == ["clips", "html", "qa", "film-script", "film"]
+    assert tail_names(g) == ["clips", "film-script", "html", "qa", "film"]
     assert artifacts.check(["film"]) == ("clips", "film")
 
 

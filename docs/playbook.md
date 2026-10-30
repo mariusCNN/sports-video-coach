@@ -43,11 +43,11 @@ Steps in order (agent steps marked *):
 | momentum, load, matchups | 8 |
 | facts* | 9 |
 | reports*, clips, posters | 10 |
-| listen-script*, narrate | 11 |
+| listen-script* + film-script* (one stop asks for both: write them at once), narrate | 11, 15 |
 | html | 12 |
 | qa* | 13 |
 | publish (only with `--publish`) | 14 |
-| film-script*, film | 15 |
+| film | 15 |
 
 ball-track, rim-scan, shot-proposals, load, matchups and posters add layers to sheets and pages; a game whose sheets (or pages) already exist skips them.
 
@@ -329,7 +329,7 @@ With `$RUN/load.json` / `$RUN/matchups.json` (step 8) the pages also get, at the
 
 ## 13. QA via the browser-check subagent
 
-Ask it (text result only, at most 10 lines) to serve `$G` over http and check, for each `index.html` and each language: title and score band correct, every image loads, audio plays and its length label matches, every clip plays and the slow-mo button works, shot chart zones, filters and zone tap work and a shot chip plays its clip, each playlist plays and moves to the next clip, tables do not overflow at 390 px width, no console errors, no dead links, no local paths visible. Fix and re-render until it passes, then write `$G/qa.md` with `PASS` as its first word and the line `checked: <stamp>` that `run` printed when it stopped at QA (the run waits for both). The stamp covers the pages, READMEs, audio and clips of both reports: any edit after QA changes it, and the run asks for QA again before anything is published.
+First run `sports-video-coach page-check --strict --write-qa "$G"` (links, anchors, media, page text; seconds, no browser) and fix what it finds, so the browser check starts on a page that already passes the static checks. Then ask it (text result only, at most 10 lines) to serve `$G` over http and check, for each `index.html` and each language: title and score band correct, every image loads, audio plays and its length label matches, every clip plays and the slow-mo button works, shot chart zones, filters and zone tap work and a shot chip plays its clip, each playlist plays and moves to the next clip, tables do not overflow at 390 px width, no console errors, no dead links, no local paths visible. A browser call that times out counts as not checked, never as passed: say so in `qa.md` and check it again. Fix and re-render until it passes, then write `$G/qa.md` with `PASS` as its first word and the line `checked: <stamp>` that `run` printed when it stopped at QA (the run waits for both). The stamp covers the pages, READMEs, audio and clips of both reports: any edit after QA changes it, and the run asks for QA again before anything is published.
 
 ## 14. Publish the pages
 
@@ -337,7 +337,7 @@ Ask it (text result only, at most 10 lines) to serve `$G` over http and check, f
 uv run hoop-tape-miner publish "$G" "$G/player-<N>" --deploy [--project <name>]   # --project only the first time
 ```
 
-(`run --publish` does this.) Then have the browser-check subagent spot-check the live URLs.
+(`run --publish` does this.) Then have the browser-check subagent spot-check the live URLs, the hub included: every link opens, and the zh / en switch works on the hub and on each page.
 
 - Each folder keeps the same random URL across updates: after any edit, publish again and the link already sent shows the new version. Links are stored in `workspace/publish.json`.
 - Team reports are also listed on a hub page (its link is printed); send the hub once and new games appear on it. `player-<N>` reports are only reachable through their own link: send each one only to that player.
@@ -350,6 +350,8 @@ uv run hoop-tape-miner publish "$G" "$G/player-<N>" --deploy [--project <name>] 
 Reply to the user with: the hub link, the team page link, the focus player's link (and who gets it).
 
 ## 15. Explained video
+
+The run asks for the film scripts in the same stop as the narration scripts (section 11): both follow the finished READMEs, not QA, so write them at the same time (one helper per script). The film itself renders after publish. A README edited during QA makes both scripts wait as out of date.
 
 Write `film.<lang>.md` for each language from the finished team report following `prompts/film.md` (scenes: clips with freeze frames that ring the players, court diagrams in `plays/*.json` for the plan, stat scenes, figures, short chapter cards; the narration is written for what is on screen). Check new clip windows and freeze moments on a contact sheet first. Then:
 
@@ -410,9 +412,9 @@ uv run hoop-tape-miner train workspace/players/7/training/<date> > workspace/log
 | film-review* | 5 |
 | summary | 6 |
 | report*, clips | 7 |
-| listen-script*, narrate, html, qa* | 8 |
+| listen-script* + film-script* (one stop), narrate, html, qa* | 8, 10 |
 | publish (only with `--publish`) | 9 |
-| film-script*, film | 10 |
+| film | 10 |
 
 **Training step 1: record.** Phone on a tripod (or a fence), landscape, still for the whole session. The rim and the player's whole body in frame, side-on or from behind the shooter at about 45°; one player in frame. Several files are fine; they are joined in the given order. Say what you meant to train in `--plan`.
 
@@ -487,9 +489,9 @@ uv run hoop-tape-miner move workspace/players/7/movement/<date> > workspace/logs
 | review* | 5 |
 | summary | 6 |
 | report*, clips | 7 |
-| listen-script*, narrate, html, qa* | 8 |
+| listen-script* + film-script* (one stop), narrate, html, qa* | 8, 10 |
 | publish (only with `--publish`) | 9 |
-| film-script*, film | 10 |
+| film | 10 |
 
 **Movement step 1: film (the protocol).** Numbers need a **side view**: phone on a tripod at hip height, landscape, locked, 8-10 m from the lane and perpendicular to it; 240 fps slow motion (120 at least; contact times are shown only at >= 100 real fps); tape marks every 1-5 m for scale; nobody crossing the frame. Clips: 3 x 20 m sprints from a 2-point start (`sprint`), 3 x full-court speed dribble each hand (`dribble-sprint`), 6 layups each side at game speed (`layup`, side or 45°), 3 x sprint-to-stop (`decel`), one easy jog (`run`). A front or behind view is optional (knee-in, base width, arm crossing). Same spot, shoes and floor at every re-test. Full protocol and the re-test battery: `prompts/movement_kb.md`.
 

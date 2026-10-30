@@ -146,6 +146,20 @@ def test_coach_check_cli_and_migrate(tmp_path, capsys):
     assert "ok" in capsys.readouterr().out.lower()
 
 
+def test_coach_check_part_shows_only_that_parts_errors(tmp_path, capsys):
+    d = tmp_path / "review"
+    write_review(d, [v2()], part=1)
+    write_review(d, [{"pid": 1, "result": "made2"}], part=2)        # broken
+    (d / "part3.json").write_text(json.dumps([{"pid": 1, "start": 5, "end": 9}]), encoding="utf8")  # not written yet
+    S.main(["--review", str(d), "--part", "1"])
+    assert "ok" in capsys.readouterr().out
+    with pytest.raises(SystemExit):
+        S.main(["--review", str(d), "--part", "2"])
+    said = capsys.readouterr().out
+    assert "coach_part2.json" in said and "coach_part3.json" not in said
+    assert S.part_errors(["coach_part12.json: x", "part1.json: y", "no part"], 1) == ["part1.json: y", "no part"]
+
+
 def test_migrate_brings_the_sheets_the_manifest_lists(tmp_path):
     # the critic re-opens sheets by their manifest path inside the review folder, so a migrated folder needs them;
     # older manifests list paths relative to the game folder ("run1/review_v1/p001_0.jpg") with the file next to it

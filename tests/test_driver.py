@@ -328,7 +328,7 @@ def test_game_status_does_not_write(game, capsys):
 
 def test_session_tables_share_the_tail_and_train_sheets_is_not_tracked():
     from hoop_tape_miner import move_run, train_run
-    tail = ["clips", "listen-script", "narrate", "html", "qa", "publish", "film-script", "film"]
+    tail = ["clips", "listen-script", "film-script", "narrate", "html", "qa", "publish", "film"]
     by = {s.name: s for s in train_run.TRAIN_STEPS}
     assert by["sheets"].inputs is None and by["summary"].inputs and by["scan"].inputs
     assert train_run.NAMES[-8:] == tail and move_run.NAMES[-8:] == tail
@@ -512,3 +512,47 @@ def test_film_script_with_an_unknown_scene_prefix_waits_before_the_film_render(u
     script.write_text(script.read_text(encoding="utf8").replace("reel:9 12", "stats:9 罚球 | 12 犯规"), encoding="utf8")
     assert P.drive(Unit.load(unit), [step]) == 0
     assert "unknown scene prefix" not in capsys.readouterr().out
+
+
+def test_a_together_step_is_asked_for_in_the_same_stop(unit, capsys):
+    one, two = unit / "one.md", unit / "two.md"
+    s = [P.Step("one", "agent", lambda g: one.exists(), how="write one"),
+         P.Step("mid", "cmd", made("mid"), lambda g: [["mid"]]),
+         P.Step("two", "agent", lambda g: two.exists(), how="write two", together="one")]
+    r = Runner(unit)
+    assert P.drive(Unit.load(unit), s, runner=r) == P.WAITING and r.calls == []
+    said = capsys.readouterr().out
+    assert "waiting for the agent: one" in said and "write it alongside one): two" in said
+    one.write_text("x", encoding="utf8"), two.write_text("x", encoding="utf8")
+    assert P.drive(Unit.load(unit), s, runner=r) == 0 and r.calls == [["mid"]]
+
+
+def test_a_together_step_already_written_is_not_asked_again(unit, capsys):
+    one, two = unit / "one.md", unit / "two.md"
+    two.write_text("x", encoding="utf8")
+    s = [P.Step("one", "agent", lambda g: one.exists(), how="write one"),
+         P.Step("two", "agent", lambda g: two.exists(), how="write two", together="one")]
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    assert "alongside" not in capsys.readouterr().out
+
+
+def test_timing_log_times_commands_and_agent_waits(unit):
+    out = unit / "script.md"
+    s = [P.Step("a", "cmd", made("a"), lambda g: [["a"]]),
+         P.Step("script", "agent", lambda g: out.exists(), how="write it")]
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == P.WAITING
+    out.write_text("x", encoding="utf8")
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0
+    log = [json.loads(x) for x in (unit / P.TIMING).read_text(encoding="utf8").splitlines()]
+    assert [(e["step"], e["event"]) for e in log] == [("a", "start"), ("a", "done"), ("script", "waiting"),
+                                                      ("script", "passed")]
+    assert isinstance(log[1]["secs"], int) and isinstance(log[3]["secs"], int)
+    assert "asked" not in json.loads((unit / P.STORE).read_text(encoding="utf8")).get("notes", {})
+    assert P.drive(Unit.load(unit), s, runner=Runner(unit)) == 0     # a passing step is logged once
+    assert len((unit / P.TIMING).read_text(encoding="utf8").splitlines()) == 4
+
+
+def test_dry_runs_leave_no_timing_log(unit):
+    s = [P.Step("a", "cmd", made("a"), lambda g: [["a"]]), P.Step("w", "agent", lambda g: False, how="x")]
+    P.drive(Unit.load(unit), s, dry=True, runner=Runner(unit))
+    assert not (unit / P.TIMING).exists()

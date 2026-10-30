@@ -64,3 +64,15 @@ def test_two_teams_tracked_jointly_get_their_own_team():
 def test_unknown_tracking_mode_fails():
     with pytest.raises(ValueError):
         bt.track_people(_frame(_walker()), TEAMS, fps=10, mode="nope")
+
+
+def test_montage_clusters_are_reused_until_the_embeddings_or_rows_change(tmp_path):
+    np.savez(tmp_path / "embeddings.npz", idx=np.arange(4), emb=np.zeros((4, 2)))
+    idx = pd.Index([0, 1, 2, 3])
+    assert bt.cached_clusters(tmp_path, idx, 0) is None
+    bt.save_clusters(tmp_path, idx, np.array([1, 0, 1, 2]), 0)
+    assert bt.cached_clusters(tmp_path, idx, 0).tolist() == [1, 0, 1, 2]
+    assert bt.cached_clusters(tmp_path, pd.Index([0, 1, 2, 5]), 0) is None   # other rows
+    assert bt.cached_clusters(tmp_path, idx, 1) is None                       # other seed
+    np.savez(tmp_path / "embeddings.npz", idx=np.arange(5), emb=np.zeros((5, 2)))
+    assert bt.cached_clusters(tmp_path, idx, 0) is None                       # a new embed

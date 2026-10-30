@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -31,6 +32,32 @@ def team_map(labels, us: str | None) -> dict[str, str]:
     if us not in teams or len(others) != 1:
         raise SystemExit(f"--us {us!r} must be one of exactly two team labels in cluster_names.json, got {teams}")
     return {us: "us", others[0]: "them", "ref": "ref"}
+
+
+CLUSTERS = "clusters.npz"   # the montage pass's KMeans labels, so `tracks` reuses the clusters the human named
+
+
+def _cluster_key(run: Path, idx, seed: int) -> str:
+    """embeddings.npz size + mtime, the detection rows clustered and the seed: any change means cluster again."""
+    st = (run / "embeddings.npz").stat()
+    rows = np.ascontiguousarray(np.asarray(idx, dtype=np.int64))
+    return f"{st.st_size}:{st.st_mtime_ns}:{seed}:{hashlib.sha256(rows.tobytes()).hexdigest()}"
+
+
+def cached_clusters(run: Path, idx, seed: int) -> np.ndarray | None:
+    """The labels saved by the montage pass when they were made from these embeddings and rows, else None."""
+    path = run / CLUSTERS
+    try:
+        with np.load(path) as z:
+            if str(z["key"]) == _cluster_key(run, idx, seed) and len(z["labels"]) == len(idx):
+                return z["labels"]
+    except (OSError, KeyError, ValueError):
+        pass
+    return None
+
+
+def save_clusters(run: Path, idx, labels: np.ndarray, seed: int) -> None:
+    np.savez(run / CLUSTERS, key=np.array(_cluster_key(run, idx, seed)), labels=np.asarray(labels))
 
 
 def write_cluster_montage(p: pd.DataFrame, path: Path, video: str, n=16):
@@ -70,20 +97,23 @@ def classify_colours(p: pd.DataFrame, run: Path, video: str, seed=0) -> pd.DataF
     pos = pd.Series(np.arange(len(e["idx"])), index=e["idx"])
     X = e["emb"][pos.loc[p.index].to_numpy()].astype(np.float32)
     X /= np.linalg.norm(X, axis=1, keepdims=True)
-    rng = np.random.default_rng(seed)
-    sub = rng.choice(len(X), min(20000, len(X)), replace=False)
-    red = umap.UMAP(n_components=3, random_state=seed).fit(X[sub])
-    Z = red.transform(X)
-    k = 6
-    km = KMeans(k, n_init=10, random_state=seed).fit(Z)
+    labels = cached_clusters(run, p.index, seed)
+    if labels is None:
+        rng = np.random.default_rng(seed)
+        sub = rng.choice(len(X), min(20000, len(X)), replace=False)
+        red = umap.UMAP(n_components=3, random_state=seed).fit(X[sub])
+        Z = red.transform(X)
+        k = 6
+        labels = KMeans(k, n_init=10, random_state=seed).fit(Z).labels_
+        save_clusters(run, p.index, labels, seed)
     lab_file = run / "cluster_names.json"
     if not lab_file.exists():
-        write_cluster_montage(p.assign(clu=km.labels_), run / "cluster_montage.jpg", video)
+        write_cluster_montage(p.assign(clu=labels), run / "cluster_montage.jpg", video)
         raise SystemExit(f"Inspect {run / 'cluster_montage.jpg'} and write {lab_file} as "
                          '{"0": "us", "1": "them", "2": "ref", "3": "unk", ...} (jersey colour words such as '
                          '"red" / "white" work too, with --us <colour>), then re-run.')
     names = {int(c): n for c, n in json.loads(lab_file.read_text()).items()}
-    y = np.array([names[l] for l in km.labels_])
+    y = np.array([names[l] for l in labels])
     conf = y != "unk"
     clf = LogisticRegression(max_iter=2000, C=1.0).fit(X[conf], y[conf])
     prob = clf.predict_proba(X)
