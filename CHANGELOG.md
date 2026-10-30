@@ -42,6 +42,7 @@ All notable changes to this project are documented here. The format follows [Kee
   experiments reviewable. Mixed first-diagnostic results and setup are documented in `docs/perception-lab.md`.
 - English/Chinese README capability tables, a complete feature/command catalog and `llms.txt` agent navigation.
 - Installation examples and agent setup hints now pin the tested implementation containing the perception adapters.
+  The pin now also includes START.md, `serve` and the other round-2 fixes, so the one-prompt start installs them.
 - Optional OpenHoopVision basketball perception backend with finalized JSONL import, shot/pass/dribble/rebound/
   possession-change candidates, OCR and identity evidence, existing FIBA calibration projection, review conflicts,
   bilingual validation cards, source clips, an annotated validation reel and independent labelled-window

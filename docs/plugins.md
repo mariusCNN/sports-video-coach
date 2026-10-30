@@ -230,7 +230,7 @@ After `uv tool install` the tool's environment has no pytest (and a plain `uv ru
 project), so it runs in a throwaway environment on the commit you installed (the one below is the pinned install):
 
 ```bash
-uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a pytest workspace/plugins/tennis
+uv run --isolated --no-project --with pytest --with sports-video-coach@git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a pytest workspace/plugins/tennis
 ```
 
 In a clone: `uv run pytest workspace/plugins/tennis` (or the folder you gave `--dir`); `uv sync --no-group basketball` is enough.

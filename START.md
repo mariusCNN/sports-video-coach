@@ -61,7 +61,7 @@ Send one message, then wait for the reply. It holds:
    Then the tool itself, pinned to a tested commit (skip it if `sports-video-coach --help` worked):
 
    ```bash
-   uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a
+   uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
    ```
 
 4. **Questions, only those the prompt and the video do not answer:** the video path(s) if none was given; the
@@ -149,7 +149,7 @@ Ask which of these they want, if any:
 - **Basketball, deeper (heavy install):** per-rep shooting session pages (`hoop-tape-miner train`) and movement
   reviews of running, layups and stops with a training, fuel and recovery plan (`hoop-tape-miner move`) need the
   tracking install: Windows or Linux with an NVIDIA GPU and several GB of downloads. In this clone:
-  `git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`, then `uv sync`, then prefix commands with `uv run`
+  `git checkout 74b517fc410944fefeac2979810656ed77fb8f1a`, then `uv sync`, then prefix commands with `uv run`
   and follow `docs/playbook.md` ("Personal training sessions", "Movement sessions"). Show these commands and wait
   for the yes, as in step 2.
 

@@ -15,10 +15,10 @@ A user who pasted the one prompt ("clone ... and follow its START.md"): follow `
 the steps below from a machine with nothing installed.
 
 - `sports-video-coach --help` works: skip this.
-- Otherwise: `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
+- Otherwise: `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
   (needs `uv` and `ffmpeg`).
 - Basketball tracking or writing a plugin: `git clone https://github.com/mariusDing/sports-video-coach`, then in it
-  `git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a` and `uv sync`, and prefix every command with `uv run`.
+  `git checkout 74b517fc410944fefeac2979810656ed77fb8f1a` and `uv sync`, and prefix every command with `uv run`.
   Then read its `AGENTS.md`.
 - Show the user the exact install command first and run it only after they say yes.
 - The user only wants to see what it makes: `sports-video-coach demo` (about 30 s, a drawn video, no agent work),
