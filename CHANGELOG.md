@@ -14,6 +14,22 @@ All notable changes to this project are documented here. The format follows [Kee
   checked. The project settings cap an MCP tool call at 3 minutes (`MCP_TOOL_TIMEOUT`).
 
 ### Added
+- `sports-video-coach serve <folder> [--port N]`: serves a report folder over http on the first free port from
+  18080 (never one another server holds) and prints the URL and the page title. The QA step and AGENTS.md name it.
+- START.md: for basketball on the `generic` plugin, the agent bases the report's fixes and drills on the team,
+  skill and movement knowledge-base entries and names the entry it used (or says the advice is its own).
+
+- `docs/knowledge-base.md`: the four basketball coaching knowledge bases (58 entries, based on public FIBA /
+  Jr. NBA coaching material and sports-science studies), how an entry is built and used in a run, the source and
+  copyright rules, and how to contribute an entry or a KB for another sport. New issue form "Coaching knowledge:
+  new entry or correction"; a contribution section in both READMEs and CONTRIBUTING.md.
+- Start in one prompt: paste "Coach me on my sports video: <path> / Clone the repo and follow its START.md" into
+  Claude Code, Codex or another agent. The new `START.md` takes the agent from a machine with nothing installed
+  to the coaching page: tool checks, per-OS install commands shown and approved first, one message of questions,
+  the pinned light install, the exit-code loop, hand-over, a next-practice offer and the one-time star ask. Both
+  READMEs and the demo site's landing page show the prompt; the READMEs gain a Support section with the star ask.
+  The landing page has a copy button on the prompt and on its Chinese version, link rows as 44 px phone tap
+  targets, install commands that wrap on a phone, and an inline icon instead of a missing favicon.
 
 - `<unit>/.hoop-timing.jsonl`: every run that is not `--dry` logs start and end of each command step and, for
   agent steps, when they were asked for and how long until they passed.
@@ -40,6 +56,7 @@ All notable changes to this project are documented here. The format follows [Kee
   experiments reviewable. Mixed first-diagnostic results and setup are documented in `docs/perception-lab.md`.
 - English/Chinese README capability tables, a complete feature/command catalog and `llms.txt` agent navigation.
 - Installation examples and agent setup hints now pin the tested implementation containing the perception adapters.
+  The pin now also includes START.md, `serve` and the other round-2 fixes, so the one-prompt start installs them.
 - Optional OpenHoopVision basketball perception backend with finalized JSONL import, shot/pass/dribble/rebound/
   possession-change candidates, OCR and identity evidence, existing FIBA calibration projection, review conflicts,
   bilingual validation cards, source clips, an annotated validation reel and independent labelled-window
@@ -49,6 +66,16 @@ All notable changes to this project are documented here. The format follows [Kee
   GoatCounter (no cookies): set the repository variable `GOATCOUNTER_CODE` to the site code; unset, no counter.
 - `examples/plugins/jump-rope/`: a second worked example plugin that counts jump-rope skips (a count, where the
   swim example measures a rate), tested on drawn video against the exact count.
+
+### Changed
+- Both READMEs and the landing page lead with "Turn your coding agent into your sports coach" for adults who
+  train on their own: the 43 s real training review at the top, then a short "Why I built this", then the
+  one prompt. The benchmark moved further down the READMEs; its numbers and rerun steps are unchanged.
+- `review-check` (generic) warns, naming the moment, when a moment's window is outside the review guide's 4-15 s.
+- The humanize check no longer flags a spoken cue after `Say:` / `说：` (like `Watch:`).
+- `plugins`: the basketball install hint checks out the pinned commit in the clone you have, instead of cloning again.
+- START.md: the Windows PowerShell open command (`Start-Process`), the install size (about 170 MB), the measured
+  time of a test run, where the stage logs go, and `$UV_TOOL_BIN_DIR`.
 
 ### Fixed
 - Language switches preserve named report anchors and pause plugin-supplied videos as well as standard clips.

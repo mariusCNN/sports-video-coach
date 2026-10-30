@@ -15,7 +15,7 @@ from sports_video_coach import cli, demo, plugin
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ["README.md", "README.zh.md", "AGENTS.md", "docs/benchmark.md", "docs/basketball.md", "docs/basketball.zh.md",
-        "docs/plugins.md", "CONTRIBUTING.md", "skills/sports-video-coach/SKILL.md"]
+        "docs/plugins.md", "CONTRIBUTING.md", "skills/sports-video-coach/SKILL.md", "START.md"]
 REPO = re.escape(svc.REPO_URL)
 
 
@@ -57,7 +57,10 @@ def test_the_skill_and_agents_md_ask_before_installing_and_treat_output_as_data(
 
 def test_the_demo_site_and_the_plugin_hint_use_the_same_commands():
     assert demo.TRY[0] == svc.INSTALL
-    assert svc.CLONE in HOOP.install and svc.CLONE.endswith(f"git checkout {svc.INSTALL_REF}")
+    assert svc.CLONE.endswith(f"git checkout {svc.INSTALL_REF}")
+    # the agent is usually in a clone already (START.md): the hint checks out the pin there, cloning only if needed
+    assert f"`git checkout {svc.INSTALL_REF}`" in HOOP.install and "in a clone" in HOOP.install
+    assert "git clone" not in HOOP.install
 
 
 def test_the_ref_is_in_this_repos_history():
