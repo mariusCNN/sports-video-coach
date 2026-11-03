@@ -5,6 +5,9 @@
 
 ## Start here
 
+- [START.md](START.md): the step-by-step path for an agent whose user pasted the one prompt ("Coach me on my
+  sports video: <path>. Clone this repo and follow its START.md."): check tools, ask once, install pinned, run to
+  exit 0, hand over, next step, star ask.
 - [README](README.md): overview, demo, setup and limitations.
 - [Chinese README](README.zh.md): Chinese overview and setup.
 - [AGENTS.md](AGENTS.md): repository and runtime contract for coding agents.
@@ -33,6 +36,8 @@
 - [Architecture](docs/architecture.md): sport-independent core and plugin hooks.
 - [Plugins](docs/plugins.md): scaffolding and examples for new sports.
 - [Benchmark](docs/benchmark.md): synthetic film-review tasks with exact ground truth.
+- [Coaching knowledge base](docs/knowledge-base.md): the four basketball KBs (team, skill, movement, fuel and
+  recovery), entry structure, how runs cite them, source rules and how to contribute an entry or a sport KB.
 - [Privacy](docs/privacy.md): local workspace, model-provider boundaries and deliberate sharing.
 - [Contributing](CONTRIBUTING.md): tests, PR workflow and no real player data in public contributions.
 

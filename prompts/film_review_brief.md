@@ -98,7 +98,8 @@ Context:
 - If a live play crosses your part boundary, flag its time, team and unresolved outcome in your notes for the coordinator. Do not invent an ending or count a delayed official score as a second basket. The coordinator must reconcile boundary plays before accepting the combined review.
 - When a jersey number or a make is decisive and unreadable, you may crop and enlarge that tile (ffmpeg crop + 3x scale) into `{review_dir}/zoom/`; otherwise mark it "likely" or "unclear".
 - Do not read other parts' files and do not edit anything outside `{review_dir}`.
-- Before replying, run `uv run hoop-tape-miner coach-check --review {review_dir}` and fix every error it lists in your `coach_partN.json` (errors in other parts are not yours). The run is not done until your part passes.
+- Write JSON and notes with the file-writing tool, or with a Python script saved to a file. Never put JSON or note text inside a shell string (`bash -c`, `python -c`, `echo '...'`): an apostrophe in a note breaks the quoting.
+- Before replying, run `uv run hoop-tape-miner coach-check --review {review_dir} --part {part}` (only your part's errors) and fix every error it lists. The run is not done until your part passes.
 - Final reply: at most 8 lines: possessions and trips reviewed, our/their scoring plays found, fouls classified, the coach-check line for your part, 3 headline findings.
 
 ## Fact-check pass with event sheets (separate reviewer, after the parts)

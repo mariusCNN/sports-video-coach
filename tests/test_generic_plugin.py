@@ -489,7 +489,7 @@ def test_review_parts_from_helpers_merge_into_review_json(analysis, video, capsy
     assert U.merge_parts(analysis) is None  # an existing review.json is never overwritten
     assert P.drive(analysis, U.STEPS, runner=lambda *a, **k: None) == P.WAITING  # on to the report
     out = capsys.readouterr().out
-    assert "[run] review-check: OK, 3 moments\n[run] waiting for the agent: report" in out
+    assert "[run] review-check: OK, 3 moments\n" in out and "\n[run] waiting for the agent: report" in out
 
 
 def test_sport_zh_names_the_sport_on_the_zh_page(tmp_path, video, capsys):
@@ -602,3 +602,17 @@ def test_new_says_where_the_unit_date_came_from(video, tmp_path, monkeypatch, ca
 def test_delegating_the_review_is_advised_only_for_more_than_10_sheets(analysis):
     review = next(s for s in U.STEPS if s.name == "review")
     assert "More than 10 sheets: delegate" in analysis.fill(review.how)
+
+
+def test_review_check_warns_about_a_window_outside_4_to_15_s(analysis):
+    """The review guide asks for a 4-15 s window per moment; a longer one passes with a warning naming it."""
+    analysis.review.mkdir(parents=True)
+    m = {"what": "shot", "why": "late set"}
+    moments = [{**m, "start": "00:01", "end": "00:06"}, {**m, "start": "00:05", "end": "00:31"},
+               {**m, "start": "00:40", "end": "00:42"}]
+    (analysis.review / "review.json").write_text(json.dumps({"summary": "s", "moments": moments}), encoding="utf8")
+    assert U.review_errors(analysis) == []
+    lines = U.review_ok(analysis).splitlines()
+    assert lines[0] == "review-check: OK, 3 moments" and len(lines) == 3
+    assert lines[1].startswith("warning: moment 2 (00:05-00:31) is 26 s") and "4-15 s" in lines[1]
+    assert lines[2].startswith("warning: moment 3 (00:40-00:42) is 2 s")

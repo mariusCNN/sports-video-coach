@@ -1,0 +1,76 @@
+name: "Coaching knowledge: new entry or correction"
+description: Add a coaching entry (any sport) or correct one in the knowledge base. Coaches who do not write code are welcome.
+title: "[KB]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        How entries are built and how they are used: [docs/knowledge-base.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md).
+        Write in your own words and cite a source. **No copied pages, PDFs or images from manuals, and no real players (names, photos, frames).**
+  - type: input
+    id: sport
+    attributes:
+      label: Sport
+      placeholder: basketball, tennis, running, ...
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: New entry or correction
+      options:
+        - New entry
+        - Correction to an existing entry
+        - A first knowledge base for a new sport
+    validations:
+      required: true
+  - type: input
+    id: slug
+    attributes:
+      label: Entry
+      description: The slug to correct (e.g. KB-arc-short-long, MV-landing), or a short name for a new one.
+    validations:
+      required: true
+  - type: textarea
+    id: entry
+    attributes:
+      label: The entry or the change
+      description: For a new entry, fill in what you can; we can help with the rest.
+      value: |
+        Symptom (what you see on film):
+        Why it happens:
+        What to check on film (and from which camera view):
+        Cue:
+        Drill (sets x reps, setup):
+        Target to check next time:
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: Manual title, edition and page, or a link to the study (DOI, PubMed, publisher page). Several are fine.
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence
+    attributes:
+      label: Evidence level
+      options:
+        - Strong (position stand, consensus, several controlled studies or a meta-analysis agree)
+        - Moderate (a controlled trial, lab or observational studies)
+        - Expert opinion (coaching manuals, coaching websites)
+        - Our rule (my own practical choice; the source supports only the principle)
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you file
+      options:
+        - label: It is in my own words, with at most one short quote, and I cited the source.
+          required: true
+        - label: It contains no real player data (names, photos, frames, rosters).
+          required: true
+        - label: I would like to open the pull request myself.

@@ -8,10 +8,13 @@ Sports come as plugins. `generic` (built in) works for any sport with no compute
 first plugin, CLI `hoop-tape-miner`) adds tracking, league stats and a team / player workflow. Add your own with
 `sports-video-coach new-plugin <name>` (see `docs/plugins.md`).
 
+A user who pasted the one prompt (clone this repo and follow `START.md`): follow [START.md](START.md), the
+step-by-step path from nothing installed to the deliverables; it applies the rules below.
+
 ## The run loop (every plugin)
 
-1. Install: `uv tool install git+https://github.com/mariusDing/sports-video-coach@6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`
-   (light, ffmpeg on PATH), or in a clone checked out at that commit (`git checkout 6845ffe9ddbfb79b8a52a5087ac26f566ef1fb4a`)
+1. Install: `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
+   (light, ffmpeg on PATH), or in a clone checked out at that commit (`git checkout 74b517fc410944fefeac2979810656ed77fb8f1a`)
    `uv sync` and prefix every command with `uv run` (needed for basketball tracking). Show your user the exact
    command and wait for their OK before you install anything. Then
    `sports-video-coach plugins` lists the plugins, what each analyses and when to use it (`--json` for you).
@@ -56,7 +59,9 @@ league or no GPU goes to `generic` with `--sport basketball`.
   names a step, the files to write and a guide; do only that. Publish only when your user asked for `--publish`.
 - Every claim in a report must be seen in the film or come from a measured number. Never invent a result; write
   "unclear" or "likely" instead (in a Chinese report: 看不清 / 可能).
-- Browser checks and screenshots: delegate to a separate helper if available. No browser at all:
+- Browser checks and screenshots: delegate to a separate helper if available. Serve the folder with
+  `sports-video-coach serve <folder>` (a free port from 18080, `--port N` to start elsewhere; it prints the URL and
+  the page title: check the browser shows that title, since another server may hold a busy port). No browser at all:
   `sports-video-coach page-check --strict --write-qa <folder>` checks links, anchors, media and the text of the
   page and scripts (not layout or playback) and drafts `qa.md`, which says what was not checked.
 

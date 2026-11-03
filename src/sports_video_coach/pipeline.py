@@ -52,6 +52,7 @@ from . import langs as L
 WAITING = 3
 LANGS = ("zh", "en")  # the default report languages; langs.CODES lists every one the core knows
 STORE = ".hoop-steps.json"
+TIMING = ".hoop-timing.jsonl"  # one line per command start / end and agent stop / pass: where a unit's time goes
 SMALL = 1 << 20      # files below this size are signed by content, larger ones by size + mtime
 TEXT = (".md", ".txt", ".json", ".csv", ".yaml", ".yml")  # inputs whose whitespace does not count (agent `derives`)
 CONTROL = re.compile(r"[\x00-\x1f\x7f\x85\u2028\u2029]+")  # line breaks and other control characters
@@ -212,6 +213,8 @@ class Step:
     needs_all: bool = False                     # done only while every step before it is done (QA checks them)
     passed: Callable[[Unit], str] | None = None  # agent: the line a run prints when its output passes the check
     auto: Callable[[Unit], bool] | None = None  # agent: done by the run itself if it can (True: it tried; then rechecked)
+    together: str = ""                          # agent: asked for in the same stop as this earlier agent step (the
+                                                # two read the same finished files, so helpers write them at once)
 
 
 def newer(out: Path, *inputs: Path, slack: float = 2.0) -> bool:
@@ -424,6 +427,38 @@ def accept_step(step: Step, g: Unit, store: Store) -> None:
         store.steps[step.name] = dict(store.get(step.name) or {}, accepted=step.checks(g))
 
 
+def log_time(g: Unit, step: str, event: str, **extra) -> None:
+    """Append one line to the unit's timing log (TIMING); a log that cannot be written never stops the run."""
+    entry = dict(at=dt.datetime.now().isoformat(timespec="seconds"), step=step, event=event, **extra)
+    try:
+        with open(g.folder / TIMING, "a", encoding="utf8") as fh:
+            fh.write(json.dumps(entry) + "\n")
+    except OSError:
+        pass
+
+
+def asked(g: Unit, store: Store, step: str) -> None:
+    """An agent step the run stops for: log the stop, and note when it was first asked for (its wait is timed
+    from there to the run that finds it passing)."""
+    log_time(g, step, "waiting")
+    store.notes.setdefault("asked", {}).setdefault(step, dt.datetime.now().isoformat(timespec="seconds"))
+
+
+def answered(g: Unit, store: Store, step: str) -> bool:
+    """An agent step found passing: log how long since it was first asked for; False when it was not waiting."""
+    since = (store.notes.get("asked") or {}).pop(step, None)
+    if since is None:
+        return False
+    try:
+        secs = round((dt.datetime.now() - dt.datetime.fromisoformat(since)).total_seconds())
+    except ValueError:
+        secs = None
+    log_time(g, step, "passed", secs=secs, asked=since)
+    if not store.notes["asked"]:
+        del store.notes["asked"]
+    return True
+
+
 def adopt(steps: list[Step], g: Unit, store: Store) -> None:
     """Record every tracked step that passes its own check but has no record yet (a folder from before provenance),
     in order, so a later --redo makes its dependants stale. Saves the store when anything was added."""
@@ -624,7 +659,8 @@ def report_checks(g: Unit) -> list[str]:
 
 def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film_script_how: str,
                film_run: bool = False) -> list[Step]:
-    """The steps every driver ends with: clips -> narration -> page -> QA -> publish -> explained video.
+    """The steps every driver ends with: clips -> narration + film scripts (one stop) -> audio -> page -> QA
+    -> publish -> explained video render.
     `video` is what clips and the film cut from; film_run passes --run (games: the film draws the tracks)."""
     def film_args(g):
         return [["film", str(g.folder), "--video", str(video(g)), *(["--run", str(g.run)] if film_run else [])]]
@@ -637,6 +673,11 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              errors=lambda g: missing([d / f"listen.{l}.md" for d in g.reports() for l in g.langs], g),
              derives=lambda g: [(d / f"listen.{l}.md", [d / readme(l)]) for d in g.reports() for l in g.langs],
              checks=listen_checks),  # a wrong "about N minutes" is fixed before the TTS render, not after
+        # the film script follows the READMEs, not QA: asked for in the same stop as the narration scripts
+        Step("film-script", "agent", lambda g: not film_script_errors(g), how=film_script_how, artifact="film",
+             errors=film_script_errors,
+             derives=lambda g: [(g.folder / f"film.{l}.md", [d / readme(l) for d in g.reports()]) for l in g.langs],
+             checks=film_checks, together="listen-script"),
         Step("narrate", "cmd", listen_done, lambda g: [["narrate", str(d), "--lang", *g.langs] for d in g.reports()],
              inputs=lambda g: [d / f"listen.{l}.md" for d in g.reports() for l in g.langs], artifact="narration"),
         Step("html", "cmd", html_done, lambda g: [["html", str(d)] for d in g.reports()], inputs=html_inputs,
@@ -645,10 +686,6 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              checks=qa_checks, auto=qa_auto),
         Step("publish", "cmd", published, lambda g: [["publish", *map(str, g.reports()), "--deploy"]],
              artifact="publish"),
-        Step("film-script", "agent", lambda g: not film_script_errors(g), how=film_script_how, artifact="film",
-             errors=film_script_errors,
-             derives=lambda g: [(g.folder / f"film.{l}.md", [d / readme(l) for d in g.reports()]) for l in g.langs],
-             checks=film_checks),
         Step("film", "cmd", film_done, film_args, long=True,
              inputs=lambda g: [*(g.folder / f"film.{l}.md" for l in g.langs), video(g)], again=("--force",),
              artifact="film"),  # film keeps a language whose mp4 is newer than its script; a new video re-renders all
@@ -854,7 +891,7 @@ def walk(g: Unit, steps: list[Step], until: str | None, redo: str | None, publis
             stamp()
             stale = []
         if own and not why and not stale and s.name != redo:
-            if not dry and note_outputs(s, g, store):
+            if not dry and (note_outputs(s, g, store) | (s.kind == "agent" and answered(g, store, s.name))):
                 store.save()
             if s.passed and not dry:
                 print(f"[run] {s.passed(g)}")
@@ -875,6 +912,9 @@ def walk(g: Unit, steps: list[Step], until: str | None, redo: str | None, publis
                     for e in w[:12]:
                         print(f"[run]   {line(e)}")
                 names = [t.name for t, _ in waits]
+                if not dry:
+                    for t in names:
+                        asked(g, store, t)
                 print("[run] Fix those files (bring them in line with what changed), then run again.")
                 print(f"[run] Only a typo or wording fix, or they still hold as they are? "
                       f"`{run_hint(g, '--accept', *names)}` keeps them.")
@@ -891,7 +931,17 @@ def walk(g: Unit, steps: list[Step], until: str | None, redo: str | None, publis
             note = g.note(s.name, errs)
             if note:
                 print(f"[run] note: {line(note)}")
+            also = [t for t in steps[i + 1:] if t.kind == "agent" and t.together == s.name and not t.done(g)]
+            for t in also:  # independent of this step: one stop asks for both, so helpers write them at once
+                print(slash(f"[run] waiting for the agent too (write it alongside {s.name}): {t.name}\n"
+                            f"{g.fill(t.how)}"))
+                for e in (t.errors(g) if t.errors else [])[:12]:
+                    print(f"[run]   {line(e)}")
             print(DATA_NOTE.format(hint=run_hint(g)))
+            if not dry:
+                for t in (s, *also):
+                    asked(g, store, t.name)
+                store.save()
             stamp()
             return WAITING
         argvs = [[*a, *s.again] for a in s.args(g)] if own else s.args(g)
@@ -902,7 +952,11 @@ def walk(g: Unit, steps: list[Step], until: str | None, redo: str | None, publis
                 print(f"[dry] {s.name}: {shown(argv, g.PLUGIN)}")
             return 0
         stamp()   # before the stage: a failed one may have written part of its output
-        if not run_cmd(s, g, runner, argvs):
+        log_time(g, s.name, "start")
+        began = dt.datetime.now()
+        ok = run_cmd(s, g, runner, argvs)
+        log_time(g, s.name, "done" if ok else "failed", secs=round((dt.datetime.now() - began).total_seconds()))
+        if not ok:
             return 1
         g = type(g).load(g.folder)  # stages may have filled game.json
         if record(s, g, store):

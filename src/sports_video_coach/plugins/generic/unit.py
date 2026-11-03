@@ -142,10 +142,30 @@ def review_errors(g: Analysis) -> list[str]:
     return errs
 
 
+WINDOW_S = (4, 15)   # prompts/review.md: a moment's window, which becomes its clip
+
+
+def window_warnings(moments: list) -> list[str]:
+    """A warning per moment whose start-end window is outside WINDOW_S (it still passes: a long window only makes a
+    long clip), naming the moment."""
+    lo, hi = WINDOW_S
+    out = []
+    for i, m in enumerate(moments, 1):
+        try:
+            t0, t1 = seconds(m["start"]), seconds(m["end"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if t1 > t0 and not lo <= t1 - t0 <= hi:
+            out.append(f"warning: moment {i} ({m['start']}-{m['end']}) is {t1 - t0:.0f} s; the review guide asks for "
+                       f"a {lo}-{hi} s window (it becomes the clip): narrow it or split the moment")
+    return out
+
+
 def review_ok(g: Analysis) -> str:
-    """The line once review.json passes: 'review-check: OK, 7 moments'."""
+    """The line once review.json passes: 'review-check: OK, 7 moments', then a warning per moment whose window is
+    outside WINDOW_S."""
     data = json.loads((g.review / "review.json").read_text(encoding="utf8"))
-    return f"review-check: OK, {len(data['moments'])} moments"
+    return "\n".join([f"review-check: OK, {len(data['moments'])} moments", *window_warnings(data["moments"])])
 
 
 def reports_written(g: Analysis) -> bool:
@@ -178,8 +198,9 @@ STEPS = [
         lambda g: g.video,
         listen_how="Write the narration scripts listen.<lang>.md for {langs} in {folder} (`sports-video-coach guide "
                    "narration --unit {folder}`).",
-        qa_how="QA: serve {folder} over http (a browser helper, if your tool has one) and check the page in every "
-               "language, the audio and every clip on a 390 px wide screen. Write the result to {folder}/qa.md, "
+        qa_how="QA: serve {folder} over http with `sports-video-coach serve {folder}` (it picks a free port, prints "
+               "the URL and the page title: check the browser shows that title), then check (a browser helper, if "
+               "your tool has one) the page in every language, the audio and every clip on a 390 px wide screen. Write the result to {folder}/qa.md, "
                "first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "
                         "report (`sports-video-coach guide film --unit {folder}`); check them with "

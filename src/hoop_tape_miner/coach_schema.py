@@ -385,10 +385,18 @@ def migrate_dir(src: Path, out: Path) -> list[str]:
     return errs
 
 
+def part_errors(errs: list[str], part: int) -> list[str]:
+    """The errors that name part `part` (coach_part<N>.json, part<N>.json, part<N>:) or no part at all."""
+    named = re.compile(r"\b(?:coach_)?part(\d+)\b")
+    return [e for e in errs if (m := named.search(e)) is None or int(m[1]) == part]
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="hoop-tape-miner coach-check")
     ap.add_argument("--review", required=True, help="folder with coach_part*.json")
     ap.add_argument("--migrate", metavar="OUTDIR", help="write v1 parts as v2 into OUTDIR, then validate OUTDIR")
+    ap.add_argument("--part", type=int, help="only this part's errors (and those of no part): a film-review helper "
+                                             "checks its own part while the other helpers are still writing theirs")
     a = ap.parse_args(argv)
     folder = Path(a.review)
     errs = []
@@ -407,6 +415,8 @@ def main(argv=None):
             pass
     from .coach_eval import part_coverage  # every pid of part<N>.json covered, no long gaps, jerseys resolved
     errs += part_coverage(folder)
+    if a.part is not None:
+        errs = part_errors(errs, a.part)
     if errs:
         print(f"coach-check: {len(errs)} error(s) in {folder}")
         print("\n".join(f"- {e}" for e in errs))

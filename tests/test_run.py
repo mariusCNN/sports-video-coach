@@ -101,7 +101,7 @@ def test_status_lists_every_step_in_order(game):
     names = [n for n, _, _ in R.status(R.Game.load(game))]
     assert names == R.NAMES
     assert names.index("calibrate") < names.index("extract") < names.index("film-review") < names.index("html")
-    assert names[-2:] == ["film-script", "film"]
+    assert names[-8:] == ["posters", "listen-script", "film-script", "narrate", "html", "qa", "publish", "film"]
 
 
 def test_stitch_runs_between_jersey_and_analyze(game):
@@ -334,6 +334,7 @@ def finished_until_html(folder: Path):
     for d in ("", "player-7/"):
         touch(folder, *(d + f for f in ("README.md", "README.en.md", "listen.zh.md", "listen.en.md",
                                         "listen.zh.mp3", "listen.en.mp3")))
+    touch(folder, "film.zh.md", "film.en.md")
 
 
 def qa_pass(folder: Path):

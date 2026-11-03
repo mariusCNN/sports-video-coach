@@ -155,7 +155,8 @@ MOVE_STEPS = [
         listen_how="Write the narration scripts {folder}/listen.<lang>.md for {langs} (prompts/narration.md; for a "
                    "movement session: the verdict, the two or three changes that matter most, how to train, eat and "
                    "recover, 3-4 minutes).",
-        qa_how="QA: have the browser-check subagent serve {folder} over http and check the page in both languages, "
+        qa_how="QA: have the browser-check subagent serve {folder} over http "
+               "(`sports-video-coach serve {folder}`: a free port, the URL, the page title) and check the page in both languages, "
                "the audio and every clip. Write the result to {folder}/qa.md, first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "
                         "report (prompts/film.md, movement notes in prompts/movement_report.md; times are on the "
