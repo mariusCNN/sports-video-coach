@@ -80,6 +80,9 @@ availability depends on the selected sport, installed dependencies, footage and 
   Claude Code, Codex, Cursor and other coding agents. [llms.txt](../llms.txt) is a concise navigation index.
 - **Sport plugins:** `new-plugin` scaffolds a working plugin; hooks keep the core independent of basketball.
   Examples include a swim stroke-rate plugin and a jump-rope counting plugin. [Plugin guide](plugins.md).
+- **Fitness plugin:** gym and strength & conditioning videos: every set named from a 56-exercise library (cues,
+  faults, dose, muscle shares, sources), per-rep depth, trunk lean and tempo from pose, a muscle map, and advice
+  tied to the athlete's sport. [Fitness guide](fitness.md), [knowledge base](knowledge-base.md#what-is-in-it-fitness).
 - **Exact-ground-truth benchmark:** `bench` prepares synthetic drills, runs agent/model adapters, scores and
   validates submissions, and builds a leaderboard. It measures the stated task, not general coaching quality.
 - **Local vision / optional services:** detection runs locally; an agent's viewed frames go to its model provider,

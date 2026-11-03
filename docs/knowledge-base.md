@@ -19,6 +19,29 @@ They are open to contributions: a new entry, a better drill, a correction, a new
 
 `tests/test_coach_kb.py` checks that every `coach_kb.md` entry has all its fields and a source with a page or a URL.
 
+## What is in it (fitness)
+
+The `fitness` plugin ([docs/fitness.md](fitness.md)) keeps its knowledge next to its code, in `src/svc_fitness/`:
+
+| File | Entries | Covers | Used by |
+|---|---|---|---|
+| [`library/exercises.json`](../src/svc_fitness/library/exercises.json) | 56 exercises, by `id` | One card per exercise: names (en, zh, aliases), pattern, equipment, setup, cues, faults, dose, regression and progression, knee and back notes, camera views, basketball transfer, and the muscles it trains with a share each. Patterns: hinge, plyometric, single leg, squat, Olympic pull, core, isometric, lunge, calf, push, carry, pull | Naming every set (`prompts/sets.md`), the film review (`review.md`) and the report (`report.md`), through `sports-video-coach fitness:library <id>` |
+| [`knowledge/programming.md`](../src/svc_fitness/knowledge/programming.md) | 7 sections | RIR / RPE, sets x reps, microdosing, velocity-based training, concurrent training with a sport, deloads, tempo | The report's dose and weekly plan |
+| [`knowledge/technique.md`](../src/svc_fitness/knowledge/technique.md) | 10 sections | Camera rules, what 2D pose can and cannot show, squat, hinge, Olympic pulls, single leg and lunge, isometrics, plyometrics, upper body, the thresholds the review uses | The film review and its measured angles |
+| [`knowledge/basketball.md`](../src/svc_fitness/knowledge/basketball.md) | 7 sections | Transfer to the court, deceleration, speed and ankle, injury-risk programmes, the in-season week, joint-friendly variants, the long-term view | The report's "with your basketball" part |
+| [`library/SOURCES.md`](../src/svc_fitness/library/SOURCES.md) | 32 sources, by key | Every `refs` key and every source tag in the knowledge files, with a link (the open exercise database `fedb` gave the starting muscle lists) | Citations in the report's notes |
+
+Two rules differ from the basketball KBs:
+
+- **Muscle shares are training emphasis, not EMG.** They sum to 100 per exercise; `muscles_basis` names the study,
+  or says "estimate" where no study measured it. Reports say so once.
+- **"(coach rule of thumb)"** marks common practice that no cited study tested, the fitness counterpart of
+  "(our rule)".
+
+`sports-video-coach fitness:library --check` reports duplicate ids, unknown muscles, patterns or source keys, and
+shares that do not sum to 100. `tests/test_fitness.py` runs it on the shipped library and also wants every card
+to cite a source or say its muscle shares are an estimate.
+
 ## How an entry is built
 
 Every entry is one `### <PREFIX>-<slug>` section (lower-case slug, words joined by `-`), with labelled fields:
@@ -76,9 +99,9 @@ guide the advice only: this path does no tracking or measuring, so every claim s
 
 ## A knowledge base for another sport
 
-Running, the gym, HYROX, soccer and every other sport run through the `generic` plugin today: the agent reviews the
-film with general coaching guides (`review.md`, `report.md`), with no sport-specific tracking and no sport KB. Basketball
-is the only sport with its own KBs so far. A sport gets its own KB through its plugin:
+Basketball and gym / strength training (the `fitness` plugin, above) have their own KBs. Running, HYROX, soccer and
+every other sport run through the `generic` plugin today: the agent reviews the film with general coaching guides
+(`review.md`, `report.md`), with no sport-specific tracking and no sport KB. A sport gets its own KB through its plugin:
 
 1. `sports-video-coach new-plugin <sport> --dir examples/plugins` makes a working copy of the generic plugin
    ([docs/plugins.md](plugins.md)).

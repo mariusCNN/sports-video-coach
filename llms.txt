@@ -26,6 +26,8 @@
 ## Basketball and perception
 
 - [Basketball guide](docs/basketball.md): team/player pages, tracking, stats, shots and coaching.
+- [Fitness guide](docs/fitness.md): gym and strength & conditioning sessions: sets named from a 56-exercise
+  library, per-rep depth, trunk lean and tempo from pose, a muscle map. Run `sports-video-coach fitness:library --help`.
 - [Playbook](docs/playbook.md): exact end-to-end procedures.
 - [OpenHoopVision](docs/perception.md): optional candidate evidence, reviews and validation media.
 - [WASB, SAHI and KaliCalib](docs/perception-lab.md): optional local model adapters, independent evaluation,
@@ -37,7 +39,8 @@
 - [Plugins](docs/plugins.md): scaffolding and examples for new sports.
 - [Benchmark](docs/benchmark.md): synthetic film-review tasks with exact ground truth.
 - [Coaching knowledge base](docs/knowledge-base.md): the four basketball KBs (team, skill, movement, fuel and
-  recovery), entry structure, how runs cite them, source rules and how to contribute an entry or a sport KB.
+  recovery), the fitness exercise library and knowledge files, entry structure, how runs cite them, source rules
+  and how to contribute an entry or a sport KB.
 - [Privacy](docs/privacy.md): local workspace, model-provider boundaries and deliberate sharing.
 - [Contributing](CONTRIBUTING.md): tests, PR workflow and no real player data in public contributions.
 
