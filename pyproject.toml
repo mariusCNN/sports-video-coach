@@ -66,6 +66,7 @@ hoop-tape-miner = "hoop_tape_miner.cli:main"
 
 [project.entry-points."sports_video_coach.plugins"]
 basketball = "hoop_tape_miner.plugin:PLUGIN"
+fitness = "svc_fitness.plugin:PLUGIN"
 
 [project.entry-points.pytest11]
 sports_video_coach = "sports_video_coach.pytest_plugin"
@@ -83,7 +84,7 @@ explicit = true
 default-groups = ["dev", "basketball"]
 
 [tool.uv.build-backend]
-module-name = ["sports_video_coach", "hoop_tape_miner"]
+module-name = ["sports_video_coach", "hoop_tape_miner", "svc_fitness"]
 
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]

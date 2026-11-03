@@ -62,6 +62,7 @@ The chart shows where the game turned.
   - Contents: start positions for `us` and `them`, the ball holder, then steps (`move`, `dribble`, `pass`, `shot`, `ball`, `ring`).
   - The first paragraph goes over the set-up; each further paragraph starts the next step, which animates in about a second.
 - A scene lasts as long as its narration. A clip that is shorter than what you say over it plays once, then replays at half speed (marked "slow motion"), then holds its last frame. Clips with freezes do not replay. Game sound is turned down under the voice. A clip with no paragraph plays at full sound, as it is.
+- `"film_overlays": false` in the unit json keeps the picture to the footage, the subtitles and the cards: no clip banners and no "freeze" / "slow motion" badges.
 
 ## Writing rules
 

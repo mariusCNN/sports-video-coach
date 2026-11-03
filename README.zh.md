@@ -172,6 +172,7 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 |---|---|
 | `generic`（内置） | 任何运动；建议取决于帧里看到的内容（野球也行：`--sport basketball`） |
 | `basketball` | 有数据网站链接的联赛比赛，或在克隆的仓库里用 GPU 跟踪：球队和球员页面、投篮分布图（[文档](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)） |
+| `fitness` | 健身房和体能训练（深蹲、拉、单腿、增强式、微剂量）：每一组对上动作库里的动作，用姿态测每次的深度、躯干前倾、节奏和后几次变慢，加肌肉分布图（[文档](https://github.com/mariusDing/sports-video-coach/blob/master/docs/fitness.md)） |
 | 你自己的 | `sports-video-coach new-plugin <your-sport>` 生成一个能跑的插件做起点（[指南](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)） |
 
 <details><summary><b>给你的 agent 安装</b>（Claude Code 插件、Agent Skills、uv、克隆）</summary>

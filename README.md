@@ -179,6 +179,7 @@ how the pipeline fits together is in [docs/architecture.md](https://github.com/m
 |---|---|
 | `generic` (built in) | any sport; the advice depends on what the frames show (pickup basketball too: `--sport basketball`) |
 | `basketball` | league games with a stats link, or tracking from a clone with a GPU: team and player pages, shot charts ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)) |
+| `fitness` | gym and strength & conditioning sessions (squats, pulls, single-leg, plyometrics, microdosing): every set named from an exercise library, per-rep depth, trunk lean, tempo and slowing from pose, a muscle map ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/fitness.md)) |
 | yours | `sports-video-coach new-plugin <your-sport>` writes a working plugin to start from ([guide](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)) |
 
 <details><summary><b>Install for your agent</b> (Claude Code plugin, Agent Skills, uv, clone)</summary>

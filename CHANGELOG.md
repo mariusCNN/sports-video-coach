@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- `"film_overlays": false` in a unit json renders explained videos with footage, subtitles and cards only (no clip banners, no freeze / slow-motion badges).
+- A `fitness` plugin for gym and strength & conditioning videos. The agent splits the session into sets and names
+  each from a library of strength, single-leg, pulling-derivative and plyometric exercises (muscle shares, cues,
+  faults, dose, knee and back notes, sources). YOLO pose then measures every side-view set per rep: depth, trunk
+  lean, tempo, pause and a velocity-loss proxy. The page adds a muscle map and a per-set table. Guides for sets,
+  review and the report cover the lifts and how to fit them around a sport. See `docs/fitness.md`.
 - Film review now resumes from per-part sheet ledgers: saved JSON checkpoints precede read acknowledgements,
   changed inputs become pending again, and new reviews cannot pass `coach-check` with unread sheets.
   Regeneration refuses folders containing review checkpoints. Existing reviews remain compatible.
