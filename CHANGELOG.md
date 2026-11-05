@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Changed
+
+- The run asks for the film scripts in the same stop as the narration scripts (both follow the READMEs, not QA),
+  so they can be written at once; publish now waits for them, and the film still renders last.
+- The tracks step reuses the jersey-colour clusters of the montage pass (`run/clusters.npz`), so the team
+  labels match the clusters that were named and the second UMAP + KMeans pass is skipped.
+- QA runs `page-check --strict --write-qa` before the browser check; a browser call that times out counts as not
+  checked. The project settings cap an MCP tool call at 3 minutes (`MCP_TOOL_TIMEOUT`).
+
 ### Added
 
 - Evidence-bound decision lessons shared by bilingual films and interactive pages: pre-action
@@ -15,6 +24,74 @@ All notable changes to this project are documented here. The format follows [Kee
   execution, outcomes and retain/revise/retire feedback in the existing game log.
 - Film `--speech-tempo` uses measured audio time-stretching with aligned subtitles, unchanged
   action speed, persistent scene timing and subtitle audit files.
+- `sports-video-coach serve <folder> [--port N]`: serves a report folder over http on the first free port from
+  18080 (never one another server holds) and prints the URL and the page title. The QA step and AGENTS.md name it.
+- START.md: for basketball on the `generic` plugin, the agent bases the report's fixes and drills on the team,
+  skill and movement knowledge-base entries and names the entry it used (or says the advice is its own).
+
+- `docs/knowledge-base.md`: the four basketball coaching knowledge bases (58 entries, based on public FIBA /
+  Jr. NBA coaching material and sports-science studies), how an entry is built and used in a run, the source and
+  copyright rules, and how to contribute an entry or a KB for another sport. New issue form "Coaching knowledge:
+  new entry or correction"; a contribution section in both READMEs and CONTRIBUTING.md.
+- Start in one prompt: paste "Coach me on my sports video: <path> / Clone the repo and follow its START.md" into
+  Claude Code, Codex or another agent. The new `START.md` takes the agent from a machine with nothing installed
+  to the coaching page: tool checks, per-OS install commands shown and approved first, one message of questions,
+  the pinned light install, the exit-code loop, hand-over, a next-practice offer and the one-time star ask. Both
+  READMEs and the demo site's landing page show the prompt; the READMEs gain a Support section with the star ask.
+  The landing page has a copy button on the prompt and on its Chinese version, link rows as 44 px phone tap
+  targets, install commands that wrap on a phone, and an inline icon instead of a missing favicon.
+
+- `<unit>/.hoop-timing.jsonl`: every run that is not `--dry` logs start and end of each command step and, for
+  agent steps, when they were asked for and how long until they passed.
+- `coach-check --part N` shows only that part's errors, so a film-review helper can check its part while the
+  others are still writing. The brief tells reviewers never to put JSON or notes inside a shell string.
+
+- `"film_overlays": false` in a unit json renders explained videos with footage, subtitles and cards only (no clip banners, no freeze / slow-motion badges).
+- A `fitness` plugin for gym and strength & conditioning videos. The agent splits the session into sets and names
+  each from a library of strength, single-leg, pulling-derivative and plyometric exercises (muscle shares, cues,
+  faults, dose, knee and back notes, sources). YOLO pose then measures every side-view set per rep: depth, trunk
+  lean, tempo, pause and a velocity-loss proxy. The page adds a muscle map and a per-set table. Guides for sets,
+  review and the report cover the lifts and how to fit them around a sport. See `docs/fitness.md`.
+- Film review now resumes from per-part sheet ledgers: saved JSON checkpoints precede read acknowledgements,
+  changed inputs become pending again, and new reviews cannot pass `coach-check` with unread sheets.
+  Regeneration refuses folders containing review checkpoints. Existing reviews remain compatible.
+- The normal basketball run accepts `review.parts` or `review.max_sheets` in game.json and tracks the choice
+  for freshness. `coach-eval --baseline DIR --gate` rejects regressions for either team, including player
+  attribution, total points, fouls and matched events. Official roster conflicts still require film review.
+
+- Opt-in `coach-sheets --max-sheets N` partitions reviews by sheet workload while keeping
+  each possession intact. The default remains six parts pending controlled quality validation.
+  Reviewers now save trips and progress after each possession to support interrupted work.
+- A real training-review showcase on the homepage and in both READMEs, with English landscape/vertical
+  video downloads and explicit limits on what the selected example demonstrates. Media is hosted separately.
+- The public landing page now presents the complete coaching, basketball, training and optional perception
+  capabilities, links the feature/agent guides, and includes matching structured feature metadata.
+- Optional `perception-lab` commands to prepare source frames, run WASB heatmaps, SAHI sliced RF-DETR
+  and KaliCalib court proposals, evaluate independent labels, and render interactive HTML and a four-way MP4.
+  Source/model hashes, false-positive accounting, pixel-radius sensitivity and geometric rejection keep
+  experiments reviewable. Mixed first-diagnostic results and setup are documented in `docs/perception-lab.md`.
+- English/Chinese README capability tables, a complete feature/command catalog and `llms.txt` agent navigation.
+- Installation examples and agent setup hints now pin the tested implementation containing the perception adapters.
+  The pin now also includes START.md, `serve` and the other round-2 fixes, so the one-prompt start installs them.
+- Optional OpenHoopVision basketball perception backend with finalized JSONL import, shot/pass/dribble/rebound/
+  possession-change candidates, OCR and identity evidence, existing FIBA calibration projection, review conflicts,
+  bilingual validation cards, source clips, an annotated validation reel and independent labelled-window
+  evaluation of attempts, outcomes and team attribution. Unknown point values stay unknown;
+  automatic candidates never replace official statistics or reviewed trips. See `docs/perception.md`.
+- The demo site's landing, benchmark and findings pages can count visits per referrer and `?ref=` campaign with
+  GoatCounter (no cookies): set the repository variable `GOATCOUNTER_CODE` to the site code; unset, no counter.
+- `examples/plugins/jump-rope/`: a second worked example plugin that counts jump-rope skips (a count, where the
+  swim example measures a rate), tested on drawn video against the exact count.
+
+### Changed
+- Both READMEs and the landing page lead with "Turn your coding agent into your sports coach" for adults who
+  train on their own: the 43 s real training review at the top, then a short "Why I built this", then the
+  one prompt. The benchmark moved further down the READMEs; its numbers and rerun steps are unchanged.
+- `review-check` (generic) warns, naming the moment, when a moment's window is outside the review guide's 4-15 s.
+- The humanize check no longer flags a spoken cue after `Say:` / `说：` (like `Watch:`).
+- `plugins`: the basketball install hint checks out the pinned commit in the clone you have, instead of cloning again.
+- START.md: the Windows PowerShell open command (`Start-Process`), the install size (about 170 MB), the measured
+  time of a test run, where the stage logs go, and `$UV_TOOL_BIN_DIR`.
 
 ### Fixed
 
@@ -38,37 +115,6 @@ All notable changes to this project are documented here. The format follows [Kee
   pickup modes, a preparation timeline and review prompts. Fixture byes and same-day timed games select the
   appropriate default; explicit mode choices preserve the selected date and existing workout progress.
 
-- Film review now resumes from per-part sheet ledgers: saved JSON checkpoints precede read acknowledgements,
-  changed inputs become pending again, and new reviews cannot pass `coach-check` with unread sheets.
-  Regeneration refuses folders containing review checkpoints. Existing reviews remain compatible.
-- The normal basketball run accepts `review.parts` or `review.max_sheets` in game.json and tracks the choice
-  for freshness. `coach-eval --baseline DIR --gate` rejects regressions for either team, including player
-  attribution, total points, fouls and matched events. Official roster conflicts still require film review.
-
-- Opt-in `coach-sheets --max-sheets N` partitions reviews by sheet workload while keeping
-  each possession intact. The default remains six parts pending controlled quality validation.
-  Reviewers now save trips and progress after each possession to support interrupted work.
-- A real training-review showcase on the homepage and in both READMEs, with English landscape/vertical
-  video downloads and explicit limits on what the selected example demonstrates. Media is hosted separately.
-- The public landing page now presents the complete coaching, basketball, training and optional perception
-  capabilities, links the feature/agent guides, and includes matching structured feature metadata.
-- Optional `perception-lab` commands to prepare source frames, run WASB heatmaps, SAHI sliced RF-DETR
-  and KaliCalib court proposals, evaluate independent labels, and render interactive HTML and a four-way MP4.
-  Source/model hashes, false-positive accounting, pixel-radius sensitivity and geometric rejection keep
-  experiments reviewable. Mixed first-diagnostic results and setup are documented in `docs/perception-lab.md`.
-- English/Chinese README capability tables, a complete feature/command catalog and `llms.txt` agent navigation.
-- Installation examples and agent setup hints now pin the tested implementation containing the perception adapters.
-- Optional OpenHoopVision basketball perception backend with finalized JSONL import, shot/pass/dribble/rebound/
-  possession-change candidates, OCR and identity evidence, existing FIBA calibration projection, review conflicts,
-  bilingual validation cards, source clips, an annotated validation reel and independent labelled-window
-  evaluation of attempts, outcomes and team attribution. Unknown point values stay unknown;
-  automatic candidates never replace official statistics or reviewed trips. See `docs/perception.md`.
-- The demo site's landing, benchmark and findings pages can count visits per referrer and `?ref=` campaign with
-  GoatCounter (no cookies): set the repository variable `GOATCOUNTER_CODE` to the site code; unset, no counter.
-- `examples/plugins/jump-rope/`: a second worked example plugin that counts jump-rope skips (a count, where the
-  swim example measures a rate), tested on drawn video against the exact count.
-
-### Fixed
 - Coach evaluation can match each visually timed made free throw separately, including long stoppages and
   delayed and-ones, without moving the foul time or changing the reviewed possession/point totals.
 - Language switches preserve named report anchors and pause plugin-supplied videos as well as standard clips.

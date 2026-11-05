@@ -1,0 +1,5484 @@
+{
+ "version": 1,
+ "muscles": {
+  "quads": {
+   "zh": "股四头肌",
+   "en": "quadriceps",
+   "region": "lower",
+   "basketball": "伸膝发力：起跳、急停时吸收冲击、防守滑步的低重心"
+  },
+  "glutes": {
+   "zh": "臀大肌",
+   "en": "gluteus maximus",
+   "region": "lower",
+   "basketball": "伸髋主发动机：第一步爆发、起跳、对抗卡位"
+  },
+  "glute_med": {
+   "zh": "臀中肌",
+   "en": "gluteus medius",
+   "region": "lower",
+   "basketball": "单腿站稳、侧向滑步、落地时防止膝内扣"
+  },
+  "hamstrings": {
+   "zh": "腘绳肌",
+   "en": "hamstrings",
+   "region": "lower",
+   "basketball": "冲刺伸髋与减速刹车，保护膝关节"
+  },
+  "adductors": {
+   "zh": "内收肌",
+   "en": "adductors",
+   "region": "lower",
+   "basketball": "变向蹬地、侧滑步、防腹股沟拉伤"
+  },
+  "calves": {
+   "zh": "腓肠肌",
+   "en": "gastrocnemius",
+   "region": "lower",
+   "basketball": "直腿蹬地：起跳最后发力、快速连续跳"
+  },
+  "soleus": {
+   "zh": "比目鱼肌",
+   "en": "soleus",
+   "region": "lower",
+   "basketball": "屈膝状态下的踝发力：跑动支撑、跟腱减负"
+  },
+  "tibialis": {
+   "zh": "胫骨前肌",
+   "en": "tibialis anterior",
+   "region": "lower",
+   "basketball": "落地与急停时控制踝，减少胫骨前侧疼痛"
+  },
+  "hip_flexors": {
+   "zh": "髋屈肌",
+   "en": "hip flexors",
+   "region": "lower",
+   "basketball": "快速提膝：冲刺步频、上篮起跳的摆腿"
+  },
+  "erectors": {
+   "zh": "竖脊肌",
+   "en": "spinal erectors",
+   "region": "trunk",
+   "basketball": "保持躯干挺直传力，对抗时不塌腰"
+  },
+  "abs": {
+   "zh": "腹直肌/深层腹肌",
+   "en": "abdominals",
+   "region": "trunk",
+   "basketball": "躯干刚性：空中对抗、落地稳定"
+  },
+  "obliques": {
+   "zh": "腹斜肌",
+   "en": "obliques",
+   "region": "trunk",
+   "basketball": "抗旋转与转体：变向、传球、对抗中保持身体"
+  },
+  "traps": {
+   "zh": "斜方肌",
+   "en": "trapezius",
+   "region": "upper",
+   "basketball": "耸肩/上提发力，对抗时稳住肩颈"
+  },
+  "lats": {
+   "zh": "背阔肌",
+   "en": "latissimus dorsi",
+   "region": "upper",
+   "basketball": "抢篮板拉球、护球、对抗中把身体拉紧"
+  },
+  "upper_back": {
+   "zh": "上背(菱形肌/中斜方)",
+   "en": "upper back",
+   "region": "upper",
+   "basketball": "肩胛稳定，传球与投篮时肩更稳"
+  },
+  "chest": {
+   "zh": "胸大肌",
+   "en": "pectorals",
+   "region": "upper",
+   "basketball": "推人卡位、胸前传球"
+  },
+  "delts": {
+   "zh": "三角肌",
+   "en": "deltoids",
+   "region": "upper",
+   "basketball": "举手防守、投篮出手、篮下护球"
+  },
+  "triceps": {
+   "zh": "肱三头肌",
+   "en": "triceps",
+   "region": "upper",
+   "basketball": "伸肘：投篮出手、推传球"
+  },
+  "biceps": {
+   "zh": "肱二头肌",
+   "en": "biceps",
+   "region": "upper",
+   "basketball": "抢球、拉球护球"
+  },
+  "forearms": {
+   "zh": "前臂/握力",
+   "en": "forearms (grip)",
+   "region": "upper",
+   "basketball": "抓篮板、护球、不被掏球"
+  }
+ },
+ "patterns": {
+  "squat": {
+   "zh": "蹲",
+   "en": "squat"
+  },
+  "hinge": {
+   "zh": "髋铰链",
+   "en": "hinge"
+  },
+  "olympic_pull": {
+   "zh": "举重提拉",
+   "en": "olympic pull"
+  },
+  "single_leg": {
+   "zh": "单腿",
+   "en": "single leg"
+  },
+  "lunge": {
+   "zh": "弓步",
+   "en": "lunge"
+  },
+  "push": {
+   "zh": "推",
+   "en": "push"
+  },
+  "pull": {
+   "zh": "拉",
+   "en": "pull"
+  },
+  "carry": {
+   "zh": "负重行走",
+   "en": "carry"
+  },
+  "core": {
+   "zh": "核心",
+   "en": "core"
+  },
+  "plyo": {
+   "zh": "增强式/跳跃",
+   "en": "plyometric"
+  },
+  "isometric": {
+   "zh": "等长",
+   "en": "isometric"
+  },
+  "calf": {
+   "zh": "小腿/足踝",
+   "en": "calf / foot"
+  }
+ },
+ "exercises": [
+  {
+   "id": "back_squat",
+   "zh": "杠铃后蹲",
+   "en": "barbell back squat",
+   "aliases": [
+    "深蹲",
+    "后蹲",
+    "back squat"
+   ],
+   "pattern": "squat",
+   "equipment": "barbell",
+   "fedb_id": "Barbell_Squat",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 40
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "adductors",
+     "share": 15
+    },
+    {
+     "m": "hamstrings",
+     "share": 5
+    },
+    {
+     "m": "erectors",
+     "share": 10
+    },
+    {
+     "m": "soleus",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: knee-extensor effort rises with depth and hip-extensor effort with depth and load (bryanton2012); adductor and erector shares are coach estimates; fedb muscle lists as a start.",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "bar_path",
+     "knee_travel",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "杠放斜方肌上",
+    "脚略宽于肩，脚尖微外",
+    "吸气撑腹再下蹲"
+   ],
+   "cues": [
+    "撑紧腹部",
+    "膝对脚尖",
+    "全脚掌踩地",
+    "胸和臀一起起"
+   ],
+   "faults": [
+    {
+     "id": "heels_up",
+     "zh": "脚跟离地",
+     "see": "侧面看脚跟抬起、重心前移到脚尖",
+     "metric": null,
+     "fix": "重心放全脚掌；脚跟垫小片或改高脚跟鞋，先做高脚杯深蹲找感觉"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "good_morning",
+     "zh": "起身先抬臀",
+     "see": "侧面看起身时臀部先升、躯干前倾角突然变大",
+     "metric": "trunk_lean",
+     "fix": "提示“胸和臀一起起”；降重；加暂停深蹲"
+    },
+    {
+     "id": "butt_wink",
+     "zh": "底部骨盆后倾",
+     "see": "侧面看最低点前后腰背突然变圆",
+     "metric": "depth",
+     "fix": "只蹲到能保持腰背中立的深度；用箱子限深"
+    },
+    {
+     "id": "shallow",
+     "zh": "深度不够",
+     "see": "侧面看最低点髋明显高于膝",
+     "metric": "depth",
+     "fix": "降重；用箱子标定目标深度"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x3-5 @RIR2-3",
+    "power": "3-5x2-3 @60-75% 1RM, 全力快起",
+    "microdose": "热身后1-2组x3次 @RIR3，5-8分钟；可放在投篮练习前"
+   },
+   "regress": [
+    "goblet_squat",
+    "box_squat"
+   ],
+   "progress": [
+    "front_squat",
+    "jump_squat"
+   ],
+   "knee": "髌腱痛时先限深（箱子）并放慢下放；疼痛≤3/10且次日不加重可继续",
+   "back": "腰痛时换前蹲、高脚杯蹲或安全杠深蹲以减少躯干前倾",
+   "basketball": {
+    "why": "最大力量基础，与冲刺和跳跃提升相关",
+    "when": "赛后48小时以上、离下一场比赛≥2天的日子；赛季中每周1-2次，每动作2-3组"
+   },
+   "refs": [
+    "bryanton2012",
+    "schoenfeld2010",
+    "seitz2014",
+    "suchomel2016",
+    "fedb"
+   ]
+  },
+  {
+   "id": "front_squat",
+   "zh": "杠铃前蹲",
+   "en": "barbell front squat",
+   "aliases": [
+    "前蹲",
+    "front squat"
+   ],
+   "pattern": "squat",
+   "equipment": "barbell",
+   "fedb_id": "Front_Barbell_Squat",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 45
+    },
+    {
+     "m": "glutes",
+     "share": 20
+    },
+    {
+     "m": "adductors",
+     "share": 12
+    },
+    {
+     "m": "erectors",
+     "share": 13
+    },
+    {
+     "m": "abs",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: similar muscle activity to back squat with lower knee compressive force and moment at the loads tested (gullett2009); more upright trunk shifts emphasis to quads (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "bar_path",
+     "knee_travel",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "杠放三角肌前束",
+    "肘抬高与地面平行",
+    "脚略宽于肩"
+   ],
+   "cues": [
+    "肘抬高",
+    "胸挺直",
+    "直上直下",
+    "膝对脚尖"
+   ],
+   "faults": [
+    {
+     "id": "elbows_drop",
+     "zh": "肘下掉",
+     "see": "侧面看上臂向下倾、杠向前滚",
+     "metric": "trunk_lean",
+     "fix": "提示“肘往上顶”；改交叉握或绑带握"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "heels_up",
+     "zh": "脚跟离地",
+     "see": "侧面看脚跟抬起、重心前移到脚尖",
+     "metric": null,
+     "fix": "重心放全脚掌；脚跟垫小片或改高脚跟鞋，先做高脚杯深蹲找感觉"
+    },
+    {
+     "id": "shallow",
+     "zh": "深度不够",
+     "see": "侧面看最低点髋明显高于膝",
+     "metric": "depth",
+     "fix": "降重；用箱子标定目标深度"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x3-5 @RIR2-3",
+    "power": "3x3 @60-70% 快起",
+    "microdose": "1-2组x3 @RIR3，配合技术热身8分钟内完成"
+   },
+   "regress": [
+    "goblet_squat",
+    "box_squat"
+   ],
+   "progress": [
+    "back_squat",
+    "jump_squat"
+   ],
+   "knee": "同等负荷下膝关节受力低于后蹲(gullett2009)，可作为膝部友好主蹲",
+   "back": "躯干更直立，腰背负担通常小于后蹲；但腹压要求高",
+   "basketball": {
+    "why": "强化股四头肌与直立躯干，利于落地缓冲与起跳",
+    "when": "赛后48小时以上、离下一场比赛≥2天的日子；赛季中每周1-2次，每动作2-3组"
+   },
+   "refs": [
+    "gullett2009",
+    "schoenfeld2010",
+    "fedb"
+   ]
+  },
+  {
+   "id": "box_squat",
+   "zh": "箱式深蹲",
+   "en": "box squat",
+   "aliases": [
+    "坐箱深蹲",
+    "box squat"
+   ],
+   "pattern": "squat",
+   "equipment": "barbell",
+   "fedb_id": "Box_Squat",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 35
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "adductors",
+     "share": 12
+    },
+    {
+     "m": "erectors",
+     "share": 13
+    }
+   ],
+   "muscles_basis": "Estimate: sitting back to a box shifts emphasis toward hip extensors (coach estimate); depth set by box height (bryanton2012 for depth-effort link).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "bar_path",
+     "pause",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "箱高让髋与膝平齐或略高",
+    "脚略宽于肩",
+    "坐箱前保持紧绷"
+   ],
+   "cues": [
+    "轻触箱子",
+    "坐上不放松",
+    "向上爆发"
+   ],
+   "faults": [
+    {
+     "id": "plop",
+     "zh": "砸箱",
+     "see": "侧面看最后几厘米突然下坠",
+     "metric": "tempo",
+     "fix": "控制下放，轻触即起"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "good_morning",
+     "zh": "起身先抬臀",
+     "see": "侧面看起身时臀部先升、躯干前倾角突然变大",
+     "metric": "trunk_lean",
+     "fix": "提示“胸和臀一起起”；降重；加暂停深蹲"
+    }
+   ],
+   "dose": {
+    "strength": "3-4x3-5 @RIR2-3",
+    "power": "6-8x2 @50-60% 快起",
+    "microdose": "1-2组x3，箱子固定深度，5分钟内"
+   },
+   "regress": [
+    "goblet_squat"
+   ],
+   "progress": [
+    "back_squat",
+    "front_squat"
+   ],
+   "knee": "限定深度，适合髌腱敏感期继续蹲；箱高随症状调整",
+   "back": "坐箱时保持腹压，不要在箱上放松弯腰",
+   "basketball": {
+    "why": "教从静止发力，与起步第一步、原地起跳相似",
+    "when": "赛季中重蹲的低风险替代，赛后第2天"
+   },
+   "refs": [
+    "bryanton2012",
+    "fedb"
+   ]
+  },
+  {
+   "id": "goblet_squat",
+   "zh": "高脚杯深蹲",
+   "en": "goblet squat",
+   "aliases": [
+    "哑铃深蹲",
+    "壶铃深蹲",
+    "goblet squat"
+   ],
+   "pattern": "squat",
+   "equipment": "dumbbell",
+   "fedb_id": "Goblet_Squat",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 45
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "adductors",
+     "share": 15
+    },
+    {
+     "m": "abs",
+     "share": 10
+    },
+    {
+     "m": "erectors",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: front-loaded, upright squat similar in emphasis to the front squat (coach estimate, by analogy to gullett2009).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "bar_path",
+     "knee_travel",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "哑铃竖抱胸前",
+    "肘贴身体",
+    "脚略宽于肩"
+   ],
+   "cues": [
+    "肘在膝内",
+    "胸挺直",
+    "慢下快起"
+   ],
+   "faults": [
+    {
+     "id": "heels_up",
+     "zh": "脚跟离地",
+     "see": "侧面看脚跟抬起、重心前移到脚尖",
+     "metric": null,
+     "fix": "重心放全脚掌；脚跟垫小片或改高脚跟鞋，先做高脚杯深蹲找感觉"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "butt_wink",
+     "zh": "底部骨盆后倾",
+     "see": "侧面看最低点前后腰背突然变圆",
+     "metric": "depth",
+     "fix": "只蹲到能保持腰背中立的深度；用箱子限深"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-10 @RIR2",
+    "power": "",
+    "microdose": "1-2组x8 @RIR3，热身或家里10分钟内"
+   },
+   "regress": [
+    "box_squat"
+   ],
+   "progress": [
+    "front_squat",
+    "back_squat"
+   ],
+   "knee": "负荷轻、易控深度，可放慢下放(3秒)作为髌腱友好选择",
+   "back": "腰背负担低，腰痛期首选蹲类",
+   "basketball": {
+    "why": "学习深蹲模式与低重心",
+    "when": "任何一天的热身或短时训练"
+   },
+   "refs": [
+    "gullett2009",
+    "fedb"
+   ]
+  },
+  {
+   "id": "safety_bar_squat",
+   "zh": "安全杠深蹲",
+   "en": "safety bar squat",
+   "aliases": [
+    "SSB深蹲",
+    "safety squat bar"
+   ],
+   "pattern": "squat",
+   "equipment": "specialty bar",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 42
+    },
+    {
+     "m": "glutes",
+     "share": 23
+    },
+    {
+     "m": "adductors",
+     "share": 13
+    },
+    {
+     "m": "erectors",
+     "share": 14
+    },
+    {
+     "m": "upper_back",
+     "share": 8
+    }
+   ],
+   "muscles_basis": "Estimate: no reviewed study used here; bar position sits between back and front squat, so shares are interpolated (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "bar_path",
+     "knee_travel",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "把手握在胸前",
+    "垫子放肩上",
+    "脚略宽于肩"
+   ],
+   "cues": [
+    "上背顶住杠",
+    "胸挺直",
+    "膝对脚尖"
+   ],
+   "faults": [
+    {
+     "id": "pitched_forward",
+     "zh": "被杠压向前",
+     "see": "侧面看上背被压弯、躯干前倾增大",
+     "metric": "trunk_lean",
+     "fix": "上背用力顶杠；降重"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "heels_up",
+     "zh": "脚跟离地",
+     "see": "侧面看脚跟抬起、重心前移到脚尖",
+     "metric": null,
+     "fix": "重心放全脚掌；脚跟垫小片或改高脚跟鞋，先做高脚杯深蹲找感觉"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x3-6 @RIR2-3",
+    "power": "",
+    "microdose": "1-2组x3-5 @RIR3"
+   },
+   "regress": [
+    "goblet_squat",
+    "box_squat"
+   ],
+   "progress": [
+    "back_squat"
+   ],
+   "knee": "",
+   "back": "肩、肘、腕不适时代替后蹲；腰背负担与后蹲相近，按症状调整",
+   "basketball": {
+    "why": "肩部不适或手腕伤时保持蹲的力量",
+    "when": "赛后48小时以上、离下一场比赛≥2天的日子；赛季中每周1-2次，每动作2-3组"
+   },
+   "refs": [
+    "schoenfeld2010"
+   ]
+  },
+  {
+   "id": "jump_squat",
+   "zh": "跳跃深蹲",
+   "en": "jump squat",
+   "aliases": [
+    "深蹲跳",
+    "jump squat"
+   ],
+   "pattern": "plyo",
+   "equipment": "bodyweight",
+   "fedb_id": "Freehand_Jump_Squat",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 35
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "calves",
+     "share": 15
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "soleus",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: triple extension against light load; used as the comparison condition in lake2012 (coach estimate for shares).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "ground_contact",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "空手或轻负荷(<30%深蹲1RM)",
+    "脚与肩同宽",
+    "下蹲到四分之一或半蹲"
+   ],
+   "cues": [
+    "快下快上",
+    "全力起跳",
+    "轻落地"
+   ],
+   "faults": [
+    {
+     "id": "stiff_landing",
+     "zh": "落地僵硬",
+     "see": "侧面看落地时膝几乎不弯、声音大",
+     "metric": "depth",
+     "fix": "提示“轻落地、屈膝屈髋”，先练落地定格"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "slow_dip",
+     "zh": "下蹲太深太慢",
+     "see": "侧面看下蹲过深、停顿后才起跳",
+     "metric": "depth",
+     "fix": "只下到四分之一蹲，立刻起跳"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-5x3-5，组间2-3分钟，每次都要全力",
+    "microdose": "热身后2组x3，在投篮或比赛前激活"
+   },
+   "regress": [
+    "box_jump"
+   ],
+   "progress": [
+    "drop_landing"
+   ],
+   "knee": "髌腱痛急性期暂停；先等长与慢速力量",
+   "back": "",
+   "basketball": {
+    "why": "将力量转为起跳速度(lake2012对比中与壶铃摆荡效果相近)",
+    "when": "比赛前1-2天低量激活，或训练日开头"
+   },
+   "refs": [
+    "lake2012",
+    "fedb"
+   ]
+  },
+  {
+   "id": "clean_pull",
+   "zh": "高翻提拉",
+   "en": "clean pull",
+   "aliases": [
+    "翻提拉",
+    "clean pull"
+   ],
+   "pattern": "olympic_pull",
+   "equipment": "barbell",
+   "fedb_id": "Clean_Pull",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "hamstrings",
+     "share": 20
+    },
+    {
+     "m": "quads",
+     "share": 20
+    },
+    {
+     "m": "traps",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "forearms",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: triple extension from the floor; fedb lists quads primary with glutes, hamstrings, erectors, traps secondary; shares are coach estimates.",
+   "views": {
+    "side": [
+     "bar_path",
+     "hip_extension",
+     "trunk_lean",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "握距同高翻",
+    "肩在杠前",
+    "杠在脚中上方"
+   ],
+   "cues": [
+    "杠贴腿走",
+    "腿推地",
+    "伸髋耸肩"
+   ],
+   "faults": [
+    {
+     "id": "early_arm",
+     "zh": "过早屈臂",
+     "see": "侧面看杠到大腿前就已屈肘拉",
+     "metric": "bar_path",
+     "fix": "提示“手臂像绳子”，先伸髋再耸肩"
+    },
+    {
+     "id": "bar_away",
+     "zh": "杠离身体",
+     "see": "侧面看杠铃离开大腿/小腿前移",
+     "metric": "bar_path",
+     "fix": "提示“杠贴腿走”；背阔肌下压"
+    },
+    {
+     "id": "hip_short",
+     "zh": "伸髋不完全",
+     "see": "侧面看顶端髋未完全伸直",
+     "metric": "hip_extension",
+     "fix": "顶端夹臀1秒；降重"
+    },
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x3 @90-110% 高翻1RM",
+    "power": "3-5x3 @70-90% 高翻1RM",
+    "microdose": "2组x3，技术为先，10分钟内"
+   },
+   "regress": [
+    "hang_clean_pull",
+    "rdl"
+   ],
+   "progress": [
+    "power_clean"
+   ],
+   "knee": "无接杠冲击，比高翻对膝友好",
+   "back": "起拉圆背时降重；腰痛期改悬垂或大腿中部起始",
+   "basketball": {
+    "why": "练习三关节伸展的爆发发力，无需学习接杠",
+    "when": "训练日开头，赛前≥2天"
+   },
+   "refs": [
+    "suchomel2015",
+    "fedb"
+   ]
+  },
+  {
+   "id": "hang_clean_pull",
+   "zh": "悬垂高翻提拉",
+   "en": "hang clean pull",
+   "aliases": [
+    "悬垂提拉",
+    "hang pull"
+   ],
+   "pattern": "olympic_pull",
+   "equipment": "barbell",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "hamstrings",
+     "share": 25
+    },
+    {
+     "m": "quads",
+     "share": 15
+    },
+    {
+     "m": "traps",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "forearms",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: same chain as clean_pull with more hip-hinge emphasis from the hang start (coach estimate); pulling derivatives rationale from suchomel2015.",
+   "views": {
+    "side": [
+     "bar_path",
+     "hip_extension",
+     "trunk_lean",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "站直持杠",
+    "屈髋下滑到膝上",
+    "肩在杠前"
+   ],
+   "cues": [
+    "推髋向后",
+    "杠贴大腿",
+    "快速伸髋"
+   ],
+   "faults": [
+    {
+     "id": "early_arm",
+     "zh": "过早屈臂",
+     "see": "侧面看杠到大腿前就已屈肘拉",
+     "metric": "bar_path",
+     "fix": "提示“手臂像绳子”，先伸髋再耸肩"
+    },
+    {
+     "id": "bar_away",
+     "zh": "杠离身体",
+     "see": "侧面看杠铃离开大腿/小腿前移",
+     "metric": "bar_path",
+     "fix": "提示“杠贴腿走”；背阔肌下压"
+    },
+    {
+     "id": "hip_short",
+     "zh": "伸髋不完全",
+     "see": "侧面看顶端髋未完全伸直",
+     "metric": "hip_extension",
+     "fix": "顶端夹臀1秒；降重"
+    }
+   ],
+   "dose": {
+    "strength": "3-4x3 @90-100% 高翻1RM",
+    "power": "3-5x3 @70-90%",
+    "microdose": "2组x3，赛季中维持爆发"
+   },
+   "regress": [
+    "rdl"
+   ],
+   "progress": [
+    "clean_pull",
+    "hang_power_clean"
+   ],
+   "knee": "冲击小",
+   "back": "比地面起拉腰背负担小",
+   "basketball": {
+    "why": "像原地起跳前的屈髋蓄力再爆发",
+    "when": "训练日开头"
+   },
+   "refs": [
+    "suchomel2015"
+   ]
+  },
+  {
+   "id": "high_pull",
+   "zh": "悬垂高拉",
+   "en": "hang high pull",
+   "aliases": [
+    "高拉",
+    "high pull"
+   ],
+   "pattern": "olympic_pull",
+   "equipment": "barbell",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 20
+    },
+    {
+     "m": "hamstrings",
+     "share": 20
+    },
+    {
+     "m": "quads",
+     "share": 10
+    },
+    {
+     "m": "traps",
+     "share": 25
+    },
+    {
+     "m": "delts",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 5
+    },
+    {
+     "m": "forearms",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: hang pull plus arm pull to chest; listed among pulling derivatives in suchomel2015; shares are coach estimates.",
+   "views": {
+    "side": [
+     "bar_path",
+     "hip_extension",
+     "trunk_lean",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "悬垂位起始",
+    "握距同高翻",
+    "肘向上向外"
+   ],
+   "cues": [
+    "先伸髋",
+    "再耸肩拉肘",
+    "杠到胸下"
+   ],
+   "faults": [
+    {
+     "id": "early_arm",
+     "zh": "过早屈臂",
+     "see": "侧面看杠到大腿前就已屈肘拉",
+     "metric": "bar_path",
+     "fix": "提示“手臂像绳子”，先伸髋再耸肩"
+    },
+    {
+     "id": "hip_short",
+     "zh": "伸髋不完全",
+     "see": "侧面看顶端髋未完全伸直",
+     "metric": "hip_extension",
+     "fix": "顶端夹臀1秒；降重"
+    },
+    {
+     "id": "hyperextend",
+     "zh": "顶端过度后仰",
+     "see": "侧面看顶端腰椎后仰、肋骨外翻",
+     "metric": "trunk_lean",
+     "fix": "顶端“肋骨下沉、夹臀站直”即可"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-4x3 @30-45% 高翻1RM，追求速度",
+    "microdose": "2组x3"
+   },
+   "regress": [
+    "hang_clean_pull"
+   ],
+   "progress": [
+    "hang_power_clean"
+   ],
+   "knee": "冲击小",
+   "back": "",
+   "basketball": {
+    "why": "高速度端的爆发训练，补足大重量提拉",
+    "when": "比赛前1-2天也可轻量做"
+   },
+   "refs": [
+    "suchomel2015"
+   ]
+  },
+  {
+   "id": "hang_power_clean",
+   "zh": "悬垂力量翻",
+   "en": "hang power clean",
+   "aliases": [
+    "悬垂翻",
+    "hang clean"
+   ],
+   "pattern": "olympic_pull",
+   "equipment": "barbell",
+   "fedb_id": "Hang_Clean",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 22
+    },
+    {
+     "m": "hamstrings",
+     "share": 18
+    },
+    {
+     "m": "quads",
+     "share": 22
+    },
+    {
+     "m": "traps",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 8
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "forearms",
+     "share": 5
+    },
+    {
+     "m": "delts",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: fedb Hang_Clean lists quads primary; kinetics compared across clean variations in comfort2011; shares are coach estimates.",
+   "views": {
+    "side": [
+     "bar_path",
+     "hip_extension",
+     "trunk_lean",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "悬垂膝上",
+    "钩握",
+    "接杠在肩前，半蹲以上"
+   ],
+   "cues": [
+    "杠贴腿",
+    "伸髋快",
+    "快速翻肘"
+   ],
+   "faults": [
+    {
+     "id": "early_arm",
+     "zh": "过早屈臂",
+     "see": "侧面看杠到大腿前就已屈肘拉",
+     "metric": "bar_path",
+     "fix": "提示“手臂像绳子”，先伸髋再耸肩"
+    },
+    {
+     "id": "bar_away",
+     "zh": "杠离身体",
+     "see": "侧面看杠铃离开大腿/小腿前移",
+     "metric": "bar_path",
+     "fix": "提示“杠贴腿走”；背阔肌下压"
+    },
+    {
+     "id": "soft_catch",
+     "zh": "接杠塌陷",
+     "see": "侧面看接杠后被压到深蹲或躯干前倒",
+     "metric": "depth",
+     "fix": "降重；接杠时脚跟落地、肘快速向前"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-5x2-3 @70-85% 1RM",
+    "microdose": "2-3组x2，技术好才加量"
+   },
+   "regress": [
+    "hang_clean_pull",
+    "high_pull"
+   ],
+   "progress": [
+    "power_clean"
+   ],
+   "knee": "接杠有冲击，髌腱痛时换提拉类",
+   "back": "",
+   "basketball": {
+    "why": "爆发力与接杠时的减速吸收",
+    "when": "训练日开头，赛前≥2天"
+   },
+   "refs": [
+    "comfort2011",
+    "suchomel2015",
+    "fedb"
+   ]
+  },
+  {
+   "id": "power_clean",
+   "zh": "力量翻",
+   "en": "power clean",
+   "aliases": [
+    "高翻",
+    "power clean"
+   ],
+   "pattern": "olympic_pull",
+   "equipment": "barbell",
+   "fedb_id": "Power_Clean",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 22
+    },
+    {
+     "m": "hamstrings",
+     "share": 18
+    },
+    {
+     "m": "quads",
+     "share": 22
+    },
+    {
+     "m": "traps",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "forearms",
+     "share": 4
+    },
+    {
+     "m": "delts",
+     "share": 4
+    }
+   ],
+   "muscles_basis": "Estimate: floor start adds knee/erector demand vs hang version (coach estimate); comfort2011 compares kinetics across variations.",
+   "views": {
+    "side": [
+     "bar_path",
+     "hip_extension",
+     "trunk_lean",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "同硬拉起始",
+    "肩在杠前",
+    "接杠在肩前半蹲以上"
+   ],
+   "cues": [
+    "慢离地",
+    "过膝加速",
+    "快速翻肘"
+   ],
+   "faults": [
+    {
+     "id": "early_arm",
+     "zh": "过早屈臂",
+     "see": "侧面看杠到大腿前就已屈肘拉",
+     "metric": "bar_path",
+     "fix": "提示“手臂像绳子”，先伸髋再耸肩"
+    },
+    {
+     "id": "bar_away",
+     "zh": "杠离身体",
+     "see": "侧面看杠铃离开大腿/小腿前移",
+     "metric": "bar_path",
+     "fix": "提示“杠贴腿走”；背阔肌下压"
+    },
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-5x2-3 @70-85% 1RM",
+    "microdose": "2组x2，仅限技术熟练者"
+   },
+   "regress": [
+    "hang_power_clean",
+    "clean_pull"
+   ],
+   "progress": [],
+   "knee": "接杠有冲击",
+   "back": "离地圆背时降重或改悬垂",
+   "basketball": {
+    "why": "全幅度爆发发力",
+    "when": "训练日开头"
+   },
+   "refs": [
+    "comfort2011",
+    "suchomel2015",
+    "fedb"
+   ]
+  },
+  {
+   "id": "clean_grip_rdl",
+   "zh": "高翻握罗马尼亚硬拉",
+   "en": "clean-grip Romanian deadlift",
+   "aliases": [
+    "翻握RDL",
+    "clean grip RDL"
+   ],
+   "pattern": "hinge",
+   "equipment": "barbell",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "hamstrings",
+     "share": 40
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "erectors",
+     "share": 15
+    },
+    {
+     "m": "traps",
+     "share": 5
+    },
+    {
+     "m": "forearms",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: same as rdl with clean grip, used to rehearse the hang position for pulling derivatives (suchomel2015 progression); shares coach estimate.",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "hip_extension",
+     "bar_path",
+     "tempo",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "高翻握距",
+    "膝微屈",
+    "推髋向后"
+   ],
+   "cues": [
+    "推髋向后",
+    "杠贴腿",
+    "背阔肌夹紧"
+   ],
+   "faults": [
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    },
+    {
+     "id": "bar_away",
+     "zh": "杠离身体",
+     "see": "侧面看杠铃离开大腿/小腿前移",
+     "metric": "bar_path",
+     "fix": "提示“杠贴腿走”；背阔肌下压"
+    },
+    {
+     "id": "squat_down",
+     "zh": "变成下蹲",
+     "see": "侧面看膝屈越来越多、髋不后移",
+     "metric": "knee_travel",
+     "fix": "膝角度固定，只动髋"
+    }
+   ],
+   "dose": {
+    "strength": "3x5-8 @RIR2",
+    "power": "",
+    "microdose": "2组x5，作为提拉前的位置练习"
+   },
+   "regress": [
+    "rdl"
+   ],
+   "progress": [
+    "hang_clean_pull"
+   ],
+   "knee": "膝负担小",
+   "back": "保持中立，下到腘绳肌拉伸即可",
+   "basketball": {
+    "why": "教提拉的悬垂位置并强化后链",
+    "when": "力量日"
+   },
+   "refs": [
+    "suchomel2015"
+   ]
+  },
+  {
+   "id": "mid_thigh_pull_iso",
+   "zh": "等长大腿中部提拉",
+   "en": "isometric mid-thigh pull",
+   "aliases": [
+    "IMTP",
+    "等长提拉"
+   ],
+   "pattern": "isometric",
+   "equipment": "barbell (rack)",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 22
+    },
+    {
+     "m": "quads",
+     "share": 22
+    },
+    {
+     "m": "hamstrings",
+     "share": 16
+    },
+    {
+     "m": "traps",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 10
+    },
+    {
+     "m": "forearms",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: mid-thigh position matches the second-pull position where comfort2011 found highest force and RFD; shares are coach estimates.",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "pause"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "杠固定在大腿中部",
+    "膝约125-145°、髋约140-150°(常用测试位，经验值)",
+    "躯干直立"
+   ],
+   "cues": [
+    "腿推地",
+    "越快越用力",
+    "保持3-5秒"
+   ],
+   "faults": [
+    {
+     "id": "pull_with_arms",
+     "zh": "用手臂拉",
+     "see": "侧面看屈肘、耸肩",
+     "metric": null,
+     "fix": "手臂伸直，“用脚推开地面”"
+    },
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x3-5秒 全力，组间1-2分钟",
+    "power": "",
+    "microdose": "2-3次x3秒，赛季中低疲劳维持力量"
+   },
+   "regress": [],
+   "progress": [
+    "clean_pull"
+   ],
+   "knee": "等长、无冲击，适合膝敏感期",
+   "back": "躯干直立，腰负担小",
+   "basketball": {
+    "why": "以很低疲劳刺激最大发力与发力速度",
+    "when": "比赛前1-2天也可做"
+   },
+   "refs": [
+    "comfort2011",
+    "suchomel2015"
+   ]
+  },
+  {
+   "id": "deadlift",
+   "zh": "杠铃硬拉",
+   "en": "barbell deadlift",
+   "aliases": [
+    "硬拉",
+    "传统硬拉",
+    "deadlift"
+   ],
+   "pattern": "hinge",
+   "equipment": "barbell",
+   "fedb_id": "Barbell_Deadlift",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "hamstrings",
+     "share": 20
+    },
+    {
+     "m": "quads",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 20
+    },
+    {
+     "m": "adductors",
+     "share": 5
+    },
+    {
+     "m": "forearms",
+     "share": 8
+    },
+    {
+     "m": "traps",
+     "share": 7
+    }
+   ],
+   "muscles_basis": "Estimate: fedb lists the posterior chain; straight-bar version loads the low back more than the hex bar (swinton2011); shares are coach estimates.",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "hip_extension",
+     "bar_path",
+     "tempo",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "杠在脚中上方",
+    "握杠后胫骨碰杠",
+    "肩略在杠前"
+   ],
+   "cues": [
+    "背阔肌夹紧",
+    "腿推地",
+    "杠贴腿",
+    "站直夹臀"
+   ],
+   "faults": [
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    },
+    {
+     "id": "bar_away",
+     "zh": "杠离身体",
+     "see": "侧面看杠铃离开大腿/小腿前移",
+     "metric": "bar_path",
+     "fix": "提示“杠贴腿走”；背阔肌下压"
+    },
+    {
+     "id": "hip_short",
+     "zh": "伸髋不完全",
+     "see": "侧面看顶端髋未完全伸直",
+     "metric": "hip_extension",
+     "fix": "顶端夹臀1秒；降重"
+    },
+    {
+     "id": "hyperextend",
+     "zh": "顶端过度后仰",
+     "see": "侧面看顶端腰椎后仰、肋骨外翻",
+     "metric": "trunk_lean",
+     "fix": "顶端“肋骨下沉、夹臀站直”即可"
+    }
+   ],
+   "dose": {
+    "strength": "2-4x2-5 @RIR2-3",
+    "power": "",
+    "microdose": "1-2组x3 @RIR3"
+   },
+   "regress": [
+    "trap_bar_deadlift",
+    "rdl"
+   ],
+   "progress": [],
+   "knee": "膝负担较蹲小",
+   "back": "腰痛期改六角杠硬拉或臀桥",
+   "basketball": {
+    "why": "后链最大力量，支撑冲刺与对抗",
+    "when": "赛后48小时以上、离下一场比赛≥2天的日子；赛季中每周1-2次，每动作2-3组"
+   },
+   "refs": [
+    "swinton2011",
+    "suchomel2016",
+    "fedb"
+   ]
+  },
+  {
+   "id": "trap_bar_deadlift",
+   "zh": "六角杠硬拉",
+   "en": "trap bar deadlift",
+   "aliases": [
+    "六角杠",
+    "hex bar deadlift"
+   ],
+   "pattern": "hinge",
+   "equipment": "trap bar",
+   "fedb_id": "Trap_Bar_Deadlift",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 25
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "hamstrings",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 15
+    },
+    {
+     "m": "traps",
+     "share": 10
+    },
+    {
+     "m": "forearms",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "swinton2011: hex bar allowed higher loads and peak force/power vs straight bar; joint-moment shift toward the knee is from secondary summaries, so shares are an estimate.",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "hip_extension",
+     "bar_path",
+     "tempo",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "站在杠中间",
+    "握手柄",
+    "屈髋屈膝，背中立"
+   ],
+   "cues": [
+    "腿推地",
+    "胸挺",
+    "站直夹臀"
+   ],
+   "faults": [
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    },
+    {
+     "id": "hip_short",
+     "zh": "伸髋不完全",
+     "see": "侧面看顶端髋未完全伸直",
+     "metric": "hip_extension",
+     "fix": "顶端夹臀1秒；降重"
+    },
+    {
+     "id": "hyperextend",
+     "zh": "顶端过度后仰",
+     "see": "侧面看顶端腰椎后仰、肋骨外翻",
+     "metric": "trunk_lean",
+     "fix": "顶端“肋骨下沉、夹臀站直”即可"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x3-5 @RIR2-3",
+    "power": "3-5x3 @40-60% 快拉或跳",
+    "microdose": "1-2组x3 @RIR3，6分钟"
+   },
+   "regress": [
+    "kb_swing",
+    "rdl"
+   ],
+   "progress": [
+    "deadlift"
+   ],
+   "knee": "",
+   "back": "杠在身体中心，腰负担通常小于直杠硬拉",
+   "basketball": {
+    "why": "运动员友好的最大力量动作，便于学习",
+    "when": "赛后48小时以上、离下一场比赛≥2天的日子；赛季中每周1-2次，每动作2-3组"
+   },
+   "refs": [
+    "swinton2011",
+    "fedb"
+   ]
+  },
+  {
+   "id": "rdl",
+   "zh": "罗马尼亚硬拉",
+   "en": "Romanian deadlift",
+   "aliases": [
+    "RDL",
+    "直腿硬拉"
+   ],
+   "pattern": "hinge",
+   "equipment": "barbell",
+   "fedb_id": "Romanian_Deadlift",
+   "muscles": [
+    {
+     "m": "hamstrings",
+     "share": 45
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "erectors",
+     "share": 15
+    },
+    {
+     "m": "forearms",
+     "share": 5
+    },
+    {
+     "m": "adductors",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: fedb lists hamstrings primary; hip-dominant with near-fixed knee angle (coach estimate).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "hip_extension",
+     "bar_path",
+     "tempo",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "站立持杠",
+    "膝微屈固定",
+    "推髋向后"
+   ],
+   "cues": [
+    "推髋向后",
+    "杠贴腿",
+    "背中立"
+   ],
+   "faults": [
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    },
+    {
+     "id": "bar_away",
+     "zh": "杠离身体",
+     "see": "侧面看杠铃离开大腿/小腿前移",
+     "metric": "bar_path",
+     "fix": "提示“杠贴腿走”；背阔肌下压"
+    },
+    {
+     "id": "squat_down",
+     "zh": "变成下蹲",
+     "see": "侧面看膝不断前移",
+     "metric": "knee_travel",
+     "fix": "膝角固定，只动髋"
+    }
+   ],
+   "dose": {
+    "strength": "3x5-8 @RIR2",
+    "power": "",
+    "microdose": "2组x6 @RIR3"
+   },
+   "regress": [
+    "glute_bridge",
+    "single_leg_rdl"
+   ],
+   "progress": [
+    "deadlift"
+   ],
+   "knee": "膝负担小",
+   "back": "下到背仍中立处即止",
+   "basketball": {
+    "why": "腘绳肌力量，对冲刺和减速刹车有用",
+    "when": "赛后第2天或周中力量日"
+   },
+   "refs": [
+    "harper2022",
+    "fedb"
+   ]
+  },
+  {
+   "id": "single_leg_rdl",
+   "zh": "单腿罗马尼亚硬拉",
+   "en": "single-leg Romanian deadlift",
+   "aliases": [
+    "单腿硬拉",
+    "SL RDL"
+   ],
+   "pattern": "hinge",
+   "equipment": "dumbbell",
+   "fedb_id": "Kettlebell_One-Legged_Deadlift",
+   "muscles": [
+    {
+     "m": "hamstrings",
+     "share": 40
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "glute_med",
+     "share": 15
+    },
+    {
+     "m": "erectors",
+     "share": 10
+    },
+    {
+     "m": "forearms",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: rdl pattern on one leg adds frontal-plane hip stability demand (coach estimate).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "hip_extension",
+     "tempo",
+     "rep_count"
+    ],
+    "front": [
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "对侧手持哑铃",
+    "支撑膝微屈",
+    "后腿与躯干一条线"
+   ],
+   "cues": [
+    "髋正对地面",
+    "后脚跟向后蹬",
+    "慢下"
+   ],
+   "faults": [
+    {
+     "id": "hip_open",
+     "zh": "髋外翻",
+     "see": "后面或正面看抬起腿的髋向外打开",
+     "metric": "symmetry",
+     "fix": "脚尖朝下，两髋水平"
+    },
+    {
+     "id": "round_back",
+     "zh": "圆背拉起",
+     "see": "侧面看腰背弯曲、肩胛前于杠铃太多",
+     "metric": "trunk_lean",
+     "fix": "起拉前“背阔肌夹紧、胸挺”；降重或抬高起始位置"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-8/侧 @RIR2",
+    "power": "",
+    "microdose": "1-2组x5/侧，热身中"
+   },
+   "regress": [
+    "rdl"
+   ],
+   "progress": [],
+   "knee": "",
+   "back": "负荷轻，腰负担小",
+   "basketball": {
+    "why": "单腿后链与平衡，类似单脚起跳与急停",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "kb_swing",
+   "zh": "壶铃摆荡",
+   "en": "kettlebell swing",
+   "aliases": [
+    "壶铃甩摆",
+    "KB swing"
+   ],
+   "pattern": "hinge",
+   "equipment": "kettlebell",
+   "fedb_id": "One-Arm_Kettlebell_Swings",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 35
+    },
+    {
+     "m": "hamstrings",
+     "share": 30
+    },
+    {
+     "m": "erectors",
+     "share": 15
+    },
+    {
+     "m": "abs",
+     "share": 10
+    },
+    {
+     "m": "forearms",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: ballistic hip hinge; lake2012 found swing training raised half-squat 1RM and jump height similarly to jump squats; shares coach estimate.",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "hip_extension",
+     "rep_count",
+     "tempo"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "壶铃在脚前",
+    "双手握把",
+    "向后夹到两腿间再爆发"
+   ],
+   "cues": [
+    "推髋发力",
+    "手臂放松",
+    "顶端站直"
+   ],
+   "faults": [
+    {
+     "id": "squat_swing",
+     "zh": "蹲着甩",
+     "see": "侧面看膝屈很多、髋不后移",
+     "metric": "knee_travel",
+     "fix": "先练RDL；“屁股往后墙推”"
+    },
+    {
+     "id": "hyperextend",
+     "zh": "顶端过度后仰",
+     "see": "侧面看顶端腰椎后仰、肋骨外翻",
+     "metric": "trunk_lean",
+     "fix": "顶端“肋骨下沉、夹臀站直”即可"
+    },
+    {
+     "id": "arm_lift",
+     "zh": "用手臂抬",
+     "see": "肩耸起、壶铃高于胸",
+     "metric": null,
+     "fix": "壶铃只到胸高，力量来自髋"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "5-8x5-10，每次都要快",
+    "microdose": "2-3组x10，3-5分钟"
+   },
+   "regress": [
+    "glute_bridge",
+    "rdl"
+   ],
+   "progress": [
+    "hang_clean_pull"
+   ],
+   "knee": "膝负担小",
+   "back": "腰痛期先练铰链",
+   "basketball": {
+    "why": "家里也能练的爆发伸髋",
+    "when": "比赛前1天低量，或微剂量"
+   },
+   "refs": [
+    "lake2012",
+    "fedb"
+   ]
+  },
+  {
+   "id": "hip_thrust",
+   "zh": "杠铃臀推",
+   "en": "barbell hip thrust",
+   "aliases": [
+    "臀推",
+    "hip thrust"
+   ],
+   "pattern": "hinge",
+   "equipment": "barbell",
+   "fedb_id": "Barbell_Hip_Thrust",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 60
+    },
+    {
+     "m": "hamstrings",
+     "share": 20
+    },
+    {
+     "m": "quads",
+     "share": 10
+    },
+    {
+     "m": "adductors",
+     "share": 5
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "contreras2015: higher glute and biceps femoris EMG than back squat, similar vastus lateralis; plotkin2023: similar glute growth to squats, so shares are emphasis not EMG.",
+   "views": {
+    "side": [
+     "hip_extension",
+     "tempo",
+     "pause",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "上背靠凳",
+    "杠放髋上加垫",
+    "顶端胫骨垂直"
+   ],
+   "cues": [
+    "下巴微收",
+    "夹臀顶髋",
+    "顶端停1秒"
+   ],
+   "faults": [
+    {
+     "id": "hip_short",
+     "zh": "伸髋不完全",
+     "see": "侧面看顶端髋未完全伸直",
+     "metric": "hip_extension",
+     "fix": "顶端夹臀1秒；降重"
+    },
+    {
+     "id": "hyperextend",
+     "zh": "顶端过度后仰",
+     "see": "侧面看顶端腰椎后仰、肋骨外翻",
+     "metric": "trunk_lean",
+     "fix": "顶端“肋骨下沉、夹臀站直”即可"
+    },
+    {
+     "id": "feet_far",
+     "zh": "脚太远",
+     "see": "顶端胫骨明显前倾",
+     "metric": null,
+     "fix": "脚往回收，顶端胫骨垂直"
+    }
+   ],
+   "dose": {
+    "strength": "3-4x6-10 @RIR2",
+    "power": "",
+    "microdose": "2组x8 @RIR2，5分钟"
+   },
+   "regress": [
+    "glute_bridge"
+   ],
+   "progress": [],
+   "knee": "膝负担低，膝痛期维持髋伸力量的好选择",
+   "back": "顶端别腰椎过伸",
+   "basketball": {
+    "why": "臀部伸髋力量，可能帮助冲刺加速(间接证据)",
+    "when": "赛后第1-2天也可做，疲劳低"
+   },
+   "refs": [
+    "contreras2015",
+    "plotkin2023",
+    "fedb"
+   ]
+  },
+  {
+   "id": "glute_bridge",
+   "zh": "臀桥",
+   "en": "glute bridge",
+   "aliases": [
+    "地面臀桥",
+    "glute bridge"
+   ],
+   "pattern": "hinge",
+   "equipment": "bodyweight",
+   "fedb_id": "Butt_Lift_Bridge",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 60
+    },
+    {
+     "m": "hamstrings",
+     "share": 25
+    },
+    {
+     "m": "abs",
+     "share": 10
+    },
+    {
+     "m": "adductors",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: floor version of the hip thrust (coach estimate based on contreras2015 pattern).",
+   "views": {
+    "side": [
+     "hip_extension",
+     "pause",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "仰卧屈膝",
+    "脚跟靠近臀部",
+    "手放身体两侧"
+   ],
+   "cues": [
+    "脚跟踩地",
+    "夹臀顶髋",
+    "肋骨下沉"
+   ],
+   "faults": [
+    {
+     "id": "hip_short",
+     "zh": "伸髋不完全",
+     "see": "侧面看顶端髋未完全伸直",
+     "metric": "hip_extension",
+     "fix": "顶端夹臀1秒；降重"
+    },
+    {
+     "id": "hyperextend",
+     "zh": "顶端过度后仰",
+     "see": "侧面看顶端腰椎后仰、肋骨外翻",
+     "metric": "trunk_lean",
+     "fix": "顶端“肋骨下沉、夹臀站直”即可"
+    }
+   ],
+   "dose": {
+    "strength": "3x10-15，单腿更难",
+    "power": "",
+    "microdose": "2组x12，热身中"
+   },
+   "regress": [],
+   "progress": [
+    "hip_thrust",
+    "single_leg_rdl"
+   ],
+   "knee": "膝友好",
+   "back": "腰友好；避免顶端过伸",
+   "basketball": {
+    "why": "激活臀部，热身或恢复日",
+    "when": "任何一天，含比赛日热身"
+   },
+   "refs": [
+    "contreras2015",
+    "fedb"
+   ]
+  },
+  {
+   "id": "nordic",
+   "zh": "北欧挺",
+   "en": "Nordic hamstring curl",
+   "aliases": [
+    "北欧腿弯举",
+    "Nordic curl"
+   ],
+   "pattern": "hinge",
+   "equipment": "bodyweight",
+   "fedb_id": "Natural_Glute_Ham_Raise",
+   "muscles": [
+    {
+     "m": "hamstrings",
+     "share": 80
+    },
+    {
+     "m": "glutes",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: knee-flexion eccentric dominated by hamstrings; injury-prevention effect from vanderhorst2015 (amateur soccer RCT).",
+   "views": {
+    "side": [
+     "tempo",
+     "trunk_lean",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "跪姿，脚踝被固定",
+    "膝下垫软垫",
+    "身体从膝到头一条线"
+   ],
+   "cues": [
+    "髋不折",
+    "慢慢倒下",
+    "手接住推回"
+   ],
+   "faults": [
+    {
+     "id": "hip_break",
+     "zh": "折髋",
+     "see": "侧面看髋屈、臀部后坐",
+     "metric": "trunk_lean",
+     "fix": "夹臀保持一条线；缩小幅度"
+    },
+    {
+     "id": "fast_eccentric",
+     "zh": "下放失控",
+     "see": "侧面看下放速度明显快于设定节奏",
+     "metric": "tempo",
+     "fix": "数秒下放；降重"
+    }
+   ],
+   "dose": {
+    "strength": "2-3x3-6，离心慢",
+    "power": "",
+    "microdose": "1-2组x3，每周1-2次即可维持"
+   },
+   "regress": [
+    "leg_curl"
+   ],
+   "progress": [],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "腘绳肌离心力量，降低拉伤风险(足球RCT证据)",
+    "when": "赛后第2天；比赛前2天内别做，避免酸痛"
+   },
+   "refs": [
+    "vanderhorst2015",
+    "fedb"
+   ]
+  },
+  {
+   "id": "leg_curl",
+   "zh": "腿弯举",
+   "en": "leg curl",
+   "aliases": [
+    "俯卧腿弯举",
+    "leg curl"
+   ],
+   "pattern": "hinge",
+   "equipment": "machine",
+   "fedb_id": "Lying_Leg_Curls",
+   "muscles": [
+    {
+     "m": "hamstrings",
+     "share": 85
+    },
+    {
+     "m": "calves",
+     "share": 15
+    }
+   ],
+   "muscles_basis": "Estimate: isolated knee flexion; gastrocnemius assists knee flexion (coach estimate).",
+   "views": {
+    "side": [
+     "tempo",
+     "rep_count"
+    ],
+    "front": []
+   },
+   "setup": [
+    "膝对齐机器轴",
+    "垫子在脚踝上方"
+   ],
+   "cues": [
+    "慢放",
+    "髋压住垫子"
+   ],
+   "faults": [
+    {
+     "id": "hip_lift",
+     "zh": "抬髋",
+     "see": "侧面看髋离开垫子",
+     "metric": null,
+     "fix": "降重；腹部压垫"
+    },
+    {
+     "id": "fast_eccentric",
+     "zh": "下放失控",
+     "see": "侧面看下放速度明显快于设定节奏",
+     "metric": "tempo",
+     "fix": "数秒下放；降重"
+    }
+   ],
+   "dose": {
+    "strength": "3x8-12 @RIR2",
+    "power": "",
+    "microdose": "2组x10"
+   },
+   "regress": [],
+   "progress": [
+    "nordic"
+   ],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "无冲击的腘绳肌力量",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "bulgarian_split_squat",
+   "zh": "保加利亚分腿蹲",
+   "en": "Bulgarian split squat",
+   "aliases": [
+    "后脚抬高分腿蹲",
+    "BSS",
+    "RFESS"
+   ],
+   "pattern": "single_leg",
+   "equipment": "dumbbell",
+   "fedb_id": "Split_Squat_with_Dumbbells",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 35
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "adductors",
+     "share": 10
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "mackey2021: hip net joint moment exceeded knee and ankle, knee range smaller than back squat; shares are an estimate built on that and fedb lists.",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "后脚背放凳上",
+    "前脚离凳约一大步",
+    "双手持哑铃"
+   ],
+   "cues": [
+    "重心在前脚",
+    "直上直下",
+    "膝对脚尖"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "push_back_leg",
+     "zh": "后腿发力",
+     "see": "侧面看后膝先伸、身体后移",
+     "metric": "trunk_lean",
+     "fix": "前脚全脚掌发力；稍前倾躯干"
+    }
+   ],
+   "dose": {
+    "strength": "3x5-8/侧 @RIR2",
+    "power": "",
+    "microdose": "1-2组x5/侧，7分钟"
+   },
+   "regress": [
+    "split_squat"
+   ],
+   "progress": [],
+   "knee": "躯干前倾、前脚稍远可减轻膝负担",
+   "back": "比后蹲脊柱负荷小，腰痛期替代主蹲",
+   "basketball": {
+    "why": "单腿力量与稳定，接近单脚起跳与变向",
+    "when": "赛后第2天；赛前2天内只做轻量"
+   },
+   "refs": [
+    "mackey2021",
+    "fedb"
+   ]
+  },
+  {
+   "id": "split_squat",
+   "zh": "分腿蹲",
+   "en": "split squat",
+   "aliases": [
+    "静态弓步蹲",
+    "split squat"
+   ],
+   "pattern": "single_leg",
+   "equipment": "bodyweight",
+   "fedb_id": "Split_Squats",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 40
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "adductors",
+     "share": 10
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: same pattern as bulgarian_split_squat with more back-leg support (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "前后脚错开一大步",
+    "后脚跟抬起",
+    "躯干直立"
+   ],
+   "cues": [
+    "后膝向地",
+    "前脚全掌",
+    "直上直下"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "trunk_twist",
+     "zh": "躯干扭转",
+     "see": "正面看肩或骨盆朝一侧转开",
+     "metric": "symmetry",
+     "fix": "降重；放慢；对镜或手扶保持平衡"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-10/侧",
+    "power": "",
+    "microdose": "1-2组x8/侧"
+   },
+   "regress": [
+    "isometric_split_squat"
+   ],
+   "progress": [
+    "bulgarian_split_squat",
+    "reverse_lunge"
+   ],
+   "knee": "限幅度即可在膝痛期练",
+   "back": "腰友好",
+   "basketball": {
+    "why": "单腿力量入门",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "reverse_lunge",
+   "zh": "后撤弓步",
+   "en": "reverse lunge",
+   "aliases": [
+    "后弓步",
+    "reverse lunge"
+   ],
+   "pattern": "lunge",
+   "equipment": "dumbbell",
+   "fedb_id": "Dumbbell_Rear_Lunge",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 35
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "adductors",
+     "share": 10
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: front-leg dominant lunge; stepping back reduces forward braking (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "双脚并拢站立",
+    "一脚向后跨一大步",
+    "后膝下到接近地面"
+   ],
+   "cues": [
+    "前脚发力回位",
+    "躯干稳",
+    "膝对脚尖"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "trunk_twist",
+     "zh": "躯干扭转",
+     "see": "正面看肩或骨盆朝一侧转开",
+     "metric": "symmetry",
+     "fix": "降重；放慢；对镜或手扶保持平衡"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-8/侧 @RIR2",
+    "power": "",
+    "microdose": "1-2组x6/侧"
+   },
+   "regress": [
+    "split_squat"
+   ],
+   "progress": [
+    "walking_lunge"
+   ],
+   "knee": "比前弓步对膝更友好(前脚不需刹车)",
+   "back": "",
+   "basketball": {
+    "why": "单腿力量与稳定",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "walking_lunge",
+   "zh": "行进弓步",
+   "en": "walking lunge",
+   "aliases": [
+    "走步弓步",
+    "walking lunge"
+   ],
+   "pattern": "lunge",
+   "equipment": "dumbbell",
+   "fedb_id": "Barbell_Walking_Lunge",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 35
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "adductors",
+     "share": 10
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: forward lunge adds a braking step on the front leg (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "双手持哑铃",
+    "向前一大步",
+    "后膝接近地面"
+   ],
+   "cues": [
+    "前脚稳住",
+    "躯干直",
+    "连续向前"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "short_step",
+     "zh": "步子太小",
+     "see": "侧面看前膝远超脚尖、脚跟抬起",
+     "metric": "knee_travel",
+     "fix": "步幅加大，前脚跟踩实"
+    }
+   ],
+   "dose": {
+    "strength": "3x8/侧",
+    "power": "",
+    "microdose": "1-2组x6/侧，场边也能做"
+   },
+   "regress": [
+    "reverse_lunge"
+   ],
+   "progress": [],
+   "knee": "前脚刹车，髌腱敏感期用后撤弓步替代",
+   "back": "",
+   "basketball": {
+    "why": "向前刹车与推进，接近急停",
+    "when": "赛后第2天"
+   },
+   "refs": [
+    "harper2022",
+    "fedb"
+   ]
+  },
+  {
+   "id": "lateral_lunge",
+   "zh": "侧弓步",
+   "en": "lateral lunge",
+   "aliases": [
+    "侧蹲",
+    "side lunge"
+   ],
+   "pattern": "lunge",
+   "equipment": "bodyweight",
+   "fedb_id": "Barbell_Side_Split_Squat",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 30
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "adductors",
+     "share": 30
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "hamstrings",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: frontal-plane lunge loads adductors of the straight leg and the working leg's quads/glutes (coach estimate).",
+   "views": {
+    "side": [],
+    "front": [
+     "depth",
+     "trunk_lean",
+     "knee_valgus",
+     "symmetry",
+     "rep_count"
+    ]
+   },
+   "setup": [
+    "双脚宽站",
+    "向一侧坐下",
+    "另一腿伸直"
+   ],
+   "cues": [
+    "坐向一侧",
+    "脚尖朝前",
+    "推地回位"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "heels_up",
+     "zh": "脚跟离地",
+     "see": "侧面看脚跟抬起、重心前移到脚尖",
+     "metric": null,
+     "fix": "重心放全脚掌；脚跟垫小片或改高脚跟鞋，先做高脚杯深蹲找感觉"
+    },
+    {
+     "id": "trunk_collapse",
+     "zh": "躯干塌下",
+     "see": "正面看胸贴向大腿",
+     "metric": "trunk_lean",
+     "fix": "幅度减小；胸挺直"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-8/侧",
+    "power": "",
+    "microdose": "1-2组x6/侧，热身中"
+   },
+   "regress": [],
+   "progress": [
+    "cossack_squat",
+    "lateral_bound"
+   ],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "侧向移动与滑步的力量与内收肌长度",
+    "when": "热身或任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "cossack_squat",
+   "zh": "哥萨克深蹲",
+   "en": "Cossack squat",
+   "aliases": [
+    "侧向深蹲",
+    "Cossack squat"
+   ],
+   "pattern": "lunge",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 30
+    },
+    {
+     "m": "glutes",
+     "share": 20
+    },
+    {
+     "m": "adductors",
+     "share": 35
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "hamstrings",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: deeper lateral lunge with greater adductor stretch (coach estimate).",
+   "views": {
+    "side": [],
+    "front": [
+     "depth",
+     "trunk_lean",
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "双脚很宽",
+    "向一侧深蹲",
+    "伸直腿脚尖朝上"
+   ],
+   "cues": [
+    "全脚掌踩",
+    "胸挺",
+    "慢慢换边"
+   ],
+   "faults": [
+    {
+     "id": "heels_up",
+     "zh": "脚跟离地",
+     "see": "侧面看脚跟抬起、重心前移到脚尖",
+     "metric": null,
+     "fix": "重心放全脚掌；脚跟垫小片或改高脚跟鞋，先做高脚杯深蹲找感觉"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    }
+   ],
+   "dose": {
+    "strength": "2-3x5/侧",
+    "power": "",
+    "microdose": "1组x5/侧，热身"
+   },
+   "regress": [
+    "lateral_lunge"
+   ],
+   "progress": [],
+   "knee": "深屈膝，膝痛时限幅度",
+   "back": "",
+   "basketball": {
+    "why": "内收肌离心与髋活动度，利于低位防守",
+    "when": "热身"
+   },
+   "refs": []
+  },
+  {
+   "id": "step_up",
+   "zh": "登阶",
+   "en": "step-up",
+   "aliases": [
+    "上台阶",
+    "step up"
+   ],
+   "pattern": "single_leg",
+   "equipment": "dumbbell",
+   "fedb_id": "Dumbbell_Step_Ups",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 40
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: single-leg concentric knee and hip extension (coach estimate; fedb lists).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "箱高约膝高",
+    "整只脚放箱上",
+    "双手持哑铃"
+   ],
+   "cues": [
+    "上面的脚发力",
+    "后脚不蹬",
+    "慢下"
+   ],
+   "faults": [
+    {
+     "id": "push_off_back",
+     "zh": "后脚蹬地",
+     "see": "侧面看后脚踝明显发力弹起",
+     "metric": null,
+     "fix": "后脚只用脚尖轻触"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-8/侧 @RIR2",
+    "power": "",
+    "microdose": "1-2组x6/侧"
+   },
+   "regress": [
+    "split_squat"
+   ],
+   "progress": [
+    "bulgarian_split_squat"
+   ],
+   "knee": "以向心为主，膝痛时常比深蹲好耐受(经验)",
+   "back": "",
+   "basketball": {
+    "why": "单腿向上推进，接近上篮起跳",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "step_down",
+   "zh": "下台阶",
+   "en": "step-down",
+   "aliases": [
+    "离心下台阶",
+    "step down"
+   ],
+   "pattern": "single_leg",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 50
+    },
+    {
+     "m": "glutes",
+     "share": 20
+    },
+    {
+     "m": "glute_med",
+     "share": 20
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: eccentric single-leg knee control (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "单脚站在低台阶上",
+    "另一脚悬空在前或侧",
+    "慢慢下放"
+   ],
+   "cues": [
+    "膝对第二趾",
+    "髋水平",
+    "3秒下放"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "fast_eccentric",
+     "zh": "下放失控",
+     "see": "侧面看下放速度明显快于设定节奏",
+     "metric": "tempo",
+     "fix": "数秒下放；降重"
+    }
+   ],
+   "dose": {
+    "strength": "3x8-10/侧 慢离心",
+    "power": "",
+    "microdose": "1-2组x6/侧"
+   },
+   "regress": [
+    "spanish_squat"
+   ],
+   "progress": [
+    "single_leg_squat_box",
+    "skater_squat"
+   ],
+   "knee": "从低台阶开始，按疼痛逐步加高(渐进肌腱负荷思路，breda2021)",
+   "back": "",
+   "basketball": {
+    "why": "单腿落地与急停时的膝控制",
+    "when": "热身或任何训练日"
+   },
+   "refs": [
+    "munro2012",
+    "breda2021"
+   ]
+  },
+  {
+   "id": "single_leg_squat_box",
+   "zh": "单腿箱式深蹲",
+   "en": "single-leg box squat",
+   "aliases": [
+    "单腿坐箱",
+    "pistol to box"
+   ],
+   "pattern": "single_leg",
+   "equipment": "box",
+   "fedb_id": "Single-Leg_High_Box_Squat",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 45
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "glute_med",
+     "share": 15
+    },
+    {
+     "m": "hamstrings",
+     "share": 5
+    },
+    {
+     "m": "calves",
+     "share": 5
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: single-leg squat to a box (coach estimate; fedb lists).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "箱在身后",
+    "单脚站",
+    "双手前伸平衡"
+   ],
+   "cues": [
+    "慢坐",
+    "轻触即起",
+    "膝对脚尖"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "plop",
+     "zh": "砸箱",
+     "see": "最后几厘米突然坐下",
+     "metric": "tempo",
+     "fix": "提高箱子"
+    }
+   ],
+   "dose": {
+    "strength": "3x5-8/侧",
+    "power": "",
+    "microdose": "1-2组x5/侧"
+   },
+   "regress": [
+    "step_down"
+   ],
+   "progress": [
+    "skater_squat"
+   ],
+   "knee": "箱高控制深度",
+   "back": "",
+   "basketball": {
+    "why": "单腿力量与膝控制",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "munro2012",
+    "fedb"
+   ]
+  },
+  {
+   "id": "skater_squat",
+   "zh": "滑冰者深蹲",
+   "en": "skater squat",
+   "aliases": [
+    "溜冰者深蹲",
+    "skater squat"
+   ],
+   "pattern": "single_leg",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 40
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "glute_med",
+     "share": 15
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: single-leg squat with the free leg behind and a forward trunk lean (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "tempo",
+     "knee_travel",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "单脚站",
+    "另一腿屈膝向后",
+    "后膝轻触垫子"
+   ],
+   "cues": [
+    "胸前倾",
+    "后膝轻触",
+    "前脚全掌"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "heels_up",
+     "zh": "脚跟离地",
+     "see": "侧面看脚跟抬起、重心前移到脚尖",
+     "metric": null,
+     "fix": "重心放全脚掌；脚跟垫小片或改高脚跟鞋，先做高脚杯深蹲找感觉"
+    }
+   ],
+   "dose": {
+    "strength": "3x5-6/侧，可手持轻哑铃",
+    "power": "",
+    "microdose": "1-2组x4/侧"
+   },
+   "regress": [
+    "single_leg_squat_box"
+   ],
+   "progress": [],
+   "knee": "膝屈深，髌腱敏感期加垫限深",
+   "back": "",
+   "basketball": {
+    "why": "单腿全幅度力量",
+    "when": "力量日"
+   },
+   "refs": []
+  },
+  {
+   "id": "spanish_squat",
+   "zh": "西班牙深蹲",
+   "en": "Spanish squat",
+   "aliases": [
+    "弹力带等长蹲",
+    "Spanish squat"
+   ],
+   "pattern": "isometric",
+   "equipment": "band or strap",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 75
+    },
+    {
+     "m": "glutes",
+     "share": 15
+    },
+    {
+     "m": "abs",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: band behind the knees keeps shins vertical so the quads carry the load (coach estimate); isometric rationale from rio2015.",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "pause"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "粗弹力带固定在膝后",
+    "身体后坐",
+    "胫骨保持垂直"
+   ],
+   "cues": [
+    "胫骨垂直",
+    "向后坐",
+    "保持呼吸"
+   ],
+   "faults": [
+    {
+     "id": "knee_forward",
+     "zh": "膝向前",
+     "see": "侧面看膝盖越过脚尖、胫骨前倾",
+     "metric": "knee_travel",
+     "fix": "离固定点更远、带子更紧"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    }
+   ],
+   "dose": {
+    "strength": "4-5x30-45秒，组间1-2分钟",
+    "power": "",
+    "microdose": "热身中1-2x30秒；膝前痛时作为训练前准备"
+   },
+   "regress": [
+    "wall_sit"
+   ],
+   "progress": [
+    "step_down"
+   ],
+   "knee": "rio2015(6人小样本)显示等长收缩后髌腱痛即时下降；作为选项，不保证有效",
+   "back": "",
+   "basketball": {
+    "why": "髌腱痛期维持股四头肌负荷",
+    "when": "任何一天，含比赛日热身"
+   },
+   "refs": [
+    "rio2015",
+    "breda2021"
+   ]
+  },
+  {
+   "id": "wall_sit",
+   "zh": "靠墙静蹲",
+   "en": "wall sit",
+   "aliases": [
+    "靠墙蹲",
+    "wall sit"
+   ],
+   "pattern": "isometric",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 75
+    },
+    {
+     "m": "glutes",
+     "share": 15
+    },
+    {
+     "m": "adductors",
+     "share": 5
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: isometric knee extension at a fixed angle (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "pause"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "背靠墙",
+    "滑到膝约60-90°",
+    "脚在膝正下方或略前"
+   ],
+   "cues": [
+    "背贴墙",
+    "膝对脚尖",
+    "均匀呼吸"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "uneven",
+     "zh": "重心偏一侧",
+     "see": "正面看身体偏向一条腿",
+     "metric": "symmetry",
+     "fix": "两脚均匀踩地"
+    }
+   ],
+   "dose": {
+    "strength": "4-5x30-45秒",
+    "power": "",
+    "microdose": "1-2x30秒，随时可做"
+   },
+   "regress": [],
+   "progress": [
+    "spanish_squat",
+    "isometric_split_squat"
+   ],
+   "knee": "膝角可选无痛角度；等长镇痛证据小(rio2015)",
+   "back": "腰友好",
+   "basketball": {
+    "why": "膝痛期仍保持股四头肌负荷",
+    "when": "任何一天"
+   },
+   "refs": [
+    "rio2015"
+   ]
+  },
+  {
+   "id": "isometric_split_squat",
+   "zh": "等长分腿蹲",
+   "en": "isometric split squat",
+   "aliases": [
+    "分腿蹲静止",
+    "iso split squat"
+   ],
+   "pattern": "isometric",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 50
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "adductors",
+     "share": 10
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: split-squat hold at mid range (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "pause"
+    ],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "分腿蹲姿势",
+    "下到中段停住",
+    "可手持哑铃"
+   ],
+   "cues": [
+    "前脚全掌",
+    "髋水平",
+    "保持呼吸"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x30-45秒/侧",
+    "power": "",
+    "microdose": "1-2x30秒/侧"
+   },
+   "regress": [
+    "wall_sit"
+   ],
+   "progress": [
+    "split_squat"
+   ],
+   "knee": "选无痛深度",
+   "back": "",
+   "basketball": {
+    "why": "单腿位置的肌腱负荷与稳定",
+    "when": "任何一天"
+   },
+   "refs": [
+    "rio2015"
+   ]
+  },
+  {
+   "id": "calf_raise_straight",
+   "zh": "直腿提踵",
+   "en": "straight-knee calf raise",
+   "aliases": [
+    "站姿提踵",
+    "standing calf raise"
+   ],
+   "pattern": "calf",
+   "equipment": "bodyweight or machine",
+   "fedb_id": "Standing_Calf_Raises",
+   "muscles": [
+    {
+     "m": "calves",
+     "share": 60
+    },
+    {
+     "m": "soleus",
+     "share": 40
+    }
+   ],
+   "muscles_basis": "Estimate: with the knee straight the gastrocnemius contributes more than when bent (coach estimate from muscle anatomy).",
+   "views": {
+    "side": [
+     "tempo",
+     "pause",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "前脚掌站台阶边",
+    "膝伸直",
+    "可单腿"
+   ],
+   "cues": [
+    "全幅度",
+    "顶端停1秒",
+    "慢放到底"
+   ],
+   "faults": [
+    {
+     "id": "bounce",
+     "zh": "底部弹起",
+     "see": "侧面看底部没有停顿、快速反弹",
+     "metric": "tempo",
+     "fix": "底部停1秒"
+    },
+    {
+     "id": "ankle_roll",
+     "zh": "踝外翻",
+     "see": "后面看脚跟外翻",
+     "metric": "symmetry",
+     "fix": "压大脚趾根"
+    }
+   ],
+   "dose": {
+    "strength": "3x8-15/侧 慢速",
+    "power": "",
+    "microdose": "2组x12/侧，随时"
+   },
+   "regress": [],
+   "progress": [
+    "pogo"
+   ],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "直腿蹬地能力，连续跳与起跳最后一推",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "beyer2015",
+    "fedb"
+   ]
+  },
+  {
+   "id": "calf_raise_bent",
+   "zh": "屈膝提踵(比目鱼肌)",
+   "en": "bent-knee calf raise (soleus)",
+   "aliases": [
+    "坐姿提踵",
+    "seated calf raise",
+    "比目鱼肌提踵"
+   ],
+   "pattern": "calf",
+   "equipment": "machine or dumbbell",
+   "fedb_id": "Seated_Calf_Raise",
+   "muscles": [
+    {
+     "m": "soleus",
+     "share": 80
+    },
+    {
+     "m": "calves",
+     "share": 20
+    }
+   ],
+   "muscles_basis": "Estimate: knee flexion shortens the two-joint gastrocnemius so the soleus does more (anatomy); dorn2012 shows soleus and gastrocnemius are major support-force contributors in running.",
+   "views": {
+    "side": [
+     "tempo",
+     "pause",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "坐姿，膝约90°",
+    "重物放膝上",
+    "前脚掌踩台阶"
+   ],
+   "cues": [
+    "全幅度",
+    "顶端停1秒",
+    "慢放"
+   ],
+   "faults": [
+    {
+     "id": "bounce",
+     "zh": "底部弹起",
+     "see": "底部没有停顿",
+     "metric": "tempo",
+     "fix": "底部停1秒"
+    }
+   ],
+   "dose": {
+    "strength": "3x10-15 重且慢",
+    "power": "",
+    "microdose": "2组x12"
+   },
+   "regress": [],
+   "progress": [],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "跑动支撑与跟腱负荷耐受(重慢训练用于跟腱病的证据，beyer2015)",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "dorn2012",
+    "beyer2015",
+    "fedb"
+   ]
+  },
+  {
+   "id": "tib_raise",
+   "zh": "胫骨前肌抬脚",
+   "en": "tibialis raise",
+   "aliases": [
+    "勾脚",
+    "tib raise"
+   ],
+   "pattern": "calf",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "tibialis",
+     "share": 100
+    }
+   ],
+   "muscles_basis": "Estimate: isolated ankle dorsiflexion (anatomy).",
+   "views": {
+    "side": [
+     "tempo",
+     "rep_count"
+    ],
+    "front": []
+   },
+   "setup": [
+    "背靠墙",
+    "脚跟离墙约一脚长",
+    "勾起脚尖"
+   ],
+   "cues": [
+    "脚尖勾高",
+    "慢放"
+   ],
+   "faults": [
+    {
+     "id": "small_range",
+     "zh": "幅度小",
+     "see": "侧面看脚尖抬得很低",
+     "metric": null,
+     "fix": "脚离墙近一点"
+    }
+   ],
+   "dose": {
+    "strength": "2-3x15-25",
+    "power": "",
+    "microdose": "1-2组x20"
+   },
+   "regress": [],
+   "progress": [],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "落地与急停时控制踝(经验)",
+    "when": "热身或任何一天"
+   },
+   "refs": []
+  },
+  {
+   "id": "copenhagen",
+   "zh": "哥本哈根内收",
+   "en": "Copenhagen adduction",
+   "aliases": [
+    "哥本哈根侧桥",
+    "Copenhagen plank"
+   ],
+   "pattern": "core",
+   "equipment": "bench",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "adductors",
+     "share": 65
+    },
+    {
+     "m": "obliques",
+     "share": 20
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: side plank supported by the top leg's adductors; groin-problem reduction from haroy2019.",
+   "views": {
+    "side": [],
+    "front": [
+     "trunk_lean",
+     "pause",
+     "rep_count",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "侧卧，上腿放凳上",
+    "下腿悬空或撑地(简易版)",
+    "前臂撑地"
+   ],
+   "cues": [
+    "身体一条线",
+    "上腿压凳",
+    "慢起慢放"
+   ],
+   "faults": [
+    {
+     "id": "sag",
+     "zh": "塌腰/塌胯",
+     "see": "侧面看髋低于肩踝连线",
+     "metric": "trunk_lean",
+     "fix": "缩短时间；收腹夹臀；改屈膝版本"
+    }
+   ],
+   "dose": {
+    "strength": "2-3x3-12/侧(从短杠杆开始)",
+    "power": "",
+    "microdose": "1-2组x5/侧；赛季中每周1次(haroy2019方案)"
+   },
+   "regress": [
+    "side_plank"
+   ],
+   "progress": [],
+   "knee": "膝内侧不适时把支撑点移到膝上(短杠杆)",
+   "back": "",
+   "basketball": {
+    "why": "降低腹股沟问题(足球RCT证据)，帮助变向",
+    "when": "赛前期每周3次，赛季每周1次"
+   },
+   "refs": [
+    "haroy2019"
+   ]
+  },
+  {
+   "id": "pallof_press",
+   "zh": "抗旋转推举",
+   "en": "Pallof press",
+   "aliases": [
+    "帕洛夫推",
+    "Pallof press"
+   ],
+   "pattern": "core",
+   "equipment": "cable or band",
+   "fedb_id": "Pallof_Press",
+   "muscles": [
+    {
+     "m": "obliques",
+     "share": 50
+    },
+    {
+     "m": "abs",
+     "share": 35
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "delts",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: anti-rotation hold (coach estimate).",
+   "views": {
+    "side": [],
+    "front": [
+     "symmetry",
+     "pause",
+     "rep_count"
+    ]
+   },
+   "setup": [
+    "侧对拉力点",
+    "双手胸前握把",
+    "推出伸直"
+   ],
+   "cues": [
+    "身体不转",
+    "推出停2秒",
+    "肋骨下沉"
+   ],
+   "faults": [
+    {
+     "id": "trunk_twist",
+     "zh": "躯干扭转",
+     "see": "正面看肩或骨盆朝一侧转开",
+     "metric": "symmetry",
+     "fix": "降重；放慢；对镜或手扶保持平衡"
+    }
+   ],
+   "dose": {
+    "strength": "3x8-10/侧",
+    "power": "",
+    "microdose": "1-2组x8/侧"
+   },
+   "regress": [],
+   "progress": [],
+   "knee": "",
+   "back": "腰友好的核心选择",
+   "basketball": {
+    "why": "对抗中保持身体不被带转",
+    "when": "任何一天"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "side_plank",
+   "zh": "侧桥",
+   "en": "side plank",
+   "aliases": [
+    "侧平板",
+    "side bridge"
+   ],
+   "pattern": "core",
+   "equipment": "bodyweight",
+   "fedb_id": "Side_Bridge",
+   "muscles": [
+    {
+     "m": "obliques",
+     "share": 55
+    },
+    {
+     "m": "glute_med",
+     "share": 20
+    },
+    {
+     "m": "abs",
+     "share": 15
+    },
+    {
+     "m": "adductors",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: lateral trunk and hip isometric (coach estimate).",
+   "views": {
+    "side": [],
+    "front": [
+     "trunk_lean",
+     "pause",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "侧卧",
+    "前臂在肩下",
+    "抬髋成一条线"
+   ],
+   "cues": [
+    "头到脚一条线",
+    "髋顶高",
+    "均匀呼吸"
+   ],
+   "faults": [
+    {
+     "id": "sag",
+     "zh": "塌腰/塌胯",
+     "see": "侧面看髋低于肩踝连线",
+     "metric": "trunk_lean",
+     "fix": "缩短时间；收腹夹臀；改屈膝版本"
+    }
+   ],
+   "dose": {
+    "strength": "3x20-45秒/侧",
+    "power": "",
+    "microdose": "1-2x30秒/侧"
+   },
+   "regress": [],
+   "progress": [
+    "copenhagen"
+   ],
+   "knee": "",
+   "back": "腰友好",
+   "basketball": {
+    "why": "侧向稳定",
+    "when": "任何一天"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "bird_dog",
+   "zh": "鸟狗式",
+   "en": "bird dog",
+   "aliases": [
+    "对侧伸展",
+    "bird dog"
+   ],
+   "pattern": "core",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "erectors",
+     "share": 35
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "abs",
+     "share": 20
+    },
+    {
+     "m": "delts",
+     "share": 15
+    }
+   ],
+   "muscles_basis": "Estimate: quadruped contralateral reach (coach estimate).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "pause",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "四点跪",
+    "手在肩下，膝在髋下",
+    "对侧手脚伸直"
+   ],
+   "cues": [
+    "腰不动",
+    "伸远不抬高",
+    "停2秒"
+   ],
+   "faults": [
+    {
+     "id": "arch",
+     "zh": "腰塌/扭",
+     "see": "侧面看腰下沉或骨盆转",
+     "metric": "trunk_lean",
+     "fix": "伸短一点，放慢"
+    }
+   ],
+   "dose": {
+    "strength": "2-3x6-8/侧",
+    "power": "",
+    "microdose": "1组x6/侧，热身"
+   },
+   "regress": [],
+   "progress": [],
+   "knee": "",
+   "back": "腰痛期常用的低负荷动作",
+   "basketball": {
+    "why": "热身中的躯干控制",
+    "when": "热身"
+   },
+   "refs": []
+  },
+  {
+   "id": "dead_bug",
+   "zh": "死虫式",
+   "en": "dead bug",
+   "aliases": [
+    "死虫",
+    "dead bug"
+   ],
+   "pattern": "core",
+   "equipment": "bodyweight",
+   "fedb_id": "Dead_Bug",
+   "muscles": [
+    {
+     "m": "abs",
+     "share": 60
+    },
+    {
+     "m": "obliques",
+     "share": 25
+    },
+    {
+     "m": "hip_flexors",
+     "share": 15
+    }
+   ],
+   "muscles_basis": "Estimate: supine anti-extension (coach estimate).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "pause",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "仰卧",
+    "手脚抬起成桌面",
+    "对侧手脚慢伸"
+   ],
+   "cues": [
+    "腰贴地",
+    "慢慢伸",
+    "呼气"
+   ],
+   "faults": [
+    {
+     "id": "back_arch",
+     "zh": "腰离地",
+     "see": "侧面看腰下出现空隙",
+     "metric": "trunk_lean",
+     "fix": "缩小幅度"
+    }
+   ],
+   "dose": {
+    "strength": "2-3x6-8/侧",
+    "power": "",
+    "microdose": "1组x6/侧"
+   },
+   "regress": [],
+   "progress": [],
+   "knee": "",
+   "back": "腰友好",
+   "basketball": {
+    "why": "抗伸展的躯干控制",
+    "when": "热身"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "farmer_carry",
+   "zh": "农夫行走",
+   "en": "farmer's carry",
+   "aliases": [
+    "农夫走",
+    "farmer walk"
+   ],
+   "pattern": "carry",
+   "equipment": "dumbbell or kettlebell",
+   "fedb_id": "Farmers_Walk",
+   "muscles": [
+    {
+     "m": "forearms",
+     "share": 30
+    },
+    {
+     "m": "traps",
+     "share": 25
+    },
+    {
+     "m": "abs",
+     "share": 15
+    },
+    {
+     "m": "obliques",
+     "share": 10
+    },
+    {
+     "m": "glute_med",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: loaded gait with grip and trunk stiffness (coach estimate).",
+   "views": {
+    "side": [
+     "trunk_lean"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "双手各持重物",
+    "站直",
+    "小步快走"
+   ],
+   "cues": [
+    "站高",
+    "肩下沉",
+    "握紧"
+   ],
+   "faults": [
+    {
+     "id": "lean_side",
+     "zh": "身体歪向一侧",
+     "see": "正面看肩线倾斜",
+     "metric": "symmetry",
+     "fix": "降重；提示“头顶向上长高”"
+    }
+   ],
+   "dose": {
+    "strength": "3-4x20-40米",
+    "power": "",
+    "microdose": "2x20米"
+   },
+   "regress": [],
+   "progress": [
+    "suitcase_carry"
+   ],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "握力与躯干刚性，抢篮板护球",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "suitcase_carry",
+   "zh": "单侧负重行走",
+   "en": "suitcase carry",
+   "aliases": [
+    "手提箱行走",
+    "suitcase carry"
+   ],
+   "pattern": "carry",
+   "equipment": "dumbbell or kettlebell",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "obliques",
+     "share": 40
+    },
+    {
+     "m": "forearms",
+     "share": 20
+    },
+    {
+     "m": "glute_med",
+     "share": 20
+    },
+    {
+     "m": "traps",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: one-sided load creates lateral flexion demand (coach estimate).",
+   "views": {
+    "side": [],
+    "front": [
+     "symmetry",
+     "trunk_lean"
+    ]
+   },
+   "setup": [
+    "一只手持重物",
+    "站直",
+    "正常步行"
+   ],
+   "cues": [
+    "身体不歪",
+    "头顶向上",
+    "肩平"
+   ],
+   "faults": [
+    {
+     "id": "lean_side",
+     "zh": "身体歪向一侧",
+     "see": "正面看肩线倾斜",
+     "metric": "symmetry",
+     "fix": "降重；提示“头顶向上长高”"
+    }
+   ],
+   "dose": {
+    "strength": "3x20-30米/侧",
+    "power": "",
+    "microdose": "1-2x20米/侧"
+   },
+   "regress": [
+    "farmer_carry"
+   ],
+   "progress": [],
+   "knee": "",
+   "back": "腰友好的抗侧屈训练",
+   "basketball": {
+    "why": "单侧受力时保持身体，像带球被撞",
+    "when": "任何一天"
+   },
+   "refs": []
+  },
+  {
+   "id": "bench_press",
+   "zh": "杠铃卧推",
+   "en": "barbell bench press",
+   "aliases": [
+    "卧推",
+    "bench press"
+   ],
+   "pattern": "push",
+   "equipment": "barbell",
+   "fedb_id": "Barbell_Bench_Press_-_Medium_Grip",
+   "muscles": [
+    {
+     "m": "chest",
+     "share": 50
+    },
+    {
+     "m": "triceps",
+     "share": 25
+    },
+    {
+     "m": "delts",
+     "share": 20
+    },
+    {
+     "m": "upper_back",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: horizontal press (coach estimate; fedb lists).",
+   "views": {
+    "side": [
+     "bar_path",
+     "tempo",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "眼在杠下",
+    "肩胛后收下沉",
+    "脚踩实"
+   ],
+   "cues": [
+    "肩胛夹紧",
+    "触胸后推",
+    "肘45°"
+   ],
+   "faults": [
+    {
+     "id": "elbow_flare",
+     "zh": "肘外展过大",
+     "see": "正面/上方看上臂与身体接近90°",
+     "metric": null,
+     "fix": "肘与躯干约45°，“掰弯杠铃”"
+    },
+    {
+     "id": "bounce_chest",
+     "zh": "杠砸胸弹起",
+     "see": "侧面看杠到胸急停反弹",
+     "metric": "tempo",
+     "fix": "控制下放、触胸即推"
+    }
+   ],
+   "dose": {
+    "strength": "3-5x3-6 @RIR2",
+    "power": "",
+    "microdose": "1-2组x5 @RIR3"
+   },
+   "regress": [
+    "push_up"
+   ],
+   "progress": [],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "上肢推的力量，对抗卡位",
+    "when": "腿部训练后同一天，或赛后第1天"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "push_up",
+   "zh": "俯卧撑",
+   "en": "push-up",
+   "aliases": [
+    "俯卧撑",
+    "push up"
+   ],
+   "pattern": "push",
+   "equipment": "bodyweight",
+   "fedb_id": "Pushups",
+   "muscles": [
+    {
+     "m": "chest",
+     "share": 45
+    },
+    {
+     "m": "triceps",
+     "share": 25
+    },
+    {
+     "m": "delts",
+     "share": 20
+    },
+    {
+     "m": "abs",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: bodyweight horizontal press (coach estimate).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "tempo",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "手略宽于肩",
+    "身体一条线",
+    "肘约45°"
+   ],
+   "cues": [
+    "身体一条线",
+    "胸碰地",
+    "推开地面"
+   ],
+   "faults": [
+    {
+     "id": "sag",
+     "zh": "塌腰/塌胯",
+     "see": "侧面看髋低于肩踝连线",
+     "metric": "trunk_lean",
+     "fix": "缩短时间；收腹夹臀；改屈膝版本"
+    },
+    {
+     "id": "elbow_flare",
+     "zh": "肘外展过大",
+     "see": "正面/上方看上臂与身体接近90°",
+     "metric": null,
+     "fix": "肘与躯干约45°，“掰弯杠铃”"
+    }
+   ],
+   "dose": {
+    "strength": "3x8-15，或负重",
+    "power": "",
+    "microdose": "1-2组x10，随时"
+   },
+   "regress": [],
+   "progress": [
+    "bench_press"
+   ],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "上肢推与躯干刚性",
+    "when": "任何一天"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "db_row",
+   "zh": "单臂哑铃划船",
+   "en": "one-arm dumbbell row",
+   "aliases": [
+    "哑铃划船",
+    "DB row"
+   ],
+   "pattern": "pull",
+   "equipment": "dumbbell",
+   "fedb_id": "One-Arm_Dumbbell_Row",
+   "muscles": [
+    {
+     "m": "lats",
+     "share": 40
+    },
+    {
+     "m": "upper_back",
+     "share": 30
+    },
+    {
+     "m": "biceps",
+     "share": 15
+    },
+    {
+     "m": "delts",
+     "share": 10
+    },
+    {
+     "m": "forearms",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: horizontal pull (coach estimate; fedb lists).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "tempo",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "一手一膝撑凳",
+    "背平",
+    "哑铃垂直下垂"
+   ],
+   "cues": [
+    "肘向后腰",
+    "背不转",
+    "慢放"
+   ],
+   "faults": [
+    {
+     "id": "torso_rotate",
+     "zh": "转身借力",
+     "see": "侧面或上方看躯干翻转",
+     "metric": "trunk_lean",
+     "fix": "降重；背保持平"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-10/侧 @RIR2",
+    "power": "",
+    "microdose": "1-2组x8/侧"
+   },
+   "regress": [],
+   "progress": [
+    "pull_up"
+   ],
+   "knee": "",
+   "back": "有支撑，腰友好",
+   "basketball": {
+    "why": "上背与背阔肌，抢篮板与护球",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "pull_up",
+   "zh": "引体向上",
+   "en": "pull-up",
+   "aliases": [
+    "引体",
+    "pull up",
+    "chin up"
+   ],
+   "pattern": "pull",
+   "equipment": "bar",
+   "fedb_id": "Pullups",
+   "muscles": [
+    {
+     "m": "lats",
+     "share": 50
+    },
+    {
+     "m": "biceps",
+     "share": 20
+    },
+    {
+     "m": "upper_back",
+     "share": 20
+    },
+    {
+     "m": "forearms",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: vertical pull (coach estimate; fedb lists).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "tempo",
+     "rep_count",
+     "velocity_loss"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "握距略宽于肩",
+    "完全悬挂",
+    "肩胛先下沉"
+   ],
+   "cues": [
+    "胸向杠",
+    "下巴过杠",
+    "慢放到底"
+   ],
+   "faults": [
+    {
+     "id": "kip",
+     "zh": "借力摆动",
+     "see": "侧面看身体前后摆、腿踢起",
+     "metric": "trunk_lean",
+     "fix": "降难度（弹力带/离心）；每次底部停顿"
+    },
+    {
+     "id": "half_rep",
+     "zh": "半程",
+     "see": "底部手臂没伸直或下巴没过杠",
+     "metric": "rep_count",
+     "fix": "只计完整次数；用弹力带辅助"
+    }
+   ],
+   "dose": {
+    "strength": "3-4x3-8，可负重",
+    "power": "",
+    "microdose": "1-2组x3-5"
+   },
+   "regress": [
+    "db_row"
+   ],
+   "progress": [],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "上肢拉的力量与相对力量",
+    "when": "任何训练日"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "landmine_press",
+   "zh": "地雷管推举",
+   "en": "landmine press",
+   "aliases": [
+    "地雷推",
+    "landmine press"
+   ],
+   "pattern": "push",
+   "equipment": "barbell (landmine)",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "delts",
+     "share": 40
+    },
+    {
+     "m": "chest",
+     "share": 20
+    },
+    {
+     "m": "triceps",
+     "share": 25
+    },
+    {
+     "m": "obliques",
+     "share": 10
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: angled single-arm press (coach estimate).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "tempo",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "杠一端固定",
+    "半跪或站姿",
+    "单手在肩前握杠端"
+   ],
+   "cues": [
+    "向前上推",
+    "肋骨下沉",
+    "身体不转"
+   ],
+   "faults": [
+    {
+     "id": "lean_back",
+     "zh": "后仰借力",
+     "see": "侧面看腰后仰",
+     "metric": "trunk_lean",
+     "fix": "半跪姿，夹臀"
+    },
+    {
+     "id": "trunk_twist",
+     "zh": "躯干扭转",
+     "see": "正面看肩或骨盆朝一侧转开",
+     "metric": "symmetry",
+     "fix": "降重；放慢；对镜或手扶保持平衡"
+    }
+   ],
+   "dose": {
+    "strength": "3x6-10/侧",
+    "power": "",
+    "microdose": "1-2组x6/侧"
+   },
+   "regress": [
+    "push_up"
+   ],
+   "progress": [],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "肩部友好的推举，投篮与对抗时肩稳",
+    "when": "任何训练日"
+   },
+   "refs": []
+  },
+  {
+   "id": "box_jump",
+   "zh": "跳箱",
+   "en": "box jump",
+   "aliases": [
+    "跳箱子",
+    "box jump"
+   ],
+   "pattern": "plyo",
+   "equipment": "box",
+   "fedb_id": "Front_Box_Jump",
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 30
+    },
+    {
+     "m": "glutes",
+     "share": 30
+    },
+    {
+     "m": "calves",
+     "share": 15
+    },
+    {
+     "m": "hamstrings",
+     "share": 15
+    },
+    {
+     "m": "soleus",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: concentric jump with a low-impact landing on the box (coach estimate; fedb lists).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "ground_contact",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "箱高以能轻落地为准",
+    "双脚与肩同宽",
+    "摆臂起跳"
+   ],
+   "cues": [
+    "摆臂",
+    "全力跳",
+    "轻落箱"
+   ],
+   "faults": [
+    {
+     "id": "stiff_landing",
+     "zh": "落地僵硬",
+     "see": "侧面看落地时膝几乎不弯、声音大",
+     "metric": "depth",
+     "fix": "提示“轻落地、屈膝屈髋”，先练落地定格"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "box_too_high",
+     "zh": "箱太高",
+     "see": "落箱时深蹲到底、提膝勉强",
+     "metric": "depth",
+     "fix": "降低箱子，落地姿势应与起跳相似"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-5x3，每次走下箱，组间完全休息",
+    "microdose": "2x3，力量训练前"
+   },
+   "regress": [
+    "jump_squat"
+   ],
+   "progress": [
+    "drop_landing",
+    "broad_jump"
+   ],
+   "knee": "落在箱上减少落地冲击，比原地连续跳对膝友好",
+   "back": "",
+   "basketball": {
+    "why": "起跳爆发，冲击低",
+    "when": "比赛前1-2天低量，或训练日开头"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "broad_jump",
+   "zh": "立定跳远",
+   "en": "broad jump",
+   "aliases": [
+    "跳远",
+    "standing long jump"
+   ],
+   "pattern": "plyo",
+   "equipment": "bodyweight",
+   "fedb_id": "Standing_Long_Jump",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 35
+    },
+    {
+     "m": "quads",
+     "share": 25
+    },
+    {
+     "m": "hamstrings",
+     "share": 20
+    },
+    {
+     "m": "calves",
+     "share": 15
+    },
+    {
+     "m": "abs",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: horizontal jump with more hip extension than a vertical jump (coach estimate).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "rep_count"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "双脚与肩同宽",
+    "摆臂下蹲",
+    "向前上方跳"
+   ],
+   "cues": [
+    "摆臂",
+    "向前上跳",
+    "落地定住"
+   ],
+   "faults": [
+    {
+     "id": "stiff_landing",
+     "zh": "落地僵硬",
+     "see": "侧面看落地时膝几乎不弯、声音大",
+     "metric": "depth",
+     "fix": "提示“轻落地、屈膝屈髋”，先练落地定格"
+    },
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-5x3，落地定格2秒",
+    "microdose": "2x3"
+   },
+   "regress": [
+    "box_jump"
+   ],
+   "progress": [
+    "lateral_bound"
+   ],
+   "knee": "落地冲击大，髌腱痛急性期暂停",
+   "back": "",
+   "basketball": {
+    "why": "水平推进，与第一步和快攻起步相关",
+    "when": "训练日开头"
+   },
+   "refs": [
+    "fedb"
+   ]
+  },
+  {
+   "id": "pogo",
+   "zh": "踝跳",
+   "en": "pogo hops",
+   "aliases": [
+    "弹跳",
+    "pogo jumps",
+    "ankle hops"
+   ],
+   "pattern": "plyo",
+   "equipment": "bodyweight",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "calves",
+     "share": 50
+    },
+    {
+     "m": "soleus",
+     "share": 35
+    },
+    {
+     "m": "tibialis",
+     "share": 5
+    },
+    {
+     "m": "quads",
+     "share": 10
+    }
+   ],
+   "muscles_basis": "Estimate: short-contact ankle stiffness hops; contact-time and RSI use from flanagan2008.",
+   "views": {
+    "side": [
+     "ground_contact",
+     "rep_count",
+     "knee_travel"
+    ],
+    "front": [
+     "symmetry",
+     "knee_valgus"
+    ]
+   },
+   "setup": [
+    "双脚并拢",
+    "膝几乎伸直",
+    "用脚踝弹跳"
+   ],
+   "cues": [
+    "地面很烫",
+    "膝微弯",
+    "快速弹"
+   ],
+   "faults": [
+    {
+     "id": "slow_contact",
+     "zh": "触地时间太长",
+     "see": "高速视频看脚着地到离地拖沓",
+     "metric": "ground_contact",
+     "fix": "降低高度/幅度，提示“地面很烫”"
+    },
+    {
+     "id": "knee_bend",
+     "zh": "屈膝过多",
+     "see": "侧面看每次落地膝明显弯曲",
+     "metric": "knee_travel",
+     "fix": "降低高度，只用脚踝"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-4x10-20次，组间1-2分钟",
+    "microdose": "2x10，热身中"
+   },
+   "regress": [
+    "calf_raise_straight"
+   ],
+   "progress": [
+    "drop_landing"
+   ],
+   "knee": "",
+   "back": "",
+   "basketball": {
+    "why": "踝的反应力量，快速连续起跳与步伐",
+    "when": "热身或比赛日前激活"
+   },
+   "refs": [
+    "flanagan2008"
+   ]
+  },
+  {
+   "id": "drop_landing",
+   "zh": "跳落定格",
+   "en": "drop landing",
+   "aliases": [
+    "落地定格",
+    "drop landing"
+   ],
+   "pattern": "plyo",
+   "equipment": "box",
+   "fedb_id": null,
+   "muscles": [
+    {
+     "m": "quads",
+     "share": 40
+    },
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "hamstrings",
+     "share": 10
+    },
+    {
+     "m": "calves",
+     "share": 10
+    },
+    {
+     "m": "soleus",
+     "share": 10
+    },
+    {
+     "m": "glute_med",
+     "share": 5
+    }
+   ],
+   "muscles_basis": "Estimate: eccentric braking on landing; braking-force control and attenuation are key deceleration qualities (harper2022).",
+   "views": {
+    "side": [
+     "depth",
+     "trunk_lean",
+     "pause"
+    ],
+    "front": [
+     "knee_valgus",
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "站在低箱(20-40厘米)",
+    "向前迈下",
+    "双脚落地定住"
+   ],
+   "cues": [
+    "轻落地",
+    "膝对脚尖",
+    "定住2秒"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "stiff_landing",
+     "zh": "落地僵硬",
+     "see": "侧面看落地时膝几乎不弯、声音大",
+     "metric": "depth",
+     "fix": "提示“轻落地、屈膝屈髋”，先练落地定格"
+    },
+    {
+     "id": "uneven_land",
+     "zh": "落地不对称",
+     "see": "正面看一侧先落、重心偏",
+     "metric": "symmetry",
+     "fix": "降低高度；两脚同时落"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-4x3-5，质量优先",
+    "microdose": "2x3，热身中"
+   },
+   "regress": [
+    "box_jump"
+   ],
+   "progress": [
+    "lateral_bound"
+   ],
+   "knee": "从低高度开始；膝内扣可用正面视频检查(munro2012)",
+   "back": "",
+   "basketball": {
+    "why": "落地与急停的刹车能力",
+    "when": "热身或训练日开头"
+   },
+   "refs": [
+    "harper2022",
+    "munro2012"
+   ]
+  },
+  {
+   "id": "lateral_bound",
+   "zh": "侧向单腿跳",
+   "en": "lateral bound",
+   "aliases": [
+    "侧跳",
+    "skater bound"
+   ],
+   "pattern": "plyo",
+   "equipment": "bodyweight",
+   "fedb_id": "Lateral_Bound",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "glute_med",
+     "share": 20
+    },
+    {
+     "m": "adductors",
+     "share": 20
+    },
+    {
+     "m": "quads",
+     "share": 20
+    },
+    {
+     "m": "calves",
+     "share": 15
+    }
+   ],
+   "muscles_basis": "Estimate: frontal-plane single-leg push and catch; fedb lists adductors primary (coach estimate for shares).",
+   "views": {
+    "side": [],
+    "front": [
+     "knee_valgus",
+     "pelvis_drop",
+     "symmetry",
+     "pause",
+     "rep_count"
+    ]
+   },
+   "setup": [
+    "单脚站",
+    "侧向推地",
+    "对侧单脚落地定住"
+   ],
+   "cues": [
+    "推地远跳",
+    "落地定住",
+    "膝对脚尖"
+   ],
+   "faults": [
+    {
+     "id": "knee_valgus",
+     "zh": "膝内扣",
+     "see": "正面看膝盖向两脚之间塌，尤其起身阶段",
+     "metric": "knee_valgus",
+     "fix": "提示“膝盖对脚尖”；降重；膝上套弹力带练习"
+    },
+    {
+     "id": "pelvis_drop",
+     "zh": "骨盆下沉",
+     "see": "正面看支撑腿对侧骨盆下掉",
+     "metric": "pelvis_drop",
+     "fix": "降低难度；支撑腿臀中肌发力；手扶支撑"
+    },
+    {
+     "id": "trunk_twist",
+     "zh": "躯干扭转",
+     "see": "正面看肩或骨盆朝一侧转开",
+     "metric": "symmetry",
+     "fix": "降重；放慢；对镜或手扶保持平衡"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3x4-6/侧，落地定格",
+    "microdose": "2x3/侧"
+   },
+   "regress": [
+    "lateral_lunge",
+    "drop_landing"
+   ],
+   "progress": [],
+   "knee": "落地冲击大，膝痛时先定格低距离",
+   "back": "",
+   "basketball": {
+    "why": "侧向变向与防守滑步的推地与刹车",
+    "when": "训练日开头，赛前≥2天"
+   },
+   "refs": [
+    "harper2022",
+    "fedb"
+   ]
+  },
+  {
+   "id": "med_ball_throw",
+   "zh": "药球抛掷",
+   "en": "medicine ball throw",
+   "aliases": [
+    "药球抛",
+    "med ball throw",
+    "scoop toss"
+   ],
+   "pattern": "plyo",
+   "equipment": "medicine ball",
+   "fedb_id": "Medicine_Ball_Scoop_Throw",
+   "muscles": [
+    {
+     "m": "glutes",
+     "share": 25
+    },
+    {
+     "m": "hamstrings",
+     "share": 15
+    },
+    {
+     "m": "quads",
+     "share": 15
+    },
+    {
+     "m": "delts",
+     "share": 15
+    },
+    {
+     "m": "obliques",
+     "share": 15
+    },
+    {
+     "m": "abs",
+     "share": 15
+    }
+   ],
+   "muscles_basis": "Estimate: whole-body throw with triple extension and trunk transfer (coach estimate; fedb lists).",
+   "views": {
+    "side": [
+     "trunk_lean",
+     "hip_extension",
+     "rep_count"
+    ],
+    "front": [
+     "symmetry"
+    ]
+   },
+   "setup": [
+    "药球3-5公斤",
+    "半蹲持球在两腿间",
+    "向前上或侧向墙抛"
+   ],
+   "cues": [
+    "先伸髋",
+    "全力抛",
+    "两侧都练"
+   ],
+   "faults": [
+    {
+     "id": "arms_only",
+     "zh": "只用手臂",
+     "see": "侧面看下肢几乎不伸展",
+     "metric": "hip_extension",
+     "fix": "先蹲再爆发伸髋"
+    }
+   ],
+   "dose": {
+    "strength": "",
+    "power": "3-5x3-5，每次全力",
+    "microdose": "2x3，热身后"
+   },
+   "regress": [],
+   "progress": [],
+   "knee": "冲击小，膝痛期替代跳跃的爆发训练",
+   "back": "",
+   "basketball": {
+    "why": "全身爆发与躯干转体传力，类似传球",
+    "when": "比赛前1-2天也可做"
+   },
+   "refs": [
+    "fedb"
+   ]
+  }
+ ]
+}

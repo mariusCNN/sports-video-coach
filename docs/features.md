@@ -4,7 +4,8 @@ Open-source sports video analysis, basketball analytics, computer vision and AI 
 amateur teams, volunteer coaches and coding agents. This catalog describes implemented capabilities;
 availability depends on the selected sport, installed dependencies, footage and reviewed evidence.
 
-[English README](../README.md) · [中文 README](../README.zh.md) · [Agent contract](../AGENTS.md)
+[English README](../README.md) · [中文 README](../README.zh.md) · [Agent contract](../AGENTS.md) ·
+[One-prompt start](../START.md)
 
 ## Video to coaching, for any sport
 
@@ -27,6 +28,7 @@ availability depends on the selected sport, installed dependencies, footage and 
 | Incremental rebuilds | Update affected outputs after source/report changes | Stage input tracking, stale-step checks, per-language scripts |
 | Concurrent-run protection | Avoid two writers corrupting one unit | OS run lock and checkout-version checks |
 | Static page QA | Detect broken anchors, missing assets and script/text issues | `page-check --strict --write-qa`; layout/playback still need a browser |
+| Serve for a browser check | A report folder over http on a free port, with the URL and page title printed | `serve <folder> [--port N]` |
 | Optional unlisted publishing | Stable report links for deliberate sharing | `publish` / `--publish`, Cloudflare account; links are not access control |
 | Synthetic demo | Inspect all deliverables without private footage or an agent | `sports-video-coach demo` |
 
@@ -81,6 +83,9 @@ availability depends on the selected sport, installed dependencies, footage and 
   Claude Code, Codex, Cursor and other coding agents. [llms.txt](../llms.txt) is a concise navigation index.
 - **Sport plugins:** `new-plugin` scaffolds a working plugin; hooks keep the core independent of basketball.
   Examples include a swim stroke-rate plugin and a jump-rope counting plugin. [Plugin guide](plugins.md).
+- **Fitness plugin:** gym and strength & conditioning videos: every set named from a 56-exercise library (cues,
+  faults, dose, muscle shares, sources), per-rep depth, trunk lean and tempo from pose, a muscle map, and advice
+  tied to the athlete's sport. [Fitness guide](fitness.md), [knowledge base](knowledge-base.md#what-is-in-it-fitness).
 - **Exact-ground-truth benchmark:** `bench` prepares synthetic drills, runs agent/model adapters, scores and
   validates submissions, and builds a leaderboard. It measures the stated task, not general coaching quality.
 - **Local vision / optional services:** detection runs locally; an agent's viewed frames go to its model provider,

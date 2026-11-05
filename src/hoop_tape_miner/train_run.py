@@ -89,7 +89,8 @@ TRAIN_STEPS = [
         lambda g: g.video,
         listen_how="Write the narration scripts {folder}/listen.<lang>.md for {langs} (prompts/narration.md; for a "
                    "training session: what went well, what did not, and next session's plan, 2-3 minutes).",
-        qa_how="QA: have the browser-check subagent serve {folder} over http and check the page in both languages, "
+        qa_how="QA: have the browser-check subagent serve {folder} over http "
+               "(`sports-video-coach serve {folder}`: a free port, the URL, the page title) and check the page in both languages, "
                "the audio and every clip. Write the result to {folder}/qa.md, first word PASS when it passes.",
         film_script_how="Write the explained-video scripts {folder}/film.<lang>.md for {langs} from the finished "
                         "report (prompts/film.md, training notes in prompts/training_report.md); check them with "

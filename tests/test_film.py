@@ -100,6 +100,12 @@ def test_ass_doc_and_scene_events():
     assert film.ass_time(3725.456) == "1:02:05.46" and film.ass_colour("#6250d6", 0x30) == "&H30D65062"
 
 
+def test_scene_events_without_overlays_keeps_only_subtitles():
+    sc = film.parse_script("![cap](clip:0:01-0:03)\nA.")[0]
+    ev = film.scene_events(sc, 8.0, 3.0, 2.0, [(0.0, 1.0, "A")], "zh", "T", 720, overlays=False)
+    assert [e[2] for e in ev] == ["Sub"]  # no banner, no slow-motion badge
+
+
 FREEZE_SCRIPT = """![alone vs the press](clip:03:08-03:20)
 Watch the ball.
 

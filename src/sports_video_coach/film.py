@@ -573,10 +573,12 @@ def ass_doc(w: int, h: int, font: str, accent: str, events: list[tuple[float, fl
 
 
 def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lang: str, title: str, h: int,
-                 extra=(), frame: tuple[int, int] | None = None, banner_to: float | None = None):
+                 extra=(), frame: tuple[int, int] | None = None, banner_to: float | None = None,
+                 overlays: bool = True):
     """Subtitle events for one scene; cue times count from the start of the voice (LEAD). extra: more events.
     h: the short side (text sizes); frame: (width, height) of the film, default 16:9 at h; banner_to: the clip's
-    first freeze, where its banner goes so the label is the only text on the frozen frame."""
+    first freeze, where its banner goes so the label is the only text on the frozen frame; overlays False: no clip
+    banner and no slow-replay badge (the unit json's "film_overlays": false)."""
     fw, fh = frame or (round(h * 16 / 9), h)
     m, side = round(h * 0.04), round(fw * 0.08)  # the margins ass_doc gives Sub and Banner
     sub_fs, small = round(h * SUB_FS), round(h * BANNER_FS)
@@ -592,9 +594,9 @@ def scene_events(sc: Scene, length: float, slow: float, clip_s: float, cues, lan
         ev += stat_events(sc.src, sc.text, length, lang, h, fw, fh)
     elif sc.kind == "stats":
         ev += stats_events(sc.src, sc.text, length, lang, h, fw, fh)
-    elif sc.text:  # what the clip is about, while it starts; then the picture is the players'
+    elif sc.text and overlays:  # what the clip is about, while it starts; then the picture is the players'
         ev.append((0, min(length, BANNER_S, BANNER_S if banner_to is None else banner_to), "Banner", "{\\fad(250,300)}" + wrap(sc.text, (fw - 2.5 * side) / small)))
-    if slow:
+    if slow and overlays:
         ev += fd.badge(SLOW_TAG.get(lang, SLOW_TAG["en"]), clip_s, clip_s + slow, fw, fh, icon="play")
     subs = sorted((LEAD + s, LEAD + e, t) for s, e, t in cues)
     for i, (s, e, t) in enumerate(subs):
@@ -977,6 +979,7 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
     if not scenes:
         sys.exit(f"{script}: no scenes")
     game = units.load(folder)
+    overlays = game.get("film_overlays") is not False  # False: footage, subtitles and cards only
     needs_video = any(sc.kind == "clip" for sc in scenes)
     has_video = bool(video and video.is_file())
     video_s = duration_s(video) if needs_video and has_video else None
@@ -1070,10 +1073,12 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
                 zooms.append(zoom)
                 extra += fd.freeze_events(marks, ass_escape(label), seconds(tt), tracks, w, h, fit, fs, fe,
                                           zoom=zoom, animate=True)
-                extra += fd.badge(FREEZE_TAG.get(lang, FREEZE_TAG["en"]), fs, fe, w, h, icon="pause")
+                if overlays:
+                    extra += fd.badge(FREEZE_TAG.get(lang, FREEZE_TAG["en"]), fs, fe, w, h, icon="pause")
             ass_name = f"s{i:03d}.ass"
             (tmp / ass_name).write_text(ass_doc(w, h, font, accent, scene_events(sc, length, slow, sc.clip_s(), cues,
-                                                                                 lang, title, height, extra, (w, h), first_hold)),
+                                                                                 lang, title, height, extra, (w, h), first_hold,
+                                                                                 overlays)),
                                         encoding="utf8")
             (audit / ass_name).write_bytes((tmp / ass_name).read_bytes())
             scene_log.append({'scene': i, 'kind': sc.kind, 'source': sc.src, 'duration': length,

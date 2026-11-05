@@ -24,6 +24,7 @@ CORE = {
     "html": ("sports_video_coach.render_html", "report folder (a README per language: README.md (Chinese) or README.<lang>.md (e.g. README.en.md)) -> one index.html"),
     "humanize": ("sports_video_coach.humanize", "flag stock AI phrasing in reports and scripts (the check the writing steps run)"),
     "page-check": ("sports_video_coach.page_check", "static check of a report page and its scripts (--strict, --write-qa: a qa.md draft)"),
+    "serve": ("sports_video_coach.serve", "serve a report folder over http on a free port for a browser check (prints the URL)"),
     "film": ("sports_video_coach.film", "film.<lang>.md -> explained video: narration over clips and charts, subtitled"),
     "lessons": ("sports_video_coach.lessons", "check, review and compile decision lessons; evaluate learning separately"),
     "lesson-bench": ("sports_video_coach.lesson_eval", "prepare pre-action reference cases; summarize independent ratings"),

@@ -62,7 +62,7 @@ EN = [
 LABEL_OPEN = re.compile(r"(?:^|(?<=[。！？])|(?<=[.!?] ))([^\s，。！？,.!?：:]{1,8}|[A-Za-z]+(?: [A-Za-z]+)?)[：:]")
 LABEL_HINT = {"zh": "开头像幻灯片标签：说成一句话（“练的是…”“下场我们要…”）",
               "en": "a slide label opening a spoken sentence: say it as a sentence"}
-LABEL_OK = {"看", "注意", "听", "watch", "now watch", "look", "listen"}  # how a coach really points at the screen
+LABEL_OK = {"看", "注意", "听", "说", "watch", "now watch", "look", "listen", "say"}  # how a coach points at the screen or gives a cue
 PATTERNS = {"zh": ZH, "en": EN}
 DASH_RE = re.compile(r"——|—|\s–\s|\s--\s")
 DASH_PER = 400   # more than one dash per this many characters reads as a chatbot's pause
