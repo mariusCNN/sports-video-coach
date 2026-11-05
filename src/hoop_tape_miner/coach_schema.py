@@ -7,7 +7,7 @@ memos and notes are copied along; trip times missing in v1 are taken from part*.
 
 v2 trip = the v1 checklist fields, plus `schema: 2`, `t0`/`t1`, `result` from RESULTS, and
   shot:  null | {t, shooter, made: bool|null, points: 2|3|null, zone, type, contested}
-  fts:   null | {shooter, made, att}
+  fts:   null | {shooter, made, att, made_times?: [video seconds, one per make]}
   foul:  null | {t, by_team, by, on, type, cause, led_to}
   evidence: {field: [video seconds]} for result, shot, foul (and optionally fts, coach_note).
 Optional (older reviews without them stay valid): `transition`: true | false | null (the trip attacked before the
@@ -27,7 +27,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from .coach_eval import foul_side, jersey, trip_times
+from .coach_eval import foul_side, ft_made_times, jersey, trip_times
 
 RESULTS = ("made2", "made3", "missed", "turnover", "foul_ft", "foul_side", "dead_ball", "end_period", "unclear")
 OFFENCE = ("us", "them", "none")
@@ -113,6 +113,8 @@ def validate_trip(trip: dict) -> list[str]:
             m, a = fts.get("made"), fts.get("att")
             if not (isinstance(m, int) and isinstance(a, int) and 0 <= m <= a and 1 <= a <= 3):
                 e.append(f"fts made/att {m!r}/{a!r} must be integers with 0 <= made <= att <= 3")
+            if "made_times" in fts and ft_made_times(trip) is None:
+                e.append("fts.made_times must contain one finite, distinct, ordered video time per make, inside the trip")
     if foul is not None:
         if not isinstance(foul, dict):
             e.append("foul must be an object or null")

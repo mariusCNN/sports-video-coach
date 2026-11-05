@@ -113,6 +113,76 @@ def validate(plan: dict) -> list[str]:
             errors.append(f"fixture.games[{i}].score: give [ours, theirs] as non-negative integers")
     if not plan["phases"]:
         errors.append("phases is empty")
+    if "briefing" in plan:
+        errors += validate_briefing(plan["briefing"], sess)
+    goals = (plan.get("game") or {}).get("learning_goals", [])
+    if not isinstance(goals, list) or len(goals) > 3:
+        errors.append("game.learning_goals: at most three evidence-linked priorities")
+    else:
+        seen = set()
+        for i, goal in enumerate(goals):
+            tag = f"game.learning_goals[{i}]"
+            if not isinstance(goal, dict):
+                errors.append(f"{tag}: must be an object")
+                continue
+            for key in ("id", "version", "title", "when", "action", "exception", "practice", "measure"):
+                if not isinstance(goal.get(key), str) or not goal[key].strip():
+                    errors.append(f"{tag}.{key}: required text")
+            if goal.get("id") in seen:
+                errors.append(f"{tag}: duplicate lesson id")
+            seen.add(goal.get("id"))
+            if not re.match(r"^https://[^\s]+$", str(goal.get("source_url", ""))):
+                errors.append(f"{tag}.source_url: use the published evidence page's https URL")
+            if goal.get("status", "retained") not in ("retained", "revised", "retired"):
+                errors.append(f"{tag}.status: retained, revised or retired")
+    return errors
+
+
+def validate_briefing(briefing, sessions: dict) -> list[str]:
+    """Keep optional pre-session cards renderable and limited to three clear priorities."""
+    if not isinstance(briefing, dict):
+        return ["briefing: must be an object"]
+    errors = []
+    profiles = {}
+    for mode in ("training", "league", "half", "full"):
+        if not isinstance(briefing.get(mode), dict):
+            errors.append(f"briefing.{mode}: must be an object")
+        else:
+            profiles[mode] = briefing[mode]
+    if "priority" in briefing:
+        if not isinstance(briefing["priority"], dict):
+            errors.append("briefing.priority: must be an object")
+        else:
+            profiles["priority"] = briefing["priority"]
+    overrides = briefing.get("sessions", {})
+    if not isinstance(overrides, dict):
+        errors.append("briefing.sessions: must be an object")
+    else:
+        for code, profile in overrides.items():
+            if code not in sessions:
+                errors.append(f"briefing.sessions.{code}: unknown session")
+            if not isinstance(profile, dict):
+                errors.append(f"briefing.sessions.{code}: must be an object")
+            else:
+                profiles[f"sessions.{code}"] = {**profiles.get("training", {}), **profile}
+    for key, profile in profiles.items():
+        tag = f"briefing.{key}"
+        if not isinstance(profile.get("title"), str) or not profile["title"].strip():
+            errors.append(f"{tag}.title: give a non-empty title")
+        cues = profile.get("cues")
+        if not isinstance(cues, list) or not 1 <= len(cues) <= 3:
+            errors.append(f"{tag}.cues: give one to three cues")
+        elif any(not isinstance(c, dict) or any(not isinstance(c.get(f), str) or not c[f].strip()
+                                              for f in ("cue", "action", "check")) for c in cues):
+            errors.append(f"{tag}.cues: each needs cue, action and check text")
+        timeline = profile.get("timeline", [])
+        if not isinstance(timeline, list) or any(not isinstance(t, dict) or
+                any(not isinstance(t.get(f), str) for f in ("when", "text")) for t in timeline):
+            errors.append(f"{tag}.timeline: give rows of when/text strings")
+        for field in ("watch", "recap"):
+            values = profile.get(field, [])
+            if not isinstance(values, list) or any(not isinstance(t, str) for t in values):
+                errors.append(f"{tag}.{field}: must be a list of strings")
     return errors
 
 

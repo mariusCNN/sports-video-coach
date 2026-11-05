@@ -554,7 +554,19 @@ def clips_done(g: Unit) -> bool:
 
 
 def film_done(g: Unit) -> bool:
-    return all(newer(g.folder / f"film.{l}.mp4", g.folder / f"film.{l}.md") for l in g.langs)
+    tempo = g.game.get("film_speech_tempo", 1.0)
+    for lang in g.langs:
+        out = g.folder / f"film.{lang}.mp4"
+        if not newer(out, g.folder / f"film.{lang}.md"):
+            return False
+        meta = out.with_suffix('.render.json')
+        try:
+            stored = json.loads(meta.read_text(encoding='utf8')) if meta.exists() else {}
+        except ValueError:
+            return False
+        if stored.get('speech_tempo', 1.0) != tempo:
+            return False
+    return True
 
 
 def listen_done(g: Unit) -> bool:
@@ -575,7 +587,8 @@ def page_inputs(d: Path) -> list[Path]:
 def page_files(g: Unit, d: Path) -> list[Path]:
     """What the page of report folder `d` is built from: READMEs, the unit json, audio, clips, plugin hook inputs."""
     return [*(d / readme(l) for l in g.langs), g.gj, *sorted(d.glob("listen.*.mp3")), *sorted(d.glob("clips/*.mp4")),
-            *page_inputs(d)]
+            *page_inputs(d), *([d / "lessons.json", d / "lesson.public.json", d / "lesson-build.json"]
+                              if (d / "lessons.json").exists() else [])]
 
 
 def html_inputs(g: Unit) -> list[Path]:
@@ -609,7 +622,8 @@ def film_script_errors(g: Unit) -> list[str]:
     run waits on the script instead of failing in the film step."""
     from . import film
     scripts = [g.folder / f"film.{l}.md" for l in g.langs]
-    return missing(scripts, g) + [p for f in scripts for p in film.script_prefix_problems(f)]
+    from . import lessons
+    return missing(scripts, g) + [p for f in scripts for p in film.script_prefix_problems(f)] + lessons.derivative_errors(g.folder)
 
 
 def film_checks(g: Unit) -> list[str]:
@@ -651,6 +665,7 @@ def tail_steps(video: Callable[[Unit], Path], listen_how: str, qa_how: str, film
              checks=film_checks),
         Step("film", "cmd", film_done, film_args, long=True,
              inputs=lambda g: [*(g.folder / f"film.{l}.md" for l in g.langs), video(g)], again=("--force",),
+             params=lambda g: {"speech_tempo": g.game.get("film_speech_tempo", 1.0)},
              artifact="film"),  # film keeps a language whose mp4 is newer than its script; a new video re-renders all
     ]
 

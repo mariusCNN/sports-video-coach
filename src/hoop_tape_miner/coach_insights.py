@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import random
 import re
 import sys
@@ -70,7 +71,7 @@ def _same(a, b) -> bool:
 
 
 def _num(v) -> bool:
-    return isinstance(v, (int, float)) and not isinstance(v, bool)
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
 
 
 def _cite_error(e: dict, t: float, by_pid: dict) -> str | None:
@@ -129,9 +130,33 @@ def validate_insights(insights: list[dict], trips: list[dict], kb_slugs: set[str
             if not str(it.get(f) or "").strip():
                 errs.append(f"{tag}: `{f}` is empty")
         ev = it.get("evidence") if isinstance(it.get("evidence"), list) else []
-        times = {round(e["t"], 1) for e in ev if isinstance(e, dict) and _num(e.get("t"))}
-        if len(times) < 2:
-            errs.append(f"{tag}: needs evidence at >= 2 different video times (has {len(times)})")
+        # Repeated frames of one trip are one observation, even when their timestamps differ.
+        identities = set()
+        for e in ev:
+            if not isinstance(e, dict) or not _num(e.get("t")) or _cite_error(e, e["t"], by_pid):
+                continue
+            candidates = by_pid[str(e["pid"])]
+            trip = e.get("trip", candidates[0].get("trip", 1))
+            identities.add((str(e["pid"]), str(trip)))
+        scope = it.get("scope", "recurring_pattern")
+        required = 1 if scope == "single_episode" else 2
+        if scope not in ("single_episode", "recurring_pattern"):
+            errs.append(f"{tag}: scope must be single_episode or recurring_pattern")
+        if len(identities) < required:
+            errs.append(f"{tag}: needs evidence from >= {required} distinct trips (has {len(identities)})")
+        vague = {"improve decision making", "make better decisions", "move the ball", "play harder",
+                 "communicate better", "提高决策", "加强防守", "多传球", "注意配合", "打得更好"}
+        for f in ("why", "rule", "drill", "target_next_game"):
+            if str(it.get(f, "")).strip().rstrip(".。!").lower() in vague:
+                errs.append(f"{tag}: `{f}` is generic; name the visible cue and concrete action")
+        target = it.get("target_basis")
+        if re.search(r"\d|[≤≥%％]", str(it.get("target_next_game", ""))) or it.get("target_check"):
+            if not isinstance(target, dict) or target.get("kind") not in ("training_experiment", "sourced_standard") \
+                    or not str(target.get("reason", "")).strip():
+                errs.append(f"{tag}: numeric target needs target_basis kind and reason; a self-chosen trial is "
+                            "training_experiment, not an established standard")
+            elif target["kind"] == "sourced_standard" and not target.get("source"):
+                errs.append(f"{tag}: sourced_standard target needs a source")
         cex = it.get("counter_examples") or []
         if not isinstance(cex, list):
             errs.append(f"{tag}: `counter_examples` must be a list")
@@ -144,7 +169,7 @@ def validate_insights(insights: list[dict], trips: list[dict], kb_slugs: set[str
                 elif (why := _cite_error(e, t, by_pid)):
                     errs.append(f"{tag}: {kind} {why}")
         kb = it.get("kb")
-        if not isinstance(kb, list) or not kb:
+        if not isinstance(kb, list) or (not kb and it.get('explanation_scope') != 'observation_only'):
             errs.append(f"{tag}: `kb` must list at least one knowledge-base slug")
         elif kb_slugs is not None:
             errs += [f"{tag}: unknown kb slug {s!r}" for s in kb if s not in kb_slugs]
@@ -219,7 +244,22 @@ def _inside(review: Path, rel: str) -> Path | None:
     return p if p.is_file() else None
 
 
-def check_critic(review: Path, insights: Path | None = None, sign: bool = False) -> list[str]:
+def dependency_hashes(review: Path, insights: Path, kb: Path) -> dict[str, str | None]:
+    """Content, not timestamps: corrections to evidence or principles invalidate a prior verdict."""
+    paths = {insights, kb, review / "manifest.json", review / "summary.json", review / "features.json",
+             review / "official.json", review.parent / "official.json", review / "plusminus.json",
+             review / "insights_dropped.json"}
+    for pattern in ("coach_part*.json", "part*.json", "pm_*.json"):
+        paths.update(review.glob(pattern))
+    crit = _load(review / "critic.json", {})
+    for verdict in crit.get("verdicts", []):
+        for rel in verdict.get("reopened", []):
+            if (p := _inside(review, rel)) is not None:
+                paths.add(p)
+    return {str(p.resolve()): insights_hash(p) if p.is_file() else None for p in sorted(paths)}
+
+
+def check_critic(review: Path, insights: Path | None = None, sign: bool = False, kb: Path | None = None) -> list[str]:
     """Errors in <review>/critic.json, the critic's own record (empty = valid). It must give every insight in
     insights.json a keep|revise verdict and every insight in insights_dropped.json a drop verdict; each verdict lists
     the files it `reopened` (paths inside the review folder that exist; at least one), and the re-opened sheets
@@ -278,7 +318,7 @@ def check_critic(review: Path, insights: Path | None = None, sign: bool = False)
             errs.append(f"{iid}: insights.json says critic.verdict {own.get('verdict')} but {cp.name} says "
                         f"{v.get('verdict')}")
         seen = [windows[str(r)] for r in v["reopened"] if str(r) in windows]
-        for e in it.get("evidence") or []:
+        for e in [*(it.get("evidence") or []), *(it.get("counter_examples") or [])]:
             t = e.get("t") if isinstance(e, dict) else None
             if _num(t) and not any(a - PAD <= t <= b + PAD for a, b in seen):
                 errs.append(f"{iid}: evidence time {t} is on no sheet the critic re-opened (add the sheet to "
@@ -295,6 +335,11 @@ def check_critic(review: Path, insights: Path | None = None, sign: bool = False)
     if not sign and not errs and crit.get("insights_sha256") != insights_hash(ip):
         errs.append("insights.json changed after the critic signed it, or critic.json is not signed: the critic "
                     "re-checks and runs `coach-insights critic --review <review>`")
+    if not sign and not errs:
+        source_kb = Path(kb or crit.get("kb_path") or KB)
+        if crit.get("dependency_hashes") != dependency_hashes(review, ip, source_kb):
+            errs.append("Evidence, number sources or knowledge base changed after the critic signed, or the "
+                        "dependency signature is missing: re-open the changed evidence and sign again")
     return errs
 
 
@@ -338,7 +383,7 @@ def check_review(review: Path, kb: Path = KB, insights: Path | None = None, crit
     errs = validate_insights(items, load_trips(review), kb_slugs(kb), _load(review / "summary.json", {}),
                              _load(review / "features.json"), sources=src, roster=roster(src["official"]))
     if critic and not errs:
-        errs = check_critic(review, ip)
+        errs = check_critic(review, ip, kb=kb)
     return errs
 
 
@@ -352,6 +397,8 @@ def sign_critic(review: Path, kb: Path = KB, insights: Path | None = None) -> li
         cp = review / "critic.json"
         crit = json.loads(cp.read_text(encoding="utf8"))
         crit["insights_sha256"] = insights_hash(ip)
+        crit["kb_path"] = str(Path(kb).resolve())
+        crit["dependency_hashes"] = dependency_hashes(review, ip, Path(kb))
         cp.write_text(json.dumps(crit, ensure_ascii=False, indent=1), encoding="utf8")
     return errs
 
@@ -424,9 +471,11 @@ def build_ab(review: Path, out: Path, old_report: Path | None = None, seed: int 
     sets = {"memos": rng.sample(old, n), "insights": rng.sample(new, n)}
     order = ["memos", "insights"]
     rng.shuffle(order)
-    key = {"seed": seed, "sets": {"A": order[0], "B": order[1]}, "items_per_set": n,
+    key = {"design": "unmatched_exploratory_not_effectiveness_evidence",
+           "seed": seed, "sets": {"A": order[0], "B": order[1]}, "items_per_set": n,
            "available": {"memos": len(old), "insights": len(new)}}
-    lines = [SHEET]
+    lines = [SHEET, "Exploratory sheet: items are not matched by episode. Do not use these scores to claim "
+             "an improvement in coaching effectiveness. Use --pairs for a matched comparison.\n"]
     for label in ("A", "B"):
         lines.append(f"## Set {label}\n")
         lines += [f"- {label}{i}. {plain(x, cap)}" for i, x in enumerate(sets[key["sets"][label]], 1)]
@@ -437,6 +486,38 @@ def build_ab(review: Path, out: Path, old_report: Path | None = None, seed: int 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines), encoding="utf8")
     out.with_name(out.stem + ".key.json").write_text(json.dumps(key, indent=1), encoding="utf8")
+    return key
+
+
+def build_matched_ab(pairs: list[dict], out: Path, seed: int | None = None) -> dict:
+    """Blind comparisons of the SAME decisions, with full text and per-pair randomized order.
+
+    Input: [{episode_id, game_id, split, before, after}]. Never truncate the actionable ending.
+    The episode IDs are withheld from the rater sheet and retained in the private key.
+    """
+    if not pairs or len({x.get("episode_id") for x in pairs}) != len(pairs):
+        raise ValueError("matched pairs need unique episode_id values")
+    seed = seed if seed is not None else random.SystemRandom().randrange(1 << 30)
+    rng, key, lines = random.Random(seed), {"design": "matched_episode", "seed": seed, "pairs": []}, [
+        "# Same-play coaching comparison\n",
+        "Watch the referenced play, then read both explanations. Rate correctness, clarity and a usable next "
+        "action separately. Record your own explanation of the cue and action; preference alone is not learning.\n"]
+    for i, pair in enumerate(pairs, 1):
+        if any(not str(pair.get(k) or "").strip() for k in ("episode_id", "game_id", "before", "after")):
+            raise ValueError(f"pair {i}: episode_id, game_id, before and after are required")
+        order = ["before", "after"]
+        rng.shuffle(order)
+        key["pairs"].append({"item": i, "episode_id": pair["episode_id"], "game_id": pair["game_id"],
+                             "split": pair.get("split", "development"), "A": order[0], "B": order[1]})
+        lines += [f"## Play {i}\n", f"### A\n\n{pair[order[0]]}\n", f"### B\n\n{pair[order[1]]}\n",
+                  "| Version | Correctness 1–5 | Clarity 1–5 | Usable action 1–5 | Unsupported claims |\n"
+                  "|---|---|---|---|---|\n| A | | | | |\n| B | | | | |\n",
+                  "In your own words: what did you notice, what would you do, and when would you choose "
+                  "something else?\n\nPreferred explanation and why:\n"]
+    out = Path(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines), encoding="utf8")
+    out.with_suffix(".key.json").write_text(json.dumps(key, ensure_ascii=False, indent=2), encoding="utf8")
     return key
 
 
@@ -461,6 +542,7 @@ def main(argv=None) -> int:
     b.add_argument("--insights", help="default: <review>/insights.json")
     b.add_argument("--seed", type=int)
     b.add_argument("--cap", type=int, default=450, help="max characters per item (both sets)")
+    b.add_argument("--pairs", help="matched [{episode_id, game_id, before, after}] JSON; preserves full text")
     a = ap.parse_args(argv)
     if a.cmd in ("check", "critic"):
         if a.cmd == "check":
@@ -473,6 +555,10 @@ def main(argv=None) -> int:
         if errs:
             sys.exit(f"coach-insights {a.cmd}: {len(errs)} error(s)")
         print(f"coach-insights {a.cmd}: PASS" + (" (critic.json signed)" if a.cmd == "critic" else ""))
+        return 0
+    if a.pairs:
+        key = build_matched_ab(_load(Path(a.pairs)), Path(a.out), a.seed)
+        print(f"wrote {a.out} ({len(key['pairs'])} matched episodes); keep the .key.json private")
         return 0
     key = build_ab(Path(a.review), Path(a.out), a.old_report, a.seed, a.cap, a.insights)
     print(f"wrote {a.out} ({key['items_per_set']} items per set); key in "

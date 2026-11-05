@@ -5,11 +5,12 @@ from pathlib import Path
 KB = Path(__file__).resolve().parents[1] / "prompts" / "coach_kb.md"
 LABELS = (
     "Symptom (observable)",
-    "Why it happens",
+    "Why it happens (hypothesis to verify)",
     "What to check on film",
-    "In-game rule",
-    "Drill",
-    "Next-game target",
+    "In-game rule (conditional)",
+    "Exception and disconfirming evidence",
+    "Drill (training experiment)",
+    "Next-game target (observation)",
     "Source",
 )
 PAGE_OR_URL = re.compile(r"(\bpp?\.\s*\d+|\bpages?\s+\d+|https?://)", re.IGNORECASE)
@@ -46,5 +47,6 @@ def test_kb_entries_complete():
 
 def test_kb_header_marks_own_numbers_and_rules():
     head = KB.read_text(encoding="utf-8").split("### KB-", 1)[0]
-    assert "our own trial value" in head, "header must say targets and success measures are our trial values"
-    assert '"(our rule)"' in head, "header must explain how our own rules are marked"
+    assert "numeric success target needs its own explicit basis" in head
+    assert "not additional workload" in head
+    assert "editorial application" in head and "do not prove the mechanism" in head

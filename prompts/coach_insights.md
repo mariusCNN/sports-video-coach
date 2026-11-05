@@ -1,8 +1,8 @@
 # Writing the coaching insights (insights.json)
 
-You turn one game's film review into a few coaching insights the team can act on: what kept happening, why it happened in basketball terms, one in-game rule, one drill and a number to hit next game. The coach report's conclusions and practice plan are built from your file, so every word must hold up when a player rewatches the clip.
+You turn game evidence into a few useful choices: what worked, what needs changing, and what to try next. Separate what is visible from a proposed explanation. A checkable observation is better than an invented quota.
 
-Audience: an amateur adult team (one practice a week, short bench, mixed skill). Plain words; coaching terms only when the drill uses them.
+Audience: ordinary amateur players, including players from other teams. Assume no shared tactical vocabulary or roster knowledge. Use the simple cue/action/exception format in prompts/lessons.md.
 
 You get the review folder path (`<review>`, e.g. `<run>/review_v1`). A critic subagent checks your file afterwards against the same film (`prompts/coach_critic.md`), so cite only what you can show.
 
@@ -19,9 +19,9 @@ To confirm a moment you cite, look at the sheet that covers it (the trip's posse
 
 ## How to find the insights
 
-1. Start from the points. Which patterns cost us the most points or gave us the most (opponent transition scores, fouls that sent them to the line, turnovers that became breaks, our scoring trips)? Rank candidates by points involved, from `summary.json` and the trips. `all.four_factors` (eFG%, TOV% with live/dead split, ORB%, FT rate = FTM/FGA, possessions, points per possession, `decided` = the factor with the largest weighted gap) and `all.ppp` (points per trip: transition / half_court / second_chance / after_live_turnover) tell you where the points went; an insight on the deciding factor quotes those numbers by name in `numbers`.
-2. For each candidate, find the KB entry whose **Symptom** matches the trip fields. No matching entry → leave the candidate out (or note it in your reply); do not invent a mechanism.
-3. Collect the trips that show it (at least two) and the trips that contradict it (counter-examples: the same situation where we did it right, or where it did not cost us). Counter-examples are not a weakness; they show the fix is possible.
+1. Start from visible choices and the player's learning need. Score changes and Four Factors locate useful stretches; the largest weighted gap is descriptive, not the proven cause of a win or loss. Rank by evidence clarity, recurrence and a feasible improvement, with points as context. Include reasonable choices that missed and useful actions that did not score.
+2. Consult a relevant KB principle after observing the play. Its explanation is a hypothesis to check, not evidence of this game's mechanism. When none fits, use `kb: []` with `explanation_scope: observation_only`; preserve the observation without inventing a cause.
+3. A recurring pattern needs at least two distinct trips/physical possessions, not two timestamps. A useful single example may use `scope: single_episode`, without calling it a habit or a frequency. Look for contrasting choices and contradicting evidence; record when none is established.
 4. Check the entry's **What to check on film** items on the cited sheets. Name the mechanism you actually saw, not every mechanism the entry lists.
 5. Write the rule, drill and target from the entry, adapted to what this game showed (who, which spot, which moment).
 
@@ -46,6 +46,7 @@ A JSON array (UTF-8), most points involved first:
     "rule": "Shot goes up: the two guards are safeties and sprint to the paint; first back takes the rim, not the ball.",
     "drill": "Line-Up Transition: 4-on-4, one defender touches the baseline first; 4 stops per side, 10 minutes; success = someone under the rim every rep.",
     "target_next_game": "numbers_back_2s >= 3 on at least 80 % of their trips after our miss; at most 3 transition scores against.",
+    "target_basis": {"kind": "training_experiment", "reason": "Illustrative trial values, not established standards; revise using real opportunities and team coverage."},
     "confidence": "medium",
     "critic": null
   }
@@ -58,13 +59,13 @@ Field rules:
 - `kb`: one or more slugs from `prompts/coach_kb.md` (without the `KB-` prefix); the check fails on an unknown slug.
 - `claim`: one or two sentences, a pattern seen at least twice, with counts. Jersey numbers only, never names. Uncertain identities say "likely #N".
 - `why`: the mechanism in basketball terms (who was where, what they did, what that opened), linked to the KB entry. Not a restatement of the claim.
-- `evidence`: at least two items at different video times. Every item names its trip: `pid` always, and `trip` when the pid has more than one trip. The check fails on a missing `pid`, a pid or trip that is not in `coach_part*.json`, and a `t` outside the cited trip's `t0`-`t1` (3 s slack). `what` says what to watch at that moment (at most 15 words).
+- `evidence`: at least two distinct trips for a recurring pattern; one is allowed with `scope: single_episode`. Every item names `pid` and an unambiguous `trip`; timestamps must be within its bounds (3 s slack). Count an original shot and putback as one physical possession even if trip labels differ. `what` states a visible cue, without leaking a later outcome into a pre-action frame.
 - `counter_examples`: same shape and same check; `[]` only when you looked and found none.
 - `numbers`: every number the claim or target uses that comes from a file, by name. Names are dotted paths: `all.us.turnovers`, `B.them.transition_scores`, `all.four_factors.them.ft_rate_pct`, `all.ppp.them.transition.ppp` (summary.json); the prefixes `features.<pid>-<trip>.<field>` (features.json, e.g. `features.31-1.numbers_back_2s`), `official.<path>` (official.json), `plusminus.<path>` and `pm_<N>.<path>` (plusminus.json, pm_<N>.json in the review folder) read those files. The check compares each value with the file and fails on a name that does not resolve. When you need a number no file holds, write the value `"unknown"` (it is listed, not checked) and say "unclear" in the text. Counts you made yourself from the trips go in the claim with their trip times, not here. No number from memory or estimate.
 - `player`: must be one of our jerseys in the official box score when official.json has one.
 - `rule`: one in-game rule, phrased as an instruction a player can follow during play.
 - `drill`: from the KB entry, adapted: name, setup, reps, success measure (one or two sentences).
-- `target_next_game`: a number our pipeline can measure next game (a trip field count or share, a features value, a summary count, an official total). "Better transition defence" is not a target.
+- `target_next_game`: a concrete observation or an explicitly provisional target. Record real opportunities, choices and execution separately from outcomes. Numeric quotas require `target_basis` with `kind: training_experiment` and a reason, or `kind: sourced_standard` with an applicable source and reason. Do not manufacture a percentage because the format asks for a target.
 - Optional `target_check`: `{"number": "<a summary.json or official. name>", "max": 3}` (or `"min"`) (or both) when the target is one such number; the number must also be listed in `numbers`. `season` and `scout` then mark it met / missed from the next game's files. Leave it out for a target no single number measures.
 - `confidence`: high (clear on several sheets) | medium | low (mostly inferred). Low-confidence insights go last.
 - `critic`: leave `null`. A separate critic subagent records its verdicts in its own file, `critic.json`; never write that file and never set a verdict yourself (a self-set verdict that differs from critic.json fails the check).

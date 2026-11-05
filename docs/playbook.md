@@ -227,7 +227,7 @@ uv run hoop-tape-miner plusminus --lineup "$RUN/review_v1/lineup_intervals.json"
 
    Per-player table (team page): the league sheet has only made shots and fouls, so rebounds, assists and steals are counted on the film. `uv run hoop-tape-miner box <game folder> --draft` writes `box.draft.json`, one entry per missed shot (rebound), made basket of ours (possible assist) and live turnover of theirs (steal), with its time. Read each on the film (`sports-video-coach frames` around the time; helpers by half, at most 3), fill `who` with the jersey only when it is clearly readable (else null: it shows as "unclear", never given to a player), drop entries that did not happen, save as `box.json`, then `hoop-tape-miner box <game folder>` checks it and prints the table. Plus-minus comes from `$RUN/<review>/plusminus.json` (all players, the first command above).
 
-5. Coaching insights, then a separate critic (run steps `insights` and `critic`). Launch the writer subagent with `prompts/coach_insights.md` and the review folder: it reads the trips, `summary.json`, `plusminus.json`, `official.json`, `features.json` (if present), `prompts/coach_kb.md` and the memos, and writes `$RUN/review_v1/insights.json` (3-6 team insights and 1-3 per focus player, each a pattern on at least two trips with a KB mechanism, a rule, a drill and a measurable target). The writer's check:
+5. Coaching insights, then a separate critic (run steps `insights` and `critic`). Launch the writer subagent with `prompts/coach_insights.md` and the review folder: it reads the trips, `summary.json`, `plusminus.json`, `official.json`, `features.json` (if present), `prompts/coach_kb.md` and the memos, and writes `$RUN/review_v1/insights.json`. Recurring claims need at least two independent possessions; a useful single example is scoped `single_episode`. Each insight gives a concrete cue, action, exception and observation to check. Numeric quotas need an explicit basis. The writer's check:
 
 ```
 uv run hoop-tape-miner coach-insights check --review "$RUN/review_v1" --no-critic
@@ -235,7 +235,7 @@ uv run hoop-tape-miner coach-insights check --review "$RUN/review_v1" --no-criti
 
    It fails on evidence without a `pid` (and `trip` when the pid has several), a pid or trip not in the trips, a time outside the cited trip, an unknown KB slug, a `numbers` name that does not resolve in its file (`summary.json`, `features.`, `official.`, `plusminus.`, `pm_<N>.`; the value `"unknown"` is allowed) or a different value, and a player not on our box-score roster. Send the errors back to the writer until it prints PASS.
 
-   Then launch a different subagent as the critic with `prompts/coach_critic.md`. It re-opens the cited sheets, writes its own `critic.json` (`{"verdicts": [{id, verdict, note, reopened: [sheet files]}]}`), moves dropped insights to `insights_dropped.json`, and signs with `uv run hoop-tape-miner coach-insights critic --review "$RUN/review_v1"`. A verdict without re-opened sheets, a sheet that does not cover an evidence time (5 s padding), or a verdict set only inside insights.json fails; the signature is the hash of insights.json, so a later edit sends it back to the critic. `coach-insights check` (no flag) is the full check the `critic` step uses.
+   Then launch a different subagent as the critic with `prompts/coach_critic.md`. It re-opens evidence and counterexample sheets, writes its own `critic.json` (`{"verdicts": [{id, verdict, note, reopened: [sheet files]}]}`), moves dropped insights to `insights_dropped.json`, and signs with `uv run hoop-tape-miner coach-insights critic --review "$RUN/review_v1"`. Missing sheets or sheets that do not cover a cited time (5 s padding) fail. The signature binds insights, evidence, statistics, KB and reopened files; edits invalidate review. `coach-insights check` is the full check the `critic` step uses.
 
    Games finished before these gates: `run` waits on `film-review`, `insights` or `critic` with the errors and a note naming what is newly required. Fix them and re-run, or keep the pages already published. The report's conclusions and practice plan (step 10) come from this file. To compare with the memo conclusions, `coach-insights ab --review "$RUN/review_v1" --out "$RUN/review_v1/eval/ab_insights.md"` writes a blind A/B rating sheet (the key goes to `ab_insights.key.json`; do not show it to the rater).
 
@@ -440,6 +440,13 @@ The next session: film it, run `train <videos>` again. Its `targets` come from t
 
 ## Training program app
 
+For evidence-bound game lessons and the linked app follow-up, see
+[Decision lessons](decision-lessons.md). New games require `lessons.json` and independent
+`lesson-review.json` before reports/films. Existing games can set `coaching_lessons: true`.
+Compile both languages from one approved source; use `film --speech-tempo 1.25` for speech
+with unchanged source action speed. App `game.learning_goals` records opportunities, decisions,
+execution and outcomes inside the existing game log, keeping unknown counts distinct from zero.
+
 A month-long program the player follows on their phone (`hoop-tape-miner program`, engine `src/hoop_tape_miner/program_app.html`).
 
 - **Folder**: `workspace/players/<player>/program/<start date>/` with `program.json` (copy
@@ -448,7 +455,19 @@ A month-long program the player follows on their phone (`hoop-tape-miner program
 - **Optional content**: `videos.json` (`{"videos": {key: [{url, title, verified}]}}`, only verified ones are shown),
   `refs.json`, and static HTML fragments `cal.html`, `game.html`, `tests.html`, `decide.html`, `lib.html`.
   The 决策 tab appears only when its fragment exists.
+- **Before-session brief**: optional `program.json` `briefing` adds a compact opening card for training,
+  league, half-court pickup and full-court pickup. Each of `training`, `league`, `half`, `full` has a `title`,
+  one to three `cues` (`cue`, `action`, `check` strings), optional `timeline` rows (`when`, `text`), and optional
+  `watch` / `recap` string lists. `sessions` maps session codes to overrides of the training profile.
+  Optional `priority` uses the same title/cues schema to pin up to three current priorities above the
+  date-specific briefing; cue checks and optional watch notes appear in a disclosure. Date and mode changes keep it visible.
+  `sourceLabel` and `updatedAt` identify the authored snapshot; keep personal data inside the private workspace.
+  The date picker follows the plan; mode changes do not alter the workout or log. A fixture bye defaults to
+  training. On today's timed league date, the default switches from training to league 30 minutes before tipoff
+  when rendered (browser local time); an explicit mode choice wins. Refresh the page to recalculate the default.
+  This is an on-demand review, not a notification or live Notion sync. Author updates, rebuild, then publish.
 - **Cue audio**: a fragment's `<audio class="loop" src="cues.zh.mp3" title="…">` becomes a looping play button.
+  All app audio starts at 1.25x each visit; speed can be changed for the current visit. The loop preference is retained.
   Make the mp3 with `sports-video-coach narrate --script cues.zh.md --chime --gap 2 --loud`;
   `publish` copies it next to the page.
 - **Car audio**: a session's `"car": "car.G.zh.mp3"` (or `{"src", "title"}`) appears above the selected day and

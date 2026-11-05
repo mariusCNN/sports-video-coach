@@ -29,6 +29,7 @@ def template(name: str) -> Path:
 def make_game(opponent: str, date: str, video: str | None = None, us_team: str | None = None,
               run: str | Path | None = None) -> dict:
     game = json.loads(template("game.example.json").read_text(encoding="utf8"))
+    game["coaching_lessons"] = True
     game["name"] = f"{date} vs {opponent}"
     game["them"]["team"] = opponent
     if us_team:

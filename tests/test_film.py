@@ -311,6 +311,17 @@ def test_card_lines_come_in_one_after_another_left_aligned_under_the_accent_bar(
     assert two[3].endswith("}Two come, pass") and "\\move(106,360,128,360" in two[3]
 
 
+def test_measured_speech_tempo_preserves_pitch_and_scales_cue_times(tmp_path):
+    wav = tmp_path / 'voice.wav'
+    film.ffmpeg('-f', 'lavfi', '-i', 'sine=frequency=440:duration=2', '-c:a', 'pcm_s16le', str(wav))
+    dest, duration, cues = film.speech_tempo(wav, 2.0, [(0.25, 1.75, 'Words')], 1.25)
+    assert dest.exists() and duration == pytest.approx(1.6, abs=.04)
+    assert cues == [(0.2, 1.4, 'Words')]
+    assert film.duration_s(wav) == pytest.approx(2.0, abs=.01)
+    with pytest.raises(ValueError):
+        film.speech_tempo(wav, 2.0, [], float('nan'))
+
+
 def test_a_chapter_card_shows_its_kicker_apart_from_the_title():
     sc = film.parse_script("## 第一件事：有压力，第二个人来接\n")[0]
     ev = film.scene_events(sc, 5, 0, 0, [], "zh", "", 720)

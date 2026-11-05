@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "game_id": "synthetic-game",
+  "languages": [
+    "en",
+    "zh"
+  ],
+  "dependencies": [
+    "evidence/observations.json"
+  ],
+  "introduction": {
+    "en": "Watch our choices.",
+    "zh": "看选择。"
+  },
+  "closing": {
+    "en": "Read the receiver before you pass.",
+    "zh": "传球前看接球人。"
+  },
+  "episodes": [
+    {
+      "id": "ep1",
+      "start": 10,
+      "decision_t": 12,
+      "action_t": 13,
+      "outcome_t": 16,
+      "end": 18,
+      "observation": "Receiver has space.",
+      "cues": [
+        "Receiver is outside the crowd."
+      ],
+      "action": "Pass to receiver.",
+      "decision_assessment": "Reasonable with the visible lane.",
+      "execution_assessment": "Receiver controls the pass.",
+      "outcome": "Shot misses.",
+      "alternatives": [
+        {
+          "when": "Lane closes",
+          "action": "Keep a live dribble",
+          "limit": "Only if still legal"
+        }
+      ],
+      "uncertainty": {
+        "identity": "Role visible, number unclear",
+        "timing": "Frames bracket release",
+        "choice": "Several reasonable actions",
+        "outcome": "Miss visible"
+      },
+      "sources": [
+        {
+          "type": "film_observation",
+          "ref": "evidence/pre-choice.jpg",
+          "supports": "Receiver space before release"
+        }
+      ],
+      "frames": [
+        "evidence/pre-choice.jpg"
+      ],
+      "marks": [
+        [
+          0.3,
+          0.5
+        ]
+      ]
+    }
+  ],
+  "lessons": [
+    {
+      "id": "pass-room",
+      "episode_id": "ep1",
+      "kind": "good",
+      "objective": "Check receiver and passing lane before passing.",
+      "contrast_limit": "No independent contrasting episode yet.",
+      "text": {
+        "en": {
+          "title": "Use the free teammate",
+          "look": "Watch the receiver near the line.",
+          "good": "The pass reaches a ready teammate.",
+          "change": "No specific error is established here.",
+          "next": "When the lane is clear, pass to the ready receiver.",
+          "exception": "Keep the ball if a defender closes that lane.",
+          "question": "Who can receive safely?",
+          "rationale": "The receiver has room before the pass, regardless of the eventual shot.",
+          "choices": [
+            {
+              "id": "pass",
+              "text": "Pass along the open lane",
+              "acceptable": true,
+              "why": "The receiver is ready."
+            },
+            {
+              "id": "force",
+              "text": "Pass through the defender",
+              "acceptable": false,
+              "why": "That lane is blocked."
+            }
+          ]
+        },
+        "zh": {
+          "title": "看见能接球的队友",
+          "look": "看底线旁能接球的队友。",
+          "good": "球传到了准备好的队友手里。",
+          "change": "这次没有证据指定一个错误。",
+          "next": "路线能传、队友准备好，就直接给。",
+          "exception": "防守挡住路线，就先留住球。",
+          "question": "谁现在能接到球？",
+          "rationale": "传球前已有空间，最后投进与否另记。",
+          "choices": [
+            {
+              "id": "pass",
+              "text": "传给有空间的队友",
+              "acceptable": true,
+              "why": "队友准备好了。"
+            },
+            {
+              "id": "force",
+              "text": "硬穿过防守人传",
+              "acceptable": false,
+              "why": "这条路线被挡住。"
+            }
+          ]
+        }
+      },
+      "practice": {
+        "kind": "observation",
+        "setup": "Review the catch.",
+        "cue": "Receiver and defender position.",
+        "observe": "Describe the lane before deciding.",
+        "stop_or_change": "Say unclear if the lane is hidden."
+      }
+    }
+  ]
+}

@@ -100,9 +100,10 @@ def scratch(near: Path):
     for i in range(1000):
         t = d / f"work-{os.getpid()}-{i}"
         try:
-            t.mkdir()
+            t.mkdir(parents=True)
             break
-        except FileExistsError:
+        except (FileExistsError, FileNotFoundError):
+            # Another writer may remove the empty shared parent before this reservation.
             continue
     else:
         raise FileExistsError(f"no free scratch folder in {d}")
@@ -130,20 +131,15 @@ def replace(src: Path, dst: Path, tries: int = 5, wait: float = 0.2) -> None:
 
 @contextlib.contextmanager
 def partial(out: Path):
-    """Yield a path to write instead of `out` (same name, in `<dir>/.partial/`); it replaces `out` only when the
+    """Yield a path to write instead of `out` (same name, in a reserved `.partial/` subfolder); it replaces `out` only when the
     block ends without an exception, else it is deleted and an existing `out` stays as it was."""
     out = Path(out)
-    d = out.parent / ".partial"
-    d.mkdir(parents=True, exist_ok=True)
-    tmp = d / out.name
-    tmp.unlink(missing_ok=True)
-    try:
+    # Reserve a directory before yielding: a peer can finish before our encoder opens
+    # its file. An empty shared directory could otherwise disappear in that interval.
+    with scratch(out) as d:
+        tmp = d / out.name
         yield tmp
         replace(tmp, out)
-    finally:
-        tmp.unlink(missing_ok=True)
-        with contextlib.suppress(OSError):
-            d.rmdir()  # only when empty: another writer may still be busy in it
 
 
 def write_text_atomic(path: Path, text: str) -> None:

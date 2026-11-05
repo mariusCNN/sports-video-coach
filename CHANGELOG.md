@@ -6,6 +6,38 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Evidence-bound decision lessons shared by bilingual films and interactive pages: pre-action
+  questions, conditional alternatives, separate choice/execution/outcome, independent review,
+  dependency hashes and explicit public exports. New basketball games enable the lesson step.
+- Matched-episode A/B sheets retain full explanations; learning evaluation separates agent
+  audits, human comprehension, retention and opportunity-based game observations.
+- Training apps can link three priorities to lesson versions and record opportunities, choices,
+  execution, outcomes and retain/revise/retire feedback in the existing game log.
+- Film `--speech-tempo` uses measured audio time-stretching with aligned subtitles, unchanged
+  action speed, persistent scene timing and subtitle audit files.
+
+### Fixed
+
+- Concurrent media writers reserve separate temporary directories, preventing one finished
+  language render from removing another render's not-yet-opened audio output directory.
+- Insight recurrence requires distinct trips; vague stock advice and unsupported numeric targets
+  fail checks. Critic signatures also invalidate on changed evidence, statistics or principles.
+- Four Factors describe the largest weighted gap without claiming it caused the game's result.
+- Coaching KB entries now require context, exceptions and disconfirming evidence; practice
+  formats are experiments, with opportunity observations instead of universal quotas.
+- Lesson responses stay synchronized across translated cards, so switching languages cannot
+  erase a saved reminder. Script QA ignores author comments while checking visible chapter text.
+
+- Training-plan apps can pin up to three current priorities above the date-specific briefing;
+  switching dates or activity modes preserves the pinned cues and workout progress.
+
+- Training-plan audio starts at 1.25x on every visit, including devices with an older saved speed;
+  listeners can still change speed during playback.
+
+- Optional pre-session brief in training-plan apps: date-specific training cues, league and half/full-court
+  pickup modes, a preparation timeline and review prompts. Fixture byes and same-day timed games select the
+  appropriate default; explicit mode choices preserve the selected date and existing workout progress.
+
 - Film review now resumes from per-part sheet ledgers: saved JSON checkpoints precede read acknowledgements,
   changed inputs become pending again, and new reviews cannot pass `coach-check` with unread sheets.
   Regeneration refuses folders containing review checkpoints. Existing reviews remain compatible.
@@ -37,6 +69,8 @@ All notable changes to this project are documented here. The format follows [Kee
   swim example measures a rate), tested on drawn video against the exact count.
 
 ### Fixed
+- Coach evaluation can match each visually timed made free throw separately, including long stoppages and
+  delayed and-ones, without moving the foul time or changing the reviewed possession/point totals.
 - Language switches preserve named report anchors and pause plugin-supplied videos as well as standard clips.
 - Team pages now follow every player-table source (`box.json`, either `official.json`, and the review's
   `plusminus.json`), so changing or adding one makes the HTML step run again. Relative run paths are resolved

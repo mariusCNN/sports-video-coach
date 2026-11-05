@@ -41,6 +41,10 @@ def test_no_page_says_how_to_make_one(tmp_path):
     assert "sports-video-coach html" in PC.problems(tmp_path)[0]
 
 
+def test_script_author_comments_are_not_spoken_but_cards_are_shown():
+    assert PC.script_text('# edit the reviewed source\n## next time\n旁白') == '## next time\n旁白'
+
+
 def test_english_left_in_the_chinese_report_is_a_warning_not_a_failure(tmp_path, capsys):
     page(tmp_path, '<article class="report" data-lang="en" lang="en"><p>keep your hips low</p></article>'
                    '<article class="report" data-lang="zh" lang="zh-CN"><p>落地后 keep your hips low，再起跳。</p>'

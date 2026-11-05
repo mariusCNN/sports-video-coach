@@ -4,7 +4,7 @@ usage: hoop-tape-miner coach-summary --review <run>/review_v1 [--official <run>/
                                      [--segments "A:0-302,B:302-1000,..."] [--out summary.json]
 Times are our-video seconds. Each trip is assigned to the segment containing its start time.
 Every segment also gets `four_factors` (eFG%, TOV% live/dead, ORB%, FT rate = FTM/FGA, possessions, points per
-possession and the "factor that decided the game" line; method notes in `four_factors.method`) and `ppp` (points per
+possession and the descriptive "largest weighted gap" line; method notes in `four_factors.method`) and `ppp` (points per
 trip by type: transition / half_court / second_chance / unknown, plus after_live_turnover). Only the whole game
 (`all`) uses --official; stretches use the reviewed trips alone. Trip types and second chances are decided with the
 whole game as context.
@@ -280,21 +280,22 @@ def decided(us: dict, them: dict, min_poss: int = MIN_POSS) -> dict:
     out = {"status": "unclear", "factor": None, "favours": None, "gap": None, "weighted": weighted}
     pu, pt = us.get("possessions"), them.get("possessions")
     if pu is None or pt is None or min(pu, pt) < min_poss:
-        out["text"] = (f"Deciding factor unclear: too few possessions (us {pu}, them {pt}; "
+        out["text"] = (f"Largest weighted gap unclear: too few possessions (us {pu}, them {pt}; "
                        f"need {min_poss} each).")
         return out
     if not weighted:
-        out["text"] = "Deciding factor unclear: no factor has numbers for both teams."
+        out["text"] = "Largest weighted gap unclear: no factor has numbers for both teams."
         return out
     f = max(weighted, key=lambda k: abs(weighted[k]))
     if abs(weighted[f]) < MIN_WEIGHTED_GAP:
-        out["text"] = f"Deciding factor unclear: every weighted gap is below {MIN_WEIGHTED_GAP:g} point."
+        out["text"] = f"Largest weighted gap unclear: every weighted gap is below {MIN_WEIGHTED_GAP:g} point."
         return out
     key = vals[f][0]
     fav = "us" if weighted[f] > 0 else "them"
     out.update(status="ok", factor=f, favours=fav, gap=gaps[f],
-               text=(f"The factor that decided the game: {FACTOR_NAMES[f]}, us {us[key]} vs them {them[key]} "
-                     f"({abs(gaps[f])} percentage points in favour of {fav}; weighted {abs(weighted[f])})."))
+               text=(f"Largest weighted gap: {FACTOR_NAMES[f]}, us {us[key]} vs them {them[key]} "
+                     f"({abs(gaps[f])} percentage points in favour of {fav}; weighted {abs(weighted[f])}). "
+                     "Descriptive comparison, not proof of what caused the result."))
     return out
 
 

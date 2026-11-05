@@ -446,6 +446,10 @@ def listen_block(folder: Path, embed: bool, langs: list[tuple] | None = None):
 def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
     """share: drop repo links and local paths; embed (default: same as share): inline audio and clips."""
     embed = share if embed is None else embed
+    from . import lessons, lesson_page
+    lesson_errors = lessons.derivative_errors(folder)
+    if lesson_errors:
+        raise ValueError("\n".join(lesson_errors))
     hooks, sport, data = hooks_of(folder)
     ui = {c: {**t, **hooks.ui.get(c, hooks.ui.get("en", {}))} for c, t in UI.items()}  # plugin labels, else English
     sb = hooks.board(folder) if hooks.board else None
@@ -467,10 +471,17 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
             pre = hooks.intro(folder, sb or {}, [(code, attr, _, fname)])
             cut = body.find("<h2 id=")
             body = body[:cut] + pre + body[cut:] if cut >= 0 else pre + body
+        teaching = lesson_page.panel(folder, code, embed)
+        if teaching:
+            cut = body.find('<h2 id=')
+            body = body[:cut] + teaching + body[cut:] if cut >= 0 else body + teaching
         arts.append(f'<article class="report" data-lang="{code}" lang="{attr}"{hide(code)}>{inline_images(body, folder)}</article>')
         links = "".join(f'<li><a href="#{code}-s{i}">{html.escape(h)}</a></li>' for i, h in enumerate(heads, 1))
         tocs.append(f'<nav class="toc" data-lang="{code}" lang="{attr}" aria-label="{ui[code]["contents"]}"{hide(code)}>'
                     f'<p class="toc-title">{ui[code]["contents"]}</p><ol>{links}</ol></nav>')
+
+    if (folder / "lesson.public.json").is_file():
+        assets += lesson_page.ASSETS
 
     def lab(key):
         return "".join(f'<span data-lang="{c}"{hide(c)}>{ui[c][key]}</span>' for c, *_ in langs)

@@ -51,6 +51,8 @@ MARKER = re.compile(r"!?\[([^\]\n]*)\]\([^)\n]*\)")
 
 def script_text(text: str) -> str:
     """A script's words as heard or shown: marker captions and freeze-mark labels kept, their syntax dropped."""
+    # Single-# lines are author comments in both narration and film grammar; ## cards are shown.
+    text = re.sub(r'^#(?!#)[^\n]*\n?', '', text, flags=re.M)
     text = MARK.sub(lambda m: " ".join(re.findall(r'"([^"\n]*)"', m.group(1))), text)
     return MARKER.sub(r"\1", text)
 

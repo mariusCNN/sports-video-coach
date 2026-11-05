@@ -25,6 +25,8 @@ CORE = {
     "humanize": ("sports_video_coach.humanize", "flag stock AI phrasing in reports and scripts (the check the writing steps run)"),
     "page-check": ("sports_video_coach.page_check", "static check of a report page and its scripts (--strict, --write-qa: a qa.md draft)"),
     "film": ("sports_video_coach.film", "film.<lang>.md -> explained video: narration over clips and charts, subtitled"),
+    "lessons": ("sports_video_coach.lessons", "check, review and compile decision lessons; evaluate learning separately"),
+    "lesson-bench": ("sports_video_coach.lesson_eval", "prepare pre-action reference cases; summarize independent ratings"),
     "publish": ("sports_video_coach.publish", "reports -> private-link website (Cloudflare Workers), one stable link per report"),
     "bench": ("sports_video_coach.bench", "benchmark an agent / model as a film reviewer: prepare, score, validate, page, run"),
 }

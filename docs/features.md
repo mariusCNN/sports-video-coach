@@ -14,6 +14,9 @@ availability depends on the selected sport, installed dependencies, footage and 
 | Multiple source videos | One ordered session timeline with source attribution | `run <video...>`; simultaneous camera angles are separate units |
 | Timestamped contact sheets and zooms | Review long footage and revisit fast or ambiguous moments | `frames`, plugin review guides |
 | Structured film review | Machine-readable moments with evidence and uncertainty | Agent-written JSON, checked by the selected plugin |
+| Reviewed decision lessons | One cue, action and exception shared by both languages, page and film | `lessons check/sign/compile`; [decision lessons](decision-lessons.md) |
+| Pre-action questions and follow-up | Choose before seeing the result; record real opportunities separately from outcomes | Interactive lesson pages, versioned program goals; no automatic learning claim |
+| Matched reference evaluation | Separate game splits, withhold outcomes, preserve unclear ratings | `lesson-bench prepare/score`, `coach-insights ab --pairs` |
 | Coaching report and drills | Each fix can include an action, practice drill and next-session target | Report guides and Markdown |
 | Mobile HTML report | Read, switch language, watch supporting clips and listen in one page | `html`; standard pages or optional embedded/offline HTML |
 | Source clips and slow replay | Check the action behind a coaching claim | `clips`, report clip references |
