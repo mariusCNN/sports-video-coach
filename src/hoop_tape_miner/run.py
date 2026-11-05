@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from sports_video_coach import pipeline
+from sports_video_coach import pipeline, lessons
 
 from . import game_config, workspace
 from . import perception
@@ -324,6 +324,16 @@ def _with_posters(tail: list[Step]) -> list[Step]:
     return [*tail[:i], step, *tail[i:]]
 
 
+def lesson_errors(g: Game) -> list[str]:
+    if not g.game.get("coaching_lessons") and not any((d / "lessons.json").exists() for d in g.reports()):
+        return []  # archived games remain readable; new games enable this contract
+    errors = []
+    for folder in g.reports():
+        found = lessons.derivative_errors(folder) if (folder / "lessons.json").exists() else ["lessons.json missing"]
+        errors += [f"{folder.name}: {error}" for error in found]
+    return errors
+
+
 STEPS = [
     Step("video", "agent", lambda g: bool(g.video and g.video.exists()),
          how="game.json `video` does not point to a file. Run `hoop-tape-miner fetch <league game url>` "
@@ -460,6 +470,12 @@ STEPS = [
              "with `hoop-tape-miner coach-insights critic --review {review}`. Any later edit of insights.json "
              "needs the critic again.",
          errors=critic_errors),
+    Step("lessons", "agent", lambda g: not lesson_errors(g), errors=lambda g: lesson_errors(g),
+         how="Write lessons.json in each report folder using prompts/lessons.md. Re-open frames BEFORE the "
+             "choice. An independent reviewer writes lesson-review.json; run `hoop-tape-miner lessons sign "
+             "<folder>` then `hoop-tape-miner lessons compile <folder>` for both languages. Check structure, "
+             "evidence, plain language and alternatives separately. Do not claim human learning from an agent "
+             "review. Old games may opt in with game.json coaching_lessons=true."),
     Step("momentum", "cmd",
          lambda g: g.no_score_flow() or all((g.folder / localised("momentum.png", l)).exists() for l in g.langs),
          lambda g: [["momentum", "--official", str(g.official), "--game", str(g.gj), "--lineup",
@@ -479,11 +495,16 @@ STEPS = [
                            *([g.run / "shot_proposals.json"] if (g.run / "shot_proposals.json").exists() else [])],
          after=("analyze",)),
     Step("facts", "agent", lambda g: all(p.exists() for p in facts_files(g)),
+         derives=lambda g: [(p, [g.review / "insights.json", g.review / "critic.json",
+                                *sorted(g.review.glob("coach_part*.json")), g.review / "summary.json"])
+                            for p in facts_files(g)],
          how="Write the fact sheets (playbook step 9): {review}/players_facts.md and {review}/player{focus}_facts.md."),
     # a corrected fact sheet makes the READMEs written from it out of date (and through them the scripts)
     Step("reports", "agent", reports_done, checks=pipeline.report_checks,
          errors=lambda g: pipeline.missing([d / pipeline.readme(l) for d in g.reports() for l in g.langs], g),
-         derives=lambda g: [(d / pipeline.readme(l), facts_files(g, d)) for d in g.reports() for l in g.langs],
+         derives=lambda g: [(d / pipeline.readme(l), facts_files(g, d) +
+                            ([d / "lessons.json", d / "lesson-review.json"] if (d / "lessons.json").exists() else []))
+                            for d in g.reports() for l in g.langs],
          how="Write the reports (playbook step 10): {readmes} in {folder} (prompts/coach_report.md) "
              "and in {folder}/player-{focus} (prompts/player_deep_dive.md), with clip markers on the key plays."),
     *_with_posters(tail_steps(

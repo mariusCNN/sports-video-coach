@@ -27,7 +27,9 @@ def test_film_cli_passes_crf_to_build(tmp_path, monkeypatch):
     monkeypatch.setattr(film, "build", lambda *a: seen.append(a))
     film.main([str(tmp_path), "--crf", "28"])
     film.main([str(tmp_path)])
-    assert seen[0][-1] == 28 and seen[1][-1] == film.CRF
+    assert seen[0][-2] == 28 and seen[1][-2] == film.CRF
+    film.main([str(tmp_path), '--speech-tempo', '1.25'])
+    assert seen[0][-1] == 1.0 and seen[-1][-1] == 1.25
 
 
 @pytest.mark.skipif(not HAVE_FFMPEG, reason="needs ffmpeg")

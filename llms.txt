@@ -29,6 +29,8 @@
 - [Fitness guide](docs/fitness.md): gym and strength & conditioning sessions: sets named from a 56-exercise
   library, per-rep depth, trunk lean and tempo from pose, a muscle map. Run `sports-video-coach fitness:library --help`.
 - [Playbook](docs/playbook.md): exact end-to-end procedures.
+- [Decision lessons](docs/decision-lessons.md): reviewed cue/action/exception episodes, bilingual film/page compilation,
+  pre-action questions, versioned app follow-up and separated evidence/media/learning evaluation.
 - [OpenHoopVision](docs/perception.md): optional candidate evidence, reviews and validation media.
 - [WASB, SAHI and KaliCalib](docs/perception-lab.md): optional local model adapters, independent evaluation,
   measured limitations and reproducibility. Run `hoop-tape-miner perception-lab --help`.

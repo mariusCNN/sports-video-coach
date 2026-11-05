@@ -52,7 +52,7 @@ def test_run_rejects_invalid_partition(game, config):
         R.review_partition(g)
 
 
-VALID_INSIGHT = {"id": "T1", "kb": ["transition-defence"], "claim": "c", "why": "w", "rule": "r", "drill": "d",
+VALID_INSIGHT = {"id": "T1", "scope": "single_episode", "kb": ["transition-defence"], "claim": "c", "why": "w", "rule": "r", "drill": "d",
                  "target_next_game": "t", "evidence": [{"t": 2.0, "pid": 1, "trip": 1, "what": "a"},
                                                        {"t": 8.0, "pid": 1, "trip": 1, "what": "b"}],
                  "counter_examples": [], "numbers": {}, "confidence": "low", "critic": None}
@@ -331,6 +331,8 @@ def finished_until_html(folder: Path):
           "run/review_v1/insights.json", "run/review_v1/players_facts.md", "run/review_v1/player7_facts.md",
           "run/review_v1/eval/run.json")
     sign_critic(folder / "run/review_v1")
+    # Facts are authored after the independent evidence review, which is now a dependency.
+    touch(folder, "run/review_v1/players_facts.md", "run/review_v1/player7_facts.md")
     for d in ("", "player-7/"):
         touch(folder, *(d + f for f in ("README.md", "README.en.md", "listen.zh.md", "listen.en.md",
                                         "listen.zh.mp3", "listen.en.mp3")))

@@ -4,6 +4,13 @@ A spoken version of a report, rendered to MP3 by `hoop-tape-miner narrate` (edge
 
 ## Files
 
+Audience: ordinary amateur players, including viewers from another team. Describe the shirt,
+location and moment before relying on a jersey number. Use a visible cue, one concrete action
+and a short exception. Explain what worked, what needs changing and what to do next. Translate
+terms such as weak side, closeout, rotation and advantage into what the viewer can actually see.
+Do not confuse a made shot with a good decision, or a missed shot with a bad one. In a folder
+with `lessons.json`, keep the narration aligned with its reviewed conditions and uncertainty.
+
 - Team report: `listen.zh.md` and `listen.en.md` next to `README.md` / `README.en.md` in the game folder.
 - Player deep dive: `player-<N>/listen.zh.md` and `listen.en.md`.
 - The suffix picks the voice: `zh` and `en` are supported; defaults can be changed in `game.json` `narration.voices`. The HTML listen button appears only when both MP3s exist.

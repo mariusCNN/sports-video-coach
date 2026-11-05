@@ -133,6 +133,28 @@ def test_eval_event_level():
     assert r["us"]["shot_points_agree"] == 1  # the 3 recorded as a 2 is found but its value disagrees
 
 
+def test_delayed_free_throws_match_individually_without_duplicating_trip_or_foul():
+    ft = v2trip(result="foul_ft", shot=None, t0=30, t1=180,
+                fts={"shooter": "4", "made": 2, "att": 2, "made_times": [100, 170]},
+                foul={"t": 40, "by_team": "them", "by": "9"})
+    r = facts_eval([ft], official([ev(110, "us", 1), ev(180, "us", 1)]))
+    assert r["us"]["pts_recall"] == r["us"]["pts_precision"] == 1.0
+    assert r["us"]["events_matched"] == {"shots": 0, "fts": 2}
+    assert r["us"]["team_pts"] == [2, 2] and r["us"]["trips"] == 1
+    assert r["them"]["fouls_found"] == 1 and ft["foul"]["t"] == 40
+
+
+def test_timed_and_one_keeps_field_goal_time_and_unknown_result_does_not_score():
+    t = v2trip(t0=70, t1=180, fts={"shooter": "13", "made": 1, "att": 1, "made_times": [160]})
+    flow = official([ev(100, "us", 2), ev(170, "us", 1)])
+    r = facts_eval([t], flow)
+    assert r["us"]["pts_recall"] == 1.0
+    assert r["us"]["events_matched"] == {"shots": 1, "fts": 1}
+    assert r["us"]["team_pts"] == [3, 3]
+    t["result"] = "unclear"
+    assert facts_eval([t], flow)["us"]["pts_recall"] == 0.0
+
+
 # ---- honest gates: part coverage, unresolved jerseys, the eval gate and regressions ----
 
 def write_part(review, n, poss, trips):

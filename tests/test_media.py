@@ -65,6 +65,29 @@ def test_partial_moves_into_place_only_on_success(tmp_path):
     assert not (out.parent / ".partial").exists()
 
 
+def test_partial_keeps_a_waiting_writers_directory(tmp_path):
+    a, b = tmp_path / "a.wav", tmp_path / "b.wav"
+    with media.partial(a) as first:
+        with media.partial(b) as second:
+            second.write_bytes(b"second")
+        # The first encoder has not opened its output when its peer finishes.
+        first.write_bytes(b"first")
+    assert a.read_bytes() == b"first" and b.read_bytes() == b"second"
+    assert not (tmp_path / ".partial").exists()
+
+
+def test_partial_same_target_writers_do_not_share_temporary_files(tmp_path):
+    out = tmp_path / "shared.wav"
+    with media.partial(out) as first:
+        first.write_bytes(b"first")
+        with media.partial(out) as second:
+            assert first != second
+            second.write_bytes(b"second")
+        assert out.read_bytes() == b"second"
+        assert first.read_bytes() == b"first"
+    assert out.read_bytes() == b"first"
+
+
 def _locked(monkeypatch, fails: int):
     """os.replace raises PermissionError `fails` times (a player or OneDrive holds the target), then works."""
     real, calls, naps = os.replace, [], []

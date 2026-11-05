@@ -25,6 +25,133 @@ def test_example_program_is_valid():
     assert program.validate(json.loads(EXAMPLE.read_text(encoding="utf8"))) == []
 
 
+def test_learning_goals_require_evidence_and_versions():
+    plan = json.loads(EXAMPLE.read_text(encoding='utf8'))
+    goal = dict(id='catch-read', version='v1', title='Read the defender', when='Before the catch',
+                action='Prepare a shot with room', exception='Pass when the receiver has the better opening',
+                practice='Vary the approach', measure='Record opportunities separately', source_url='https://example.org/play')
+    plan.setdefault('game', {})['learning_goals'] = [goal]
+    assert not program.validate(plan)
+    goal['source_url'] = 'javascript:alert(1)'
+    assert any('source_url' in e for e in program.validate(plan))
+    goal['version'] = ''
+    assert any('version' in e for e in program.validate(plan))
+
+
+@pytest.mark.skipif(not shutil.which('node'), reason='needs node')
+def test_learning_log_preserves_unknown_counts_and_prior_versions(tmp_path):
+    engine = program.ENGINE.read_text(encoding='utf8')
+    code = engine[engine.index('const LEARN_COUNTS ='):engine.index('function renderLog()')]
+    script = 'const assert=require("node:assert/strict");\n' + code + r'''
+const draft={}, goal={id:'read',version:'v1',title:'Read',source_url:'https://example.org'};
+const first=lessonTrial(draft,goal);
+assert.equal(first.opportunities,null);
+assert.equal(changeLessonCount(first,'opportunities',-1),true);
+assert.equal(first.opportunities,0);
+assert.equal(changeLessonCount(first,'decisions',1),false);
+changeLessonCount(first,'opportunities',1);
+changeLessonCount(first,'decisions',1);
+assert.equal(changeLessonCount(first,'opportunities',-1),false);
+const next=lessonTrial(draft,{...goal,version:'v2'});
+assert.equal(next.opportunities,null);
+assert.equal(draft.lesson_trials['read:v1'].decisions,1);
+assert.equal(first.outcomes,null);
+'''
+    (tmp_path / 'learning.cjs').write_text(script, encoding='utf8')
+    result = subprocess.run(['node', 'learning.cjs'], cwd=tmp_path, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="needs node")
+def test_audio_starts_at_125_even_with_legacy_saved_speed(tmp_path):
+    engine = program.ENGINE.read_text(encoding="utf8")
+    pref = next(line for line in engine.splitlines() if line.startswith("const apref ="))
+    script = 'const assert = require("node:assert/strict");\n'
+    script += 'for (const saved of [null, "{", JSON.stringify({rate:1,loop:false}), JSON.stringify({rate:1.5})]) {\n'
+    script += 'const AKEY="test", localStorage={getItem:()=>saved};\n' + pref + '\n'
+    script += 'assert.equal(apref.rate,1.25); if(saved?.includes("false")) assert.equal(apref.loop,false);\n}\n'
+    (tmp_path / "audio.cjs").write_text(script, encoding="utf8")
+    r = subprocess.run(["node", "audio.cjs"], cwd=tmp_path, capture_output=True, text=True, timeout=30)
+    assert r.returncode == 0, r.stderr
+
+
+def briefing_example():
+    profile = {"title": "Read before play", "cues": [
+        {"cue": "Look first", "action": "Read the help defender", "check": "Count the right reads"}],
+        "timeline": [{"when": "30 minutes before", "text": "Review the cue"}], "watch": [], "recap": []}
+    return {mode: dict(profile) for mode in ("training", "league", "half", "full")}
+
+
+@pytest.mark.parametrize("field,value,issue", [
+    ("priority", None, "priority: must be an object"),
+    ("priority", {"title": "Current focus", "cues": []}, "priority.cues: give one to three cues"),
+    ("training", None, "training: must be an object"),
+    ("sessions", [], "sessions: must be an object"),
+    ("sessions", {"unknown": {}}, "unknown session"),
+    ("training", {"title": "X", "cues": []}, "one to three cues"),
+    ("training", {"title": "X", "cues": [None]}, "each needs cue"),
+    ("training", {"title": "X", "cues": [], "timeline": ["bad"]}, "when/text strings"),
+    ("training", {"title": "X", "cues": [], "watch": "bad"}, "list of strings"),
+])
+def test_briefing_validation_reports_bad_profiles(field, value, issue):
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    plan["briefing"] = briefing_example()
+    plan["briefing"][field] = value
+    assert any(issue in error for error in program.validate(plan))
+
+
+def test_briefing_accepts_session_overrides_and_escapes_script_data(tmp_path):
+    folder = plan_folder(tmp_path)
+    plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
+    plan["briefing"] = briefing_example()
+    plan["briefing"]["sessions"] = {"G": {"title": "Morning shooting </script>"}}
+    plan["briefing"]["priority"] = dict(plan["briefing"]["training"], title="Priority </script>")
+    assert program.validate(plan) == []
+    (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
+    page = program.page(folder)
+    assert "Morning shooting \\u003c/script>" in page
+    assert "Priority \\u003c/script>" in page
+    assert page.count("</script>") == 1
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="needs node")
+def test_briefing_browser_model_uses_date_fixture_and_explicit_mode(tmp_path):
+    engine = program.ENGINE.read_text(encoding="utf8")
+    model = engine[engine.index("const EX = PLAN.exercises"):engine.index("/* icons (lucide paths)")]
+    brief = engine[engine.index("const BRIEF = PLAN.briefing;"):engine.index("function renderBrief()")]
+    plan = {"start": "2025-03-03", "week1": "2025-03-03", "days": 14, "phases": ["Practice"] * 3,
+            "exercises": {}, "sessions": {"M": {}, "G": {"game": "league"}, "P": {"game": "half"}},
+            "weekdays": {str(k): "P" if k == 0 else "G" if k == 3 else "M" for k in range(7)},
+            "special": {"2025-03-12": "M"}, "fixture": {"games": [
+                {"date": "2025-03-05", "bye": True},
+                {"date": "2025-03-12", "time": "19:30", "vs": "Team B"}]},
+            "briefing": briefing_example()}
+    plan["briefing"]["sessions"] = {"M": {"title": "Today's training"}}
+    script = 'const assert = require("node:assert/strict"); const location = {hash:""};\n'
+    script += "const PLAN = " + json.dumps(plan) + ";\n" + model + brief
+    script += r'''
+assert.equal(briefingModel("2025-03-03").mode, "training");
+assert.equal(briefingModel("2025-03-03").profile.title, "Today's training");
+assert.equal(briefingModel("2025-03-09").mode, "half");
+assert.equal(briefingModel("2025-03-05").mode, "training");
+assert.equal(briefingModel("2025-03-05", "league").fixture.bye, true);
+assert.equal(briefingModel("2025-03-12", null, new Date(2025,2,12,9,0)).mode, "training");
+assert.equal(briefingModel("2025-03-12", null, new Date(2025,2,12,18,59)).mode, "training");
+assert.equal(briefingModel("2025-03-12", null, new Date(2025,2,12,19,0)).mode, "league");
+assert.equal(briefingModel("2025-03-12", "training", new Date(2025,2,12,19,0)).mode, "training");
+assert.equal(briefingModel("2025-03-03", "full").mode, "full");
+assert.equal(briefingModel("2025-03-03", "invalid").mode, "training");
+assert.equal(briefingModel("2025-04-01"), null);
+briefModes["2025-03-12"] = "training";
+assert.equal(finishGameType("2025-03-12"), null);
+briefModes["2025-03-03"] = "full";
+assert.equal(finishGameType("2025-03-03"), "full");
+'''
+    (tmp_path / "briefing.cjs").write_text(script, encoding="utf8")
+    r = subprocess.run(["node", "briefing.cjs"], cwd=tmp_path, capture_output=True, text=True, timeout=30)
+    assert r.returncode == 0, r.stderr
+
+
 def test_validate_names_unknown_sessions_and_exercises():
     plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
     plan["weekdays"]["5"] = "X"

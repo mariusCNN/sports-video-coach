@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from collections import Counter
@@ -137,8 +138,40 @@ def valid_v1_result(r) -> bool:
     return head in V1_RESULTS and "+" not in str(r)
 
 
+def ft_made_times(x: dict) -> list[float] | None:
+    """Validated optional outcome times, one per made FT; unknown timing remains absent."""
+    f = _fts(x)
+    times, made = f.get("made_times"), f.get("made")
+    if (not isinstance(times, list) or not isinstance(made, int) or isinstance(made, bool)
+            or len(times) != made or any(not isinstance(t, (int, float)) or isinstance(t, bool)
+                                        or not math.isfinite(t) or t < 0 for t in times)):
+        return None
+    if times != sorted(set(times)):
+        return None
+    a, b = trip_times(x)
+    if any((isinstance(a, (int, float)) and t < a) or (isinstance(b, (int, float)) and t > b) for t in times):
+        return None
+    return times
+
+
+def _timed_scoring_trips(trips: list[dict]) -> list[dict]:
+    """Split only the evaluator's FT supply; keep real trips, fouls and totals unchanged."""
+    out = []
+    for x in trips:
+        times = ft_made_times(x) if is_v2(x) else None
+        if times is None or not ft_made(x):
+            out.append(x)
+            continue
+        if made_shot(x):
+            out.append({**x, "fts": None})
+        out.extend({**x, "t0": t, "t1": t, "result": "foul_ft", "shot": None, "foul": None,
+                    "fts": {**_fts(x), "made": 1, "att": 1, "made_times": [t]}} for t in times)
+    return out
+
+
 def _match(events: list[dict], trips: list[dict], lag: tuple[float, float]) -> int:
     """Greedy: each official event takes points from the scoring trip ending closest to (event - 15 s) in the lag window."""
+    trips = _timed_scoring_trips(trips)
     left = {id(x): trip_points(x) or 0 for x in trips}
     matched = 0
     for e in sorted(events, key=lambda e: e["our_video_t"]):
@@ -157,6 +190,7 @@ def _match(events: list[dict], trips: list[dict], lag: tuple[float, float]) -> i
 def _match_events(events: list[dict], trips: list[dict], lag: tuple[float, float]) -> Counter:
     """One-to-one: each official shot event (+2/+3) takes one made shot and each +1 one made free throw from a
     trip whose ref_time lies in the lag window (closest to event - 15 s wins)."""
+    trips = _timed_scoring_trips(trips)
     supply = {"shots": {id(x): made_shot(x) for x in trips}, "fts": {id(x): ft_made(x) for x in trips}}
     m = Counter()
     for e in sorted(events, key=lambda e: e["our_video_t"]):

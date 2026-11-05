@@ -157,9 +157,9 @@ FF_UI = {
                note="来源：联赛数据（命中）+ 录像复盘（出手、失误、篮板、回合）。百分比 = 每 100 次。"
                     "回合数 = 复盘的进攻次数减去抢到前场篮板后的二次进攻；每回合得分用录像里的得分。",
                factors=dict(efg="投篮（eFG%）", tov="失误（TOV%）", orb="进攻篮板（ORB%）", ft="罚球（罚球率）"),
-               decided="决定比赛的因素：{f}，我们 {a} 对 对手 {b}，{who}领先 {gap} 个百分点（加权 {w}）。",
+               decided="加权差距最大的一项：{f}，我们 {a} 对 对手 {b}，{who}领先 {gap} 个百分点（加权 {w}）。这是数据比较，不能单凭它认定输赢原因。",
                us_word="我们", them_word="对手", lower="越低越好", more="回合数、每回合得分与数据来源",
-               unclear="决定比赛的因素：无法判断（样本太小或差距太小）。"),
+               unclear="加权差距最大的一项：无法判断（样本太小或差距太小）。"),
     "en": dict(title="Four Factors", side="", efg="Effective FG% (eFG%)", tov="Turnover rate (TOV%)", live="live",
                dead="dead", orb="Offensive rebounding (ORB%)", ft="Free-throw rate (FTM/FGA)", poss="Possessions",
                ppp="Points per possession", transition="Transition, points per trip",
@@ -170,11 +170,11 @@ FF_UI = {
                     "offensive rebound); points per possession uses the points seen on film.",
                factors=dict(efg="shooting (eFG%)", tov="turnovers (TOV%)", orb="offensive rebounding (ORB%)",
                             ft="free throws (FT rate)"),
-               decided="The factor that decided the game: {f}, us {a} vs them {b}, {gap} percentage points in favour of {who} "
-                       "(weighted {w}).",
+               decided="Largest weighted gap: {f}, us {a} vs them {b}, {gap} percentage points in favour of {who} "
+                       "(weighted {w}). A descriptive comparison, not proof of causation.",
                us_word="us", them_word="them", lower="lower is better",
                more="Possessions, points per trip and sources",
-               unclear="The factor that decided the game: unclear (sample or gap too small)."),
+               unclear="Largest weighted gap: unclear (sample or gap too small)."),
 }
 _FF_KEYS = {"efg": "efg_pct", "tov": "tov_pct", "orb": "orb_pct", "ft": "ft_rate_pct"}
 

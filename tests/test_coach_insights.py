@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from hoop_tape_miner.coach_insights import build_ab, check_critic, kb_slugs, main, validate_insights
+from hoop_tape_miner.coach_insights import build_ab, build_matched_ab, check_critic, kb_slugs, main, validate_insights
 
 TRIPS = [{"schema": 2, "pid": 1, "trip": 1, "t0": 100.0, "t1": 110.0, "offence": "them"},
          {"schema": 2, "pid": 4, "trip": 1, "t0": 300.0, "t1": 312.0, "offence": "them"}]
@@ -22,6 +22,7 @@ def insight(**kw):
             "rule": "Shot goes up: the guard sprints back to the paint.",
             "drill": "3-on-2 to 2-on-1, 10 reps, guard back first every rep.",
             "target_next_game": "transition scores against at most 3",
+            "target_basis": {"kind": "training_experiment", "reason": "Trial target; revisit after next game."},
             "confidence": "medium", "critic": {"verdict": "keep", "note": "both checked"}}
     base.update(kw)
     return base
@@ -29,6 +30,33 @@ def insight(**kw):
 
 def test_valid_insight_passes():
     assert validate_insights([insight()], TRIPS, KB, SUMMARY) == []
+
+
+def test_generic_advice_and_unsupported_numeric_target_fail():
+    assert any('generic' in e for e in validate_insights([insight(rule='Make better decisions')], TRIPS, KB, SUMMARY))
+    bad = insight(target_next_game='Convert 95% of opportunities', target_basis=None)
+    assert any('target_basis' in e for e in validate_insights([bad], TRIPS, KB, SUMMARY))
+
+
+@pytest.mark.parametrize('file', ['coach_part1.json', 'summary.json', 'kb.md', 'p001_0.jpg'])
+def test_evidence_or_principle_correction_requires_critic_again(tmp_path, file):
+    kb = review_folder(tmp_path)
+    write_critic(tmp_path, [KEEP])
+    main(['critic', '--review', str(tmp_path), '--kb', str(kb)])
+    with (tmp_path / file).open('ab') as stream:
+        stream.write(b' ')
+    assert any('changed after' in e for e in check_critic(tmp_path))
+
+
+def test_matched_sheet_pairs_same_episodes_and_keeps_actionable_ending(tmp_path):
+    ending = ' When the lane closes, keep the dribble.'
+    pairs = [dict(episode_id='e1', game_id='g1', before='Short earlier explanation.', after='Detail. ' * 150 + ending)]
+    out = tmp_path / 'sheet.md'
+    key = build_matched_ab(pairs, out, seed=7)
+    assert key['pairs'][0]['episode_id'] == 'e1' and ending in out.read_text(encoding='utf8')
+    assert 'before' not in out.read_text(encoding='utf8')
+    with pytest.raises(ValueError, match='unique'):
+        build_matched_ab(pairs * 2, out)
 
 
 def test_insight_needs_two_evidence_times():
@@ -46,7 +74,8 @@ def test_insight_orphan_time_fails():
     assert any("200" in e and "no trip" in e for e in errs)
     slack = insight(evidence=[{"t": 104.0, "pid": 1, "what": "x"},
                               {"t": 112.5, "pid": 1, "trip": 1, "what": "just after the trip, within 3 s"}])
-    assert validate_insights([slack], TRIPS, KB, SUMMARY) == []
+    assert any("distinct trips" in e for e in validate_insights([slack], TRIPS, KB, SUMMARY))
+    assert validate_insights([dict(slack, scope="single_episode")], TRIPS, KB, SUMMARY) == []
     counter = insight(counter_examples=[{"t": 500.0, "pid": 4, "trip": 1, "what": "orphan counter-example"}])
     assert validate_insights([counter], TRIPS, KB, SUMMARY)
 

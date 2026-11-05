@@ -786,21 +786,38 @@ def spoken(text: str, voice: str, rate: str, cache: Path) -> tuple[Path, float, 
     return wav, dur, [(s, min(e, dur), t) for s, e, t in cues if s < dur]
 
 
-def voice_track(paras: list[str], voice: str, rate: str, cache: Path, out: Path, max_chars: int):
+def speech_tempo(wav: Path, duration: float, cues: list, tempo: float) -> tuple[Path, float, list]:
+    """Measured audio tempo; scale subtitle times by the same factor, never source footage."""
+    if not math.isfinite(tempo) or not 0.5 <= tempo <= 2.0:
+        raise ValueError("speech tempo must be between 0.5 and 2.0")
+    if tempo == 1:
+        return wav, duration, cues
+    dest = wav.with_name(f'{wav.stem}.tempo-{tempo:g}.wav')
+    if not dest.exists() or dest.stat().st_mtime < wav.stat().st_mtime:
+        with media.partial(dest) as part:
+            ffmpeg('-i', str(wav), '-af', f'atempo={tempo:g}', '-c:a', 'pcm_s16le', str(part))
+    measured = duration_s(dest)
+    if abs(measured - duration / tempo) > 0.08:
+        raise ValueError(f'speech tempo duration mismatch: {dest.name} ({measured:.3f}s vs {duration/tempo:.3f}s)')
+    return dest, measured, [(s / tempo, min(e / tempo, measured), text) for s, e, text in cues if s / tempo < measured]
+
+
+def voice_track(paras: list[str], voice: str, rate: str, cache: Path, out: Path, max_chars: int, tempo: float = 1.0):
     """Paragraphs -> one wav with GAP between them: (wav or None, seconds, subtitle cues, paragraph starts)."""
     if not paras:
         return None, 0.0, [], []
     parts, cues, starts, t = [], [], [], 0.0
     for p in paras:
         mp3, dur, pc = spoken(p, voice, rate, cache)
+        mp3, dur, pc = speech_tempo(mp3, dur, pc, tempo)
         starts.append(t)
         for s, e, txt in pc:
             cues += cue_split(t + s, t + e, txt, max_chars)
         parts.append(mp3)
-        t += dur + GAP
+        t += dur + GAP / tempo
     ins = [x for p in parts for x in ("-i", str(p))]
     pads = "".join(f"[{i}:a]aformat=sample_rates=48000:channel_layouts=mono"
-                   f"{f',apad=pad_dur={GAP}' if i < len(parts) - 1 else ''}[p{i}];" for i in range(len(parts)))
+                   f"{f',apad=pad_dur={GAP / tempo}' if i < len(parts) - 1 else ''}[p{i}];" for i in range(len(parts)))
     ffmpeg(*ins, "-filter_complex", pads + "".join(f"[p{i}]" for i in range(len(parts))) +
            f"concat=n={len(parts)}:v=0:a=1[a]", "-map", "[a]", "-c:a", "pcm_s16le", str(out))
     return out, duration_s(out), cues, starts
@@ -949,8 +966,13 @@ def plan(sc: Scene, voice_s: list[float], para_starts: list[float], n_steps: int
 
 def build(folder: Path, lang: str, video: Path | None, height: int, font: str | None,
           pick: tuple[int, int] | None = None, dry: bool = False, run: Path | None = None,
-          crf: int = CRF) -> Path | None:
+          crf: int = CRF, tempo: float = 1.0) -> Path | None:
     """Render film.<lang>.mp4 (font None: the language's subtitle font, langs.font)."""
+    from . import lessons
+    if errors := lessons.derivative_errors(folder):
+        sys.exit('\n'.join(errors))
+    if not math.isfinite(tempo) or not 0.5 <= tempo <= 2.0:
+        sys.exit('speech tempo must be between 0.5 and 2.0')
     script = folder / f"film.{lang}.md"
     hooks, kinds = hooks_for(folder)
     scenes = parse_script(script.read_text(encoding="utf8"), hooks)
@@ -981,8 +1003,8 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
         total = 0.0
         for i, sc in enumerate(scenes, 1):
             groups = [sc.paras] + [fz.paras for fz in sc.freezes]
-            voice_s = [sum(L.read_s(p, lang) for p in g) + GAP * max(0, len(g) - 1) for g in groups]
-            starts = [sum(L.read_s(p, lang) + GAP for p in sc.paras[:k]) for k in range(len(sc.paras))]
+            voice_s = [(sum(L.read_s(p, lang) for p in g) + GAP * max(0, len(g) - 1)) / tempo for g in groups]
+            starts = [sum(L.read_s(p, lang) + GAP for p in sc.paras[:k]) / tempo for k in range(len(sc.paras))]
             length, slow, *_ = plan(sc, voice_s, starts, steps.get(i, 0), anim.get(i, 1.0))
             total += length
             n_resume = sum(fz.resume for fz in sc.freezes)  # a bare > resumes the play: not a freeze
@@ -1029,10 +1051,12 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
         max_chars = round(max_chars * w / h * 1.5)
     with media.scratch(out) as t:
         tmp = Path(t)
-        rendered = []
+        rendered, scene_log = [], []
+        audit = folder / f'film-audit-{lang}'
+        audit.mkdir(exist_ok=True)
         for i, sc in chosen:
             groups = [sc.paras] + [fz.paras for fz in sc.freezes]
-            tracks_ = [voice_track(g, voice, rate, cache, tmp / f"v{i:03d}_{k}.wav", max_chars)
+            tracks_ = [voice_track(g, voice, rate, cache, tmp / f"v{i:03d}_{k}.wav", max_chars, tempo)
                        for k, g in enumerate(groups)]
             length, slow, segs, starts, spans, step_at = plan(sc, [v[1] for v in tracks_], tracks_[0][3],
                                                               steps.get(i, 0), anim.get(i, 1.0))
@@ -1056,6 +1080,11 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
                                                                                  lang, title, height, extra, (w, h), first_hold,
                                                                                  overlays)),
                                         encoding="utf8")
+            (audit / ass_name).write_bytes((tmp / ass_name).read_bytes())
+            scene_log.append({'scene': i, 'kind': sc.kind, 'source': sc.src, 'duration': length,
+                              'voice_durations': [v[1] for v in tracks_], 'freeze_spans': spans,
+                              'segments': segs, 'cues': cues, 'speech_tempo': tempo,
+                              'slow_replay_duration': slow})
             frames = None
             if i in objs:
                 frames = kinds[sc.kind].render(objs[i], ctx, step_at, length, tmp / f"c{i:03d}") \
@@ -1071,6 +1100,11 @@ def build(folder: Path, lang: str, video: Path | None, height: int, font: str | 
             media.concat([tmp / x for x in rendered], part.resolve(), tmp)
     if not pick:
         poster(out, out.with_suffix(".jpg"))
+    (audit / 'scene-timing.json').write_text(json.dumps(scene_log, ensure_ascii=False, indent=2), encoding='utf8')
+    out.with_suffix('.render.json').write_text(json.dumps({'speech_tempo': tempo, 'height': height, 'crf': crf,
+        'font': font, 'script_sha256': hashlib.sha256(script.read_bytes()).hexdigest(),
+        'media_duration': duration_s(out),
+        'source_action_speed': 'includes_slow_replay' if any(s['slow_replay_duration'] for s in scene_log) else 1.0}, indent=2), encoding='utf8')
     print(f"wrote {out} {out.stat().st_size / 1e6:.1f} MB, {duration_s(out) / 60:.1f} min")
     return out
 
@@ -1112,12 +1146,20 @@ def main(argv=None):
     ap.add_argument("--font", help=f"subtitle font, must cover the script's language (default per language: {FONT} "
                                    f"for zh, {L.font('en')} for en and other Latin scripts, {L.font('ja')} for ja, "
                                    f"{L.font('ko')} for ko)")
+    ap.add_argument('--speech-tempo', type=float, help='measured speech speed, 0.5–2.0; footage stays unchanged '
+                        '(default unit json film_speech_tempo, else 1.0)')
     ap.add_argument("--scenes", help="render only scenes A-B (1-based) into film.<lang>.preview.mp4")
     ap.add_argument("--dry", action="store_true", help="check the script and print scenes with estimated lengths")
     ap.add_argument("--force", action="store_true", help="re-render a language whose film is newer than its script "
                                                          "and the files it shows")
     a = ap.parse_args(argv)
     folder = Path(a.folder)
+    from . import lessons
+    if errors := lessons.derivative_errors(folder):
+        sys.exit('\n'.join(errors))
+    tempo = a.speech_tempo if a.speech_tempo is not None else units.load(folder).get('film_speech_tempo', 1.0)
+    if type(tempo) not in (int, float) or not math.isfinite(tempo) or not 0.5 <= tempo <= 2.0:
+        ap.error('--speech-tempo / film_speech_tempo must be between 0.5 and 2.0')
     have = sorted(p.name.split(".")[1] for p in folder.glob("film.*.md"))
     order = [l for l in (units.load(folder).get("languages") or []) if l in have]
     langs = a.lang or order + [l for l in have if l not in order]  # the unit's language order (zh first if asked)
@@ -1135,11 +1177,15 @@ def main(argv=None):
         video = (folder / video).resolve()
     for lang in langs:
         out = folder / f"film.{lang}.mp4"
-        if not (a.force or a.dry or pick) and up_to_date(out, inputs(folder, lang, Path(video) if video else None)):
+        config = out.with_suffix('.render.json')
+        saved = json.loads(config.read_text(encoding='utf8')) if config.exists() else {}
+        matching = saved.get('speech_tempo', 1.0) == tempo and saved.get('height', 720) == a.height \
+            and saved.get('crf', CRF) == a.crf and (a.font is None or saved.get('font') == a.font)
+        if not (a.force or a.dry or pick) and matching and up_to_date(out, inputs(folder, lang, Path(video) if video else None)):
             print(f"[film] {lang}: {out.name} is newer than film.{lang}.md, kept (--force re-renders)")
             continue
         build(folder, lang, Path(video) if video else None, a.height, a.font, pick, a.dry,
-              Path(a.run) if a.run else None, a.crf)
+              Path(a.run) if a.run else None, a.crf, tempo)
 
 
 if __name__ == "__main__":

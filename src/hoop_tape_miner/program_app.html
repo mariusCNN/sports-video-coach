@@ -428,6 +428,18 @@ audio.loop{display:none}
 .flow .ar{text-align:center;color:var(--mute);font-size:13px;line-height:1}
 .flow .fs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 
+/* Pre-session brief: the three cues stay visible; detail opens on demand. */
+.brief{border:1px solid var(--p25);border-radius:22px;padding:18px 16px;margin:8px 0 18px;background:linear-gradient(150deg,var(--p10),var(--card))}
+.brief h1{font-size:1.4rem;margin:8px 0}.brief .brief-date{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.brief input[type=date]{min-width:0;max-width:160px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;color-scheme:dark}
+.brief-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0 16px}
+.brief-modes button{min-height:44px;padding:6px 2px;font-size:12px;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer}
+.brief-modes button[aria-pressed=true]{color:var(--bg);background:var(--pri);border-color:var(--pri);font-weight:700}
+.brief-cue{padding:12px 0;border-top:1px solid var(--p15)}.brief-cue b{display:block;font-size:1.05rem;color:var(--pri)}
+.brief-cue p{font-size:14px;margin:4px 0 0;line-height:1.55}.brief details{border-top:1px solid var(--line);padding:12px 0 0;margin-top:12px}
+.brief summary{cursor:pointer;font-size:14px;font-weight:600;min-height:32px}.brief .brief-step{display:grid;grid-template-columns:66px 1fr;gap:10px;margin:12px 0;font-size:14px}
+.brief .brief-step b{color:var(--pri)}.brief .brief-step p{margin:0}.brief .brief-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.brief .brief-actions a,.brief .brief-actions button{padding:10px 12px;border-radius:10px;font-size:14px}
 </style>
 </head>
 <body>
@@ -435,6 +447,8 @@ audio.loop{display:none}
 <div class="topbar"><span class="brand" id="brand"></span><span class="rt"><span class="sync local" id="syncChip"></span><span class="dt" id="topDate"></span></span></div>
 
 <section data-panel="today" id="today">
+<div id="priorityBox"></div>
+<div id="briefBox"></div>
 <div id="carBox"><!--CAR--></div>
 <div id="todayBox"></div>
 </section>
@@ -672,8 +686,71 @@ function progOf(ds){ let dn=0,n=0; itemsOf(ds).forEach(it=>rowsOf(it).forEach((_
 function dayDone(ds){ const c=sessOf(dayOf(ds)); return !!store.fin[ds] || (isGame(c) && store.log.some(r=>r.date===ds)); }
 const OPEN = {};
 
+/* Optional owner-authored briefing data; dates and modes do not change workout/log state. */
+const BRIEF = PLAN.briefing;
+const briefModes = {};
+function briefingModel(ds, override, now = new Date()){
+  if (!BRIEF || !dayOf(ds)) return null;
+  const code = sessOf(dayOf(ds)), session = SESS[code], fixture = FIX[ds];
+  let mode = session.game || "training";
+  if (fixture && fixture.bye) mode = "training";
+  else if (fixture){
+    mode = "league";
+    const time = /^(\d{1,2}):(\d{2})$/.exec(fixture.time || "");
+    if (ds === iso(now) && time && +time[1] < 24 && +time[2] < 60){
+      const tip = pd(ds); tip.setHours(+time[1], +time[2], 0, 0);
+      if (now < new Date(tip.getTime() - 30 * 60000)) mode = "training";
+    }
+  }
+  if (["training", "league", "half", "full"].includes(override)) mode = override;
+  const profile = mode === "training" ? {...BRIEF.training, ...(BRIEF.sessions || {})[code]} : BRIEF[mode];
+  return {mode, profile, session, fixture};
+}
+function finishGameType(ds){
+  const brief = briefingModel(ds, briefModes[ds]);
+  return brief ? (brief.mode === "training" ? null : brief.mode) : SESS[sessOf(dayOf(ds))].game;
+}
+function renderPriority(){
+  const box = document.getElementById("priorityBox"), p = BRIEF?.priority;
+  if (!p){ box.innerHTML = ""; return; }
+  box.innerHTML = `<article class="brief" aria-labelledby="priorityTitle">
+    <h2 id="priorityTitle">${esc(p.title)}</h2>
+    ${p.cues.map((c,i)=>`<div class="brief-cue"><b>${i+1}. ${esc(c.cue)}</b><p>${esc(c.action)}</p></div>`).join("")}
+    <details><summary>怎么练 · 怎么回看</summary>
+      ${p.cues.map(c=>`<div class="brief-step"><b>${esc(c.cue)}</b><p>${esc(c.check)}</p></div>`).join("")}
+      ${(p.watch||[]).length?`<ul>${p.watch.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+    </details>
+  </article>`;
+}
+function renderBrief(){
+  renderPriority();
+  const box = document.getElementById("briefBox"), b = briefingModel(selD, briefModes[selD]);
+  if (!b || !b.profile){ box.innerHTML = ""; return; }
+  const p = b.profile, league = b.mode === "league", training = b.mode === "training";
+  const labels = {training:"训练", league:"联赛", half:"半场 Pickup", full:"全场 Pickup"};
+  const context = league && b.fixture && !b.fixture.bye ? fixLine(b.fixture) : training ? esc(b.session.title) : labels[b.mode];
+  const status = todayIso > LAST ? "计划已结束 · 以下为历史安排" : todayIso < FIRST ? "计划尚未开始 · 预览安排" : selD === todayIso ? "今天" : "所选日期";
+  box.innerHTML = `<article class="brief" aria-label="开打前30分钟回顾">
+    <div class="brief-date"><span class="eyebrow">${esc(status)}</span><label><span class="sr">回顾日期</span><input id="briefDate" type="date" min="${FIRST}" max="${LAST}" value="${selD}"></label></div>
+    <div class="eyebrow">${training?"开练":"开打"}前 30 分钟</div>
+    <h1>${esc(p.title)}</h1><p class="small mute">${context}</p>
+    <div class="brief-modes" aria-label="回顾类型">${Object.entries(labels).map(([m,label])=>`<button data-act="brief-mode" data-m="${m}" aria-pressed="${b.mode===m}">${label}</button>`).join("")}</div>
+    ${league && b.fixture && b.fixture.bye ? '<p class="note">这天联赛轮空。以下是联赛通用提醒；当天可切回训练。</p>' : ""}
+    ${(p.cues||[]).map((c,i)=>`<div class="brief-cue"><b>${i+1}. ${esc(c.cue)}</b><p>${esc(c.action)}</p></div>`).join("")}
+    <details><summary>提前 30 分钟，怎么准备</summary>${(p.timeline||[]).map(t=>`<div class="brief-step"><b>${esc(t.when)}</b><p>${esc(t.text)}</p></div>`).join("")}</details>
+    <details><summary>${training?"练习标准与注意事项":"场上怎么做 · 打完看什么"}</summary>
+      ${(p.cues||[]).filter(c=>c.check).map(c=>`<div class="brief-step"><b>回看</b><p>${esc(c.check)}</p></div>`).join("")}
+      ${(p.watch||[]).length?`<h3>注意</h3><ul>${p.watch.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+      ${(p.recap||[]).length?`<h3>结束后留两句</h3><ul>${p.recap.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+    </details>
+    <div class="brief-actions"><a href="#todayBox">查看当天原计划</a>${training?"":`<button class="btn" data-act="golog" data-d="${selD}" data-m="${b.mode}">打完记一笔</button>`}</div>
+    <p class="small mute">${esc(BRIEF.sourceLabel || "")} ${BRIEF.updatedAt?"· 更新 "+esc(BRIEF.updatedAt):""}</p>
+  </article>`;
+}
+
 /* ---------- training tab ---------- */
 function renderToday(){
+  renderBrief();
   const i = DAYS.findIndex(x=>iso(x)===selD), d = DAYS[i], code = sessOf(d), sess = SESS[code], w = weekOf(d);
   const items = itemsOf(selD), [dn,n] = progOf(selD), fin = store.fin[selD];
   const blocks = []; items.forEach(it=>{ const last=blocks[blocks.length-1]; if(last && last.t===it.blk) last.items.push(it); else blocks.push({t:it.blk,items:[it]}); });
@@ -704,14 +781,20 @@ function renderToday(){
    <div class="wstrip">${strip}</div>${back}${note}${fixNote(selD)}${reviewCard(sess)}${readyCard(sess)}` +
    blocks.map(b=>`<div class="gcard glass grain"><div class="ghead">${ic("dumbbell")}<span>${esc(b.t||"今天")}</span></div><div class="gbody">${b.items.map(it=>exCard(it)).join("")}</div></div>`).join("");
   const fb = document.getElementById("finBtn");
-  if (isGame(code)) fb.innerHTML = `${ic("pen")}打完了：去记录`;
+  const gameType = finishGameType(selD);
+  if (gameType) fb.innerHTML = `${ic("pen")}打完了：去记录`;
   else fb.innerHTML = fin ? `${ic("check")}已完成 · 用力 ${fin.rpe||"–"}/10（点这里修改）` : `${ic("check")}完成训练`;
-  fb.classList.toggle("did", !!fin && !isGame(code));
+  fb.classList.toggle("did", !!fin && !gameType);
   carShow();
 }
 /* the car talk of the selected day's session; one still playing stays until it is paused */
 function carShow(){
-  const code = sessOf(dayOf(selD));
+  let code = sessOf(dayOf(selD));
+  const mode = finishGameType(selD);
+  if (BRIEF && mode){
+    code = Object.keys(SESS).find(c => SESS[c].game === mode && SESS[c].car)
+      || Object.keys(SESS).find(c => mode !== "league" && SESS[c].game === "half" && SESS[c].car) || code;
+  }
   document.querySelectorAll("#carBox .carp").forEach(p => {
     p.hidden = !p.dataset.codes.split(" ").includes(code) && p.querySelector("audio").paused; });
 }
@@ -846,11 +929,19 @@ function fixTable(){
 let gameMode = null;
 function nextGame(){ const from = inPlan() ? todayIso : FIRST; return DAYS.find(d=>iso(d)>=from && isGame(sessOf(d))) || DAYS[DAYS.length-1]; }
 const TARGETS = G.targets || [];
+const LEARNING = G.learning_goals || [];
+function learningCards(){
+ return LEARNING.filter(x=>x.status!=="retired").map(g=>`<div class="gcard glass"><div class="ghead">${ic("target")}<span>${esc(g.title)}</span></div>
+ <div class="gbody pad"><div class="kv"><div class="k">看见什么</div><div>${esc(g.when)}</div></div>
+ <div class="kv"><div class="k">怎么做</div><div>${esc(g.action)}</div></div>
+ <details><summary>怎么练、什么时候换办法</summary><p>${esc(g.practice)}</p><p>${esc(g.exception)}</p>
+ <p>${esc(g.measure)}</p><a href="${esc(g.source_url)}" target="_blank" rel="noopener">看这条提醒的比赛例子</a></details></div></div>`).join("");
+}
 function renderGame(){
   const d = nextGame(), ds = iso(d), code = sessOf(d), w = weekOf(d), sess = SESS[code];
   if (!gameMode) gameMode = sess.game || "half";
   const m = gameMode, mk = m==="league" ? "half" : m;
-  const three = (G.three||{})[m] || [], rules = (G.rules||{})[m] || [], wu = store.wu[ds] || [];
+  const three = LEARNING.some(x=>x.status!=="retired") ? [] : (G.three||{})[m] || [], rules = (G.rules||{})[m] || [], wu = store.wu[ds] || [];
   const mission = ((G.mission||{})[mk]||[])[w] || "", done = ((G.done||{})[mk]||[])[w] || "";
   const icons = ["target","trophy","zap","alert"];
   document.getElementById("gameBox").innerHTML = `
@@ -862,6 +953,8 @@ function renderGame(){
    <div class="chips">${TARGETS.slice(0,3).map((t,j)=>`<span class="chip">${ic(icons[j])}${esc(t.label)} <b>${esc(t.value)}</b></span>`).join("")}</div>
   </div>
   <div class="segc">${[["half","半场"],["full","全场"],["league","联赛"]].map(([k,t])=>`<button class="${m===k?"on":""}" data-act="gm" data-m="${k}">${t}</button>`).join("")}</div>
+  ${BRIEF?`<button class="btn pri" data-act="brief-open" data-d="${ds}" data-m="${m}" style="width:100%;min-height:48px">开打前 30 分钟回顾</button>`:""}
+  ${learningCards()}
 
   ${three.length?`<div class="gcard glass grain"><div class="ghead">${ic("target")}<span>今天只盯 ${three.length} 件事</span></div><div class="gbody">
    ${three.map(([cue,when,doo,cnt],j)=>`<div class="fcard"><span class="fnum">${j+1}</span><div>
@@ -908,20 +1001,47 @@ const ctLine = x => CT.filter(([k])=>x[k]!=null).map(([k,t])=>`${esc(t)} ${x[k]}
 function statsOf(r){ const s=r.sh, fga=s.rim[1]+s.flo[1]+s.mid[1]+s.three[1], good=s.rim[1]+s.flo[1]+s.three[1];
   return {fga, good: fga?Math.round(100*good/fga):null, pts:2*(s.rim[0]+s.flo[0]+s.mid[0])+3*s.three[0]+s.ft[0]}; }
 let savedMsg = "";
+/* Store these observations inside the existing game draft/log, including the source version.
+   Missing is unknown; an outcome never stands in for a decision or its execution. */
+const LEARN_COUNTS = [["opportunities","实际遇到几次"],["decisions","选择合适几次"],["executed","动作做到几次"],["outcomes","得到好结果几次"]];
+function lessonTrial(draft, goal){
+ const trials=draft.lesson_trials=draft.lesson_trials||{};
+ const key=goal.id+":"+goal.version;
+ return trials[key]=trials[key]||{lesson_id:goal.id,lesson_version:goal.version,title:goal.title,source_url:goal.source_url,
+  opportunities:null,decisions:null,executed:null,outcomes:null,review:"unreviewed",note:""};
+}
+function changeLessonCount(trial, field, delta){
+ if(!LEARN_COUNTS.some(([k])=>k===field))return false;
+ const value=trial[field]==null?Math.max(0,delta):Math.max(0,trial[field]+delta);
+ const proposed={...trial,[field]:value};
+ if(proposed.opportunities!=null && ["decisions","executed","outcomes"].some(k=>proposed[k]!=null && proposed[k]>proposed.opportunities))return false;
+ trial[field]=value;return true;
+}
+function lessonLog(r, openLessons = new Set()){return LEARNING.filter(g=>g.status!=="retired").map(g=>{
+ const trial=lessonTrial(r,g);
+ return `<details class="gcard" data-lesson-id="${esc(g.id)}" ${openLessons.has(g.id)?"open":""}><summary style="padding:14px">${esc(g.title)} · 打完回想一下</summary><div class="gbody pad">
+ <p class="small mute">只记真的遇到的机会。没数留空，没遇到记 0；投没投进和选得对不对分开记。</p>
+ ${LEARN_COUNTS.map(([field,title])=>`<div class="ctr"><span>${title}</span><div class="step">
+ <button data-act="lesson-count" data-id="${esc(g.id)}" data-k="${field}" data-v="-1" aria-label="${title}减一次">−</button><b>${cv(trial[field])}</b>
+ <button data-act="lesson-count" data-id="${esc(g.id)}" data-k="${field}" data-v="1" aria-label="${title}加一次">+</button></div></div>`).join("")}
+ <label>哪一球让你这么判断？<input class="inp" data-lesson-note="${esc(g.id)}" value="${esc(trial.note)}" placeholder="可以记时间，或写看不清"></label>
+ <div class="opts">${[["retained","继续练"],["revised","要调整"],["retired","暂时放下"]].map(([v,label])=>`<button data-act="lesson-status" data-id="${esc(g.id)}" data-v="${v}" class="${trial.review===v?"on":""}">${label}</button>`).join("")}</div>
+ </div></details>`;}).join("");}
 function renderLog(){
+  const openLessons = new Set([...document.querySelectorAll('#logBox details[data-lesson-id][open]')].map(x=>x.dataset.lessonId));
   const r = store.dr = store.dr || newDraft();
   const games = store.log.filter(x=>x.type!=="shoot"), last = games.slice(-3).map(statsOf);
   const avgF = last.length ? (last.reduce((a,x)=>a+x.fga,0)/last.length).toFixed(1) : "–";
   const gs = last.filter(x=>x.good!==null), avgG = gs.length ? Math.round(gs.reduce((a,x)=>a+x.good,0)/gs.length)+"%" : "–";
   const hist = [...store.log.map((x,i)=>({kind:"g",date:x.date,i,x})), ...Object.entries(store.fin).map(([ds,f])=>({kind:"w",date:ds,f}))]
     .sort((a,b)=>a.date<b.date?1:-1);
-  const goal = j => TARGETS[j] ? " · 目标 "+esc(TARGETS[j].value) : "";
+  const goal = j => !LEARNING.length && TARGETS[j] ? " · 目标 "+esc(TARGETS[j].value) : "";
   document.getElementById("logBox").innerHTML = `
   <div class="tiles">
    <div class="tile"><div class="lb">练完的课</div><div class="v">${Object.keys(store.fin).length}</div><div class="d">本计划</div></div>
    <div class="tile"><div class="lb">记录的比赛</div><div class="v">${games.length}</div><div class="d">联赛 + pickup</div></div>
    <div class="tile"><div class="lb">出手 / 场</div><div class="v">${avgF}</div><div class="d">最近 3 场${goal(0)}</div></div>
-   <div class="tile"><div class="lb">好出手</div><div class="v">${avgG}</div><div class="d">最近 3 场${goal(1)}</div></div>
+   <div class="tile"><div class="lb">篮下／抛投／三分占比</div><div class="v">${avgG}</div><div class="d">最近 3 场 · 类型不代表选择好坏</div></div>
   </div>
 
   <div class="gcard glass grain"><div class="ghead">${ic("pen")}<span>记录这一场</span><span class="rt">自动保存草稿</span></div><div class="gbody pad">
@@ -935,6 +1055,8 @@ function renderLog(){
      <div class="step"><button data-act="ct" data-k="${k}" data-v="-1" aria-label="减">−</button><b>${cv(r[k])}</b><button data-act="ct" data-k="${k}" data-v="1" aria-label="加">+</button></div></div>`).join("")}
    ${TREES.length?`<div class="flab">今天哪张决策图做得最差</div>
    <div class="opts">${[...TREES,"不清楚"].map(t=>`<button class="${r.worst===t?"on":""}" data-act="worst" data-v="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}
+   <div class="flab">这场的三个提醒</div>
+   ${lessonLog(r, openLessons)}
    <div class="flab">身体</div>
    <div class="ctr"><div><div class="nm">昨晚睡了几小时</div></div><div class="step"><button data-act="ct" data-k="sleep" data-v="-0.5" aria-label="减">−</button><b>${r.sleep||"–"}</b><button data-act="ct" data-k="sleep" data-v="0.5" aria-label="加">+</button></div></div>
    <div class="nm" style="font-size:14.5px;font-weight:600;margin-top:8px">腿累几分（1 = 很新鲜，10 = 抬不动）</div>
@@ -949,8 +1071,9 @@ function renderLog(){
   <div class="gbody" style="padding:0">${hist.length ? hist.map(h=>{
     if (h.kind==="g"){ const x=h.x, s=statsOf(x);
       return `<div class="hcard"><span class="okc g">${ic("target")}</span><div class="hm"><div class="t">${LTYPE[x.type]||esc(x.type)} · ${x.date.slice(5).replace("-","/")}</div>
-       <div class="s">出手 ${s.fga} · 好出手 ${s.good===null?"–":s.good+"%"} · 得分 ${s.pts} · 罚球 ${x.sh.ft[0]}/${x.sh.ft[1]}</div>
+       <div class="s">出手 ${s.fga} · 篮下／抛投／三分 ${s.good===null?"–":s.good+"%"} · 得分 ${s.pts} · 罚球 ${x.sh.ft[0]}/${x.sh.ft[1]}</div>
        ${ctLine(x)?`<div class="s">${ctLine(x)}</div>`:""}
+       ${Object.values(x.lesson_trials||{}).map(t=>`<div class="s">${esc(t.title)}：机会 ${cv(t.opportunities)} · 选择合适 ${cv(t.decisions)} · 动作做到 ${cv(t.executed)} · 好结果 ${cv(t.outcomes)}${t.note?" · "+esc(t.note):""}</div>`).join("")}
        ${x.worst||x.legs||x.sleep?`<div class="f">${[x.worst?"最差："+esc(x.worst):"", x.legs?"腿累 "+x.legs:"", x.sleep?"睡 "+x.sleep+" 小时":""].filter(Boolean).join(" · ")}</div>`:""}${x.note?`<div class="s">${esc(x.note)}</div>`:""}</div>
        <button class="del" data-act="del" data-i="${h.i}">删除</button></div>`; }
     const d = dayOf(h.date), s = d ? SESS[sessOf(d)] : null;
@@ -987,8 +1110,8 @@ function openVid(id, j){
 }
 let finRpe = 0;
 function openFin(){
-  const code = sessOf(dayOf(selD));
-  if (isGame(code)){ goLog(selD, SESS[code].game); return; }
+  const gameType = finishGameType(selD);
+  if (gameType){ goLog(selD, gameType); return; }
   const [dn,n] = progOf(selD); finRpe = (store.fin[selD]||{}).rpe || 0;
   document.getElementById("finTxt").textContent = `已完成 ${dn}/${n} 组。` + (dn<n ? "没做完也可以点完成，系统会记下实际做了多少。" : "全部做完了。");
   renderRpe(); showModal("finModal");
@@ -1054,6 +1177,8 @@ document.addEventListener("click", e=>{
   const act = t.dataset.act, k = t.dataset.k; if (!act) return;
   const dr = store.dr;
   switch (act){
+   case "brief-mode": briefModes[selD]=t.dataset.m; renderToday(); break;
+   case "brief-open": selD=t.dataset.d; briefModes[selD]=t.dataset.m; renderToday(); showTab("today"); window.scrollTo(0,0); break;
    case "day": selD=t.dataset.d; renderToday(); showTab("today"); window.scrollTo(0,0); break;
    case "step": { const i=DAYS.findIndex(x=>iso(x)===selD)+(+t.dataset.s); if(DAYS[i]){ selD=iso(DAYS[i]); renderToday(); window.scrollTo(0,0); } break; }
    case "gotoday": selD=todayIso; renderToday(); window.scrollTo(0,0); break;
@@ -1076,6 +1201,10 @@ document.addEventListener("click", e=>{
    case "wu": { const ds=t.dataset.d, j=+t.dataset.j, a=store.wu[ds]=store.wu[ds]||[]; const x=a.indexOf(j); x<0?a.push(j):a.splice(x,1); save(); renderGame(); break; }
    case "golog": goLog(t.dataset.d, t.dataset.m); break;
    case "lt": dr.type=t.dataset.t; save(); renderLog(); break;
+   case "lesson-count": {const goal=LEARNING.find(g=>g.id===t.dataset.id);if(goal){
+     if(changeLessonCount(lessonTrial(dr,goal),k,+t.dataset.v)){save();renderLog();}
+     else alert("这个次数不能超过实际机会数；先核对机会数。");}break;}
+   case "lesson-status": {const goal=LEARNING.find(g=>g.id===t.dataset.id);if(goal){lessonTrial(dr,goal).review=t.dataset.v;save();renderLog();}break;}
    case "sh": { const s=dr.sh[k], v=+t.dataset.v; if(v===1){s[0]++;s[1]++;} else if(v===0){s[1]++;} else if(s[1]>0){ if(s[0]>=s[1]) s[0]--; s[1]--; } savedMsg=""; save(); renderLog(); break; }
    case "ct": { const v=+t.dataset.v;
      dr[k] = k==="sleep" ? (!n0(dr[k]) ? 7 : Math.max(0, Math.round((n0(dr[k])+v)*2)/2))
@@ -1118,13 +1247,13 @@ window.addEventListener("online", ()=>{ if (SYNC_URL && sync.dirty) push(); });
 const refBox = document.getElementById("refs");
 if (refBox) refBox.innerHTML = Object.entries(REFS).map(([k,r])=>
   `<div class="card" id="ref-${k}"><b>[${r.s}]</b> <span class="tag ${r.lab}">${{h:"强",m:"中",l:"弱"}[r.lab]}</span> ${r.t}<br>${(r.src||[]).map(u=>`<a href="${esc(u[1])}" target="_blank" rel="noopener">${u[0]}</a>`).join(" · ")}</div>`).join("");
-/* loop players: one big button per <audio class="loop">, then speed and loop chips (this browser's own choice, not
-   synced). Phones may still stop a web page's audio on the lock screen (in-app browsers such as WeChat, battery
+/* loop players: one big button per <audio class="loop">, then speed and loop chips. Each visit starts at 1.25x;
+   loop choice stays in this browser, not synced. Phones may still stop audio on the lock screen (WeChat, battery
    savers), so the lock-screen controls are wired and playback events are kept in the synced log (store.au, with
    store.ua) to see afterwards where it stopped. */
 const mmss = t => (t = Math.floor(t||0), Math.floor(t/60) + ":" + String(t%60).padStart(2,"0"));
 const players = [...document.querySelectorAll("audio.loop")], RATES = [0.8, 1, 1.25, 1.5], AKEY = KEY + ":audio";
-const apref = (() => { try { return {rate:1, loop:true, ...JSON.parse(localStorage.getItem(AKEY) || "{}")}; } catch (e) { return {rate:1, loop:true}; } })();
+const apref = (() => { try { return {loop:true, ...JSON.parse(localStorage.getItem(AKEY) || "{}"), rate:1.25}; } catch (e) { return {rate:1.25, loop:true}; } })();
 let cur = players[0], played = false;
 /* sync=false only keeps it in this browser: it goes up with the next real save (no write on every screen wake) */
 const UA = navigator.userAgent;
@@ -1187,7 +1316,7 @@ if (players.length){
     const t = e.target.closest("button"); if (!t) return;
     if (t.dataset.rate) apref.rate = +t.dataset.rate;
     if (t.dataset.loop) apref.loop = t.dataset.loop === "1";
-    try { localStorage.setItem(AKEY, JSON.stringify(apref)); } catch (e) {}
+    try { localStorage.setItem(AKEY, JSON.stringify({loop:apref.loop})); } catch (e) {}
     aApply();
   });
   if (/MicroMessenger|; wv\)|FBAN|FBAV|Instagram|Line\//.test(UA)){
@@ -1213,6 +1342,14 @@ if (players.length){
   aApply();
 }
 for (const t of ["decide","lib"]) if (!document.querySelector(`[data-panel="${t}"]`).children.length) document.querySelector(`nav.tabs [data-tab="${t}"]`).hidden = true;
+document.addEventListener("change", e=>{
+  if(e.target.dataset.lessonNote){const goal=LEARNING.find(g=>g.id===e.target.dataset.lessonNote);
+    if(goal){lessonTrial(store.dr,goal).note=e.target.value;save();}}
+  if (e.target.id === "briefDate"){
+    if (dayOf(e.target.value)){ selD=e.target.value; renderToday(); }
+    else e.target.value=selD;
+  }
+});
 document.getElementById("brand").textContent = PLAN.brand || PLAN.title;
 document.getElementById("topDate").textContent = md(START) + " → " + md(DAYS[DAYS.length-1]);
 setSync(sync.st);

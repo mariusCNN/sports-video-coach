@@ -51,6 +51,9 @@ Offence:
 - `result`: exactly one of made2 | made3 | missed | turnover | foul_ft | foul_side | dead_ball | end_period | unclear. No free text here; descriptions go in `result_note`. An and-one is `made2`/`made3` plus `fts`. "unclear" is always allowed and better than a guess.
 - `shot`: null or `{"t": s, "shooter": "13" | null, "made": true | false, "points": 2 | 3, "zone": rim | paint_non_rim | midrange | three, "type": layup | floater | pullup_mid | catch_shoot_mid | three_catch | three_pullup | post | putback, "contested": open | contested | heavily_contested}` (the last attempt of the trip; `t` = release time). Required for made2/made3/missed.
 - `fts`: null or `{"shooter": "13" | null, "made": n, "att": n}`. Required for foul_ft; also for an and-one.
+  When visible, add `"made_times": [video_seconds, ...]`, one outcome time per made free throw, in order and inside
+  the trip. This lets evaluation match a delayed free throw at its own time instead of the earlier foul or basket.
+  Omit the field when timing is unclear; never infer it from the official feed.
 - `turnover_cause`: bad_pass | lost_dribble | travel | charge | out_of_bounds | violation | steal_on_ball | null; `turnover_lead_to`: transition points for the other team? yes | no | unclear.
 - `turnover_kind` (only with result turnover): live (the defence took the ball in play: steal, deflection they kept, pick-up of a lost dribble) | dead (out of bounds, travel, violation, offensive foul: play stops and they inbound) | null when unclear. Live-ball turnovers are the ones that become breaks.
 - `oreb_crash`: `{"n": attackers crashing (0-3+), "got": "us" | "them" | "unclear"}`. On a miss, `got` decides the offensive / defensive rebound; when the offence keeps the ball, its next trip is a new object with the same `pid` and the next `trip` index.

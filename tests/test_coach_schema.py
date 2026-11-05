@@ -67,6 +67,22 @@ def test_migrate_and_one():
     assert S.validate_trip(t) == []
 
 
+@pytest.mark.parametrize("times", [[18.0], [18.0, 18.0], [19.0, 18.0], [9.0, 19.0],
+                                   [18.0, 21.0], [float('nan'), 19.0], [True, 19.0], "18,19"])
+def test_invalid_made_ft_times_are_rejected(times):
+    t = v2(result="foul_ft", shot=None, fts={"shooter": "4", "made": 2, "att": 2, "made_times": times},
+           evidence={"result": [18.0, 19.0]})
+    assert any("fts.made_times" in e for e in S.validate_trip(t))
+
+
+def test_made_ft_times_are_optional_and_valid_times_are_accepted():
+    t = v2(result="foul_ft", shot=None, fts={"shooter": "4", "made": 2, "att": 2},
+           evidence={"result": [18.0, 19.0]})
+    assert S.validate_trip(t) == []
+    t["fts"]["made_times"] = [18.0, 19.0]
+    assert S.validate_trip(t) == []
+
+
 @pytest.mark.parametrize("res,off,want,pts", [
     ("FT (1/2)", "them", "foul_ft", 1),
     ("FT (2/2, inferred)", "us", "foul_ft", 2),

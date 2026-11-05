@@ -34,7 +34,8 @@ def test_team_page_has_the_four_factors_panel(tmp_path):
     assert "75.0%" in page and "62.5%" in page
     assert "进攻篮板" in page and "Offensive rebounding" in page
     assert page.count('class="factors"') == 2  # one block per language
-    assert "决定比赛的因素：进攻篮板（ORB%）" in page and "in favour of us" in page
+    assert "加权差距最大的一项：进攻篮板（ORB%）" in page and "in favour of us" in page
+    assert "不能单凭它认定输赢原因" in page and "not proof of causation" in page
 
 
 def test_team_page_without_summary_has_no_panel(tmp_path):

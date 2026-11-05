@@ -14,6 +14,16 @@ All notable changes to this project are documented here. The format follows [Kee
   checked. The project settings cap an MCP tool call at 3 minutes (`MCP_TOOL_TIMEOUT`).
 
 ### Added
+
+- Evidence-bound decision lessons shared by bilingual films and interactive pages: pre-action
+  questions, conditional alternatives, separate choice/execution/outcome, independent review,
+  dependency hashes and explicit public exports. New basketball games enable the lesson step.
+- Matched-episode A/B sheets retain full explanations; learning evaluation separates agent
+  audits, human comprehension, retention and opportunity-based game observations.
+- Training apps can link three priorities to lesson versions and record opportunities, choices,
+  execution, outcomes and retain/revise/retire feedback in the existing game log.
+- Film `--speech-tempo` uses measured audio time-stretching with aligned subtitles, unchanged
+  action speed, persistent scene timing and subtitle audit files.
 - `sports-video-coach serve <folder> [--port N]`: serves a report folder over http on the first free port from
   18080 (never one another server holds) and prints the URL and the page title. The QA step and AGENTS.md name it.
 - START.md: for basketball on the `generic` plugin, the agent bases the report's fixes and drills on the team,
@@ -84,6 +94,29 @@ All notable changes to this project are documented here. The format follows [Kee
   time of a test run, where the stage logs go, and `$UV_TOOL_BIN_DIR`.
 
 ### Fixed
+
+- Concurrent media writers reserve separate temporary directories, preventing one finished
+  language render from removing another render's not-yet-opened audio output directory.
+- Insight recurrence requires distinct trips; vague stock advice and unsupported numeric targets
+  fail checks. Critic signatures also invalidate on changed evidence, statistics or principles.
+- Four Factors describe the largest weighted gap without claiming it caused the game's result.
+- Coaching KB entries now require context, exceptions and disconfirming evidence; practice
+  formats are experiments, with opportunity observations instead of universal quotas.
+- Lesson responses stay synchronized across translated cards, so switching languages cannot
+  erase a saved reminder. Script QA ignores author comments while checking visible chapter text.
+
+- Training-plan apps can pin up to three current priorities above the date-specific briefing;
+  switching dates or activity modes preserves the pinned cues and workout progress.
+
+- Training-plan audio starts at 1.25x on every visit, including devices with an older saved speed;
+  listeners can still change speed during playback.
+
+- Optional pre-session brief in training-plan apps: date-specific training cues, league and half/full-court
+  pickup modes, a preparation timeline and review prompts. Fixture byes and same-day timed games select the
+  appropriate default; explicit mode choices preserve the selected date and existing workout progress.
+
+- Coach evaluation can match each visually timed made free throw separately, including long stoppages and
+  delayed and-ones, without moving the foul time or changing the reviewed possession/point totals.
 - Language switches preserve named report anchors and pause plugin-supplied videos as well as standard clips.
 - Team pages now follow every player-table source (`box.json`, either `official.json`, and the review's
   `plusminus.json`), so changing or adding one makes the HTML step run again. Relative run paths are resolved

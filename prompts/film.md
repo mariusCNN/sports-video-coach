@@ -4,6 +4,10 @@ One video the team can just watch: the narration plays over the clips, charts, d
 
 ## Files
 
+For a folder with `lessons.json`, follow `prompts/lessons.md`: write and independently review
+the shared source, then `hoop-tape-miner lessons compile <folder>`. Do not hand-edit its compiled
+film scripts. The same approved Chinese/English lessons supply the interactive page and films.
+
 - Team report: `film.zh.md` and/or `film.en.md` next to `README.md` in the game folder. Player deep dive: `player-<N>/film.<lang>.md`.
 - Court diagrams: `plays/<name>.json` in the same folder.
 - Write it after the report and its clips are final; it uses the same facts and, mostly, the same clip windows.
@@ -67,12 +71,17 @@ The chart shows where the game turned.
 ## Writing rules
 
 1. **Show, then say.** Each point needs a picture that proves it.
-   - A mistake: freeze at the moment it happens, ring the player(s), say what should have happened.
+   - A choice: freeze before the action, point to the visible cue, ask what the viewer would do,
+     then play the action and explain a feasible next step and its exception. Never use the final
+     outcome frame as proof the player should have known it earlier.
    - A habit to fix: the clip of it plus the clip of us doing it right.
    - A rule or a drill: a court diagram, then a clip from this game where we did it.
    - Text-only cards are chapter breaks (one or two sentences), never the explanation itself.
 2. **Talk about what is on screen.**
    - Over a running clip, say what to watch: "Watch number nineteen leave before the shot goes up".
+   - Check the opening frame as well as the freeze. If the cue appears later, guide the sequence
+     ("After blue loses the ball, watch who gets back"). Do not say "everyone is back" while
+     the picture still shows the turnover. Review scene-start samples in both languages.
    - On a freeze, say what is wrong or right *in this frame* and what the player should do.
    - Over a chart, name the one thing to see in it.
 3. **Fit the words to the picture.**
@@ -85,13 +94,15 @@ The chart shows where the game turned.
    - The game plan and practice priorities as court diagrams, each followed by a clip of us doing it in this game.
    - One good play and one fix per player, each a short clip with that player ringed.
    - Close on the sign-off card.
-   - Show at least three clips of us doing it right.
+   - Include clear good choices and useful contrasting examples. Never pad a quota of clips.
 6. **Clips:**
    - Reuse the report's windows (`clip:` markers in `README.md`); same selection and window rules as "Film clips" in `prompts/coach_report.md`.
    - A film may add a clip the report does not have, but every claim must still come from the report and its fact sheets.
    - Check new windows and freeze moments on frames (a subagent with a contact sheet: frames every second, the track boxes drawn) before writing over them. Track jersey numbers can be wrong, so look at who is actually ringed.
 7. **Captions:** one short line (Chinese up to about 25 characters, English up to about 12 words), stating what is visible. Freeze labels: up to about 8 Chinese characters / 4 English words.
-8. **Length:** team film about 10-14 minutes, player film about 3-5 minutes. Cut words before cutting pictures.
+8. **Length:** use the fewest distinct examples that teach the selected cues. A short understandable film
+   is complete when the viewer can state what worked, what to change and the next action. Do not pad
+   a fixed runtime. Audit long holds and speech continuing after the relevant action has finished.
 9. Never add a claim that is not in the report; uncertain things stay "likely" or "unclear".
 
 ## Render and check
@@ -104,6 +115,9 @@ The chart shows where the game turned.
    Fix anything over the length target here.
 2. `uv run hoop-tape-miner film <folder> --scenes 3-6` renders a short `film.<lang>.preview.mp4` to check fonts, subtitles, freezes and timing.
 3. `uv run hoop-tape-miner film <folder>` renders `film.<lang>.mp4` (720p by default, `--height 480` for a smaller file). Speech is cached in `.film-cache/`, so re-rendering after an edit only re-speaks the changed paragraphs.
+   `--speech-tempo 1.25` (or unit `film_speech_tempo: 1.25`) speeds speech and subtitle cues together;
+   actual play keeps its source speed. The renderer measures audio duration and saves scene timing
+   and subtitles in `film-audit-<lang>/`, plus a `film.<lang>.render.json` record.
 4. Check a few frames from every freeze and diagram (a subagent can extract them with ffmpeg):
    - each ring is on the player the narration names;
    - subtitles are readable and not clipped;

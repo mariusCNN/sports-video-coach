@@ -6,8 +6,14 @@ You get the review folder path (`<review>`). Same inputs as the writer: `coach_p
 
 ## For each insight
 
+Count independent physical possessions, not timestamps. A single useful example is allowed
+only when explicitly scoped `single_episode`; do not call it a recurring habit. Keep
+`observation_only` cases without a forced KB mechanism. Numeric targets require an applicable
+source or a stated training experiment. Re-open counter-examples as well as supporting examples.
+The signature binds reviewed frames, trip files, number sources and KB content, not just the prose.
+
 1. **Evidence.** For every `evidence` and `counter_examples` item, open the sheet covering that time (find the trip's possession in `<review>/part*.json`; it lists the sheets; each tile is stamped with its video time). Zoom when a detail decides it: `uv run hoop-tape-miner coach-sheets zoom SHEET TILE X Y W H OUT [--scale 3]`, output under `<review>/zoom/`. Does the moment show what `what` says? Is the jersey right?
-2. **Claim.** Recount the pattern in the trips (`coach_part*.json`): is the count right, and does it hold in at least two trips? Look for counter-examples the writer missed (the same situation, different outcome) and add them.
+2. **Claim.** Recount the pattern in the trips (`coach_part*.json`): is the count right, and does a recurring claim hold in at least two independent possessions? A scoped single episode must make no frequency claim. Look for counter-examples the writer missed (the same situation, different outcome) and add them.
 3. **Mechanism.** Is `why` what the film shows, and does it match the cited KB entry's **Why it happens**? A plausible mechanism the film does not show is a revise (say "likely") or a drop.
 4. **Numbers.** Check every value in `numbers` and every number in the text against `summary.json`, `features.json` and `official.json` (box score, score flow). Official totals win over the review for points and fouls.
 5. **Advice.** Is the rule one clear instruction? Does the drill fit the problem and an amateur practice (8-10 players, one hoop or two)? Can our pipeline measure the target next game? Any generic phrase (see the writer guide's list)?
@@ -41,6 +47,6 @@ Rules:
 - `<review>/critic.json`: your verdicts (above), one per insight in insights.json and in insights_dropped.json.
 - `<review>/insights.json`: the kept and revised insights only.
 - `<review>/insights_dropped.json`: an array of the dropped insights, unchanged except for their `critic` (verdict `drop` and the reason). Write `[]` when none were dropped.
-- Last, sign: `uv run hoop-tape-miner coach-insights critic --review <review>`. It runs the writer's checks plus yours and, when everything passes, writes the hash of insights.json into critic.json. Fix every error it lists until it prints PASS. Any edit of insights.json after signing breaks the signature, and the run sends the file back to you.
+- Last, sign: `uv run hoop-tape-miner coach-insights critic --review <review>`. It checks the insight and review, then hashes the insight, evidence, statistics, KB and reopened sheets. Fix every error until PASS. Editing any signed input invalidates review and sends it back to the critic.
 
 Reply in at most 8 lines: kept / revised / dropped counts, the biggest correction you made, any fact you could not settle, the check result.

@@ -1,8 +1,8 @@
 # Coaching knowledge base
 
 The coaching advice in a report is not made up on the spot. The agent ties what it saw on the film to an entry in a
-fixed knowledge base (KB): why the problem happens, what to check on the film, a cue, a drill and a target to check
-next time. The KBs are plain Markdown files in this repo, written in our own words from public coaching material
+fixed knowledge base (KB): a possible explanation, what to check on the film, a conditional cue, a practice
+experiment and an observation to check next time. The KBs are plain Markdown files in this repo, written in our own words from public coaching material
 (FIBA WABC coaches manuals, Jr. NBA practice material) and sports-science studies, with a source on every entry.
 They are not endorsed by FIBA, the NBA or any author they cite.
 
@@ -44,7 +44,9 @@ to cite a source or say its muscle shares are an estimate.
 
 ## How an entry is built
 
-Every entry is one `### <PREFIX>-<slug>` section (lower-case slug, words joined by `-`), with labelled fields:
+Every entry is one `### <PREFIX>-<slug>` section (lower-case slug, words joined by `-`), with labelled fields.
+The skill, movement and recovery libraries use the common fields below; the team library adds the conditional
+requirements described after the table.
 
 | Field | What goes in it |
 |---|---|
@@ -57,7 +59,14 @@ Every entry is one `### <PREFIX>-<slug>` section (lower-case slug, words joined 
 | **Evidence level** (movement, fuel/recovery) | Strong / moderate / expert opinion / our rule, as the KB's header defines them. The team and skill KBs cite manual pages and studies per entry instead. |
 | **Source** | Manual and page, or a link to the study (a DOI, PubMed / Europe PMC record or the publisher's page). |
 
-Two markers keep our own choices apart from what the sources say:
+The team library (`coach_kb.md`) labels the mechanism as a **hypothesis to verify**, the in-game rule as
+**conditional**, the drill as a **training experiment**, and the next-game target as an **observation**.
+Every entry also needs **Exception and disconfirming evidence**. Record real opportunities, choices, execution
+and results separately; missing counts remain unknown. It sets no universal success quota. A numeric target
+needs an explicit basis, and inherited manual page pointers need edition/passage verification before precise
+citation. See [decision lessons](decision-lessons.md) for the shared film, page and evaluation contract.
+
+Two markers in the other libraries keep our own choices apart from what the sources say:
 
 - **"(our rule)"**: a cue, threshold, drill variant or dose we chose; the source supports the principle, not the
   detail. Reports present it as our choice, never as "the book says".
@@ -68,10 +77,11 @@ Two markers keep our own choices apart from what the sources say:
 
 1. The film reviewer marks a moment with the entry whose symptom it shows (`"kb": "MV-braking-touchdown"`,
    `coach_note`, `form` notes), with a status such as seen / not seen / not visible.
-2. The report writer cites the entry by slug, explains the "why" from it, and copies the cue, drill and target into
-   the page and `plan.json` only when the session data shows the symptom.
-3. Checks and critics reject a claim whose symptom is not in the data (the team critic wants it in at least two
-   trips). Pain and injury questions never get a drill: they go to a physiotherapist or doctor.
+2. The report writer cites the entry by slug, checks whether its explanation fits, and adapts the cue and practice
+   to the visible conditions and exceptions. A source-backed principle is not proof of a cause in this game.
+3. Checks and critics reject unsupported claims. A recurring team claim needs distinct physical possessions;
+   a useful single example can explicitly remain `single_episode`. Pain and injury questions never get a drill:
+   they go to a physiotherapist or doctor.
 
 **The one-prompt start ([START.md](../START.md)), basketball on the `generic` plugin:** the agent reads the team,
 skill and movement KBs from the clone before it writes the report. It bases each fix and drill on the entry whose

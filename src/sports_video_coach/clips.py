@@ -64,6 +64,12 @@ def find_clips(folder: Path, film: bool = True) -> list[tuple[str, str]]:
     if film:
         for w in plugin_windows(folder):
             seen.setdefault(w, None)
+    from .lessons import clock, read
+    public = folder / "lesson.public.json"
+    if public.is_file():
+        for lesson in read(public)["lessons"]:
+            for end in (lesson["decision_t"], lesson["end"]):
+                seen.setdefault((clock(lesson["start"]), clock(end)), None)
     return list(seen)
 
 
