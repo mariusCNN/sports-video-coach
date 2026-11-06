@@ -84,7 +84,10 @@ def briefing_example():
 
 @pytest.mark.parametrize("field,value,issue", [
     ("priority", None, "priority: must be an object"),
-    ("priority", {"title": "Current focus", "cues": []}, "priority.cues: give one to three cues"),
+    ("priority", {"title": "Current focus", "cues": []}, "priority.cues: give one to four cues"),
+    ("priority", {"title": "Current focus", "cues": [{"cue": "a", "action": "b", "check": "c"}] * 5},
+     "priority.cues: give one to four cues"),
+    ("training", {"title": "X", "cues": [{"cue": "a", "action": "b", "check": "c"}] * 4}, "one to three cues"),
     ("training", None, "training: must be an object"),
     ("sessions", [], "sessions: must be an object"),
     ("sessions", {"unknown": {}}, "unknown session"),
@@ -431,8 +434,8 @@ def test_focus_is_valid_and_switches_the_today_tab_to_the_lean_view(tmp_path):
 
 @pytest.mark.parametrize("value,issue", [
     ([], "focus: must be an object"),
-    ({"title": "X", "rules": []}, "focus.rules: give one to three rules"),
-    ({"title": "X", "rules": [{"cue": "a", "action": "b"}] * 4}, "focus.rules: give one to three rules"),
+    ({"title": "X", "rules": []}, "focus.rules: give one to four rules"),
+    ({"title": "X", "rules": [{"cue": "a", "action": "b"}] * 5}, "focus.rules: give one to four rules"),
     ({"title": "X", "rules": [{"cue": "", "action": "b"}]}, "focus.rules: each needs cue and action text"),
     ({"title": "X", "rules": [{"cue": "a", "action": "b", "points": []}]}, "focus.rules: points must be"),
     ({"title": "X", "rules": [{"cue": "a", "action": "b", "points": ["x"] * 6}]}, "focus.rules: points must be"),
@@ -447,6 +450,14 @@ def test_focus_validation(value, issue):
         value = dict(value, sessions={next(iter(plan["sessions"])): "c"})
     plan["focus"] = value
     assert any(issue in error for error in program.validate(plan)), program.validate(plan)
+
+
+def test_four_pinned_rules_are_accepted():
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    plan["briefing"] = briefing_example()
+    plan["briefing"]["priority"] = {"title": "Every day", "cues": [{"cue": "a", "action": "b", "check": "c"}] * 4}
+    plan["focus"] = {"title": "X", "rules": [{"cue": "a", "action": "b", "points": ["x"]}] * 4}
+    assert program.validate(plan) == []
 
 
 def test_theme_picker_ships_every_theme_and_stays_local(tmp_path):

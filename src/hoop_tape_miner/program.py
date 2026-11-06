@@ -172,8 +172,9 @@ def validate_briefing(briefing, sessions: dict) -> list[str]:
         if not isinstance(profile.get("title"), str) or not profile["title"].strip():
             errors.append(f"{tag}.title: give a non-empty title")
         cues = profile.get("cues")
-        if not isinstance(cues, list) or not 1 <= len(cues) <= 3:
-            errors.append(f"{tag}.cues: give one to three cues")
+        most = 4 if key == "priority" else 3  # the pinned rules match focus.rules (up to four); a day brief keeps three
+        if not isinstance(cues, list) or not 1 <= len(cues) <= most:
+            errors.append(f"{tag}.cues: give one to {'four' if most == 4 else 'three'} cues")
         elif any(not isinstance(c, dict) or any(not isinstance(c.get(f), str) or not c[f].strip()
                                               for f in ("cue", "action", "check")) for c in cues):
             errors.append(f"{tag}.cues: each needs cue, action and check text")
@@ -189,16 +190,17 @@ def validate_briefing(briefing, sessions: dict) -> list[str]:
 
 
 def validate_focus(focus, sessions: dict) -> list[str]:
-    """The lean today view: one to three standing rules for every day, plus an optional one-line cue per session,
-    never more than three points on screen. A rule's optional "points" (up to five lines) fill its "how" fold."""
+    """The lean today view: one to four standing rules for every day, plus an optional one-line cue per session
+    when there are at most two rules (never more than three points from rules and cue together).
+    A rule's optional "points" (up to five lines) fill its "how" fold."""
     if not isinstance(focus, dict):
         return ["focus: must be an object"]
     errors = []
     if not isinstance(focus.get("title"), str) or not focus["title"].strip():
         errors.append("focus.title: give a non-empty title")
     rules = focus.get("rules")
-    if not isinstance(rules, list) or not 1 <= len(rules) <= 3:
-        errors.append("focus.rules: give one to three rules")
+    if not isinstance(rules, list) or not 1 <= len(rules) <= 4:
+        errors.append("focus.rules: give one to four rules")
         rules = []
     elif any(not isinstance(r, dict) or any(not isinstance(r.get(f), str) or not r[f].strip()
                                             for f in ("cue", "action")) for r in rules):
