@@ -394,3 +394,65 @@ def test_worker_sync_api(tmp_path):
     assert "media-src 'self'" in page["content-security-policy"]  # the loop audio next to the app
     assert "connect-src 'self'" in page["content-security-policy"]
     assert out["get"]["headers"]["referrer-policy"] == "no-referrer"  # only plan pages send a referrer
+
+
+def test_priority_rules_are_pinned_on_today_and_game_tabs(tmp_path):
+    folder = plan_folder(tmp_path)
+    plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
+    plan["briefing"] = briefing_example()
+    plan["briefing"]["priority"] = {"title": "Every time", "cues": [
+        {"cue": "Three to four dribbles", "action": "Then pass", "check": "Count them"}]}
+    (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
+    page = program.page(folder)
+    assert 'class="brief pin"' in page
+    assert 'getElementById("gameBox").innerHTML = `${priorityHtml()}' in page
+
+
+def focus_example():
+    return {"title": "Must do", "rules": [
+        {"cue": "Three to four dribbles", "action": "Then pass or call a screen"},
+        {"cue": "Read your spot before the catch", "action": "Look before the ball arrives",
+         "points": ["Check your defender's feet", "Find the help behind"]}],
+        "sessions": {}}
+
+
+def test_focus_is_valid_and_switches_the_today_tab_to_the_lean_view(tmp_path):
+    folder = plan_folder(tmp_path)
+    plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
+    code = next(iter(plan["sessions"]))
+    plan["focus"] = dict(focus_example(), sessions={code: "Sit back on the box"})
+    assert program.validate(plan) == []
+    (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
+    page = program.page(folder)
+    assert "function renderLean(" in page
+    assert "Sit back on the box" in page
+    assert "Find the help behind" in page and "r.points" in page
+
+
+@pytest.mark.parametrize("value,issue", [
+    ([], "focus: must be an object"),
+    ({"title": "X", "rules": []}, "focus.rules: give one to three rules"),
+    ({"title": "X", "rules": [{"cue": "a", "action": "b"}] * 4}, "focus.rules: give one to three rules"),
+    ({"title": "X", "rules": [{"cue": "", "action": "b"}]}, "focus.rules: each needs cue and action text"),
+    ({"title": "X", "rules": [{"cue": "a", "action": "b", "points": []}]}, "focus.rules: points must be"),
+    ({"title": "X", "rules": [{"cue": "a", "action": "b", "points": ["x"] * 6}]}, "focus.rules: points must be"),
+    ({"title": "X", "rules": [{"cue": "a", "action": "b", "points": ["x", " "]}]}, "focus.rules: points must be"),
+    ({"title": "", "rules": [{"cue": "a", "action": "b"}]}, "focus.title"),
+    ({"title": "X", "rules": [{"cue": "a", "action": "b"}], "sessions": {"nope": "c"}}, "focus.sessions.nope: unknown session"),
+    ({"title": "X", "rules": [{"cue": "a", "action": "b"}] * 3, "sessions": {"__first__": "c"}}, "at most three points"),
+])
+def test_focus_validation(value, issue):
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    if isinstance(value, dict) and "__first__" in value.get("sessions", {}):
+        value = dict(value, sessions={next(iter(plan["sessions"])): "c"})
+    plan["focus"] = value
+    assert any(issue in error for error in program.validate(plan)), program.validate(plan)
+
+
+def test_theme_picker_ships_every_theme_and_stays_local(tmp_path):
+    page = program.page(plan_folder(tmp_path))
+    for theme in ("court", "ice", "mint", "paper"):
+        assert f'html[data-theme="{theme}"]' in page
+    assert 'data-act="theme"' in page
+    assert 'localStorage.setItem("plan-theme"' in page
+    assert page.count("</script>") == 1

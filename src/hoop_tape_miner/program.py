@@ -115,6 +115,8 @@ def validate(plan: dict) -> list[str]:
         errors.append("phases is empty")
     if "briefing" in plan:
         errors += validate_briefing(plan["briefing"], sess)
+    if "focus" in plan:
+        errors += validate_focus(plan["focus"], sess)
     goals = (plan.get("game") or {}).get("learning_goals", [])
     if not isinstance(goals, list) or len(goals) > 3:
         errors.append("game.learning_goals: at most three evidence-linked priorities")
@@ -183,6 +185,37 @@ def validate_briefing(briefing, sessions: dict) -> list[str]:
             values = profile.get(field, [])
             if not isinstance(values, list) or any(not isinstance(t, str) for t in values):
                 errors.append(f"{tag}.{field}: must be a list of strings")
+    return errors
+
+
+def validate_focus(focus, sessions: dict) -> list[str]:
+    """The lean today view: one to three standing rules for every day, plus an optional one-line cue per session,
+    never more than three points on screen. A rule's optional "points" (up to five lines) fill its "how" fold."""
+    if not isinstance(focus, dict):
+        return ["focus: must be an object"]
+    errors = []
+    if not isinstance(focus.get("title"), str) or not focus["title"].strip():
+        errors.append("focus.title: give a non-empty title")
+    rules = focus.get("rules")
+    if not isinstance(rules, list) or not 1 <= len(rules) <= 3:
+        errors.append("focus.rules: give one to three rules")
+        rules = []
+    elif any(not isinstance(r, dict) or any(not isinstance(r.get(f), str) or not r[f].strip()
+                                            for f in ("cue", "action")) for r in rules):
+        errors.append("focus.rules: each needs cue and action text")
+    elif any("points" in r and (not isinstance(r["points"], list) or not 1 <= len(r["points"]) <= 5
+                                or any(not isinstance(t, str) or not t.strip() for t in r["points"])) for r in rules):
+        errors.append("focus.rules: points must be one to five short lines")
+    extra = focus.get("sessions", {})
+    if not isinstance(extra, dict):
+        return errors + ["focus.sessions: must be an object"]
+    for code, cue in extra.items():
+        if code not in sessions:
+            errors.append(f"focus.sessions.{code}: unknown session")
+        elif not isinstance(cue, str) or not cue.strip():
+            errors.append(f"focus.sessions.{code}: give one short cue")
+        elif len(rules) >= 3:
+            errors.append(f"focus.sessions.{code}: at most three points on screen; drop a rule or this cue")
     return errors
 
 

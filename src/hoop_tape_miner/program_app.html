@@ -18,12 +18,12 @@
  --mute:oklch(0.65 0 0);--line:oklch(0.26 0.04 85);--bad:oklch(0.62 0.17 25);--ok:oklch(0.72 0.14 155);--warn:oklch(0.80 0.13 75);--blue:oklch(0.75 0.09 240);
  --p5:color-mix(in oklch,var(--pri) 5%,transparent);--p8:color-mix(in oklch,var(--pri) 8%,transparent);--p10:color-mix(in oklch,var(--pri) 10%,transparent);
  --p15:color-mix(in oklch,var(--pri) 15%,transparent);--p20:color-mix(in oklch,var(--pri) 20%,transparent);--p25:color-mix(in oklch,var(--pri) 25%,transparent);--p35:color-mix(in oklch,var(--pri) 35%,transparent);
- --r:.75rem
+ --r:.75rem;--glow:oklch(0.14 0.04 85);--scheme:dark
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{font-size:17px}
 body{margin:0;color:var(--fg);font:1rem/1.65 Inter,-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
- background:radial-gradient(ellipse 100% 45% at 50% 0%,oklch(0.14 0.04 85) 0%,oklch(0.07 0.005 85) 65%) fixed,var(--bg);min-height:100vh;padding-bottom:96px}
+ background:radial-gradient(ellipse 100% 45% at 50% 0%,var(--glow) 0%,var(--bg) 65%) fixed,var(--bg);min-height:100vh;padding-bottom:96px}
 main{max-width:640px;margin:0 auto;padding:12px 14px}
 body.tab-lib main{max-width:860px}
 a{color:var(--pri)}
@@ -431,7 +431,7 @@ audio.loop{display:none}
 /* Pre-session brief: the three cues stay visible; detail opens on demand. */
 .brief{border:1px solid var(--p25);border-radius:22px;padding:18px 16px;margin:8px 0 18px;background:linear-gradient(150deg,var(--p10),var(--card))}
 .brief h1{font-size:1.4rem;margin:8px 0}.brief .brief-date{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
-.brief input[type=date]{min-width:0;max-width:160px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;color-scheme:dark}
+.brief input[type=date]{min-width:0;max-width:160px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;color-scheme:var(--scheme)}
 .brief-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0 16px}
 .brief-modes button{min-height:44px;padding:6px 2px;font-size:12px;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer}
 .brief-modes button[aria-pressed=true]{color:var(--bg);background:var(--pri);border-color:var(--pri);font-weight:700}
@@ -440,6 +440,61 @@ audio.loop{display:none}
 .brief summary{cursor:pointer;font-size:14px;font-weight:600;min-height:32px}.brief .brief-step{display:grid;grid-template-columns:66px 1fr;gap:10px;margin:12px 0;font-size:14px}
 .brief .brief-step b{color:var(--pri)}.brief .brief-step p{margin:0}.brief .brief-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .brief .brief-actions a,.brief .brief-actions button{padding:10px 12px;border-radius:10px;font-size:14px}
+.brief.pin{border:2px solid var(--pri);background:linear-gradient(150deg,var(--p20),var(--card) 75%)}
+.brief.pin h2{font-size:1.05rem;letter-spacing:.04em;color:var(--pri);margin:0 0 4px}
+.brief.pin .brief-cue{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:start}
+.brief.pin .brief-cue b{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:40px;margin:0}
+.brief.pin .brief-cue b{font-size:1.3rem;line-height:1.35}
+.pin-n{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--pri);color:var(--pri-fg);font-weight:800;font-size:1.15rem}
+/* lean today view (plan.focus): what to remember, then what to train; everything else one tap away */
+html.lean .finbar{display:none}html.lean body.tab-today{padding-bottom:90px}
+.lhead{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;column-gap:8px;text-align:center;padding:8px 0 4px}
+.lhead>*{grid-column:2}.lhead .eyebrow{grid-row:1}.lhead h1{grid-row:2;font-size:26px;font-weight:800;margin:4px 0 2px;line-height:1.25}
+.lhead .sub{grid-row:3;color:var(--mute);font-size:14px;line-height:1.4}.lhead .linkbtn{grid-row:4;justify-self:center;margin-top:4px}
+.lhead .hnav{position:static;grid-row:2;align-self:center;width:40px;height:40px}.lhead .hnav.l{grid-column:1}.lhead .hnav.r{grid-column:3}
+.lean-focus .tagc{display:inline-flex;align-items:center;flex:none;height:22px;font-size:11px;font-weight:600;line-height:1;color:var(--pri);border:1px solid var(--p35);border-radius:999px;padding:0 8px}
+.lsec{font-size:12px;font-weight:700;letter-spacing:.14em;line-height:1.4;color:var(--pri);margin:20px 16px 8px}
+.lsec span{color:var(--mute);font-weight:400;letter-spacing:0;margin-left:6px}
+.lblk{border:1px solid var(--line);border-radius:14px;background:var(--card);margin:8px 0}
+.lblk summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 15px;min-height:52px;cursor:pointer;font-size:16px;font-weight:600;line-height:1.4}
+.lblk summary::-webkit-details-marker{display:none}.lblk summary .m{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:13px;font-weight:400;text-align:right}
+.lean .chev{width:16px;height:16px;color:var(--mute);transition:transform .2s}details[open]>summary .chev{transform:rotate(90deg)}
+.lrow{display:flex;align-items:center;gap:12px;padding:10px 15px;min-height:56px;border-top:1px solid var(--line);font-size:14px;margin:0}
+.lrow div{flex:1;min-width:0}.lrow b{display:block;font-weight:600}.lrow p{margin:2px 0 0;color:var(--mute);font-size:13px;line-height:1.45}
+.lrow .play{flex:none;width:36px;height:36px}
+/* themes (owner picks one on the today page; kept on this device only) */
+html[data-theme="court"]{--bg:oklch(0.08 0.01 45);--card:oklch(0.14 0.015 45 / .9);--card-s:oklch(0.14 0.015 45);--pri:oklch(0.74 0.16 48);
+ --sec:oklch(0.19 0.01 45);--muted:oklch(0.21 0.01 45);--line:oklch(0.28 0.05 45);--glow:oklch(0.17 0.06 45)}
+html[data-theme="ice"]{--bg:oklch(0.10 0.025 250);--card:oklch(0.16 0.03 250 / .9);--card-s:oklch(0.16 0.03 250);--pri:oklch(0.82 0.10 215);
+ --sec:oklch(0.20 0.03 250);--muted:oklch(0.22 0.03 250);--line:oklch(0.30 0.05 240);--glow:oklch(0.20 0.06 245)}
+html[data-theme="mint"]{--bg:oklch(0.09 0.015 170);--card:oklch(0.15 0.02 170 / .9);--card-s:oklch(0.15 0.02 170);--pri:oklch(0.84 0.13 165);
+ --sec:oklch(0.19 0.015 170);--muted:oklch(0.21 0.015 170);--line:oklch(0.29 0.05 168);--glow:oklch(0.18 0.05 168)}
+html[data-theme="paper"]{--bg:oklch(0.97 0.006 85);--fg:oklch(0.20 0.01 85);--card:oklch(1 0 0 / .92);--card-s:oklch(1 0 0);--pri:oklch(0.50 0.12 70);
+ --pri-fg:oklch(0.99 0 0);--sec:oklch(0.93 0.008 85);--muted:oklch(0.92 0.008 85);--mute:oklch(0.40 0.01 85);
+ --ok:oklch(0.46 0.12 155);--warn:oklch(0.50 0.12 70);--bad:oklch(0.50 0.18 25);--blue:oklch(0.46 0.13 245);--line:oklch(0.86 0.02 85);
+ --glow:oklch(0.93 0.04 85);--scheme:light}
+html[data-theme="paper"] .gcard,html[data-theme="paper"] .hero{box-shadow:0 6px 20px rgba(0,0,0,.08)}
+html[data-theme="paper"] :is(.k-hard,.tag.l){color:var(--bad)}html[data-theme="paper"] :is(.dc .ok,.legend .lg-done .ic){color:oklch(0.99 0 0)}
+/* lean alignment: every card edge at the main padding, every content edge 16px inside it */
+html.lean .topbar{padding:6px 0 4px}
+html.lean .brief.pin{padding:14px 14px 4px;margin:12px 0 16px;border-radius:18px}
+html.lean .brief.pin h2{font-size:12px;font-weight:700;letter-spacing:.14em;line-height:1.4;margin:0 0 4px}
+html.lean .brief.pin .brief-cue{padding:10px 0}
+html.lean .brief.pin .brief-cue b{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0;font-size:1.25rem;line-height:1.35}
+html.lean .brief.pin details{margin-top:4px;padding:0}
+html.lean .brief.pin summary{list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px;font-size:14px;line-height:1.4}
+html.lean .brief.pin summary::-webkit-details-marker{display:none}
+html.lean .brief.pin .brief-step{display:block;margin:0;padding:6px 0 10px 52px}
+html.lean .brief.pin .brief-step b{display:block;line-height:1.4}html.lean .brief.pin .brief-step ul{margin:4px 0 0;padding-left:1.1em;font-size:14px;line-height:1.55}html.lean .brief.pin .brief-step li{margin:3px 0}html.lean .brief.pin .brief-step li::marker{color:var(--pri)}html.lean .brief.pin .brief-step p{margin:2px 0 0;line-height:1.55}
+html.lean #carBox .aplay{margin:0 0 16px;padding:12px 15px;gap:12px;border-radius:18px}
+html.lean #carBox .aplay .pi{width:40px;height:40px}
+html.lean #carBox .aplay .pi::before{left:15px;top:12px;border-left-width:13px;border-top-width:8px;border-bottom-width:8px}
+html.lean #carBox .aplay.on .pi::before{left:14px;top:13px;width:4px;height:14px;border:0;box-shadow:8px 0 0 var(--pri-fg)}
+html.lean .lblk{border-radius:18px}
+html.lean .note{margin:8px 0}
+.lthemes{display:flex;justify-content:center;align-items:center;gap:12px;margin:24px 0;color:var(--mute);font-size:13px}
+.lthemes button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:var(--c);cursor:pointer;padding:0}
+.lthemes button[aria-pressed=true]{border-color:var(--fg);box-shadow:0 0 0 3px var(--p25)}
 </style>
 </head>
 <body>
@@ -710,18 +765,20 @@ function finishGameType(ds){
   const brief = briefingModel(ds, briefModes[ds]);
   return brief ? (brief.mode === "training" ? null : brief.mode) : SESS[sessOf(dayOf(ds))].game;
 }
-function renderPriority(){
-  const box = document.getElementById("priorityBox"), p = BRIEF?.priority;
-  if (!p){ box.innerHTML = ""; return; }
-  box.innerHTML = `<article class="brief" aria-labelledby="priorityTitle">
-    <h2 id="priorityTitle">${esc(p.title)}</h2>
-    ${p.cues.map((c,i)=>`<div class="brief-cue"><b>${i+1}. ${esc(c.cue)}</b><p>${esc(c.action)}</p></div>`).join("")}
+/* the owner's standing rules: pinned on top of the today and game tabs, whatever the day */
+function priorityHtml(){
+  const p = BRIEF?.priority;
+  if (!p) return "";
+  return `<article class="brief pin" aria-label="${esc(p.title)}">
+    <h2>${esc(p.title)}</h2>
+    ${p.cues.map((c,i)=>`<div class="brief-cue"><span class="pin-n">${i+1}</span><div><b>${esc(c.cue)}</b><p>${esc(c.action)}</p></div></div>`).join("")}
     <details><summary>怎么练 · 怎么回看</summary>
       ${p.cues.map(c=>`<div class="brief-step"><b>${esc(c.cue)}</b><p>${esc(c.check)}</p></div>`).join("")}
       ${(p.watch||[]).length?`<ul>${p.watch.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
     </details>
   </article>`;
 }
+function renderPriority(){ document.getElementById("priorityBox").innerHTML = priorityHtml(); }
 function renderBrief(){
   renderPriority();
   const box = document.getElementById("briefBox"), b = briefingModel(selD, briefModes[selD]);
@@ -748,8 +805,57 @@ function renderBrief(){
   </article>`;
 }
 
+/* ---------- themes ---------- */
+const THEMES = [["gold","黑金","#d9b45a","#0b0a07"],["court","球场橙","#f08a3c","#140c08"],["ice","冰蓝","#7fd0f0","#0a1020"],["mint","薄荷绿","#6fe0b4","#08130f"],["paper","白天","#b98a2e","#f6f3ec"]];
+function setTheme(t){
+  const th = THEMES.find(x=>x[0]===t) || THEMES[0];
+  if (th[0]==="gold") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = th[0];
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = th[3];
+  try { localStorage.setItem("plan-theme", th[0]); } catch(e) {}
+}
+const curTheme = () => document.documentElement.dataset.theme || "gold";
+try { setTheme(localStorage.getItem("plan-theme") || "gold"); } catch(e) {}
+const themePicker = () => `<div class="lthemes"><span>主题</span>${THEMES.map(([k,l,c])=>`<button data-act="theme" data-t="${k}" style="--c:${c}" aria-label="${l}" title="${l}" aria-pressed="${curTheme()===k}"></button>`).join("")}</div>`;
+/* ---------- lean today (plan.focus) ---------- */
+const FOCUS = PLAN.focus;
+const cleanBlk = t => String(t||"").replace(/^[①-⑩]\s*/,"").replace(/[（(][^）)]*[）)]/g,"").trim();
+const shortEx = id => cleanBlk((EX[id]||{}).n || id).split("：")[0];
+function renderLean(){
+  const i = DAYS.findIndex(x=>iso(x)===selD), d = DAYS[i], code = sessOf(d), sess = SESS[code];
+  const fx = FIX[selD], extra = (FOCUS.sessions||{})[code];
+  const sub = fx && !fx.bye ? "联赛 · " + fixLine(fx) : esc(sess.dur || "");
+  const eyebrow = `${md(d)} 周${WD[d.getDay()]}${selD===todayIso?" · 今天":""}`;
+  let note = "";
+  if (todayIso < FIRST && selD === FIRST) note = `<div class="note">计划从 <b>${md(START)}</b> 开始，这里先显示第一天。</div>`;
+  if (todayIso > LAST) note = `<div class="note">${esc(PLAN.endNote || "这个计划已经结束。")}</div>`;
+  if (fx && fx.bye) note += `<div class="note"><b>本轮轮空</b></div>`;
+  const cues = FOCUS.rules.map(r=>[r.cue,""]).concat(extra ? [[extra,"这节课"]] : []);
+  document.getElementById("briefBox").innerHTML = "";
+  document.getElementById("priorityBox").innerHTML = `
+   <div class="lhead">
+    <button class="hnav l" data-act="step" data-s="-1" ${i===0?"disabled":""} aria-label="前一天">${ic("left")}</button>
+    <button class="hnav r" data-act="step" data-s="1" ${i===DAYS.length-1?"disabled":""} aria-label="后一天">${ic("right")}</button>
+    <div class="eyebrow">${eyebrow}</div><h1>${esc(sess.title)}</h1><div class="sub">${sub}</div>
+    ${inPlan() && selD!==todayIso ? `<button class="linkbtn" data-act="gotoday">← 回到今天</button>` : ""}
+   </div>${note}
+   <article class="brief pin lean-focus" aria-label="${esc(FOCUS.title)}">
+    <h2>${esc(FOCUS.title)}</h2>
+    ${cues.map(([c,tag],j)=>`<div class="brief-cue"><span class="pin-n">${j+1}</span><div><b>${esc(c)}${tag?`<span class="tagc">${tag}</span>`:""}</b></div></div>`).join("")}
+    <details><summary><span>怎么做</span>${ic("right","").replace('class="ic"','class="ic chev"')}</summary>${FOCUS.rules.map(r=>`<div class="brief-step"><b>${esc(r.cue)}</b>${(r.points||[]).length?`<ul>${r.points.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:`<p>${esc(r.action)}</p>`}</div>`).join("")}</details>
+   </article>`;
+  const blocks = []; itemsOf(selD).forEach(it=>{ const last=blocks[blocks.length-1]; if(last && last.t===it.blk) last.items.push(it); else blocks.push({t:it.blk,items:[it]}); });
+  document.getElementById("todayBox").innerHTML = `<div class="lsec">练什么</div>` +
+   blocks.map(b=>{ const one = b.items.length===1 ? b.items[0] : null, label = cleanBlk(b.t) || (one ? shortEx(one.id) : "今天");
+     const meta = one ? (String(one.dose).length <= 14 ? esc(one.dose) : "") : b.items.length+" 项";
+     return `<details class="lblk"><summary><span>${esc(label)}</span><span class="m">${meta}${ic("right").replace('class="ic"','class="ic chev"')}</span></summary>${b.items.map(it=>{
+       const vs = vlist(EX[it.id]||{});
+       return `<div class="lrow"><div><b>${esc(shortEx(it.id))}</b><p>${esc(it.dose)}</p></div>${vs.length?`<button class="play" data-act="vid" data-id="${it.id}" aria-label="看示范">${ic("play")}</button>`:""}</div>`; }).join("")}</details>`; }).join("") +
+   themePicker();
+  carShow();
+}
 /* ---------- training tab ---------- */
 function renderToday(){
+  if (FOCUS) return renderLean();
   renderBrief();
   const i = DAYS.findIndex(x=>iso(x)===selD), d = DAYS[i], code = sessOf(d), sess = SESS[code], w = weekOf(d);
   const items = itemsOf(selD), [dn,n] = progOf(selD), fin = store.fin[selD];
@@ -779,7 +885,7 @@ function renderToday(){
     <div class="pbar"><i style="width:${n?Math.round(100*dn/n):0}%"></i></div>
    </div>
    <div class="wstrip">${strip}</div>${back}${note}${fixNote(selD)}${reviewCard(sess)}${readyCard(sess)}` +
-   blocks.map(b=>`<div class="gcard glass grain"><div class="ghead">${ic("dumbbell")}<span>${esc(b.t||"今天")}</span></div><div class="gbody">${b.items.map(it=>exCard(it)).join("")}</div></div>`).join("");
+   blocks.map(b=>`<div class="gcard glass grain"><div class="ghead">${ic("dumbbell")}<span>${esc(b.t||"今天")}</span></div><div class="gbody">${b.items.map(it=>exCard(it)).join("")}</div></div>`).join("") + themePicker();
   const fb = document.getElementById("finBtn");
   const gameType = finishGameType(selD);
   if (gameType) fb.innerHTML = `${ic("pen")}打完了：去记录`;
@@ -944,7 +1050,7 @@ function renderGame(){
   const three = LEARNING.some(x=>x.status!=="retired") ? [] : (G.three||{})[m] || [], rules = (G.rules||{})[m] || [], wu = store.wu[ds] || [];
   const mission = ((G.mission||{})[mk]||[])[w] || "", done = ((G.done||{})[mk]||[])[w] || "";
   const icons = ["target","trophy","zap","alert"];
-  document.getElementById("gameBox").innerHTML = `
+  document.getElementById("gameBox").innerHTML = `${priorityHtml()}
   <div class="hero grain">
    <div class="eyebrow">下一场 · ${ds===todayIso?"今天":md(d)+" 周"+WD[d.getDay()]}</div>
    <h1>${sess.game==="league"?"联赛":"Pickup"}</h1>
@@ -1181,6 +1287,7 @@ document.addEventListener("click", e=>{
    case "brief-open": selD=t.dataset.d; briefModes[selD]=t.dataset.m; renderToday(); showTab("today"); window.scrollTo(0,0); break;
    case "day": selD=t.dataset.d; renderToday(); showTab("today"); window.scrollTo(0,0); break;
    case "step": { const i=DAYS.findIndex(x=>iso(x)===selD)+(+t.dataset.s); if(DAYS[i]){ selD=iso(DAYS[i]); renderToday(); window.scrollTo(0,0); } break; }
+   case "theme": setTheme(t.dataset.t); renderToday(); break;
    case "gotoday": selD=todayIso; renderToday(); window.scrollTo(0,0); break;
    case "tog": OPEN[k] = !t.closest(".ex").classList.contains("open"); renderToday(); break;
    case "set": markRow(k); break;
@@ -1341,6 +1448,7 @@ if (players.length){
   document.addEventListener("resume", () => { if (played) aLog(cur, "resume", false); });
   aApply();
 }
+if (FOCUS) document.documentElement.classList.add("lean");
 for (const t of ["decide","lib"]) if (!document.querySelector(`[data-panel="${t}"]`).children.length) document.querySelector(`nav.tabs [data-tab="${t}"]`).hidden = true;
 document.addEventListener("change", e=>{
   if(e.target.dataset.lessonNote){const goal=LEARNING.find(g=>g.id===e.target.dataset.lessonNote);

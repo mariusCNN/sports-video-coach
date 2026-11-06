@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Training-plan app: an optional `focus` key in program.json (one to three standing rules, plus an optional cue per
+  session, never more than three points) switches the today tab to a lean view: the day, the rules, the car talk,
+  then one collapsed row per block, every tab still in the bottom nav. Its cards share one left and right edge, and
+  the header arrows, number badges, play buttons and chevrons are centred on the text beside them.
+  A rule may carry `points` (up to five short lines) that fill its "怎么做" fold instead of the one-line action.
+- Training-plan app: a theme picker (黑金, 球场橙, 冰蓝, 薄荷绿, 白天) at the bottom of the today tab, kept on the device.
+- Training-plan app: `briefing.priority` is a pinned card with numbered rules, shown at the top of both the
+  today tab and the game tab, so standing rules stay in view on training, league and pickup days.
 - The run asks for the film scripts in the same stop as the narration scripts (both follow the READMEs, not QA),
   so they can be written at once; publish now waits for them, and the film still renders last.
 - The tracks step reuses the jersey-colour clusters of the montage pass (`run/clusters.npz`), so the team
