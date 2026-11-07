@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Report pages: every report now ends with one muted line in its language saying it was made with
+  sports-video-coach, linking the README's one-prompt start (the Chinese README for Chinese). The link is absolute,
+  so `--share` files and published pages keep it.
 - Training-plan app: an optional `focus` key in program.json (one to four standing rules, plus an optional cue per
   session, never more than three points) switches the today tab to a lean view: the day, the rules, the car talk,
   then one collapsed row per block, every tab still in the bottom nav. Its cards share one left and right edge, and

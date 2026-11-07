@@ -34,7 +34,7 @@ from markdown_it.rules_inline.state_inline import Scanned
 
 from sports_video_coach import clips as clipmod
 from sports_video_coach import langs as langs_
-from sports_video_coach import plugin, units
+from sports_video_coach import REPO_URL, plugin, units
 from sports_video_coach.media import joined, source_at, video_size
 from sports_video_coach.timefmt import seconds
 from sports_video_coach.media import duration_s  # ffprobe with a timeout: a cloud placeholder file can hang it
@@ -444,6 +444,14 @@ def listen_block(folder: Path, embed: bool, langs: list[tuple] | None = None):
     return block, mini
 
 
+def credit(lang: str, ui: dict) -> str:
+    """The line under every report: which tool made it and where a reader starts one from their own video
+    (the README in their language when the repo has one). An absolute link, so it survives --share and publish."""
+    url = REPO_URL + ("/blob/master/README.zh.md#一句话开始" if lang == "zh" else "#start-in-one-prompt")
+    return (f'<p class="made-with">{html.escape(ui["credit"])} · '
+            f'<a href="{url}" target="_blank" rel="noopener">{html.escape(ui["credit_cta"])} →</a></p>')
+
+
 def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
     """share: drop repo links and local paths; embed (default: same as share): inline audio and clips."""
     embed = share if embed is None else embed
@@ -476,7 +484,7 @@ def page(folder: Path, share: bool = False, embed: bool | None = None) -> str:
         if teaching:
             cut = body.find('<h2 id=')
             body = body[:cut] + teaching + body[cut:] if cut >= 0 else body + teaching
-        arts.append(f'<article class="report" data-lang="{code}" lang="{attr}"{hide(code)}>{inline_images(body, folder)}</article>')
+        arts.append(f'<article class="report" data-lang="{code}" lang="{attr}"{hide(code)}>{inline_images(body, folder)}{credit(code, ui[code])}</article>')
         links = "".join(f'<li><a href="#{code}-s{i}">{html.escape(h)}</a></li>' for i, h in enumerate(heads, 1))
         tocs.append(f'<nav class="toc" data-lang="{code}" lang="{attr}" aria-label="{ui[code]["contents"]}"{hide(code)}>'
                     f'<p class="toc-title">{ui[code]["contents"]}</p><ol>{links}</ol></nav>')
@@ -643,6 +651,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .report li {{ margin: .35rem 0; }}
 .report li::marker {{ color: var(--muted); font-weight: 700; }}
 .report strong {{ color: var(--ink); font-weight: 700; }}
+.report .made-with {{ margin: 3rem 0 1rem; padding-top: 1rem; border-top: 1px solid #e3e5eb; color: var(--muted); font-size: .85rem; }}
+.report .made-with a {{ color: var(--muted); }}
 .report a {{ color: var(--ink); text-decoration-color: var(--marker); text-decoration-thickness: 2px; text-underline-offset: 3px; }}
 .report a[href^="#"] {{ font: 600 .9em/1 var(--display); letter-spacing: .02em; text-decoration: none; background: var(--marker-wash);
   border: 1px solid var(--marker); border-radius: 3px; padding: .1em .4em; white-space: nowrap; }}

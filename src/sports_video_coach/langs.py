@@ -96,40 +96,48 @@ NUM_KO = {**{w: i for i, w in enumerate(_KO_ONES, 1)},  # 일 .. 구, 십 .. 구
 UI_ZH = dict(contents="目录", switch="切换语言", reports="报告",
              listen="听报告", listen_sub="约 {m} 分钟，可以边看边听", listen_sub_s="约 {s} 秒，可以边看边听",
              play="播放 / 暂停", seek="播放进度", speed="播放速度",
-             clip="片段", slow="慢放", missing="（片段还没剪：运行 clips）")
+             clip="片段", slow="慢放", missing="（片段还没剪：运行 clips）",
+             credit="由开源工具 sports-video-coach 生成", credit_cta="用你自己的视频也做一份")
 UI_EN = dict(contents="Contents", switch="Switch language", reports="Reports",
              listen="Listen to the report", listen_sub="About {m} min. Read along or just listen.",
              listen_sub_s="About {s} seconds. Read along or just listen.", play="Play / pause",
              seek="Playback position", speed="Playback speed",
-             clip="Clip", slow="Slow-mo", missing="(clip not cut yet: run the clips stage)")
+             clip="Clip", slow="Slow-mo", missing="(clip not cut yet: run the clips stage)",
+             credit="Made with sports-video-coach, free and open source", credit_cta="Make one from your own video")
 UI_JA = dict(contents="目次", switch="言語を切り替える", reports="レポート",
              listen="レポートを聞く", listen_sub="約 {m} 分。読みながらでも、聞くだけでも", listen_sub_s="約 {s} 秒。読みながらでも、聞くだけでも",
              play="再生 / 一時停止", seek="再生位置", speed="再生速度",
-             clip="クリップ", slow="スロー", missing="（クリップがまだありません：clips を実行してください）")
+             clip="クリップ", slow="スロー", missing="（クリップがまだありません：clips を実行してください）",
+             credit="オープンソースの sports-video-coach で作成", credit_cta="自分の動画でも作ってみる")
 UI_KO = dict(contents="목차", switch="언어 바꾸기", reports="리포트",
              listen="리포트 듣기", listen_sub="약 {m}분. 읽으면서 들어도, 듣기만 해도 됩니다",
              listen_sub_s="약 {s}초. 읽으면서 들어도, 듣기만 해도 됩니다", play="재생 / 일시정지", seek="재생 위치",
-             speed="재생 속도", clip="클립", slow="느리게", missing="(클립이 아직 없습니다: clips 단계를 실행하세요)")
+             speed="재생 속도", clip="클립", slow="느리게", missing="(클립이 아직 없습니다: clips 단계를 실행하세요)",
+             credit="오픈소스 sports-video-coach로 만들었습니다", credit_cta="내 영상으로도 만들어 보기")
 UI_ES = dict(contents="Índice", switch="Cambiar idioma", reports="Informes",
              listen="Escucha el informe", listen_sub="Unos {m} min. Léelo mientras escuchas o solo escucha.",
              listen_sub_s="Unos {s} segundos. Léelo mientras escuchas o solo escucha.", play="Reproducir / pausa",
              seek="Posición de reproducción", speed="Velocidad de reproducción",
-             clip="Clip", slow="Cámara lenta", missing="(clip aún sin cortar: ejecuta la etapa clips)")
+             clip="Clip", slow="Cámara lenta", missing="(clip aún sin cortar: ejecuta la etapa clips)",
+             credit="Hecho con sports-video-coach, gratis y de código abierto", credit_cta="Haz uno con tu propio vídeo")
 UI_FR = dict(contents="Sommaire", switch="Changer de langue", reports="Rapports",
              listen="Écouter le rapport", listen_sub="Environ {m} min. Lisez en écoutant, ou écoutez simplement.",
              listen_sub_s="Environ {s} secondes. Lisez en écoutant, ou écoutez simplement.", play="Lecture / pause",
              seek="Position de lecture", speed="Vitesse de lecture",
-             clip="Extrait", slow="Ralenti", missing="(extrait pas encore découpé : lancez l’étape clips)")
+             clip="Extrait", slow="Ralenti", missing="(extrait pas encore découpé : lancez l’étape clips)",
+             credit="Réalisé avec sports-video-coach, libre et gratuit", credit_cta="Faites-en un avec votre vidéo")
 UI_DE = dict(contents="Inhalt", switch="Sprache wechseln", reports="Berichte",
              listen="Bericht anhören", listen_sub="Etwa {m} Min. Mitlesen oder einfach zuhören.",
              listen_sub_s="Etwa {s} Sekunden. Mitlesen oder einfach zuhören.", play="Abspielen / Pause",
              seek="Wiedergabeposition", speed="Wiedergabetempo",
-             clip="Clip", slow="Zeitlupe", missing="(Clip noch nicht geschnitten: Schritt clips ausführen)")
+             clip="Clip", slow="Zeitlupe", missing="(Clip noch nicht geschnitten: Schritt clips ausführen)",
+             credit="Erstellt mit sports-video-coach, frei und quelloffen", credit_cta="Mach einen aus deinem eigenen Video")
 UI_PT = dict(contents="Sumário", switch="Mudar idioma", reports="Relatórios",
              listen="Ouça o relatório", listen_sub="Cerca de {m} min. Leia junto ou só ouça.",
              listen_sub_s="Cerca de {s} segundos. Leia junto ou só ouça.", play="Reproduzir / pausar",
              seek="Posição da reprodução", speed="Velocidade de reprodução",
-             clip="Clipe", slow="Câmera lenta", missing="(clipe ainda não cortado: rode a etapa clips)")
+             clip="Clipe", slow="Câmera lenta", missing="(clipe ainda não cortado: rode a etapa clips)",
+             credit="Feito com sports-video-coach, grátis e de código aberto", credit_cta="Faça um com o seu próprio vídeo")
 
 # Common sport names per language, keyed by the English name (SPORTS_EN), so a page header in that language does
 # not show "volleyball"; `--sport-name LANG=NAME` (analysis.json `"sport": {lang: name}`) names any other sport.

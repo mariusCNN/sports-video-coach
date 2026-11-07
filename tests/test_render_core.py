@@ -11,7 +11,7 @@ FIXTURE = Path(__file__).parent / "fixtures" / "report_min"
 # only the language registry changed it (CJK / Japanese / Korean CSS, a language-free switch script) and the
 # 2026-10 film-room style system (stylesheet, web fonts, no-referrer meta; the markup stayed the same) and white
 # narration play buttons (2026-10-25, owner found the yellow odd), and named language anchors / plugin-video
-# playback coordination (2026-10-28).
+# playback coordination (2026-10-28) and the credit line under each report (2026-11-07).
 GOLDEN = Path(__file__).parent / "fixtures" / "report_min.page.html"
 
 
@@ -203,3 +203,16 @@ def test_fonts_do_not_block_the_first_paint():
     page = render_html.page(FIXTURE)
     head = page[:page.index("</head>")]
     assert '<link rel="stylesheet" href="https://fonts.googleapis.com' not in head.replace("<noscript><link", "")
+
+
+def test_every_report_ends_with_a_credit_line_in_its_language(tmp_path):
+    # the pages teammates receive are the main way anyone sees the tool: each says what made it and links the
+    # one-prompt start, as an absolute link so --share and publish (which drop repo-relative links) keep it
+    folder = _generic(tmp_path / "u" / "2025-03-15", None)
+    for share in (False, True):
+        page = render_html.page(folder, share=share)
+        assert page.count('class="made-with"') == 2
+        assert "由开源工具 sports-video-coach 生成" in page and "Made with sports-video-coach" in page
+        assert f'href="{render_html.REPO_URL}/blob/master/README.zh.md#一句话开始"' in page
+        assert f'href="{render_html.REPO_URL}#start-in-one-prompt"' in page
+        assert page.index('class="made-with"') < page.index("</article>")
