@@ -2,7 +2,7 @@ name: pypi
 
 # Publishes a release to PyPI with trusted publishing (no token stored here). Run by hand from the Actions tab on a
 # release tag, after the tests passed for it. Needs, once, a trusted publisher on pypi.org for project
-# sports-video-coach: owner mariusDing, repository sports-video-coach, workflow pypi.yml, environment pypi.
+# sports-video-coach: owner mariusCNN, repository sports-video-coach, workflow pypi.yml, environment pypi.
 
 on:
   workflow_dispatch:
