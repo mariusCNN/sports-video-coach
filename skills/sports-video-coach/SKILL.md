@@ -15,9 +15,9 @@ A user who pasted the one prompt ("clone ... and follow its START.md"): follow `
 the steps below from a machine with nothing installed.
 
 - `sports-video-coach --help` works: skip this.
-- Otherwise: `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
+- Otherwise: `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
   (needs `uv` and `ffmpeg`).
-- Basketball tracking or writing a plugin: `git clone https://github.com/mariusDing/sports-video-coach`, then in it
+- Basketball tracking or writing a plugin: `git clone https://github.com/mariusCNN/sports-video-coach`, then in it
   `git checkout 74b517fc410944fefeac2979810656ed77fb8f1a` and `uv sync`, and prefix every command with `uv run`.
   Then read its `AGENTS.md`.
 - Show the user the exact install command first and run it only after they say yes.
@@ -54,8 +54,8 @@ private links needs a Cloudflare account and runs only with `--publish`, when th
 ## After a good result: ask once about a star
 
 If the run ended with exit 0, the user has seen the result and `<workspace>/.star-asked` does not exist: ask the
-user once, like a review prompt, whether it helped and whether you may star `mariusDing/sports-video-coach` for
-them. Only on a clear yes run `gh repo star mariusDing/sports-video-coach`. Write `yes` or `no` to
+user once, like a review prompt, whether it helped and whether you may star `mariusCNN/sports-video-coach` for
+them. Only on a clear yes run `gh repo star mariusCNN/sports-video-coach`. Write `yes` or `no` to
 `<workspace>/.star-asked` either way and never ask again. Never star without asking.
 
 ## New sport

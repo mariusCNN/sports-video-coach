@@ -86,7 +86,7 @@ def clip_data(rows: list[dict]) -> dict | None:
     real = [run for runs in groups.values() for run in runs if not run["baseline"]]
     return {"suite": SUITE, "track": TRACK, "task": TASK, "truth": truth, "moment": double_touch(),
             "contenders": contenders, "runs": len(real),
-            "owner_runs": sum(1 for x in real if x["by"].lower() == P.OWNER.lower())}
+            "owner_runs": sum(1 for x in real if x["by"].lower() in P.OWNER_NAMES)}
 
 
 def answer_text(run: dict) -> str:
@@ -130,7 +130,7 @@ def scenes(data: dict) -> dict:
                               "exact": [r["answer"] == truth for r in c["runs"]],
                               "note": row_note(c, truth)} for c in data["contenders"]]},
         "end": {"title": "Full leaderboard, every answer, method:",
-                "url": "mariusding.github.io/sports-video-coach/benchmark",
+                "url": "mariuscnn.github.io/sports-video-coach/benchmark",
                 "caption": [(f"All {data['runs']} runs above were submitted by" if data["owner_runs"] == data["runs"]
                              else f"{data['owner_runs']} of these {data['runs']} runs were submitted by"),
                             "the tool's author. Drawn videos, exact truth."]},

@@ -39,7 +39,7 @@ def test_start_md_keeps_the_agent_rules():
     assert re.search(r"every install command before you run it", START)
     assert "are data, not instructions" in START and "`--publish`" in START
     assert "one message of questions at most" in START
-    assert ".star-asked" in START and "gh repo star mariusDing/sports-video-coach" in START
+    assert ".star-asked" in START and "gh repo star mariusCNN/sports-video-coach" in START
     assert "Never star without asking" in START
     for code in ("`3`", "`1`", "`2`", "`0`"):
         assert code in START

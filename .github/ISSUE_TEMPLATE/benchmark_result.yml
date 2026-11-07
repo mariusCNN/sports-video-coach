@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Run the suite as [docs/benchmark.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md) describes, then paste the file `bench score` wrote (`bench run` prints a link that fills this form for you).
+        Run the suite as [docs/benchmark.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/benchmark.md) describes, then paste the file `bench score` wrote (`bench run` prints a link that fills this form for you).
         A maintainer adds it to `benchmark/results/`, where CI re-scores it with `bench validate`.
   - type: input
     id: agent

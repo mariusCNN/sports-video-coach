@@ -187,7 +187,7 @@ def test_headline_box_states_scores_what_they_mean_and_the_rerun(fake_above):
     box = page.headline(rows)
     assert "M 1.0" in box and "default <strong>0.450</strong> (n=2, 0.400–0.500)" in box
     assert "low <strong>0.700</strong> (n=1)" in box and "max: no answer, timed out, scored 0 (n=1)" in box
-    assert "1 = perfect" in box and "4 runs, 2 of 3 settings ran once, all by mariusDing" in box
+    assert "1 = perfect" in box and "4 runs, 2 of 3 settings ran once, all by mariusCNN" in box
     assert page.INSTALL in box and page.HEADLINE_RUN in box and f'href="{page.REPO_URL}"' in box
     assert '<a href="#effort">' in box
     zh = page.headline(rows, "zh")

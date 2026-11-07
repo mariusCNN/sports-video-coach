@@ -54,11 +54,11 @@ basketball = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mariusDing/sports-video-coach"
-Documentation = "https://github.com/mariusDing/sports-video-coach/tree/master/docs"
-Repository = "https://github.com/mariusDing/sports-video-coach"
-Issues = "https://github.com/mariusDing/sports-video-coach/issues"
-Changelog = "https://github.com/mariusDing/sports-video-coach/blob/master/CHANGELOG.md"
+Homepage = "https://github.com/mariusCNN/sports-video-coach"
+Documentation = "https://github.com/mariusCNN/sports-video-coach/tree/master/docs"
+Repository = "https://github.com/mariusCNN/sports-video-coach"
+Issues = "https://github.com/mariusCNN/sports-video-coach/issues"
+Changelog = "https://github.com/mariusCNN/sports-video-coach/blob/master/CHANGELOG.md"
 
 [project.scripts]
 sports-video-coach = "sports_video_coach.cli:main"

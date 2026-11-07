@@ -1,7 +1,7 @@
 {
   "name": "sports-video-coach",
   "description": "Sports video analysis and coaching, driven by your agent",
-  "owner": { "name": "mariusDing", "url": "https://github.com/mariusDing" },
+  "owner": { "name": "mariusCNN", "url": "https://github.com/mariusCNN" },
   "plugins": [
     {
       "name": "sports-video-coach",

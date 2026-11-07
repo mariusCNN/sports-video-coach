@@ -4,13 +4,13 @@
 
 ### 让你的 coding agent 当你的运动教练。
 
-[English](https://github.com/mariusDing/sports-video-coach/blob/master/README.md) · **中文**
+[English](https://github.com/mariusCNN/sports-video-coach/blob/master/README.md) · **中文**
 
 写给自己练的成年人：用手机拍一次训练，你的 agent（Claude Code、Codex……）告诉你哪里要改、怎么练。
 
-<a href="https://mariusding.github.io/sports-video-coach/#training-example"><img alt="43 秒真实训练复盘：作者自己的投篮训练、定格圈注、两次动作对照、下次练习建议" src="https://github.com/mariusDing/sports-video-coach/releases/download/showcase-2026-10-29/poster-en-wide.jpg" width="720"></a>
+<a href="https://mariuscnn.github.io/sports-video-coach/#training-example"><img alt="43 秒真实训练复盘：作者自己的投篮训练、定格圈注、两次动作对照、下次练习建议" src="https://github.com/mariusCNN/sports-video-coach/releases/download/showcase-2026-10-29/poster-en-wide.jpg" width="720"></a>
 
-**[▶ 看一段真实训练复盘（43 秒，英文）](https://mariusding.github.io/sports-video-coach/#training-example)** · [竖版](https://github.com/mariusDing/sports-video-coach/releases/download/showcase-2026-10-29/sports-video-coach-en-vertical.mp4)<br>
+**[▶ 看一段真实训练复盘（43 秒，英文）](https://mariuscnn.github.io/sports-video-coach/#training-example)** · [竖版](https://github.com/mariusCNN/sports-video-coach/releases/download/showcase-2026-10-29/sports-video-coach-en-vertical.mp4)<br>
 <sub>作者自己的训练，agent 复盘，为展示节选。不代表训练前后改善，也不是命中率测量。</sub>
 
 </div>
@@ -32,7 +32,7 @@
 
 ```text
 帮我分析我的运动视频：<视频路径>
-克隆 https://github.com/mariusDing/sports-video-coach ，按里面的 START.md 一步步做。
+克隆 https://github.com/mariusCNN/sports-video-coach ，按里面的 START.md 一步步做。
 ```
 
 **接下来会发生什么**：你的 agent 克隆仓库，照着 [START.md](START.md) 做。装任何东西之前先把命令给你看，你同意才装；
@@ -43,18 +43,18 @@
 
 [完整功能](docs/features.md) · [篮球插件](docs/basketball.zh.md) · [Agent 入口](llms.txt)
 
-**试一下：**[demo 网页，不用安装](https://mariusding.github.io/sports-video-coach/demo/) ·
-[在 Codespaces 里打开](https://codespaces.new/mariusDing/sports-video-coach)
+**试一下：**[demo 网页，不用安装](https://mariuscnn.github.io/sports-video-coach/demo/) ·
+[在 Codespaces 里打开](https://codespaces.new/mariusCNN/sports-video-coach)
 
-[![release](https://img.shields.io/github/v/release/mariusDing/sports-video-coach)](https://github.com/mariusDing/sports-video-coach/releases)
-[![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)
-[![Works with Claude Code and Codex](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex%20%7C%20AGENTS.md-8A2BE2.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md)
+[![release](https://img.shields.io/github/v/release/mariusCNN/sports-video-coach)](https://github.com/mariusCNN/sports-video-coach/releases)
+[![tests](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusCNN/sports-video-coach/blob/master/LICENSE)
+[![Works with Claude Code and Codex](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex%20%7C%20AGENTS.md-8A2BE2.svg)](https://github.com/mariusCNN/sports-video-coach/blob/master/AGENTS.md)
 
-<img alt="作者自己投篮练习的真实运行：原片、agent 的看片复盘在出手后收手定住的地方暂停，然后是教练网页" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
+<img alt="作者自己投篮练习的真实运行：原片、agent 的看片复盘在出手后收手定住的地方暂停，然后是教练网页" src="https://raw.githubusercontent.com/mariusCNN/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
 <sub>作者自己投篮练习的一次真实运行：你的视频 → agent 看片复盘 → 你的教练网页。
-不用安装就能看完整示例：<a href="https://mariusding.github.io/sports-video-coach/demo/">demo 网页</a>（程序画的练习）。</sub>
+不用安装就能看完整示例：<a href="https://mariuscnn.github.io/sports-video-coach/demo/">demo 网页</a>（程序画的练习）。</sub>
 
 </div>
 
@@ -65,14 +65,14 @@
 
 ## 试一下
 
-**1. 先看成品，不用安装：**[demo 的教练网页](https://mariusding.github.io/sports-video-coach/demo/)，以及它的讲解视频
-（[中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariusding.github.io/sports-video-coach/film.en.mp4)）。
+**1. 先看成品，不用安装：**[demo 的教练网页](https://mariuscnn.github.io/sports-video-coach/demo/)，以及它的讲解视频
+（[中文](https://mariuscnn.github.io/sports-video-coach/film.zh.mp4)、[English](https://mariuscnn.github.io/sports-video-coach/film.en.mp4)）。
 
 **2. 或者把每一步写清楚交给 agent**（[一句话开始](#一句话开始)会替你做完这些；把运动和语言换成你的）：
 
 ```text
 给我的运动视频 <你的视频路径> 做教练复盘。安装前先把完整的安装命令给我看，我同意后再装。
-安装命令行工具：`uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`（需要 ffmpeg）。
+安装命令行工具：`uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`（需要 ffmpeg）。
 运行 `sports-video-coach run <视频> --sport badminton --lang zh`，它交给你的每一步（退出码 3）都做完，
 直到退出码 0，再把教练网页给我看。
 ```
@@ -90,7 +90,7 @@
 程序画的练习视频，复盘是预先写好的，从头渲染到尾：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a   # PATH 上要有 ffmpeg
+uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a   # PATH 上要有 ffmpeg
 sports-video-coach demo --lang zh en
 ```
 
@@ -98,7 +98,7 @@ sports-video-coach demo --lang zh en
 
 ## 你会拿到什么
 
-<img align="right" width="260" alt="手机上的教练网页：比分、讲解音频、复盘报告" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/mobile.png">
+<img align="right" width="260" alt="手机上的教练网页：比分、讲解音频、复盘报告" src="https://raw.githubusercontent.com/mariusCNN/sports-video-coach/master/docs/images/mobile.png">
 
 - **一个手机教练网页**：改什么、一个练习、下次可以检查的目标、对应的片段，整份报告还能听。
 - **一段讲解视频**：出问题的地方画面暂停，圈出位置，字幕说明原因。
@@ -148,34 +148,34 @@ WASB 漏掉了大部分可见球，KaliCalib 尚不适合自动替换标定。[�
    校验器会告诉 agent 答案还缺什么。
 3. **剩下的工具来做**：片段、讲解音频、网页、讲解视频。改了报告再跑一次，只重做受影响的部分。
 
-agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md)；
-流水线怎么衔接见 [docs/architecture.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/architecture.md)。
+agent 的完整约定见 [AGENTS.md](https://github.com/mariusCNN/sports-video-coach/blob/master/AGENTS.md)；
+流水线怎么衔接见 [docs/architecture.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/architecture.md)。
 
 ## 任何运动
 
 | 插件 | 适用 |
 |---|---|
 | `generic`（内置） | 任何运动：跑步、健身、HYROX、足球、网球……；由 agent 看录像复盘，暂时没有专项跟踪和知识库（野球也行：`--sport basketball`） |
-| `basketball` | 有数据网站链接的联赛比赛，或在克隆的仓库里用 GPU 跟踪：球队和球员页面、投篮分布图（[文档](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)） |
-| `fitness` | 健身房和体能训练（深蹲、拉、单腿、增强式、微剂量）：每一组对上动作库里的动作，用姿态测每次的深度、躯干前倾、节奏和后几次变慢，加肌肉分布图（[文档](https://github.com/mariusDing/sports-video-coach/blob/master/docs/fitness.md)） |
-| 你自己的 | `sports-video-coach new-plugin <your-sport>` 生成一个能跑的插件做起点（[指南](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)） |
+| `basketball` | 有数据网站链接的联赛比赛，或在克隆的仓库里用 GPU 跟踪：球队和球员页面、投篮分布图（[文档](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.md)） |
+| `fitness` | 健身房和体能训练（深蹲、拉、单腿、增强式、微剂量）：每一组对上动作库里的动作，用姿态测每次的深度、躯干前倾、节奏和后几次变慢，加肌肉分布图（[文档](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/fitness.md)） |
+| 你自己的 | `sports-video-coach new-plugin <your-sport>` 生成一个能跑的插件做起点（[指南](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/plugins.md)） |
 
 <details><summary><b>给你的 agent 安装</b>（Claude Code 插件、Agent Skills、uv、克隆）</summary>
 
-- **Claude Code：**`/plugin marketplace add mariusDing/sports-video-coach`，然后
+- **Claude Code：**`/plugin marketplace add mariusCNN/sports-video-coach`，然后
   `/plugin install sports-video-coach@sports-video-coach`。
-- **任何支持 Agent Skills 的客户端**（Codex、Cursor 等）：`npx skills add mariusDing/sports-video-coach`，或复制
-  [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md)。
+- **任何支持 Agent Skills 的客户端**（Codex、Cursor 等）：`npx skills add mariusCNN/sports-video-coach`，或复制
+  [skills/sports-video-coach/SKILL.md](https://github.com/mariusCNN/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md)。
 - **只装命令行：**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
+  `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
   （约 60 MB，不含 torch；PATH 上要有 ffmpeg），然后 `sports-video-coach plugins` 和
   `sports-video-coach run <视频> --sport <运动>`。
-- **改代码、写插件：**`git clone https://github.com/mariusDing/sports-video-coach`，进目录后
+- **改代码、写插件：**`git clone https://github.com/mariusCNN/sports-video-coach`，进目录后
   `git checkout 74b517fc410944fefeac2979810656ed77fb8f1a`（或你选的分支），
   再 `uv sync --no-group basketball`（Python 3.11，不装 torch），命令前加 `uv run`。`uv run pytest -q` 照常能跑。
 - **从克隆做篮球跟踪**：同样克隆并 checkout 后 `uv sync`（Python 3.11，CUDA torch，几 GB），命令前加 `uv run`。
 - 每条安装命令都固定到同一个提交，装的就是你读过的代码；换版本时更新日志会写明。
-- 没有 git 或被代理挡住：从 `https://github.com/mariusDing/sports-video-coach/archive/74b517fc410944fefeac2979810656ed77fb8f1a.zip` 安装。
+- 没有 git 或被代理挡住：从 `https://github.com/mariusCNN/sports-video-coach/archive/74b517fc410944fefeac2979810656ed77fb8f1a.zip` 安装。
 - 提示 `command not found`：运行 `uv tool update-shell` 再开新终端；Git Bash 里 PATH 中的 `C:/...` 要写成 `/c/...`（例如 `/c/Users/<you>/.local/bin`）。
 
 </details>
@@ -190,7 +190,7 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 | **只在你要求时** | 用 `--publish` 在 Cloudflare 上生成不公开列出的链接（拿到链接的人都能打开） |
 
 单个视频留在原处；帧、片段和报告放在工作区文件夹。不会发给任何统计或埋点服务。
-网页里有真人：只分享给出现在里面的人。详见 [docs/privacy.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/privacy.md)。
+网页里有真人：只分享给出现在里面的人。详见 [docs/privacy.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/privacy.md)。
 
 </details>
 
@@ -198,8 +198,8 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
 
 一个可续跑的命令行：需要 agent 的眼睛或文字时就以退出码 3 停下，每个 agent 步骤都有校验器（检查必需的文件和复盘字段），并按文件判断新旧，
 所以中断后从停下的地方继续，改动后只重做变旧的部分。
-架构见 [docs/architecture.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/architecture.md)；
-项目最初是 `hoop-tape-miner`，给一支业余篮球队用的看片室（[docs/basketball.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)）。
+架构见 [docs/architecture.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/architecture.md)；
+项目最初是 `hoop-tape-miner`，给一支业余篮球队用的看片室（[docs/basketball.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.md)）。
 
 </details>
 
@@ -211,18 +211,18 @@ agent 的完整约定见 [AGENTS.md](https://github.com/mariusDing/sports-video-
   Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997（low effort 时 0.778）· Claude Sonnet 5.5 默认 effort 0.419，high 时 0.931（4 次，0.856–0.994；max 超时）·
   本地显卡上的 qwen3-vl 4B 0.000。
   每个设置跑了一到四次；目前所有运行都是作者自己跑的。
-- [中文排行榜](https://mariusding.github.io/sports-video-coach/benchmark/zh/#frames-svc-bench-3-fresh) · [自己数一数触球](https://mariusding.github.io/sports-video-coach/benchmark/zh/#count) · [方法和提交方式](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)（英文）
+- [中文排行榜](https://mariuscnn.github.io/sports-video-coach/benchmark/zh/#frames-svc-bench-3-fresh) · [自己数一数触球](https://mariuscnn.github.io/sports-video-coach/benchmark/zh/#count) · [方法和提交方式](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/benchmark.md)（英文）
 - 重跑新种子榜：先安装（需要 ffmpeg），再跑一条命令（`--seed` 抽一个新种子；
   加上 `--model claude-sonnet-5-5 --effort high` 就是重跑 Sonnet 5.5 high 那一项）：
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
+uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
-- 不想在本机安装：[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+- 不想在本机安装：[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusCNN/sports-video-coach)
   （用你自己 GitHub 账号的免费时长；在里面登录你的 agent，再在命令前面加上 `uv run`；
-  [说明](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)，英文）。
+  [说明](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)，英文）。
 
 <details><summary>别的 agent CLI，或自己显卡上的视觉模型</summary>
 
@@ -230,11 +230,11 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
   `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
 - Gemini CLI、Qwen Code、Aider、Cursor CLI、Copilot CLI、Goose：这些预设的参数已对照各 CLI 的 `--help` 核对，但还没人用真 CLI 跑过题目。
   OpenCode 用免费模型、不登录跑过：计入一次，0.000，到时限被杀时还没写答案（快结束时免费额度用完）；另有三次不计入（我们预设的 bug，以及两次免费额度用完）（[详情](docs/benchmark.md#opencode-run-once-2026-10-25)）。
-  [跑一次，把结果发来（issue #7）](https://github.com/mariusDing/sports-video-coach/issues/7)。
+  [跑一次，把结果发来（issue #7）](https://github.com/mariusCNN/sports-video-coach/issues/7)。
 
 </details>
 
-<a href="https://mariusding.github.io/sports-video-coach/benchmark/zh/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="基准测试短片：程序画的颠球视频，agent 看到的一次快速连续两触的静帧，再对比真实触球数（47）和各个模型的回答"></a>
+<a href="https://mariuscnn.github.io/sports-video-coach/benchmark/zh/"><img src="https://mariuscnn.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="基准测试短片：程序画的颠球视频，agent 看到的一次快速连续两触的静帧，再对比真实触球数（47）和各个模型的回答"></a>
 
 ## 状态与贡献
 
@@ -246,8 +246,8 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 - [ ] 扩大不同球馆、机位的独立验证，再决定是否将实验模型作为默认流程。
 
 欢迎贡献你熟悉的运动的插件、提示词、修复和文档：
-[CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md)、
-[good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
+[CONTRIBUTING.md](https://github.com/mariusCNN/sports-video-coach/blob/master/CONTRIBUTING.md)、
+[good first issues](https://github.com/mariusCNN/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
 不要在 issue 或 PR 里附上真实球员的视频、帧或名字。
 
 ## 教练知识库：欢迎一起完善
@@ -256,20 +256,20 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
 内容参考公开的 FIBA / Jr. NBA 教练资料和运动科学研究，用我们自己的话写成，每条都注明出处。
 用一句话开始分析篮球视频时，agent 会按这些条目给出改进点和练习，并写明用的是哪一条；没有合适的条目，就说明这是它自己的建议。
 条目只用来指导建议；快速开始不做跟踪，也不做测量。
-[知识库里有什么、怎么补充](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md)。
+[知识库里有什么、怎么补充](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/knowledge-base.md)。
 
 - **什么运动都行：先用起来，再一起补充**。跑步、健身、HYROX、足球，都可以用[一句话开始](#一句话开始)跑一遍。
-  通用插件什么运动都能看录像复盘，但这些运动还没有自己的跟踪和知识库。告诉我们你这项运动的教练会看什么。提一个[教练知识 issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml)就够了，不用写代码。
+  通用插件什么运动都能看录像复盘，但这些运动还没有自己的跟踪和知识库。告诉我们你这项运动的教练会看什么。提一个[教练知识 issue](https://github.com/mariusCNN/sports-video-coach/issues/new?template=coaching_knowledge.yml)就够了，不用写代码。
 - 篮球条目的纠错、更新的研究、更好的练习方法，也欢迎这样提。
 
 <sub>与 FIBA、NBA 及所引用的作者均无关联，也未获其认可。</sub>
 
 ## 支持
 
-[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach)
+[![GitHub stars](https://img.shields.io/github/stars/mariusCNN/sports-video-coach?logo=github&label=star)](https://github.com/mariusCNN/sports-video-coach)
 
 免费开源，是一个打业余联赛的球员用空闲时间做的。
 觉得有用，就去 GitHub 点个 ☆ star。看到 star，我就知道它真帮到了人，也能让更多打球的人找到它。
 分析顺利跑完后，你的 agent 只会问你一次，你点头它才会帮你点。
 
-[MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)。运行时下载的模型保留各自的许可证。
+[MIT](https://github.com/mariusCNN/sports-video-coach/blob/master/LICENSE)。运行时下载的模型保留各自的许可证。

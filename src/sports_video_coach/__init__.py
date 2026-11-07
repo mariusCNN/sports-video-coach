@@ -5,7 +5,7 @@ to do), provenance, media helpers, clips, narration, the HTML page, the explaine
 in plugins (see `plugin.py`): basketball (`hoop_tape_miner`) and the built-in `generic` plugin ship with the repo.
 """
 
-REPO_URL = "https://github.com/mariusDing/sports-video-coach"
+REPO_URL = "https://github.com/mariusCNN/sports-video-coach"
 # The revision every install command in the docs, the skill and the demo site pins (tests/test_install_pin.py
 # checks they all name this one, and that it is a commit of this repo). Move it to a release tag when one is cut.
 INSTALL_REF = "74b517fc410944fefeac2979810656ed77fb8f1a"

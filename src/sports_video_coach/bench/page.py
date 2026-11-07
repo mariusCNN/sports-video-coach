@@ -31,15 +31,16 @@ from . import effort as effort_chart
 from . import run as bench_run
 from .score import BASELINE_AGENT, SUITES as TRUTH_SUITES, above_chance, is_num, score_task, suite_tasks
 
-OWNER = "mariusDing"           # the repo owner, who also wrote the tool and submitted its first runs
+OWNER = "mariusCNN"            # the repo owner, who also wrote the tool and submitted its first runs
+OWNER_NAMES = {"mariuscnn", "mariusding"}  # the same account before its 2026-11 rename (older submitted_by)
 REPO_URL = f"https://github.com/{OWNER}/sports-video-coach"
 DOC_URL = f"{REPO_URL}/blob/master/docs/benchmark.md"
 RESULTS_URL = f"{REPO_URL}/tree/master/benchmark/results"
 ISSUE_URL = f"{REPO_URL}/issues/new?template=benchmark_result.yml"
 CODESPACES_URL = f"https://codespaces.new/{OWNER}/sports-video-coach"   # .devcontainer/: uv, ffmpeg, agent CLIs
 WANTED_URL = f"{REPO_URL}/issues/7"   # open issue: run an untested preset against the real CLI, send the row
-PAGE_URL = "https://mariusding.github.io/sports-video-coach/benchmark/"   # where the demo-site CI publishes it
-DEMO_URL = "https://mariusding.github.io/sports-video-coach/demo/"        # the coaching page the demo builds
+PAGE_URL = "https://mariuscnn.github.io/sports-video-coach/benchmark/"   # where the demo-site CI publishes it
+DEMO_URL = "https://mariuscnn.github.io/sports-video-coach/demo/"        # the coaching page the demo builds
 SUITE = "svc-bench-1"          # a result file without a suite field is from suite 1
 SUITES = (                     # (name, what it is), shown in this order; unknown suites follow by name
     ("svc-bench-3", "Eyes: four drawn videos whose events are small, short or hidden: a ball 5 px in radius on a "
@@ -872,7 +873,7 @@ def headline(rows: list[dict], lang: str = "en") -> str:
     bars = [b for g in data["groups"] for b in g["bars"]]
     by = {r["_file"]: r for r in rows}
     files = [f for b in bars for f in b["files"]]
-    owner = all(str(by[f].get("submitted_by") or "").lower() == OWNER.lower() for f in files)
+    owner = all(str(by[f].get("submitted_by") or "").lower() in OWNER_NAMES for f in files)
 
     def said(b: dict) -> str:   # "high 0.931 (n=4, 0.856–0.994)"
         e = t("default", lang) if b["effort"] == effort_chart.DEFAULT else b["effort"]
@@ -932,7 +933,7 @@ def facts(rows: list[dict], lang: str = "en") -> list[str]:
     if not runs:
         return []
     n = len(runs)
-    by_owner = sum(1 for r in runs if str(r.get("submitted_by") or "").lower() == OWNER.lower())
+    by_owner = sum(1 for r in runs if str(r.get("submitted_by") or "").lower() in OWNER_NAMES)
     others = n - by_owner
     own = sum(1 for r in runs if any(m in str(r["contender"].get("settings") or "") for m in OWN_CONFIG))
     singles = contenders = 0

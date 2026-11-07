@@ -110,7 +110,7 @@ def test_indexnow_key_and_body():
     import re
     assert re.fullmatch(r"[A-Za-z0-9-]{8,128}", demo.INDEXNOW_KEY)   # the protocol's key format
     body = demo.indexnow_body()
-    assert body["host"] == "mariusding.github.io" and body["key"] == demo.INDEXNOW_KEY
+    assert body["host"] == "mariuscnn.github.io" and body["key"] == demo.INDEXNOW_KEY
     # the key file sits under the project path, which scopes it to URLs under SITE_URL: every URL must be there
     assert body["keyLocation"] == f"{demo.SITE_URL}{demo.INDEXNOW_KEY}.txt"
     assert body["urlList"] == list(demo.SITE_PAGES) and all(u.startswith(demo.SITE_URL) for u in body["urlList"])

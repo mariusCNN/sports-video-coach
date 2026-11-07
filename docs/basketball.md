@@ -2,11 +2,11 @@
 
 **Mine your basketball game tape for the insights that win the next game.**
 
-[![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
+[![tests](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](../pyproject.toml)
 [![Agent: Claude Code | Codex](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-8A2BE2.svg)](../AGENTS.md)
-[![good first issues](https://img.shields.io/github/issues/mariusDing/sports-video-coach/good%20first%20issue.svg?label=good%20first%20issues)](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+[![good first issues](https://img.shields.io/github/issues/mariusCNN/sports-video-coach/good%20first%20issue.svg?label=good%20first%20issues)](https://github.com/mariusCNN/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
 
 English · [中文](basketball.zh.md)
 
@@ -75,7 +75,7 @@ One command drives all of it: `hoop-tape-miner run`. It knows which file each st
 ### 2. Install
 
 ```bash
-git clone https://github.com/mariusDing/sports-video-coach.git    # or your fork
+git clone https://github.com/mariusCNN/sports-video-coach.git    # or your fork
 cd sports-video-coach
 git checkout 74b517fc410944fefeac2979810656ed77fb8f1a
 uv sync
@@ -193,11 +193,11 @@ Working end to end on real games (one side-on camera, NVIDIA GPU). Known limits 
 - [ ] More report and narration languages beyond English and Chinese
 - [ ] Better handling of panning or phone-recorded video
 
-Ideas and votes are welcome in [Discussions](https://github.com/mariusDing/sports-video-coach/discussions).
+Ideas and votes are welcome in [Discussions](https://github.com/mariusCNN/sports-video-coach/discussions).
 
 ## Contributing
 
-Contributions are welcome, from a typo fix to a new league fetcher. Start with [CONTRIBUTING.md](../CONTRIBUTING.md) and the [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22). Ask questions in [Discussions](https://github.com/mariusDing/sports-video-coach/discussions).
+Contributions are welcome, from a typo fix to a new league fetcher. Start with [CONTRIBUTING.md](../CONTRIBUTING.md) and the [good first issues](https://github.com/mariusCNN/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22). Ask questions in [Discussions](https://github.com/mariusCNN/sports-video-coach/discussions).
 
 One hard rule: never attach game videos, frames, rosters or names of real players to issues or pull requests. See [docs/privacy.md](privacy.md).
 

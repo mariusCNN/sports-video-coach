@@ -122,7 +122,7 @@ def test_no_external_urls_but_repo_and_evidence(tmp_path):
     _, html = render(tmp_path, results)
     html = re.sub(r'<script type="application/ld\+json">.*?</script>', "", html, flags=re.S)  # data, not fetched
     urls = set(re.findall(r"""(?:https?:)?//[^\s"'<>)]+""", html))
-    allowed = ("https://github.com/mariusDing/sports-video-coach", "https://example.org/ev", page.PAGE_URL, page.DEMO_URL,
+    allowed = ("https://github.com/mariusCNN/sports-video-coach", "https://example.org/ev", page.PAGE_URL, page.DEMO_URL,
                page.CODESPACES_URL)
     assert urls and all(u.startswith(allowed) for u in urls), urls
     assert "<script" not in html                            # self-contained: no stylesheet or script fetched
@@ -385,7 +385,7 @@ def test_skeptic_facts_are_counted_from_the_files(tmp_path):
     facts = html[html.index('id="facts"'):html.index('id="leaderboard"')]
     assert "Before you trust this: 11 things" in facts
     assert "no run used a fresh seed yet" in facts
-    assert "2 of 3 runs were submitted by mariusDing" in facts and "1 by others" in facts
+    assert "2 of 3 runs were submitted by mariusCNN" in facts and "1 by others" in facts
     assert "2 of 3 runs say in Settings" in facts
     assert "1 of 2 contenders" in facts and "differed by up to 0.524" in facts   # A: 0.869 vs 0.345 above
     assert "up to 0.30 on one task (cadence)" in facts
@@ -430,7 +430,7 @@ def test_rerun_section_links_codespaces_in_both_languages(tmp_path):
     results.mkdir()
     out, html = render(tmp_path, results)
     zh = (out / "zh" / "index.html").read_text(encoding="utf8")
-    assert page.CODESPACES_URL == "https://codespaces.new/mariusDing/sports-video-coach"
+    assert page.CODESPACES_URL == "https://codespaces.new/mariusCNN/sports-video-coach"
     for doc, label in ((html, "Open in GitHub Codespaces"), (zh, "在 GitHub Codespaces 中打开")):
         para = doc[doc.index('<p id="codespaces">'):]
         para = para[:para.index("</p>")]
@@ -543,7 +543,7 @@ def test_dataset_structured_data_and_sitemap_lastmod(tmp_path):
         assert ld["url"] == page.URLS[lang] and ld["inLanguage"] == page.TAGS[lang]
         assert ld["name"] and 50 <= len(ld["description"]) <= 5000
         assert ld["sameAs"] == page.REPO_URL and ld["license"] == page.LICENSE_URL
-        assert ld["creator"] == {"@type": "Person", "name": "mariusDing", "url": "https://github.com/mariusDing"}
+        assert ld["creator"] == {"@type": "Person", "name": "mariusCNN", "url": "https://github.com/mariusCNN"}
         assert ld["dateModified"] == "2026-10-23"                       # the newest result file, not the build
         assert ld["keywords"] and ld["measurementTechnique"]
         assert {v["name"] for v in ld["variableMeasured"]} == {k for k, _, _ in page.KINDS} | {"total", "above chance"}

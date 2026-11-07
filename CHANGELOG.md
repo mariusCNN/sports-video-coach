@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The repo now lives at github.com/mariusCNN/sports-video-coach (the owner's account was renamed). Every link,
+  install command, badge, Codespaces button and the demo site (now https://mariuscnn.github.io/sports-video-coach/;
+  the old mariusding.github.io address returns 404) point there. Benchmark runs submitted under the old name still
+  count as the author's.
 - Report pages: every report now ends with one muted line in its language saying it was made with
   sports-video-coach, linking the README's one-prompt start (the Chinese README for Chinese). The link is absolute,
   so `--share` files and published pages keep it.

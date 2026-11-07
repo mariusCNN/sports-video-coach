@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        How entries are built and how they are used: [docs/knowledge-base.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md).
+        How entries are built and how they are used: [docs/knowledge-base.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/knowledge-base.md).
         Write in your own words and cite a source. **No copied pages, PDFs or images from manuals, and no real players (names, photos, frames).**
   - type: input
     id: sport

@@ -2,11 +2,11 @@
 
 **从比赛录像里，挖出能赢下一场的东西。**
 
-[![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
+[![tests](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](../pyproject.toml)
 [![Agent: Claude Code | Codex](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-8A2BE2.svg)](../AGENTS.md)
-[![good first issues](https://img.shields.io/github/issues/mariusDing/sports-video-coach/good%20first%20issue.svg?label=good%20first%20issues)](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+[![good first issues](https://img.shields.io/github/issues/mariusCNN/sports-video-coach/good%20first%20issue.svg?label=good%20first%20issues)](https://github.com/mariusCNN/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
 
 [English](basketball.md) · 中文
 
@@ -75,7 +75,7 @@
 ### 2. 安装
 
 ```bash
-git clone https://github.com/mariusDing/sports-video-coach.git    # 或者你的 fork
+git clone https://github.com/mariusCNN/sports-video-coach.git    # 或者你的 fork
 cd sports-video-coach
 git checkout 74b517fc410944fefeac2979810656ed77fb8f1a
 uv sync
@@ -186,11 +186,11 @@ workspace/                 你自己的数据：球队档案、比赛、报告�
 - [ ] 中英文之外的更多报告和口播语言
 - [ ] 更好地处理会转动的机位或手机录像
 
-欢迎在 [Discussions](https://github.com/mariusDing/sports-video-coach/discussions) 里提想法、投票。
+欢迎在 [Discussions](https://github.com/mariusCNN/sports-video-coach/discussions) 里提想法、投票。
 
 ## 参与贡献
 
-从改一个错别字到新增一个联赛抓取器，都欢迎。先看 [CONTRIBUTING.md](../CONTRIBUTING.md) 和 [good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22)，有问题去 [Discussions](https://github.com/mariusDing/sports-video-coach/discussions) 问。
+从改一个错别字到新增一个联赛抓取器，都欢迎。先看 [CONTRIBUTING.md](../CONTRIBUTING.md) 和 [good first issues](https://github.com/mariusCNN/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22)，有问题去 [Discussions](https://github.com/mariusCNN/sports-video-coach/discussions) 问。
 
 一条硬规定：永远不要在 issue 或 PR 里附上比赛录像、截图、名单或真实球员的名字。详见 [docs/privacy.md](privacy.md)。
 

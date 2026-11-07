@@ -100,7 +100,7 @@ guide the advice only: this path does no tracking or measuring, so every claim s
 
 ## Propose an entry or a correction
 
-- **Quickest:** open a [Coaching knowledge issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml)
+- **Quickest:** open a [Coaching knowledge issue](https://github.com/mariusCNN/sports-video-coach/issues/new?template=coaching_knowledge.yml)
   with the sport, the entry (new or which slug), the change, the source with a link and the evidence level. Coaches
   who do not write code are welcome; we turn a good issue into an entry.
 - **As a pull request:** edit the KB file, keep the fields in the order above, put the source on the entry, and run
@@ -122,6 +122,6 @@ every other sport run through the `generic` plugin today: the agent reviews the 
 4. Ship it as a pull request adding `examples/plugins/<sport>/` or in its own repo (see
    [docs/plugins.md](plugins.md#share-it)).
 
-Not ready to write a plugin? Open a [Coaching knowledge issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml)
+Not ready to write a plugin? Open a [Coaching knowledge issue](https://github.com/mariusCNN/sports-video-coach/issues/new?template=coaching_knowledge.yml)
 with a few entries for your sport: what you look for on film, the cue, the drill and the source. That is the
 start of a plugin.

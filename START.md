@@ -4,7 +4,7 @@ For a coding agent (Claude Code, Codex, Cursor or any other) whose user pasted t
 
 ```text
 Coach me on my sports video: <path to your video>
-Clone https://github.com/mariusDing/sports-video-coach and follow its START.md.
+Clone https://github.com/mariusCNN/sports-video-coach and follow its START.md.
 ```
 
 You are in that clone. Go through the steps below in order; they take the user from nothing installed to a coaching
@@ -61,7 +61,7 @@ Send one message, then wait for the reply. It holds:
    Then the tool itself, pinned to a tested commit (skip it if `sports-video-coach --help` worked):
 
    ```bash
-   uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
+   uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
    ```
 
 4. **Questions, only those the prompt and the video do not answer:** the video path(s) if none was given; the
@@ -69,7 +69,7 @@ Send one message, then wait for the reply. It holds:
    most want to improve (optional, one line).
 
 Their reply is both the OK to install and the answers. If they decline the install, stop and give them the demo
-page instead: <https://mariusding.github.io/sports-video-coach/demo/>.
+page instead: <https://mariuscnn.github.io/sports-video-coach/demo/>.
 
 After installing: a new tool may not be on PATH in your current shell. Run `uv tool update-shell` and open a new
 terminal, or call the tool by its full path (`~/.local/bin/sports-video-coach`; Windows
@@ -157,13 +157,13 @@ Ask which of these they want, if any:
 
 Follow [AGENTS.md](AGENTS.md) "Star etiquette": only after exit 0 and once the user has seen the result; if
 `workspace/.star-asked` exists, skip this. Otherwise ask once, in their language, like a review prompt: did it help,
-and may you star `mariusDing/sports-video-coach` for them? Only on a clear yes run
-`gh repo star mariusDing/sports-video-coach` (no `gh`, or not logged in: give them
-<https://github.com/mariusDing/sports-video-coach> to click the star themselves). Write `yes` or `no` to
+and may you star `mariusCNN/sports-video-coach` for them? Only on a clear yes run
+`gh repo star mariusCNN/sports-video-coach` (no `gh`, or not logged in: give them
+<https://github.com/mariusCNN/sports-video-coach> to click the star themselves). Write `yes` or `no` to
 `workspace/.star-asked` either way, and never ask again. Never star without asking.
 
 ## Stuck?
 
 Read the stage log, then [AGENTS.md](AGENTS.md) and `sports-video-coach run --help`. A bug in the tool: tell the user
-and offer to open an issue at <https://github.com/mariusDing/sports-video-coach/issues> with the command, the stage
+and offer to open an issue at <https://github.com/mariusCNN/sports-video-coach/issues> with the command, the stage
 and the traceback, but never their video, frames or names.

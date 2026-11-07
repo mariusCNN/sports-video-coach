@@ -8,10 +8,10 @@ This project analyses real people, often amateurs and sometimes minors. **Never 
 
 ## Ways to help
 
-- **Questions and ideas:** [Discussions](https://github.com/mariusDing/sports-video-coach/discussions).
+- **Questions and ideas:** [Discussions](https://github.com/mariusCNN/sports-video-coach/discussions).
 - **Bugs:** open an issue with the bug form. Include the stage, the command and the traceback.
 - **Features:** open an issue first so we can agree on the approach before you write code.
-- **First contribution?** Pick a [good first issue](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22).
+- **First contribution?** Pick a [good first issue](https://github.com/mariusCNN/sports-video-coach/issues?q=is%3Aopen+label%3A%22good+first+issue%22).
 
 ## Development setup
 
@@ -51,7 +51,7 @@ uv run --no-sync pytest -q
 
 ## The demo site
 
-`.github/workflows/demo-site.yml` builds <https://mariusding.github.io/sports-video-coach/> on every push to `master`
+`.github/workflows/demo-site.yml` builds <https://mariuscnn.github.io/sports-video-coach/> on every push to `master`
 that touches the code: `sports-video-coach demo --site _site` (landing page, `demo/`, `sitemap.xml` and the IndexNow
 key file) plus `bench page` (`benchmark/`). Google finds it through the sitemap in Search Console (owner only).
 For Bing, Yandex, Seznam, Naver and the other [IndexNow](https://www.indexnow.org/documentation) engines, run this by
@@ -82,7 +82,7 @@ sports-video-coach demo indexnow             # POST to api.indexnow.org; 200 or 
 The coaching advice comes from knowledge bases in `prompts/` (`coach_kb.md`, `skill_kb.md`, `movement_kb.md`,
 `fuel_recovery_kb.md`). New entries, corrections, newer studies and better drills are welcome, for basketball or
 any other sport, and you do not need to write code: open a
-[coaching knowledge issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml). How an entry is built, the source and copyright rules (your own words, a cited
+[coaching knowledge issue](https://github.com/mariusCNN/sports-video-coach/issues/new?template=coaching_knowledge.yml). How an entry is built, the source and copyright rules (your own words, a cited
 source, no copied pages or PDFs, never implying endorsement) and how a sport plugin ships its own KB:
 [docs/knowledge-base.md](docs/knowledge-base.md).
 

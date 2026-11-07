@@ -26,7 +26,7 @@ from .. import media
 from . import frames as F, score as S
 from .suite import SUITE
 
-ISSUE_FORM = "https://github.com/mariusDing/sports-video-coach/issues/new"
+ISSUE_FORM = "https://github.com/mariusCNN/sports-video-coach/issues/new"
 MAX_URL = 7500           # GitHub rejects much longer prefilled URLs; past this the result is pasted by hand
 AGENTS = {"claude": "Claude Code", "codex": "Codex"}
 

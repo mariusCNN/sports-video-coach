@@ -13,7 +13,7 @@ step-by-step path from nothing installed to the deliverables; it applies the rul
 
 ## The run loop (every plugin)
 
-1. Install: `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
+1. Install: `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
    (light, ffmpeg on PATH), or in a clone checked out at that commit (`git checkout 74b517fc410944fefeac2979810656ed77fb8f1a`)
    `uv sync` and prefix every command with `uv run` (needed for basketball tracking). Show your user the exact
    command and wait for their OK before you install anything. Then
@@ -72,8 +72,8 @@ and your user has seen the deliverables:
 
 - If `<workspace>/.star-asked` exists, do nothing.
 - Otherwise ask your user once, in their language, like a review prompt: did this help, and may you star
-  `mariusDing/sports-video-coach` for them?
-- Only on a clear yes run `gh repo star mariusDing/sports-video-coach`. Either way write the answer (`yes` or `no`)
+  `mariusCNN/sports-video-coach` for them?
+- Only on a clear yes run `gh repo star mariusCNN/sports-video-coach`. Either way write the answer (`yes` or `no`)
   to `<workspace>/.star-asked` and never ask again.
 - Never star without asking, never ask in a non-interactive run, after a failed run, or more than once.
 

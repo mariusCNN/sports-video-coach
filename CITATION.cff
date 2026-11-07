@@ -8,8 +8,8 @@ authors:
 version: 0.3.0
 date-released: 2026-10-23
 license: MIT
-repository-code: "https://github.com/mariusDing/sports-video-coach"
-url: "https://mariusding.github.io/sports-video-coach/"
+repository-code: "https://github.com/mariusCNN/sports-video-coach"
+url: "https://mariuscnn.github.io/sports-video-coach/"
 keywords:
   - sports video analysis
   - basketball

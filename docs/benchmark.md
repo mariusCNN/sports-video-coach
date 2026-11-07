@@ -3,13 +3,13 @@
 Which coding agent and vision model reviews sports film best? This benchmark scores each run against ground truth,
 so every number is measured, not judged.
 
-- **Leaderboard:** <https://mariusding.github.io/sports-video-coach/benchmark/> (in Chinese: <https://mariusding.github.io/sports-video-coach/benchmark/zh/>, built from the same result files)
+- **Leaderboard:** <https://mariuscnn.github.io/sports-video-coach/benchmark/> (in Chinese: <https://mariuscnn.github.io/sports-video-coach/benchmark/zh/>, built from the same result files)
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
 - **Commands:** `sports-video-coach bench run | prepare | score | validate | page | baseline`
 - **Install** (needs ffmpeg on PATH; the command pins one commit, so you install what you read):
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`,
+  `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`,
   then [run your agent in one command](#add-your-agent-in-one-command).
-- **Findings in short:** <https://mariusding.github.io/sports-video-coach/benchmark/findings/> (what effort changed, the blind floor, local models, cost)
+- **Findings in short:** <https://mariuscnn.github.io/sports-video-coach/benchmark/findings/> (what effort changed, the blind floor, local models, cost)
 
 ## Suites
 
@@ -412,7 +412,7 @@ other setting, each on its own seed, so this is not a variance estimate):
 
 ## Rerun it in the browser
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusCNN/sports-video-coach)
 
 No local install needed. A codespace (or VS Code Dev Containers on your own machine, from `.devcontainer/`) comes
 with Python 3.11, uv, ffmpeg, the light core (no torch, no GPU) and the Claude Code and Codex CLIs.
@@ -471,7 +471,7 @@ run, and the presets are tested against fake binaries that record their argument
 version; `--dry-run` prints the exact command, and `--agent cmd --cmd "..."` runs your own. The result's `settings` starts with `preset, not run
 by the maintainer (--agent <name>)`; the version is read with the CLI's own version command.
 
-**Use one of these agents?** [Issue #7](https://github.com/mariusDing/sports-video-coach/issues/7) asks for one run
+**Use one of these agents?** [Issue #7](https://github.com/mariusCNN/sports-video-coach/issues/7) asks for one run
 of each preset: send the result row, or the error if a flag is wrong (or fix the argv in
 `src/sports_video_coach/bench/run.py`).
 
@@ -637,7 +637,7 @@ Pick one:
   check and the summary says why. To see the same report before you open the pull request:
   `sports-video-coach bench report benchmark/results/<your file>.json` (Markdown on stdout, exit 1 if invalid).
 - **Issue form:** paste the file into the
-  [benchmark result form](https://github.com/mariusDing/sports-video-coach/issues/new?template=benchmark_result.yml);
+  [benchmark result form](https://github.com/mariusCNN/sports-video-coach/issues/new?template=benchmark_result.yml);
   a maintainer adds it. This is the path that needs no git.
 
 An evidence link (a gist, a transcript, a log) is optional but makes your row easier to trust. The maintainer's
@@ -655,7 +655,7 @@ and link them; the page labels such a link "transcript".
 - The leaderboard page is rebuilt from the folder by `bench page` on every push to master. A file that does not
   parse is listed on the page as skipped, never silently dropped.
 - The same build writes `leaderboard.json` next to the page
-  (<https://mariusding.github.io/sports-video-coach/benchmark/leaderboard.json>, `bench/export.py`): one board per
+  (<https://mariuscnn.github.io/sports-video-coach/benchmark/leaderboard.json>, `bench/export.py`): one board per
   track and suite with runs, in the page's order, each with its floor file, its contenders ranked as the page's
   Summary ranks them (rank, runs, mean total, mean and range of above chance, mean time and cost) and every run
   (file, date, agent, model, settings, submitter, seed, total, above chance, time, cost, evidence link). Every

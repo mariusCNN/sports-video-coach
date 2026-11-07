@@ -4,14 +4,14 @@
 
 ### Turn your coding agent into your sports coach.
 
-**English** · [中文](https://github.com/mariusDing/sports-video-coach/blob/master/README.zh.md)
+**English** · [中文](https://github.com/mariusCNN/sports-video-coach/blob/master/README.zh.md)
 
 For adults who train on their own: film a session on your phone, and your agent (Claude Code, Codex ...)
 tells you what to fix and how to practise it.
 
-<a href="https://mariusding.github.io/sports-video-coach/#training-example"><img alt="A real training review in 43 seconds: the author's own shooting session, freeze-frame cues, two attempts compared, then the next practice" src="https://github.com/mariusDing/sports-video-coach/releases/download/showcase-2026-10-29/poster-en-wide.jpg" width="720"></a>
+<a href="https://mariuscnn.github.io/sports-video-coach/#training-example"><img alt="A real training review in 43 seconds: the author's own shooting session, freeze-frame cues, two attempts compared, then the next practice" src="https://github.com/mariusCNN/sports-video-coach/releases/download/showcase-2026-10-29/poster-en-wide.jpg" width="720"></a>
 
-**[▶ Watch a real training review (43 s)](https://mariusding.github.io/sports-video-coach/#training-example)** · [vertical version](https://github.com/mariusDing/sports-video-coach/releases/download/showcase-2026-10-29/sports-video-coach-en-vertical.mp4)<br>
+**[▶ Watch a real training review (43 s)](https://mariuscnn.github.io/sports-video-coach/#training-example)** · [vertical version](https://github.com/mariusCNN/sports-video-coach/releases/download/showcase-2026-10-29/sports-video-coach-en-vertical.mp4)<br>
 <sub>The author's own session, reviewed by the agent and edited for length. Not a before/after or an accuracy measurement.</sub>
 
 </div>
@@ -34,7 +34,7 @@ Paste this into Claude Code, Codex or another coding agent:
 
 ```text
 Coach me on my sports video: <path to your video>
-Clone https://github.com/mariusDing/sports-video-coach and follow its START.md.
+Clone https://github.com/mariusCNN/sports-video-coach and follow its START.md.
 ```
 
 **What happens next:** your agent clones the repo and follows [START.md](START.md). It shows you every install
@@ -46,18 +46,18 @@ the explained video are ready, then offers a plan for your next practice.
 
 [All features](docs/features.md) · [Basketball](docs/basketball.md) · [Agent entry points](llms.txt)
 
-**Try it:** [demo page, no install](https://mariusding.github.io/sports-video-coach/demo/) ·
-[open in Codespaces](https://codespaces.new/mariusDing/sports-video-coach)
+**Try it:** [demo page, no install](https://mariuscnn.github.io/sports-video-coach/demo/) ·
+[open in Codespaces](https://codespaces.new/mariusCNN/sports-video-coach)
 
-[![release](https://img.shields.io/github/v/release/mariusDing/sports-video-coach)](https://github.com/mariusDing/sports-video-coach/releases)
-[![tests](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusDing/sports-video-coach/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE)
-[![Works with Claude Code and Codex](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex%20%7C%20AGENTS.md-8A2BE2.svg)](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md)
+[![release](https://img.shields.io/github/v/release/mariusCNN/sports-video-coach)](https://github.com/mariusCNN/sports-video-coach/releases)
+[![tests](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/mariusCNN/sports-video-coach/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mariusCNN/sports-video-coach/blob/master/LICENSE)
+[![Works with Claude Code and Codex](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex%20%7C%20AGENTS.md-8A2BE2.svg)](https://github.com/mariusCNN/sports-video-coach/blob/master/AGENTS.md)
 
-<img alt="A real run on the author's shooting drill: the clip, the agent's film review pausing where the finish is held, then the coaching page" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/real-session.gif" width="720">
+<img alt="A real run on the author's shooting drill: the clip, the agent's film review pausing where the finish is held, then the coaching page" src="https://raw.githubusercontent.com/mariusCNN/sports-video-coach/master/docs/images/real-session.gif" width="720">
 
 <sub>A real run on the author's own shooting drill: your video → the agent's film review → your coaching page.
-No install needed to see a full example: <a href="https://mariusding.github.io/sports-video-coach/demo/">the demo page</a> (a synthetic drill).</sub>
+No install needed to see a full example: <a href="https://mariuscnn.github.io/sports-video-coach/demo/">the demo page</a> (a synthetic drill).</sub>
 
 </div>
 
@@ -70,14 +70,14 @@ its model provider, like anything else you show it. Free and MIT.
 
 ## Try it
 
-**1. See what you get, no install:** the [demo coaching page](https://mariusding.github.io/sports-video-coach/demo/) and its explained video
-([English](https://mariusding.github.io/sports-video-coach/film.en.mp4), [中文](https://mariusding.github.io/sports-video-coach/film.zh.mp4)).
+**1. See what you get, no install:** the [demo coaching page](https://mariuscnn.github.io/sports-video-coach/demo/) and its explained video
+([English](https://mariuscnn.github.io/sports-video-coach/film.en.mp4), [中文](https://mariuscnn.github.io/sports-video-coach/film.zh.mp4)).
 
 **2. Or spell out each step for your agent** (the [one prompt](#start-in-one-prompt) does all this for you; set your sport and language):
 
 ```text
 Coach me on my sports video <path to your video>. Show me the exact install command and wait for my OK.
-Install the CLI: `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a` (it needs ffmpeg).
+Install the CLI: `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a` (it needs ffmpeg).
 Run `sports-video-coach run <video> --sport soccer --lang en`, do each step it hands you (exit code 3)
 until it exits 0, then show me the coaching page.
 ```
@@ -96,7 +96,7 @@ agent plan.
 A synthetic drill with a pre-written review, rendered end to end:
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a   # needs ffmpeg on PATH
+uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a   # needs ffmpeg on PATH
 sports-video-coach demo
 ```
 
@@ -104,7 +104,7 @@ sports-video-coach demo
 
 ## What you get
 
-<img align="right" width="260" alt="The coaching page on a phone: score, audio read-out, the report" src="https://raw.githubusercontent.com/mariusDing/sports-video-coach/master/docs/images/mobile.png">
+<img align="right" width="260" alt="The coaching page on a phone: score, audio read-out, the report" src="https://raw.githubusercontent.com/mariusCNN/sports-video-coach/master/docs/images/mobile.png">
 
 - **A coaching page for your phone:** what to fix, with a drill and a target to check next time for each fix,
   the clips that show it, and a spoken version of the report.
@@ -159,35 +159,35 @@ dependencies. Check availability with `hoop-tape-miner perception-lab --help`.
 3. **The tool renders the rest:** clips, narration, the page, the explained video. Edit the report and run again:
    only what the change affects is redone.
 
-The full agent contract is [AGENTS.md](https://github.com/mariusDing/sports-video-coach/blob/master/AGENTS.md);
-how the pipeline fits together is in [docs/architecture.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/architecture.md).
+The full agent contract is [AGENTS.md](https://github.com/mariusCNN/sports-video-coach/blob/master/AGENTS.md);
+how the pipeline fits together is in [docs/architecture.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/architecture.md).
 
 ## Any sport
 
 | Plugin | For |
 |---|---|
 | `generic` (built in) | any sport: running, the gym, HYROX, soccer, tennis ...; the agent reviews the film, with no sport-specific tracking or knowledge base yet (pickup basketball too: `--sport basketball`) |
-| `basketball` | league games with a stats link, or tracking from a clone with a GPU: team and player pages, shot charts ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)) |
-| `fitness` | gym and strength & conditioning sessions (squats, pulls, single-leg, plyometrics, microdosing): every set named from an exercise library, per-rep depth, trunk lean, tempo and slowing from pose, a muscle map ([docs](https://github.com/mariusDing/sports-video-coach/blob/master/docs/fitness.md)) |
-| yours | `sports-video-coach new-plugin <your-sport>` writes a working plugin to start from ([guide](https://github.com/mariusDing/sports-video-coach/blob/master/docs/plugins.md)) |
+| `basketball` | league games with a stats link, or tracking from a clone with a GPU: team and player pages, shot charts ([docs](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.md)) |
+| `fitness` | gym and strength & conditioning sessions (squats, pulls, single-leg, plyometrics, microdosing): every set named from an exercise library, per-rep depth, trunk lean, tempo and slowing from pose, a muscle map ([docs](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/fitness.md)) |
+| yours | `sports-video-coach new-plugin <your-sport>` writes a working plugin to start from ([guide](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/plugins.md)) |
 
 <details><summary><b>Install for your agent</b> (Claude Code plugin, Agent Skills, uv, clone)</summary>
 
-- **Claude Code:** `/plugin marketplace add mariusDing/sports-video-coach`, then
+- **Claude Code:** `/plugin marketplace add mariusCNN/sports-video-coach`, then
   `/plugin install sports-video-coach@sports-video-coach`.
-- **Any Agent Skills client** (Codex, Cursor ...): `npx skills add mariusDing/sports-video-coach`, or copy
-  [skills/sports-video-coach/SKILL.md](https://github.com/mariusDing/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md).
+- **Any Agent Skills client** (Codex, Cursor ...): `npx skills add mariusCNN/sports-video-coach`, or copy
+  [skills/sports-video-coach/SKILL.md](https://github.com/mariusCNN/sports-video-coach/blob/master/skills/sports-video-coach/SKILL.md).
 - **The CLI alone:**
-  `uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
+  `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
   (about 60 MB, no torch; ffmpeg on PATH), then `sports-video-coach plugins` and
   `sports-video-coach run <video> --sport <sport>`.
-- **Fork or write a plugin:** `git clone https://github.com/mariusDing/sports-video-coach`, then in it
+- **Fork or write a plugin:** `git clone https://github.com/mariusCNN/sports-video-coach`, then in it
   `git checkout 74b517fc410944fefeac2979810656ed77fb8f1a` (or a branch you choose) and
   `uv sync --no-group basketball` (Python 3.11, no torch). Prefix commands with `uv run`; `uv run pytest -q` works.
 - **Basketball tracking from a clone:** the same clone and checkout, then `uv sync` (Python 3.11, CUDA torch, several
   GB), and prefix commands with `uv run`.
 - Every install command names one commit, so you install what you read. The release notes say when it moves.
-- No git or a proxy: install from `https://github.com/mariusDing/sports-video-coach/archive/74b517fc410944fefeac2979810656ed77fb8f1a.zip`.
+- No git or a proxy: install from `https://github.com/mariusCNN/sports-video-coach/archive/74b517fc410944fefeac2979810656ed77fb8f1a.zip`.
 - `command not found`: `uv tool update-shell` and a new terminal; in Git Bash, write `C:/...` PATH entries as `/c/...` (e.g. `/c/Users/<you>/.local/bin`).
 
 </details>
@@ -202,7 +202,7 @@ how the pipeline fits together is in [docs/architecture.md](https://github.com/m
 | **Only if you ask** | unlisted links on Cloudflare with `--publish` (anyone with the link can open them) |
 
 A single video stays where it is; frames, clips and reports go in the workspace folder. Nothing goes to an analytics service.
-Pages show real people: share them only with the people in them. Details: [docs/privacy.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/privacy.md).
+Pages show real people: share them only with the people in them. Details: [docs/privacy.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/privacy.md).
 
 </details>
 
@@ -210,8 +210,8 @@ Pages show real people: share them only with the people in them. Details: [docs/
 
 A resumable CLI that pauses with exit code 3 whenever it needs the agent's eyes or words, with a check on each
 agent step (required files and review fields) and file-level freshness, so a run resumes where it stopped and redoes only what a change made stale.
-Architecture: [docs/architecture.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/architecture.md);
-the project began as `hoop-tape-miner`, a film room for an amateur basketball team ([docs/basketball.md](https://github.com/mariusDing/sports-video-coach/blob/master/docs/basketball.md)).
+Architecture: [docs/architecture.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/architecture.md);
+the project began as `hoop-tape-miner`, a film room for an amateur basketball team ([docs/basketball.md](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.md)).
 
 </details>
 
@@ -223,18 +223,18 @@ Drawn drills, scored against the exact truth the tool drew in. No judge model.
   Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 (0.778 at low effort) · Claude Sonnet 5.5 0.419 at default effort,
   0.931 at high (4 runs, 0.856–0.994; max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
   One to four runs per setting; all runs so far are the author's.
-- [Leaderboard](https://mariusding.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariusding.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md)
+- [Leaderboard](https://mariuscnn.github.io/sports-video-coach/benchmark/#frames-svc-bench-3-fresh) · [count the touches yourself](https://mariuscnn.github.io/sports-video-coach/benchmark/#count) · [method and how to submit](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/benchmark.md)
 - Rerun the fresh-seed board: install (needs ffmpeg), then one command (`--seed` draws a new seed;
   add `--model claude-sonnet-5-5 --effort high` to rerun the Sonnet 5.5 high setting):
 
 ```bash
-uv tool install git+https://github.com/mariusDing/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
+uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
 sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed
 ```
 
-- No local install: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusDing/sports-video-coach)
+- No local install: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mariusCNN/sports-video-coach)
   (your own GitHub account's free hours; log in to your agent there, then put `uv run` in front;
-  [how](https://github.com/mariusDing/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)).
+  [how](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/benchmark.md#rerun-it-in-the-browser)).
 
 <details><summary>Another agent CLI, or a vision model on your own GPU</summary>
 
@@ -242,11 +242,11 @@ sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames -
   `--agent openai --base-url http://localhost:11434/v1 --model qwen3-vl:4b-instruct-q4_K_M`
 - Gemini CLI, Qwen Code, Aider, Cursor CLI, Copilot CLI, Goose: presets, flags checked against each CLI's `--help`, not yet run on a task.
   OpenCode was run with a free model and no account: one counted run, 0.000, killed at the time limit with no answer written (the free limit was reached near the end); three runs not counted (our preset bug, then the free quota used up, twice) ([details](docs/benchmark.md#opencode-run-once-2026-10-25)).
-  [Run one and send the row (issue #7)](https://github.com/mariusDing/sports-video-coach/issues/7).
+  [Run one and send the row (issue #7)](https://github.com/mariusCNN/sports-video-coach/issues/7).
 
 </details>
 
-<a href="https://mariusding.github.io/sports-video-coach/benchmark/"><img src="https://mariusding.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="Benchmark clip: a drawn juggling video, the stills an agent sees around a quick double touch, then the true touch count (47) against what each model answered"></a>
+<a href="https://mariuscnn.github.io/sports-video-coach/benchmark/"><img src="https://mariuscnn.github.io/sports-video-coach/benchmark/clip.gif" width="360" alt="Benchmark clip: a drawn juggling video, the stills an agent sees around a quick double touch, then the true touch count (47) against what each model answered"></a>
 
 ## Status and contributing
 
@@ -258,8 +258,8 @@ Early (alpha): built and tested by its author on their own games and training, a
 - [ ] Broader independent validation across gyms/cameras before promoting experimental models to defaults.
 
 Plugins for a sport you know, prompts, fixes and docs are welcome:
-[CONTRIBUTING.md](https://github.com/mariusDing/sports-video-coach/blob/master/CONTRIBUTING.md),
-[good first issues](https://github.com/mariusDing/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+[CONTRIBUTING.md](https://github.com/mariusCNN/sports-video-coach/blob/master/CONTRIBUTING.md),
+[good first issues](https://github.com/mariusCNN/sports-video-coach/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 Never attach real players' videos, frames or names to issues or pull requests.
 
 ## Coaching knowledge base: open to contributions
@@ -268,22 +268,22 @@ The advice in the basketball reports comes from four knowledge bases with 58 ent
 movement, fuel and recovery). They are written in our own words from public FIBA / Jr. NBA coaching material and
 sports-science studies, and every entry names its source. With the one prompt, your agent bases a basketball
 report's fixes and drills on these entries and names the one it used, or says when the advice is its own. The
-entries guide the advice; the quick start does no tracking or measuring. [What is in them and how to add to them](https://github.com/mariusDing/sports-video-coach/blob/master/docs/knowledge-base.md).
+entries guide the advice; the quick start does no tracking or measuring. [What is in them and how to add to them](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/knowledge-base.md).
 
 - **Any sport: try it and help build it.** Running, the gym, HYROX, soccer: run your own sport through the
   [one prompt](#start-in-one-prompt). The generic plugin reviews the film for any sport, but these sports have no
   tracking or knowledge base of their own yet. Tell us what a coach of your sport looks for. A
-  [coaching knowledge issue](https://github.com/mariusDing/sports-video-coach/issues/new?template=coaching_knowledge.yml) is enough; no code needed.
+  [coaching knowledge issue](https://github.com/mariusCNN/sports-video-coach/issues/new?template=coaching_knowledge.yml) is enough; no code needed.
 - Corrections, newer studies and better drills for the basketball entries are welcome the same way.
 
 <sub>Not endorsed by FIBA, the NBA or any author cited.</sub>
 
 ## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/mariusDing/sports-video-coach?logo=github&label=star)](https://github.com/mariusDing/sports-video-coach)
+[![GitHub stars](https://img.shields.io/github/stars/mariusCNN/sports-video-coach?logo=github&label=star)](https://github.com/mariusCNN/sports-video-coach)
 
 Free and open source, built by a rec-league player in spare time.
 If it helped your game, leave a ☆ star. A star is how I know it helped, and it helps other players find it.
 After a good run your agent asks about it once, and stars the repo only if you say yes.
 
-[MIT](https://github.com/mariusDing/sports-video-coach/blob/master/LICENSE). Models downloaded at run time keep their own licences.
+[MIT](https://github.com/mariusCNN/sports-video-coach/blob/master/LICENSE). Models downloaded at run time keep their own licences.

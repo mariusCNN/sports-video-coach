@@ -76,8 +76,8 @@ def write_qa(g: U.Analysis) -> None:
     media.write_text_atomic(g.folder / "qa.md", text)
 
 
-SITE_URL = "https://mariusding.github.io/sports-video-coach/"
-REPO_URL = "https://github.com/mariusDing/sports-video-coach"
+SITE_URL = "https://mariuscnn.github.io/sports-video-coach/"
+REPO_URL = "https://github.com/mariusCNN/sports-video-coach"
 TRAINING_MEDIA = f"{REPO_URL}/releases/download/showcase-2026-10-29"
 TAGLINE = "Turn your coding agent into your sports coach."
 PITCH = ("Open-source sports video analysis for adults who train on their own: film a session or a game on your phone "
@@ -151,7 +151,7 @@ def json_ld() -> str:
 
 def robots_txt() -> str:
     # A project Pages site lives under /sports-video-coach/; crawlers read robots.txt only at the domain root
-    # (mariusding.github.io/robots.txt), so this file is not read by them. It is kept for completeness; the
+    # (mariuscnn.github.io/robots.txt), so this file is not read by them. It is kept for completeness; the
     # sitemap (submitted in Search Console or found via links) is what helps discovery.
     return f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n"
 
@@ -169,7 +169,7 @@ def sitemap_xml(lastmod: dict[str, str] | None = None) -> str:
 # IndexNow (https://www.indexnow.org/documentation): a site proves it owns its URLs by hosting <key>.txt holding the
 # key, then POSTs changed URLs once; Bing, Yandex, Seznam, Naver and the others share the submission. The key is a
 # public ownership proof by design (anyone can read the file on the site), not a secret, so it lives in the code.
-# A project Pages site cannot write the domain root (mariusding.github.io/), so the key file sits at SITE_URL and is
+# A project Pages site cannot write the domain root (mariuscnn.github.io/), so the key file sits at SITE_URL and is
 # named as keyLocation; a key file there covers only URLs under SITE_URL, which is every page we submit.
 INDEXNOW_KEY = "bfa6c325a9ce2c6c52580f1b61b58b23"
 INDEXNOW_KEY_FILE = f"{INDEXNOW_KEY}.txt"
