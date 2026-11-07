@@ -483,6 +483,16 @@ def test_callout_is_pinned_first_on_today_and_game_tabs_and_escaped(tmp_path):
     assert "<again>" not in page and "u003cagain>" in page
 
 
+def test_callout_checks_show_in_view(tmp_path):
+    folder = plan_folder(tmp_path)
+    plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
+    plan["callout"] = {"title": "T", "lines": [{"say": "a"}], "checks": [{"what": "Standing still", "goal": "< 30%"}]}
+    assert program.validate(plan) == []
+    (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
+    page = program.page(folder)
+    assert "class=\"checks\"" in page and "\"what\":\"Standing still\",\"goal\":" in page and " 30%" in page
+
+
 @pytest.mark.parametrize("value,issue", [
     ([], "callout: must be an object"),
     ({"title": "", "lines": [{"say": "a"}]}, "callout.title"),
@@ -491,6 +501,10 @@ def test_callout_is_pinned_first_on_today_and_game_tabs_and_escaped(tmp_path):
     ({"title": "X", "lines": [{"say": " "}]}, "callout.lines: each needs say text"),
     ({"title": "X", "lines": [{"say": "a", "proof": 3}]}, "callout.lines: each needs say text"),
     ({"title": "X", "lines": [{"say": "a"}], "source": 1}, "callout.source"),
+    ({"title": "X", "lines": [{"say": "a"}], "checks": [{"what": "a", "goal": ""}]}, "callout.checks"),
+    ({"title": "X", "lines": [{"say": "a"}], "checks": [{"what": "a", "goal": "b"}] * 5}, "callout.checks"),
+    ({"title": "X", "lines": [{"say": "a"}], "checks": {}}, "callout.checks"),
+    ({"title": "X", "lines": [{"say": "a"}], "checksTitle": 2}, "callout.checksTitle"),
 ])
 def test_callout_validation(value, issue):
     plan = json.loads(EXAMPLE.read_text(encoding="utf8"))

@@ -456,6 +456,10 @@ audio.loop{display:none}
 .callout details{margin-top:4px}.callout summary{cursor:pointer;font-size:13px;color:var(--mute);min-height:32px;display:flex;align-items:center}
 .callout .proof{margin:6px 0;font-size:13px;color:var(--mute);line-height:1.45}.callout .proof b{color:var(--fg,inherit)}
 .callout .src{margin:6px 0 0;font-size:12px;color:var(--mute)}
+.callout .checks{margin:10px 0 2px;padding:10px 0 0;border-top:1px solid color-mix(in oklch,var(--bad) 30%,transparent)}
+.callout .checks h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--mute)}
+.callout .chk{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;font-size:14px;line-height:1.4}
+.callout .chk b{min-width:64px;padding:4px 10px;border-radius:999px;background:var(--bad);color:#fff;font-size:15px;font-weight:800;text-align:center;white-space:nowrap}
 /* lean today view (plan.focus): what to remember, then what to train; everything else one tap away */
 html.lean .finbar{display:none}html.lean body.tab-today{padding-bottom:90px}
 .lhead{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;column-gap:8px;text-align:center;padding:8px 0 4px}
@@ -782,6 +786,7 @@ function calloutHtml(){
   const proofs = c.lines.filter(l=>l.proof);
   return `<article class="callout" aria-label="${esc(c.title)}"><h2>${esc(c.title)}</h2>
     <ol>${c.lines.map(l=>`<li><span>${esc(l.say)}</span></li>`).join("")}</ol>
+    ${(c.checks||[]).length?`<div class="checks"><h3>${esc(c.checksTitle||"练到位没有，看这几个数")}</h3>${c.checks.map(k=>`<div class="chk"><span>${esc(k.what)}</span><b>${esc(k.goal)}</b></div>`).join("")}</div>`:""}
     ${proofs.length?`<details><summary>证据（录像时间）</summary>${c.lines.map((l,i)=>l.proof?`<p class="proof"><b>${i+1}.</b> ${esc(l.proof)}</p>`:"").join("")}${c.source?`<p class="src">${esc(c.source)}</p>`:""}</details>`:""}
   </article>`;
 }

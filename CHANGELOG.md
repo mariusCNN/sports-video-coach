@@ -13,7 +13,8 @@ All notable changes to this project are documented here. The format follows [Kee
   A rule may carry `points` (up to five short lines) that fill its "怎么做" fold instead of the one-line action.
 - Training-plan app: an optional `callout` key in program.json (a title, one to six lines to say, each with an
   optional film-time proof, and a source line) is a red card pinned above everything on the today and game tabs,
-  so what still has not improved is the first thing seen on every open; the proofs sit behind a fold.
+  so what still has not improved is the first thing seen on every open; the proofs sit behind a fold. Up to four
+  `checks` (what to count next game and the goal, e.g. "standing still < 30%") stay in view at the bottom of the card.
 - Training-plan app: a theme picker (黑金, 球场橙, 冰蓝, 薄荷绿, 白天) at the bottom of the today tab, kept on the device.
 - Training-plan app: `briefing.priority` is a pinned card with numbered rules, shown at the top of both the
   today tab and the game tab, so standing rules stay in view on training, league and pickup days.

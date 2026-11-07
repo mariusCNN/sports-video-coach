@@ -225,7 +225,8 @@ def validate_focus(focus, sessions: dict) -> list[str]:
 
 def validate_callout(callout) -> list[str]:
     """The coach's callout pinned above everything on the today and game tabs: a title, one to six lines to "say"
-    (each with an optional "proof", e.g. the film times, shown behind a fold) and an optional "source" line."""
+    (each with an optional "proof", e.g. the film times, shown behind a fold), an optional "source" line and up to four
+    "checks" (what to count next game and the goal, always in view, under an optional "checksTitle")."""
     if not isinstance(callout, dict):
         return ["callout: must be an object"]
     errors = []
@@ -239,6 +240,13 @@ def validate_callout(callout) -> list[str]:
         errors.append("callout.lines: each needs say text (proof, if given, is text)")
     if "source" in callout and not isinstance(callout["source"], str):
         errors.append("callout.source: must be text")
+    checks = callout.get("checks", [])
+    if not isinstance(checks, list) or len(checks) > 4 or any(
+            not isinstance(k, dict) or not all(isinstance(k.get(f), str) and k[f].strip() for f in ("what", "goal"))
+            for k in checks):
+        errors.append("callout.checks: up to four, each with what and goal text")
+    if "checksTitle" in callout and not isinstance(callout["checksTitle"], str):
+        errors.append("callout.checksTitle: must be text")
     return errors
 
 
