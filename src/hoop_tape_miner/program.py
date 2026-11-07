@@ -117,6 +117,8 @@ def validate(plan: dict) -> list[str]:
         errors += validate_briefing(plan["briefing"], sess)
     if "focus" in plan:
         errors += validate_focus(plan["focus"], sess)
+    if "callout" in plan:
+        errors += validate_callout(plan["callout"])
     goals = (plan.get("game") or {}).get("learning_goals", [])
     if not isinstance(goals, list) or len(goals) > 3:
         errors.append("game.learning_goals: at most three evidence-linked priorities")
@@ -218,6 +220,25 @@ def validate_focus(focus, sessions: dict) -> list[str]:
             errors.append(f"focus.sessions.{code}: give one short cue")
         elif len(rules) >= 3:
             errors.append(f"focus.sessions.{code}: at most three points on screen; drop a rule or this cue")
+    return errors
+
+
+def validate_callout(callout) -> list[str]:
+    """The coach's callout pinned above everything on the today and game tabs: a title, one to six lines to "say"
+    (each with an optional "proof", e.g. the film times, shown behind a fold) and an optional "source" line."""
+    if not isinstance(callout, dict):
+        return ["callout: must be an object"]
+    errors = []
+    if not isinstance(callout.get("title"), str) or not callout["title"].strip():
+        errors.append("callout.title: give a non-empty title")
+    lines = callout.get("lines")
+    if not isinstance(lines, list) or not 1 <= len(lines) <= 6:
+        errors.append("callout.lines: give one to six lines")
+    elif any(not isinstance(x, dict) or not isinstance(x.get("say"), str) or not x["say"].strip()
+             or ("proof" in x and not isinstance(x["proof"], str)) for x in lines):
+        errors.append("callout.lines: each needs say text (proof, if given, is text)")
+    if "source" in callout and not isinstance(callout["source"], str):
+        errors.append("callout.source: must be text")
     return errors
 
 

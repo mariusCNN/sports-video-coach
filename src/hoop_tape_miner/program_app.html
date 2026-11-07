@@ -446,6 +446,16 @@ audio.loop{display:none}
 .brief.pin .brief-cue b{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:40px;margin:0}
 .brief.pin .brief-cue b{font-size:1.3rem;line-height:1.35}
 .pin-n{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--pri);color:var(--pri-fg);font-weight:800;font-size:1.15rem}
+/* plan.callout: a blunt coach's callout pinned above everything on the today and game tabs */
+.callout{border:2px solid var(--bad);background:color-mix(in oklch,var(--bad) 14%,var(--card-s));border-radius:14px;padding:14px 15px 10px;margin:8px 0 12px}
+.callout h2{margin:0 0 8px;font-size:1.15rem;font-weight:800;line-height:1.35;color:oklch(0.80 0.13 25)}
+.callout ol{margin:0;padding:0;list-style:none;counter-reset:c}
+.callout li{counter-increment:c;display:grid;grid-template-columns:26px 1fr;gap:8px;padding:8px 0;border-top:1px solid color-mix(in oklch,var(--bad) 30%,transparent);font-size:15px;line-height:1.5}
+.callout li:first-child{border-top:0}
+.callout li::before{content:counter(c);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--bad);color:#fff;font-weight:800;font-size:13px}
+.callout details{margin-top:4px}.callout summary{cursor:pointer;font-size:13px;color:var(--mute);min-height:32px;display:flex;align-items:center}
+.callout .proof{margin:6px 0;font-size:13px;color:var(--mute);line-height:1.45}.callout .proof b{color:var(--fg,inherit)}
+.callout .src{margin:6px 0 0;font-size:12px;color:var(--mute)}
 /* lean today view (plan.focus): what to remember, then what to train; everything else one tap away */
 html.lean .finbar{display:none}html.lean body.tab-today{padding-bottom:90px}
 .lhead{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;column-gap:8px;text-align:center;padding:8px 0 4px}
@@ -765,6 +775,16 @@ function finishGameType(ds){
   const brief = briefingModel(ds, briefModes[ds]);
   return brief ? (brief.mode === "training" ? null : brief.mode) : SESS[sessOf(dayOf(ds))].game;
 }
+/* plan.callout: the coach's blunt list of what has not changed, first thing on the today and game tabs */
+function calloutHtml(){
+  const c = PLAN.callout;
+  if (!c) return "";
+  const proofs = c.lines.filter(l=>l.proof);
+  return `<article class="callout" aria-label="${esc(c.title)}"><h2>${esc(c.title)}</h2>
+    <ol>${c.lines.map(l=>`<li><span>${esc(l.say)}</span></li>`).join("")}</ol>
+    ${proofs.length?`<details><summary>证据（录像时间）</summary>${c.lines.map((l,i)=>l.proof?`<p class="proof"><b>${i+1}.</b> ${esc(l.proof)}</p>`:"").join("")}${c.source?`<p class="src">${esc(c.source)}</p>`:""}</details>`:""}
+  </article>`;
+}
 /* the owner's standing rules: pinned on top of the today and game tabs, whatever the day */
 function priorityHtml(){
   const p = BRIEF?.priority;
@@ -778,7 +798,7 @@ function priorityHtml(){
     </details>
   </article>`;
 }
-function renderPriority(){ document.getElementById("priorityBox").innerHTML = priorityHtml(); }
+function renderPriority(){ document.getElementById("priorityBox").innerHTML = calloutHtml() + priorityHtml(); }
 function renderBrief(){
   renderPriority();
   const box = document.getElementById("briefBox"), b = briefingModel(selD, briefModes[selD]);
@@ -831,7 +851,7 @@ function renderLean(){
   if (fx && fx.bye) note += `<div class="note"><b>本轮轮空</b></div>`;
   const cues = FOCUS.rules.map(r=>[r.cue,""]).concat(extra ? [[extra,"这节课"]] : []);
   document.getElementById("briefBox").innerHTML = "";
-  document.getElementById("priorityBox").innerHTML = `
+  document.getElementById("priorityBox").innerHTML = calloutHtml() + `
    <div class="lhead">
     <button class="hnav l" data-act="step" data-s="-1" ${i===0?"disabled":""} aria-label="前一天">${ic("left")}</button>
     <button class="hnav r" data-act="step" data-s="1" ${i===DAYS.length-1?"disabled":""} aria-label="后一天">${ic("right")}</button>
@@ -1050,7 +1070,7 @@ function renderGame(){
   const three = LEARNING.some(x=>x.status!=="retired") ? [] : (G.three||{})[m] || [], rules = (G.rules||{})[m] || [], wu = store.wu[ds] || [];
   const mission = ((G.mission||{})[mk]||[])[w] || "", done = ((G.done||{})[mk]||[])[w] || "";
   const icons = ["target","trophy","zap","alert"];
-  document.getElementById("gameBox").innerHTML = `${priorityHtml()}
+  document.getElementById("gameBox").innerHTML = `${calloutHtml()}${priorityHtml()}
   <div class="hero grain">
    <div class="eyebrow">下一场 · ${ds===todayIso?"今天":md(d)+" 周"+WD[d.getDay()]}</div>
    <h1>${sess.game==="league"?"联赛":"Pickup"}</h1>

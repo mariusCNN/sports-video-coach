@@ -11,6 +11,9 @@ All notable changes to this project are documented here. The format follows [Kee
   then one collapsed row per block, every tab still in the bottom nav. Its cards share one left and right edge, and
   the header arrows, number badges, play buttons and chevrons are centred on the text beside them.
   A rule may carry `points` (up to five short lines) that fill its "怎么做" fold instead of the one-line action.
+- Training-plan app: an optional `callout` key in program.json (a title, one to six lines to say, each with an
+  optional film-time proof, and a source line) is a red card pinned above everything on the today and game tabs,
+  so what still has not improved is the first thing seen on every open; the proofs sit behind a fold.
 - Training-plan app: a theme picker (黑金, 球场橙, 冰蓝, 薄荷绿, 白天) at the bottom of the today tab, kept on the device.
 - Training-plan app: `briefing.priority` is a pinned card with numbered rules, shown at the top of both the
   today tab and the game tab, so standing rules stay in view on training, league and pickup days.

@@ -408,7 +408,7 @@ def test_priority_rules_are_pinned_on_today_and_game_tabs(tmp_path):
     (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
     page = program.page(folder)
     assert 'class="brief pin"' in page
-    assert 'getElementById("gameBox").innerHTML = `${priorityHtml()}' in page
+    assert 'getElementById("gameBox").innerHTML = `${calloutHtml()}${priorityHtml()}' in page
 
 
 def focus_example():
@@ -467,3 +467,32 @@ def test_theme_picker_ships_every_theme_and_stays_local(tmp_path):
     assert 'data-act="theme"' in page
     assert 'localStorage.setItem("plan-theme"' in page
     assert page.count("</script>") == 1
+
+
+def test_callout_is_pinned_first_on_today_and_game_tabs_and_escaped(tmp_path):
+    folder = plan_folder(tmp_path)
+    plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
+    plan["callout"] = {"title": "Still the same", "source": "film review",
+                       "lines": [{"say": "You stood in the corner <again>", "proof": "11:00-11:20"}, {"say": "No boxing out"}]}
+    assert program.validate(plan) == []
+    (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
+    page = program.page(folder)
+    assert "function calloutHtml(" in page
+    assert "calloutHtml() + priorityHtml()" in page and "${calloutHtml()}${priorityHtml()}" in page
+    assert "calloutHtml() + `" in page  # the lean today view too
+    assert "<again>" not in page and "u003cagain>" in page
+
+
+@pytest.mark.parametrize("value,issue", [
+    ([], "callout: must be an object"),
+    ({"title": "", "lines": [{"say": "a"}]}, "callout.title"),
+    ({"title": "X", "lines": []}, "callout.lines: give one to six lines"),
+    ({"title": "X", "lines": [{"say": "a"}] * 7}, "callout.lines: give one to six lines"),
+    ({"title": "X", "lines": [{"say": " "}]}, "callout.lines: each needs say text"),
+    ({"title": "X", "lines": [{"say": "a", "proof": 3}]}, "callout.lines: each needs say text"),
+    ({"title": "X", "lines": [{"say": "a"}], "source": 1}, "callout.source"),
+])
+def test_callout_validation(value, issue):
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    plan["callout"] = value
+    assert any(issue in error for error in program.validate(plan)), program.validate(plan)
