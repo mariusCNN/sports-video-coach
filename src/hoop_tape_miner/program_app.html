@@ -459,6 +459,19 @@ audio.loop{display:none}
 .callout .checks{margin:10px 0 2px;padding:10px 0 0;border-top:1px solid color-mix(in oklch,var(--bad) 30%,transparent)}
 .callout .checks h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--mute)}
 .callout .chk{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;font-size:14px;line-height:1.4}
+/* fixture[].plan: the plan for one opponent, first on the game tab and on the today tab before that game */
+.gplan{border:2px solid var(--pri);background:linear-gradient(150deg,var(--p10),var(--card));border-radius:14px;padding:14px 15px 10px;margin:8px 0 12px}
+.gplan h2{margin:4px 0 6px;font-size:1.15rem;font-weight:800;line-height:1.35;color:var(--pri)}
+.gplan .gp-l{display:grid;grid-template-columns:26px 1fr;gap:8px;padding:9px 0;border-top:1px solid var(--p15);font-size:15px;line-height:1.5}
+.gplan .gp-l:first-of-type{border-top:0}
+.gplan .gp-n{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--pri);color:var(--bg);font-weight:800;font-size:13px}
+.gplan .gp-l b{display:block;font-size:1.02rem}.gplan .gp-l p{margin:2px 0 0;font-size:14px;color:var(--mute)}
+.gplan details{margin-top:4px;border-top:1px solid var(--p15)}.gplan summary{cursor:pointer;font-size:13px;color:var(--mute);min-height:36px;display:flex;align-items:center}
+.gplan details b{display:block;margin:8px 0 2px;color:var(--pri);font-size:14px}.gplan details ul{margin:0 0 6px;padding-left:18px;font-size:14px;line-height:1.5}
+.gplan .checks{margin:8px 0 2px;padding:8px 0 0;border-top:1px solid var(--p15)}.gplan .checks h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--mute)}
+.gplan .chk{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;font-size:14px;line-height:1.4}
+.gplan .chk b{min-width:64px;padding:4px 10px;border-radius:999px;background:var(--pri);color:var(--bg);font-size:15px;font-weight:800;text-align:center;white-space:nowrap}
+.gplan .src{margin:6px 0 0;font-size:12px;color:var(--mute)}
 .callout .chk b{min-width:64px;padding:4px 10px;border-radius:999px;background:var(--bad);color:#fff;font-size:15px;font-weight:800;text-align:center;white-space:nowrap}
 /* lean today view (plan.focus): what to remember, then what to train; everything else one tap away */
 html.lean .finbar{display:none}html.lean body.tab-today{padding-bottom:90px}
@@ -790,6 +803,22 @@ function calloutHtml(){
     ${proofs.length?`<details><summary>证据（录像时间）</summary>${c.lines.map((l,i)=>l.proof?`<p class="proof"><b>${i+1}.</b> ${esc(l.proof)}</p>`:"").join("")}${c.source?`<p class="src">${esc(c.source)}</p>`:""}</details>`:""}
   </article>`;
 }
+/* fixture[].plan: the next unplayed game with a plan, from a date on; the today tab shows it up to two days before */
+function planGame(from, within){
+  const g = (FX.games||[]).filter(x=>x.plan && !x.bye && !x.score && x.date>=from).sort((a,b)=>a.date<b.date?-1:1)[0];
+  return g && (within==null || (pd(g.date) - pd(from)) / 864e5 <= within) ? g : null;
+}
+function gamePlanHtml(g){
+  if (!g) return "";
+  const p = g.plan, d = pd(g.date), more = p.lines.filter(l=>(l.points||[]).length);
+  return `<article class="gplan" aria-label="${esc(p.title)}"><div class="eyebrow">${md(d)} 周${WD[d.getDay()]}${g.time?" "+esc(g.time):""} · ${esc(g.vs)}</div>
+    <h2>${esc(p.title)}</h2>
+    ${p.lines.map((l,i)=>`<div class="gp-l"><span class="gp-n">${i+1}</span><div><b>${esc(l.cue)}</b>${l.action?`<p>${esc(l.action)}</p>`:""}</div></div>`).join("")}
+    ${(p.checks||[]).length?`<div class="checks"><h3>打完看这几个数</h3>${p.checks.map(k=>`<div class="chk"><span>${esc(k.what)}</span><b>${esc(k.goal)}</b></div>`).join("")}</div>`:""}
+    ${more.length?`<details><summary>怎么做</summary>${more.map(l=>`<b>${esc(l.cue)}</b><ul>${l.points.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`).join("")}</details>`:""}
+    ${p.note?`<p class="src">${esc(p.note)}</p>`:""}
+  </article>`;
+}
 /* the owner's standing rules: pinned on top of the today and game tabs, whatever the day */
 function priorityHtml(){
   const p = BRIEF?.priority;
@@ -803,7 +832,7 @@ function priorityHtml(){
     </details>
   </article>`;
 }
-function renderPriority(){ document.getElementById("priorityBox").innerHTML = calloutHtml() + priorityHtml(); }
+function renderPriority(){ document.getElementById("priorityBox").innerHTML = gamePlanHtml(planGame(selD, 2)) + calloutHtml() + priorityHtml(); }
 function renderBrief(){
   renderPriority();
   const box = document.getElementById("briefBox"), b = briefingModel(selD, briefModes[selD]);
@@ -856,7 +885,7 @@ function renderLean(){
   if (fx && fx.bye) note += `<div class="note"><b>本轮轮空</b></div>`;
   const cues = FOCUS.rules.map(r=>[r.cue,""]).concat(extra ? [[extra,"这节课"]] : []);
   document.getElementById("briefBox").innerHTML = "";
-  document.getElementById("priorityBox").innerHTML = calloutHtml() + `
+  document.getElementById("priorityBox").innerHTML = gamePlanHtml(planGame(selD, 2)) + calloutHtml() + `
    <div class="lhead">
     <button class="hnav l" data-act="step" data-s="-1" ${i===0?"disabled":""} aria-label="前一天">${ic("left")}</button>
     <button class="hnav r" data-act="step" data-s="1" ${i===DAYS.length-1?"disabled":""} aria-label="后一天">${ic("right")}</button>
@@ -1075,7 +1104,7 @@ function renderGame(){
   const three = LEARNING.some(x=>x.status!=="retired") ? [] : (G.three||{})[m] || [], rules = (G.rules||{})[m] || [], wu = store.wu[ds] || [];
   const mission = ((G.mission||{})[mk]||[])[w] || "", done = ((G.done||{})[mk]||[])[w] || "";
   const icons = ["target","trophy","zap","alert"];
-  document.getElementById("gameBox").innerHTML = `${calloutHtml()}${priorityHtml()}
+  document.getElementById("gameBox").innerHTML = `${gamePlanHtml(planGame(todayIso))}${calloutHtml()}${priorityHtml()}
   <div class="hero grain">
    <div class="eyebrow">下一场 · ${ds===todayIso?"今天":md(d)+" 周"+WD[d.getDay()]}</div>
    <h1>${sess.game==="league"?"联赛":"Pickup"}</h1>

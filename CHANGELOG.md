@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Added
+
+- Training-plan app: a fixture game can carry a `plan` for that opponent (cues, points behind a fold, numbers
+  to check afterwards). It is the first card on the game tab and on the today tab from two days before the game.
+
 ### Changed
 
 - The repo now lives at github.com/mariusCNN/sports-video-coach (the owner's account was renamed). Every link,

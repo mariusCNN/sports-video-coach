@@ -408,7 +408,7 @@ def test_priority_rules_are_pinned_on_today_and_game_tabs(tmp_path):
     (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
     page = program.page(folder)
     assert 'class="brief pin"' in page
-    assert 'getElementById("gameBox").innerHTML = `${calloutHtml()}${priorityHtml()}' in page
+    assert 'getElementById("gameBox").innerHTML = `${gamePlanHtml(planGame(todayIso))}${calloutHtml()}${priorityHtml()}' in page
 
 
 def focus_example():
@@ -509,4 +509,43 @@ def test_callout_checks_show_in_view(tmp_path):
 def test_callout_validation(value, issue):
     plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
     plan["callout"] = value
+    assert any(issue in error for error in program.validate(plan)), program.validate(plan)
+
+
+def game_plan_example():
+    return {"title": "Stop their shooters, pound the paint",
+            "lines": [{"cue": "Sprint back <first>", "action": "Stop the ball, then find your man"},
+                      {"cue": "Inside first", "points": ["Post up the mismatch", "Duck in"]}],
+            "checks": [{"what": "Fast-break points allowed", "goal": "< 6"}], "note": "From the coach"}
+
+
+def test_fixture_game_plan_is_valid_and_shown_first_on_game_and_today_tabs(tmp_path):
+    folder = plan_folder(tmp_path)
+    plan = json.loads((folder / "program.json").read_text(encoding="utf8"))
+    plan["fixture"] = {"games": [{"date": "2025-03-22", "vs": "Bears", "time": "22:00", "plan": game_plan_example()}]}
+    assert program.validate(plan) == []
+    (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
+    page = program.page(folder)
+    assert "function gamePlanHtml(" in page and "function planGame(" in page
+    assert "gamePlanHtml(planGame(selD, 2)) + calloutHtml() + priorityHtml()" in page  # today, full view
+    assert "gamePlanHtml(planGame(selD, 2)) + calloutHtml() + `" in page  # today, lean view
+    assert "<first>" not in page and "u003cfirst>" in page and "Post up the mismatch" in page
+
+
+@pytest.mark.parametrize("value,issue", [
+    ([], "fixture.games[0].plan: must be an object"),
+    ({"title": "", "lines": [{"cue": "a"}]}, "plan.title"),
+    ({"title": "X", "lines": []}, "plan.lines: give one to four lines"),
+    ({"title": "X", "lines": [{"cue": "a"}] * 5}, "plan.lines: give one to four lines"),
+    ({"title": "X", "lines": [{"cue": " "}]}, "plan.lines: each needs cue text"),
+    ({"title": "X", "lines": [{"cue": "a", "action": 1}]}, "plan.lines: each needs cue text"),
+    ({"title": "X", "lines": [{"cue": "a", "points": []}]}, "plan.lines: each needs cue text"),
+    ({"title": "X", "lines": [{"cue": "a", "points": ["x"] * 6}]}, "plan.lines: each needs cue text"),
+    ({"title": "X", "lines": [{"cue": "a"}], "checks": [{"what": "a", "goal": ""}]}, "plan.checks"),
+    ({"title": "X", "lines": [{"cue": "a"}], "checks": [{"what": "a", "goal": "b"}] * 5}, "plan.checks"),
+    ({"title": "X", "lines": [{"cue": "a"}], "note": 3}, "plan.note"),
+])
+def test_fixture_game_plan_validation(value, issue):
+    plan = json.loads(EXAMPLE.read_text(encoding="utf8"))
+    plan["fixture"] = {"games": [{"date": "2025-03-22", "vs": "Bears", "plan": value}]}
     assert any(issue in error for error in program.validate(plan)), program.validate(plan)

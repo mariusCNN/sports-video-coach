@@ -484,6 +484,10 @@ A month-long program the player follows on their phone (`hoop-tape-miner program
     The calendar marks dates and lists the season with results.
   - Use valid, distinct dates and non-negative integer scores. On a bye, give that date a session without
     `"game"` in `special`.
+  - A game's optional `"plan"` is the plan for that opponent: `{"title", "lines": [{"cue", "action", "points"}],
+    "checks": [{"what", "goal"}], "note"}` (one to four lines, up to five points each, up to four checks).
+    It is the first card on the game tab and on the today tab from two days before the game; it disappears once
+    the game has a score or its date has passed. Points sit behind a fold.
 - **Write it**: base the program on the player's knowledge base (`workspace/players/<player>/`), their last game and training pages, and `prompts/skill_kb.md`. Keep fixed days fixed (game nights, childcare days). Each exercise card follows the formatting rules in `AGENTS.md`.
 - **Check and build**: `program check <folder>`, then `program build <folder>` writes `index.html`. Opened as a local file, YouTube refuses embeds without a referrer (error 153), so the page shows a thumbnail that opens YouTube; the published link plays them inline.
 - **Publish**: `publish <folder> --deploy`. The first deploy with a program creates the KV namespace `<project>-sync` and binds it as `SYNC`. The link is `<site>/p/<token>/`, stable across re-publishes; `--new-link` also starts an empty log.

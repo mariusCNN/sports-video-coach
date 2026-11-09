@@ -15,7 +15,8 @@ copies the mp3 next to the page. A session's "car" (an mp3 file name in the fold
 talk for the drive to the court: the today tab shows it as a play-once button on every day of that session.
 An optional "fixture" ({"team", "source", "games": [{"date", "time", "vs", "court", "score": [ours, theirs]} or
 {"date", "bye": true}]}) is the league draw: the today and game tabs show that day's game or bye, the calendar
-marks the dates and lists the whole season with results, also past the plan's last day.
+marks the dates and lists the whole season with results, also past the plan's last day. A game's optional "plan"
+(see validate_game_plan) is the plan for that opponent, shown first on the game tab and on the today tab before it.
 
 The page is the engine program_app.html with that data inlined. Ticks, finished workouts and the game log are
 saved in the browser (localStorage). `hoop-tape-miner publish <program folder> --deploy` gives it a random
@@ -111,6 +112,8 @@ def validate(plan: dict) -> list[str]:
         if score is not None and not (isinstance(score, list) and len(score) == 2
                                       and all(type(x) is int and x >= 0 for x in score)):
             errors.append(f"fixture.games[{i}].score: give [ours, theirs] as non-negative integers")
+        if "plan" in g:
+            errors += validate_game_plan(g["plan"], f"fixture.games[{i}].plan")
     if not plan["phases"]:
         errors.append("phases is empty")
     if "briefing" in plan:
@@ -247,6 +250,32 @@ def validate_callout(callout) -> list[str]:
         errors.append("callout.checks: up to four, each with what and goal text")
     if "checksTitle" in callout and not isinstance(callout["checksTitle"], str):
         errors.append("callout.checksTitle: must be text")
+    return errors
+
+
+def validate_game_plan(gp, where: str) -> list[str]:
+    """One game's plan (the team's or coach's instructions for that opponent): a title, one to four "lines"
+    ({"cue", "action"?, "points"?: up to five}), up to four "checks" ({"what", "goal"}) and an optional "note".
+    Shown first on the game tab and on the today tab from two days before the game until it has a score."""
+    if not isinstance(gp, dict):
+        return [f"{where}: must be an object"]
+    errors = []
+    text = lambda v: isinstance(v, str) and v.strip()
+    if not text(gp.get("title")):
+        errors.append(f"{where}.title: give a non-empty title")
+    lines = gp.get("lines")
+    if not isinstance(lines, list) or not 1 <= len(lines) <= 4:
+        errors.append(f"{where}.lines: give one to four lines")
+    elif any(not isinstance(x, dict) or not text(x.get("cue")) or ("action" in x and not isinstance(x["action"], str))
+             or ("points" in x and not (isinstance(x["points"], list) and 1 <= len(x["points"]) <= 5
+                                         and all(text(t) for t in x["points"]))) for x in lines):
+        errors.append(f"{where}.lines: each needs cue text (action is text, points one to five texts)")
+    checks = gp.get("checks", [])
+    if not isinstance(checks, list) or len(checks) > 4 or any(
+            not isinstance(k, dict) or not all(text(k.get(f)) for f in ("what", "goal")) for k in checks):
+        errors.append(f"{where}.checks: up to four, each with what and goal text")
+    if "note" in gp and not isinstance(gp["note"], str):
+        errors.append(f"{where}.note: must be text")
     return errors
 
 
