@@ -408,7 +408,8 @@ def test_priority_rules_are_pinned_on_today_and_game_tabs(tmp_path):
     (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
     page = program.page(folder)
     assert 'class="brief pin"' in page
-    assert 'getElementById("gameBox").innerHTML = `${gamePlanHtml(planGame(todayIso))}${calloutHtml()}${priorityHtml()}' in page
+    assert 'getElementById("gameBox").innerHTML = `${pinnedHtml(planGame(todayIso), ds)}' in page
+    assert "const rest = calloutHtml() + priorityHtml();" in page
 
 
 def focus_example():
@@ -478,8 +479,8 @@ def test_callout_is_pinned_first_on_today_and_game_tabs_and_escaped(tmp_path):
     (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
     page = program.page(folder)
     assert "function calloutHtml(" in page
-    assert "calloutHtml() + priorityHtml()" in page and "${calloutHtml()}${priorityHtml()}" in page
-    assert "calloutHtml() + `" in page  # the lean today view too
+    assert "calloutHtml() + priorityHtml()" in page and "${pinnedHtml(planGame(todayIso), ds)}" in page
+    assert '(gday ? "" : calloutHtml()) + `' in page  # the lean today view too
     assert "<again>" not in page and "u003cagain>" in page
 
 
@@ -527,9 +528,61 @@ def test_fixture_game_plan_is_valid_and_shown_first_on_game_and_today_tabs(tmp_p
     (folder / "program.json").write_text(json.dumps(plan), encoding="utf8")
     page = program.page(folder)
     assert "function gamePlanHtml(" in page and "function planGame(" in page
-    assert "gamePlanHtml(planGame(selD, 2)) + calloutHtml() + priorityHtml()" in page  # today, full view
-    assert "gamePlanHtml(planGame(selD, 2)) + calloutHtml() + `" in page  # today, lean view
+    assert "pinnedHtml(planGame(selD, 2), selD)" in page  # today, full view
+    assert 'gamePlanHtml(gp) + (gday ? "" : calloutHtml()) + `' in page  # today, lean view
     assert "<first>" not in page and "u003cfirst>" in page and "Post up the mismatch" in page
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="needs node")
+def test_game_day_with_a_plan_folds_the_standing_rules_and_callout(tmp_path):
+    """On the plan game's own day the plan is the only one up front; other days keep the old layout."""
+    engine = program.ENGINE.read_text(encoding="utf8")
+    cut = lambda a, b: engine[engine.index(a):engine.index(b)]
+    model = cut("const EX = PLAN.exercises", "/* text formatting")  # dates, fixture, icons
+    pinned = cut("const BRIEF = PLAN.briefing;", "function renderBrief()")
+    lean = cut("const FOCUS = PLAN.focus;", "/* ---------- training tab")
+    plan = {"start": "2025-03-03", "week1": "2025-03-03", "days": 14, "phases": ["Practice"] * 3,
+            "exercises": {}, "sessions": {"M": {"title": "Train"}, "G": {"title": "League", "game": "league"}},
+            "weekdays": {str(k): "G" if k == 3 else "M" for k in range(7)},
+            "fixture": {"games": [{"date": "2025-03-12", "time": "19:30", "vs": "Team B", "plan": game_plan_example()}]},
+            "briefing": dict(briefing_example(), priority={"title": "OLD PINNED", "cues": [
+                {"cue": "Old rule", "action": "a", "check": "c"}]}),
+            "callout": {"title": "OLD CALLOUT", "lines": [{"say": "Still the same"}]},
+            "focus": dict(focus_example(), title="OLD FOCUS", sessions={"G": "Own session cue"})}
+    script = ('const assert = require("node:assert/strict"); const location = {hash:""};\n'
+              'const boxes = {}; const document = {getElementById: id => (boxes[id] ||= {innerHTML: ""})};\n'
+              'const itemsOf = () => [], themePicker = () => "", carShow = () => {};\n'
+              "const PLAN = " + json.dumps(plan) + ";\n" + model + pinned + lean)
+    script += r'''
+const box = () => boxes.priorityBox.innerHTML, at = s => box().indexOf(s);
+const show = ds => { todayIso = selD = ds; renderLean(); };
+// the game day: plan first, then one closed fold holding the callout and the standing rules
+show("2025-03-12");
+const fold = at('<details class="fold others">');
+assert.ok(at('<article class="gplan"') === 0 && fold > 0, box());
+assert.ok(!/<details class="fold others" open/.test(box()));
+for (const s of ["OLD CALLOUT", "OLD FOCUS", "Three to four dribbles"]) assert.ok(at(s) > fold, s);
+assert.ok(at("Own session cue") > 0 && at("Own session cue") < fold);  // this session's own cue stays up front
+// two days before: plan card, then the callout and the rules as before (no fold)
+show("2025-03-10");
+assert.equal(at('class="fold others"'), -1);
+assert.ok(at('<article class="gplan"') === 0 && at("OLD CALLOUT") > 0 && at("OLD FOCUS") > 0);
+// no plan in reach: unchanged fallback
+show("2025-03-04");
+assert.equal(at('<article class="gplan"'), -1); assert.equal(at('class="fold others"'), -1);
+assert.ok(at('<article class="callout"') === 0 && at("OLD FOCUS") > 0);
+// game tab and full today view: same switch through pinnedHtml
+const g = planGame("2025-03-12");
+let h = pinnedHtml(g, "2025-03-12");
+assert.ok(h.indexOf("gplan") < h.indexOf("fold others") && h.indexOf("fold others") < h.indexOf("OLD PINNED"));
+h = pinnedHtml(g, "2025-03-09");
+assert.ok(!h.includes("fold others") && h.includes("OLD PINNED") && h.includes("OLD CALLOUT"));
+h = pinnedHtml(null, "2025-03-12");
+assert.ok(!h.includes("fold others") && h.startsWith('<article class="callout"') && h.includes("OLD PINNED"));
+'''
+    (tmp_path / "gameday.cjs").write_text(script, encoding="utf8")
+    r = subprocess.run(["node", "gameday.cjs"], cwd=tmp_path, capture_output=True, text=True, encoding="utf8", timeout=30)
+    assert r.returncode == 0, r.stderr
 
 
 @pytest.mark.parametrize("value,issue", [

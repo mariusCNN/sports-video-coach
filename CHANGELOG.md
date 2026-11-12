@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Training-plan app: a fixture game can carry a `plan` for that opponent (cues, points behind a fold, numbers
   to check afterwards). It is the first card on the game tab and on the today tab from two days before the game.
+- Training-plan app: on the day of a game with a `plan`, that plan is the only card up front; the callout and the
+  pinned rules wait in a closed "其他提醒" fold below it. Days without a plan are unchanged.
 
 ### Changed
 

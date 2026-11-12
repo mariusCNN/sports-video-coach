@@ -472,6 +472,9 @@ audio.loop{display:none}
 .gplan .chk{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;font-size:14px;line-height:1.4}
 .gplan .chk b{min-width:64px;padding:4px 10px;border-radius:999px;background:var(--pri);color:var(--bg);font-size:15px;font-weight:800;text-align:center;white-space:nowrap}
 .gplan .src{margin:6px 0 0;font-size:12px;color:var(--mute)}
+/* with a game plan up front, the standing rules and the callout wait in one closed fold below it */
+details.fold.others{margin:4px 0 14px;padding:0 14px}details.fold.others>summary{min-height:44px;display:flex;align-items:center;font-size:14px}
+details.fold.others[open]{padding-bottom:4px}details.fold.others .callout,details.fold.others .brief.pin{margin:4px 0 10px}
 .callout .chk b{min-width:64px;padding:4px 10px;border-radius:999px;background:var(--bad);color:#fff;font-size:15px;font-weight:800;text-align:center;white-space:nowrap}
 /* lean today view (plan.focus): what to remember, then what to train; everything else one tap away */
 html.lean .finbar{display:none}html.lean body.tab-today{padding-bottom:90px}
@@ -832,7 +835,14 @@ function priorityHtml(){
     </details>
   </article>`;
 }
-function renderPriority(){ document.getElementById("priorityBox").innerHTML = gamePlanHtml(planGame(selD, 2)) + calloutHtml() + priorityHtml(); }
+/* on the day of a game with a plan (the today tab's day, or the game tab's next game), that plan is the only one
+   up front: the standing rules and the callout wait in a closed fold below it. Other days keep them as they were. */
+function othersFold(html){ return html.trim() ? `<details class="fold others"><summary>其他提醒（之前的规则）</summary>${html}</details>` : ""; }
+function pinnedHtml(g, ds){
+  const rest = calloutHtml() + priorityHtml();
+  return !g ? rest : g.date === ds ? gamePlanHtml(g) + othersFold(rest) : gamePlanHtml(g) + rest;
+}
+function renderPriority(){ document.getElementById("priorityBox").innerHTML = pinnedHtml(planGame(selD, 2), selD); }
 function renderBrief(){
   renderPriority();
   const box = document.getElementById("briefBox"), b = briefingModel(selD, briefModes[selD]);
@@ -883,20 +893,24 @@ function renderLean(){
   if (todayIso < FIRST && selD === FIRST) note = `<div class="note">计划从 <b>${md(START)}</b> 开始，这里先显示第一天。</div>`;
   if (todayIso > LAST) note = `<div class="note">${esc(PLAN.endNote || "这个计划已经结束。")}</div>`;
   if (fx && fx.bye) note += `<div class="note"><b>本轮轮空</b></div>`;
-  const cues = FOCUS.rules.map(r=>[r.cue,""]).concat(extra ? [[extra,"这节课"]] : []);
+  /* the day of a game with a plan: that plan alone stays up front; the standing rules and the callout go into a
+     closed fold (this session's own cue stays visible). Other days: unchanged. */
+  const gp = planGame(selD, 2), gday = !!gp && gp.date === selD;
+  const focusCard = (title, cues) => `<article class="brief pin lean-focus" aria-label="${esc(title)}">
+    <h2>${esc(title)}</h2>
+    ${cues.map(([c,tag],j)=>`<div class="brief-cue"><span class="pin-n">${j+1}</span><div><b>${esc(c)}${tag?`<span class="tagc">${tag}</span>`:""}</b></div></div>`).join("")}
+    ${cues.some(([,tag])=>!tag)?`<details><summary><span>怎么做</span>${ic("right","").replace('class="ic"','class="ic chev"')}</summary>${FOCUS.rules.map(r=>`<div class="brief-step"><b>${esc(r.cue)}</b>${(r.points||[]).length?`<ul>${r.points.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:`<p>${esc(r.action)}</p>`}</div>`).join("")}</details>`:""}
+   </article>`;
+  const rules = FOCUS.rules.map(r=>[r.cue,""]), own = extra ? [[extra,"这节课"]] : [];
   document.getElementById("briefBox").innerHTML = "";
-  document.getElementById("priorityBox").innerHTML = gamePlanHtml(planGame(selD, 2)) + calloutHtml() + `
+  document.getElementById("priorityBox").innerHTML = gamePlanHtml(gp) + (gday ? "" : calloutHtml()) + `
    <div class="lhead">
     <button class="hnav l" data-act="step" data-s="-1" ${i===0?"disabled":""} aria-label="前一天">${ic("left")}</button>
     <button class="hnav r" data-act="step" data-s="1" ${i===DAYS.length-1?"disabled":""} aria-label="后一天">${ic("right")}</button>
     <div class="eyebrow">${eyebrow}</div><h1>${esc(sess.title)}</h1><div class="sub">${sub}</div>
     ${inPlan() && selD!==todayIso ? `<button class="linkbtn" data-act="gotoday">← 回到今天</button>` : ""}
-   </div>${note}
-   <article class="brief pin lean-focus" aria-label="${esc(FOCUS.title)}">
-    <h2>${esc(FOCUS.title)}</h2>
-    ${cues.map(([c,tag],j)=>`<div class="brief-cue"><span class="pin-n">${j+1}</span><div><b>${esc(c)}${tag?`<span class="tagc">${tag}</span>`:""}</b></div></div>`).join("")}
-    <details><summary><span>怎么做</span>${ic("right","").replace('class="ic"','class="ic chev"')}</summary>${FOCUS.rules.map(r=>`<div class="brief-step"><b>${esc(r.cue)}</b>${(r.points||[]).length?`<ul>${r.points.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:`<p>${esc(r.action)}</p>`}</div>`).join("")}</details>
-   </article>`;
+   </div>${note}` + (gday ? (own.length ? focusCard("这节课", own) : "") + othersFold(calloutHtml() + focusCard(FOCUS.title, rules))
+                         : focusCard(FOCUS.title, rules.concat(own)));
   const blocks = []; itemsOf(selD).forEach(it=>{ const last=blocks[blocks.length-1]; if(last && last.t===it.blk) last.items.push(it); else blocks.push({t:it.blk,items:[it]}); });
   document.getElementById("todayBox").innerHTML = `<div class="lsec">练什么</div>` +
    blocks.map(b=>{ const one = b.items.length===1 ? b.items[0] : null, label = cleanBlk(b.t) || (one ? shortEx(one.id) : "今天");
@@ -1104,7 +1118,7 @@ function renderGame(){
   const three = LEARNING.some(x=>x.status!=="retired") ? [] : (G.three||{})[m] || [], rules = (G.rules||{})[m] || [], wu = store.wu[ds] || [];
   const mission = ((G.mission||{})[mk]||[])[w] || "", done = ((G.done||{})[mk]||[])[w] || "";
   const icons = ["target","trophy","zap","alert"];
-  document.getElementById("gameBox").innerHTML = `${gamePlanHtml(planGame(todayIso))}${calloutHtml()}${priorityHtml()}
+  document.getElementById("gameBox").innerHTML = `${pinnedHtml(planGame(todayIso), ds)}
   <div class="hero grain">
    <div class="eyebrow">下一场 · ${ds===todayIso?"今天":md(d)+" 周"+WD[d.getDay()]}</div>
    <h1>${sess.game==="league"?"联赛":"Pickup"}</h1>
