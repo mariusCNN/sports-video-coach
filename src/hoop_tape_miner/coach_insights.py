@@ -34,6 +34,7 @@ import sys
 from pathlib import Path
 
 from .coach_eval import load_trips, memo_conclusions, trip_times
+from .review_progress import by_part
 from sports_video_coach.timefmt import mmss as _mmss
 
 KB = Path(__file__).resolve().parents[2] / "prompts" / "coach_kb.md"
@@ -459,7 +460,7 @@ def build_ab(review: Path, out: Path, old_report: Path | None = None, seed: int 
              insights: Path | None = None) -> dict:
     """Write the blind sheet to `out` and `<out stem>.key.json`; return the key."""
     review, out = Path(review), Path(out)
-    old = [c for p in sorted(review.glob("memo_part*.md")) for c in memo_conclusions(p.read_text(encoding="utf8"))]
+    old = [c for p in by_part(review.glob("memo_part*.md")) for c in memo_conclusions(p.read_text(encoding="utf8"))]
     if old_report:
         old += report_items(Path(old_report).read_text(encoding="utf8"))
     ins = json.loads((Path(insights) if insights else review / "insights.json").read_text(encoding="utf8"))

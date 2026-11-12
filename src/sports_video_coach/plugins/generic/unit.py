@@ -82,7 +82,8 @@ def merge_parts(g: Analysis) -> Path | None:
     """run/review/part*.json (one per helper) joined into review.json, moments in time order; None when there is a
     review.json already or no parts."""
     p = g.review / "review.json"
-    parts = sorted(g.review.glob("part*.json")) if g.review.is_dir() else []
+    # in part order (part2 before part10), so the summaries join in that order
+    parts = sorted(g.review.glob("part*.json"), key=lambda f: (len(f.name), f.name)) if g.review.is_dir() else []
     if p.exists() or not parts:
         return None
     moments, summaries = [], []

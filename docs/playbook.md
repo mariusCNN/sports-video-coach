@@ -168,26 +168,31 @@ uv run hoop-tape-miner shot-proposals --run "$RUN" --official "$RUN/official.jso
 1. Build the coach sheets, part files and briefs:
 
 ```
-uv run hoop-tape-miner coach-sheets --run "$RUN" --game "$GJ" --out "$RUN/review_v1" --parts 6 --video "$V" \
+uv run hoop-tape-miner coach-sheets --run "$RUN" --game "$GJ" --out "$RUN/review_v1" --video "$V" \
     > workspace/logs/coach-sheets.log 2>&1
 ```
 
-   Writes `p<pid>_<k>.jpg` sheets, `manifest.json`, `part<N>.json`, `lineup_intervals.json` and `brief_part<N>.md` (filled from `prompts/film_review_brief.md`). Read one brief: no `{...}` left, team names and jersey colours right. To fix values, edit `$GJ` and re-run with `--skip-sheets`.
-   For a controlled workload experiment, replace `--parts 6` with `--max-sheets N`
-   and use a separate output folder. This keeps each possession intact; an oversized
-   possession gets its own part and a warning. It does not cap image tokens or guarantee
-   that a context will not compact. Keep the original resolution and read every sheet.
+   Writes `p<pid>_<k>.jpg` sheets, `manifest.json`, `part<N>.json`, `lineup_intervals.json`, `brief_part<N>.md` (filled from `prompts/film_review_brief.md`) and `review_partition.json` (the split used). Read one brief: no `{...}` left, team names and jersey colours right. To fix values, edit `$GJ` and re-run with `--skip-sheets`.
+   Parts are sized by sheets: by default a part holds whole possessions up to 20 sheets
+   (measured: about 3.5k tokens per sheet on top of a 45k start, so a part peaks near 130k and its reviewer finishes
+   without its context being summarised). A full game (670 sheets) gives about 42 parts. A possession
+   is never split; one with more than 20 sheets gets a part of its own and a note.
+   `--max-sheets N` changes the cap; `--parts N` gives the older split into N parts
+   balanced by sheets instead (much larger parts). The cap does not guarantee that a
+   context will not compact. Keep the original resolution and read every sheet.
    Regeneration refuses a folder with existing coach JSON or read ledgers: their part
    numbers must keep referring to the same possessions. For a new partition, copy the
    manifest and its sheets into a new folder, then use `--skip-sheets` there.
-   The default remains six parts. The normal `run` also accepts `"review": {"max_sheets": 35}`
-   or `"review": {"parts": 6}` in game.json (mutually exclusive); changing this setting
-   invalidates the sheet step. Use a new `review_dir` when starting another review.
+   The normal `run` also accepts `"review": {"max_sheets": 35}` or `"review": {"parts": 6}`
+   in game.json (mutually exclusive); changing this setting invalidates the sheet step.
+   Without either, a folder keeps the split it was made with (`review_partition.json`;
+   folders from before it count as six parts), so finished games are not re-split.
+   Use a new `review_dir` when starting another review.
 
-2. Launch one subagent per part, **at most 3 at once**. Each gets only its `brief_part<N>.md` path. It reads every sheet of its part, writes `coach_part<N>.json`, `memo_part<N>.md`, `notes_part<N>.txt` into `$RUN/review_v1`, and replies in at most 8 lines. Save trips and notes after each possession, including the last sheet read and remaining work when interrupted. Reopen uncertain evidence on resume. Do not read the sheets yourself. Close-ups: `uv run hoop-tape-miner coach-sheets zoom SHEET TILE X Y W H OUT [--scale 3]`.
+2. Launch one subagent per `brief_part<N>.md`, **at most 3 at once** (start the next part when one finishes). Start each with an explicitly chosen model and effort, a cheaper vision-capable model, instead of letting it inherit the coordinating session's: an inherited top-tier model at high effort makes the review many times more expensive. Each gets only its `brief_part<N>.md` path. It reads every sheet of its part in batches of up to about 8 sheets per step, writes `coach_part<N>.json`, `memo_part<N>.md`, `notes_part<N>.txt` into `$RUN/review_v1`, and replies in at most 8 lines. Save trips and notes after each batch, including the last sheet read and remaining work when interrupted. Reopen uncertain evidence on resume. Do not read the sheets yourself. Close-ups: `uv run hoop-tape-miner coach-sheets zoom SHEET TILE X Y W H OUT [--scale 3]`.
 
    Start or resume a part with `coach-sheets progress --review "$RUN/review_v1" --part N`.
-   After viewing a possession and saving its JSON, acknowledge its exact relative paths
+   After viewing a batch and saving its JSON, acknowledge its exact relative paths
    using the same command with `--read sheet1.jpg sheet2.jpg`. It atomically saves
    `read_partN.json`; the command lists pending sheets on resume. Part and image hashes
    invalidate stale acknowledgements. New folders carry `review_policy.json`, so
@@ -424,7 +429,7 @@ uv run hoop-tape-miner train workspace/players/7/training/<date> > workspace/log
 
 **Training step 4: sheets.** `train-sheets` writes overview sheets (a frame every 10 s), rep sheets (set / release / follow-through crops, a rim filmstrip from +0.3 s to +2.1 s, a wide frame at +0.8 s) and dribble sheets, split into parts of 50 candidates with one brief each. Once any `review_part<N>.json` exists it will not rebuild (the parts could shift under the reviews); run `hoop-tape-miner train-sheets <session> --force` to rebuild, then review every part again.
 
-**Training step 5: film review.** One subagent per `brief_part<N>.md` (at most 3 at once). Each writes `review_part<N>.json` (every candidate confirmed or rejected, make / miss / unclear, zone, spot, type, miss direction, form notes, drill blocks, dribble drills, reps the scan missed) and `memo_part<N>.md`. Do not read the sheets yourself. Re-run a part whose json does not parse or misses candidate ids.
+**Training step 5: film review.** One subagent per `brief_part<N>.md` (at most 3 at once), each started with an explicitly chosen model and effort as in game step 7 (a cheaper vision-capable model, not the session's inherited one). Each writes `review_part<N>.json` (every candidate confirmed or rejected, make / miss / unclear, zone, spot, type, miss direction, form notes, drill blocks, dribble drills, reps the scan missed) and `memo_part<N>.md`. Do not read the sheets yourself. Re-run a part whose json does not parse or misses candidate ids.
 
 **Training step 6: summary.** `train-summary` merges the parts with the pose numbers into `summary.json`, `facts.md` and the figures. Every number in the report comes from `facts.md`.
 

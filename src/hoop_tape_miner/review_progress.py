@@ -11,6 +11,11 @@ from sports_video_coach.media import write_json_atomic
 POLICY = "review_policy.json"
 
 
+def by_part(paths) -> list[Path]:
+    """Part files in part order (part2.json before part10.json), which a plain sort breaks past nine parts."""
+    return sorted(paths, key=lambda p: (len(p.name), p.name))
+
+
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -73,7 +78,7 @@ def errors(review: Path) -> list[str]:
         if json.loads(policy.read_text(encoding="utf8")) != {"sheet_coverage": 1}:
             return [f"{POLICY}: unsupported coverage policy"]
         out = []
-        for path in sorted(review.glob("part*.json")):
+        for path in by_part(review.glob("part[0-9]*.json")):
             part = int(path.stem.removeprefix("part"))
             status = progress(review, part)
             if status["pending"]:

@@ -13,7 +13,7 @@ Loop:
 
 - Run `uv run hoop-tape-miner train $ARGUMENTS > workspace/logs/train.log 2>&1` and read only the tail of the log. After the first run, pass the session folder it printed instead of the videos.
 - Exit 3 means it is waiting for you: do exactly the step the log names (playbook, "Personal training sessions"), then run it again. Exit 1: read the stage log it names, fix the cause, run again. Exit 0: done.
-- Film review: one subagent per `brief_part<N>.md`, at most 3 at once; they write files and reply in a few lines. Do not read the sheets yourself.
+- Film review: one subagent per `brief_part<N>.md`, at most 3 at once, each started with the model and effort set explicitly in the Agent call (the film-review choice in `game.md`), never inherited from this session; they write files and reply in a few lines. Do not read the sheets yourself.
 - Browser checks go to the browser-check subagent. Publish only when the user asks: then run once more with `--publish` (the page gets its own private link and is never listed on the team hub).
 
 Rules: one session per conversation; reuse an existing `run/` and never re-run `train-scan` when `pose.npz` exists; never invent a make ("unclear"); every number in the report comes from `facts.md`; never commit anything from `workspace/` or any media.

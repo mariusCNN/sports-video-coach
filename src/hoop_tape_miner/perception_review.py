@@ -6,11 +6,12 @@ import json
 from pathlib import Path
 
 from .perception_eval import match_times
+from .review_progress import by_part
 
 
 def compare_reviewed(doc: dict, review: Path, tolerance: float = 2.0):
     shots = []
-    for path in sorted(review.glob("coach_part*.json")):
+    for path in by_part(review.glob("coach_part*.json")):
         for trip in json.loads(path.read_text(encoding="utf8")):
             shot = trip.get("shot") or {}
             t = shot.get("t")

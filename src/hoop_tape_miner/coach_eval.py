@@ -293,13 +293,14 @@ def memo_conclusions(text: str) -> list[str]:
 
 def load_trips(review: Path) -> list[dict]:
     """All coach_part*.json trips; missing times are taken from the possession in part*.json."""
+    from .review_progress import by_part
     poss = {}
-    for p in sorted(review.glob("part*.json")):
+    for p in by_part(review.glob("part*.json")):
         d = json.loads(p.read_text(encoding="utf8"))
         for x in d if isinstance(d, list) else d.get("possessions", []):
             poss[x["pid"]] = (x["start"], x["end"])
     trips = []
-    for p in sorted(review.glob("coach_part*.json")):
+    for p in by_part(review.glob("coach_part*.json")):
         for x in json.loads(p.read_text(encoding="utf8")):
             if trip_times(x)[0] is None and x.get("pid") in poss:
                 x["t0"], x["t1"] = poss[x["pid"]]
@@ -337,10 +338,10 @@ def part_coverage(review: Path, max_gap: float = MAX_GAP) -> list[str]:
     """Errors when a coach_part<N>.json does not cover its part<N>.json: a possession (pid) with no trip, a stretch
     longer than `max_gap` s inside a possession that no trip's [t0, t1] covers, or a null scoring / foul jersey
     with no note. Parts whose coach json is unreadable are left to coach-check's schema errors."""
-    from .review_progress import errors as progress_errors
+    from .review_progress import by_part, errors as progress_errors
     review = Path(review)
     errs = progress_errors(review)
-    for p in sorted(review.glob("part*.json")):
+    for p in by_part(review.glob("part*.json")):
         try:
             poss = [x for x in _part_possessions(p) if isinstance(x, dict) and "pid" in x]
         except (OSError, ValueError):
@@ -477,10 +478,11 @@ def main(argv=None):
     res["regressions"] = regressions(prev.get("facts") if prev else None, res["facts"])
     if a.baseline:
         from .coach_schema import validate_part
+        from .review_progress import by_part
         baseline = Path(a.baseline)
         comparison_errors = []
         for folder in (baseline, review):
-            files = list(folder.glob("coach_part*.json"))
+            files = by_part(folder.glob("coach_part*.json"))
             if not files:
                 comparison_errors.append(f"{folder}: no coach parts")
             comparison_errors.extend(f"{folder.name}/{p.name}: {e}" for p in files for e in validate_part(p))

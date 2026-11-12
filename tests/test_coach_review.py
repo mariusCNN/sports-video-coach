@@ -125,6 +125,47 @@ def test_sheet_budget_cli_reuses_existing_sheets(tmp_path, capsys):
     assert not list(out.glob("*.jpg"))  # No video or sheet regeneration needed.
 
 
+def _skip_sheets(tmp_path, sizes, *options):
+    """coach-sheets --skip-sheets on a manifest with possessions of `sizes` sheets; returns (out, parts in order)."""
+    import json
+    from hoop_tape_miner.review_progress import by_part
+    out = tmp_path / "review"
+    out.mkdir(exist_ok=True)
+    game = tmp_path / "game.json"
+    game.write_text("{}", encoding="utf-8")
+    manifest = [{"pid": i, "start": i * 20, "end": i * 20 + 19, "sheets": [f"p{i}_{n}.jpg" for n in range(size)]}
+                for i, size in enumerate(sizes)]
+    (out / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    coach_review.main(["--run", str(tmp_path), "--game", str(game), "--out", str(out), *options,
+                       "--skip-sheets", "--brief", str(tmp_path / "missing.md")])
+    return out, [json.loads(p.read_text()) for p in by_part(out.glob("part*.json"))]
+
+
+def test_default_split_caps_parts_at_20_sheets_and_keeps_big_possession_whole(tmp_path, capsys):
+    import json
+    out, parts = _skip_sheets(tmp_path, [12, 8, 5, 40, 3])
+    assert coach_review.DEFAULT_MAX_SHEETS == 20
+    assert [[m["pid"] for m in p] for p in parts] == [[0, 1], [2], [3], [4]]
+    assert "possession 3 exceeds --max-sheets; kept intact" in capsys.readouterr().out
+    assert json.loads((out / coach_review.PARTITION).read_text()) == {"max_sheets": 20}
+    assert coach_review.partition_of(out) == {"max_sheets": 20}
+
+
+def test_default_split_never_cuts_a_possession_and_numbers_past_nine(tmp_path):
+    sizes = [7, 9, 16, 1, 30, 2, 33, 4, 12, 12, 12, 5] * 3
+    out, parts = _skip_sheets(tmp_path, sizes)
+    assert len(parts) > 9
+    assert [m["pid"] for p in parts for m in p] == list(range(len(sizes)))  # all, once, in order
+    for p in parts:
+        assert sum(len(m["sheets"]) for m in p) <= 20 or len(p) == 1
+
+
+def test_explicit_parts_keeps_balanced_split(tmp_path):
+    out, parts = _skip_sheets(tmp_path, [4, 4, 1, 1, 1, 1], "--parts", "2")
+    assert [[m["pid"] for m in p] for p in parts] == [[0, 1], [2, 3, 4, 5]]
+    assert coach_review.partition_of(out) == {"parts": 2}
+
+
 def _flow(*ts, team="us"):
     return {"score_flow": [{"official_t": 100 + i, "our_video_t": t, "team": team, "points": 2,
                             "score_us": 2 * (i + 1), "score_them": 0} for i, t in enumerate(ts)]}

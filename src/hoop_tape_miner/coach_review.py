@@ -1,9 +1,12 @@
 """Coach film-review sheets: 2x2 annotated frame grids per possession with the official
-score flow in the header, CV lineups per possession, and the game split into N parts
-(one reviewer each) with a filled-in brief per part.
+score flow in the header, CV lineups per possession, and the game split into parts
+(one reviewer each) with a filled-in brief per part. By default a part holds at most
+DEFAULT_MAX_SHEETS sheets of whole possessions (`--max-sheets N` to change it); `--parts N`
+splits into N parts balanced by sheets instead.
 
     hoop-tape-miner coach-sheets --run RUN --game game.json --official official.json \
-        --out RUN/review_v1 [--parts 6] [--video V] [--brief prompts/film_review_brief.md] [--skip-sheets]
+        --out RUN/review_v1 [--max-sheets 20 | --parts N] [--video V] [--brief prompts/film_review_brief.md]
+        [--skip-sheets]
     hoop-tape-miner coach-sheets zoom SHEET TILE X Y W H OUT [--scale 3] [--grid 2 2] [--header 28]   # close-up
     hoop-tape-miner coach-sheets event --run RUN --video V --review R --official O --out DIR [--fps 4]
     hoop-tape-miner coach-sheets event-merge --review R --events DIR --out NEW_R [--official O]   # merge answers
@@ -12,7 +15,7 @@ Reads RUN/tracks.pkl, possessions.pkl, player_numbers.json; when present also RU
 the sheets) and RUN/shot_proposals.json (CV shot-attempt markers + cv_attempts per possession in the manifest and
 part files). Writes to --out: p<pid>_<k>.jpg,
 manifest.json, part<N>.json, lineup_intervals.json, brief_part<N>.md (if the brief template
-exists). Sheet paths in the json files are relative to --out. Optional game.json "review"
+exists), review_partition.json (the split used: {"max_sheets": n} or {"parts": n}). Sheet paths in the json files are relative to --out. Optional game.json "review"
 block overrides the layout: every, pre, post, tile [w, h], grid [cols, rows], header,
 lineup_gap, lineup_min. Brief placeholders ({us_team}, {review_dir}, {official_totals}, {part},
 {t0}, ...; see brief_values) come from game.json + official.json; a game.json "brief" block
@@ -38,6 +41,25 @@ from sports_video_coach.timefmt import mmss
 LAYOUT = dict(every=1.0, pre=1.0, post=3.0, tile=[800, 450], grid=[2, 2], header=28, quality=82,
               lineup_gap=25.0, lineup_min=8.0, window_pad=8.0, trail=0.6, attempt_win=1.0)
 BRIEF = Path(__file__).resolve().parents[2] / "prompts" / "film_review_brief.md"
+# Sheets per part by default. Measured 2026-11-12: a reviewer starts near 45k tokens and each sheet adds about 3.5k,
+# so 20 sheets peak near 130k; a 30-sheet part reached 150-165k and one reviewer's context was summarised.
+DEFAULT_MAX_SHEETS = 20
+LEGACY_PARTS = 6          # the balanced split older review folders were made with
+PARTITION = "review_partition.json"
+
+
+def partition_of(review: Path) -> dict | None:
+    """The split coach-sheets recorded in review/PARTITION ({"max_sheets": n} or {"parts": n}); None if absent or
+    unreadable."""
+    try:
+        d = json.loads((Path(review) / PARTITION).read_text(encoding="utf8"))
+    except (OSError, ValueError):
+        return None
+    if isinstance(d, dict) and len(d) == 1:
+        (k, v), = d.items()
+        if k in ("parts", "max_sheets") and type(v) is int and v >= 1:
+            return {k: v}
+    return None
 
 
 def _num_key(n: str):
@@ -612,6 +634,7 @@ def merge_event_answers(trips: list[dict], windows: list[dict], answers: dict, b
 def event_merge_main(argv):
     """coach-sheets event-merge: copy --review into a new --out folder with the fact-check answers merged."""
     import shutil
+    from .review_progress import by_part
     ap = argparse.ArgumentParser(prog="hoop-tape-miner coach-sheets event-merge", description=event_merge_main.__doc__)
     ap.add_argument("--review", required=True, help="review dir with coach_part*.json (v2 trips)")
     ap.add_argument("--events", required=True, help="event sheets dir with events.json and event_NN.answer.json")
@@ -629,7 +652,8 @@ def event_merge_main(argv):
     answers = {}
     for p in sorted(ev_dir.glob("event_*.answer.json")):
         answers[int(p.name.split("_")[1].split(".")[0])] = json.loads(p.read_text(encoding="utf-8"))
-    parts = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in sorted(out.glob("coach_part*.json"))}
+    # in part order: on a tie between two trips the earlier one (by part, then within it) takes the answer
+    parts = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in by_part(out.glob("coach_part*.json"))}
     box = None
     if a.official:
         players = json.loads(Path(a.official).read_text(encoding="utf-8")).get("players") or {}
@@ -706,15 +730,19 @@ def main(argv=None):
     ap.add_argument("--official", help="league stats (default: official.json next to game.json or in --run, if any)")
     ap.add_argument("--out", required=True)
     partition = ap.add_mutually_exclusive_group()
-    partition.add_argument("--parts", type=int, default=6, help="number of balanced parts (default: 6)")
+    partition.add_argument("--parts", type=int, help="split into N parts balanced by sheets instead")
     partition.add_argument("--max-sheets", type=int,
-                           help="opt-in sheet budget per part; whole possessions are never split")
+                           help=f"sheet budget per part (default: {DEFAULT_MAX_SHEETS}); whole possessions are never "
+                                "split, a larger possession gets a part of its own")
     ap.add_argument("--video", help="default: game.json 'video', relative to game.json")
     ap.add_argument("--brief", default=str(BRIEF), help="brief template with {placeholders}")
     ap.add_argument("--skip-sheets", action="store_true", help="reuse --out/manifest.json; redo parts + briefs")
     a = ap.parse_args(argv)
-    if a.parts < 1 or (a.max_sheets is not None and a.max_sheets < 1):
+    if (a.parts is not None and a.parts < 1) or (a.max_sheets is not None and a.max_sheets < 1):
         ap.error("--parts and --max-sheets must be positive")
+    if a.parts is None and a.max_sheets is None:
+        a.max_sheets = DEFAULT_MAX_SHEETS
+    chosen = {"parts": a.parts} if a.parts is not None else {"max_sheets": a.max_sheets}
     run, out, game_path = Path(a.run), Path(a.out), Path(a.game)
     if any(out.glob("coach_part*.json")) or any(out.glob("read_part*.json")):
         raise SystemExit("review checkpoints already exist; use a new --out folder to regenerate or repartition "
@@ -759,7 +787,7 @@ def main(argv=None):
     write_json_atomic(out / "manifest.json", manifest)
     print(len(manifest), "possessions", sum(len(m["sheets"]) for m in manifest), "sheets")
 
-    parts = split_parts(manifest, a.parts, max_sheets=a.max_sheets)
+    parts = split_parts(manifest, a.parts or 1, max_sheets=a.max_sheets)
     # These are generated files only; reviewed folders were rejected before any mutation.
     for stale in [*out.glob("part[0-9]*.json"), *out.glob("brief_part[0-9]*.md")]:
         if re.fullmatch(r"part\d+\.json|brief_part\d+\.md", stale.name):
@@ -781,8 +809,12 @@ def main(argv=None):
         print("no brief template at", a.brief, "- skipped brief_part*.md")
     from .review_progress import POLICY
     write_json_atomic(out / POLICY, {"sheet_coverage": 1})
+    write_json_atomic(out / PARTITION, chosen)
+    print(f"{len(parts)} parts ({'--parts ' + str(a.parts) if a.parts else f'at most {a.max_sheets} sheets each'}); "
+          "start one reviewer per brief_part<N>.md, at most 3 at once")
     incomplete.unlink()
-    print("After each possession: save coach_part<N>.json, then coach-sheets progress --review", out,
+    print("After each batch (one possession's sheets, up to about 8 per step): save coach_part<N>.json, "
+          "then coach-sheets progress --review", out,
           "--part N --read <viewed sheet paths>. Resume with progress without --read.")
 
 

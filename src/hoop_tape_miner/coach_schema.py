@@ -28,6 +28,7 @@ import sys
 from pathlib import Path
 
 from .coach_eval import foul_side, ft_made_times, jersey, trip_times
+from .review_progress import by_part
 
 RESULTS = ("made2", "made3", "missed", "turnover", "foul_ft", "foul_side", "dead_ball", "end_period", "unclear")
 OFFENCE = ("us", "them", "none")
@@ -326,7 +327,7 @@ def migrate_v1(trip: dict) -> dict:
 
 def _possession_times(review: Path) -> dict:
     poss = {}
-    for p in sorted(review.glob("part*.json")):
+    for p in by_part(review.glob("part*.json")):
         d = json.loads(p.read_text(encoding="utf8"))
         for x in d if isinstance(d, list) else d.get("possessions", []):
             poss[x["pid"]] = (x["start"], x["end"])
@@ -370,7 +371,7 @@ def migrate_dir(src: Path, out: Path) -> list[str]:
     copy_sheets(src, out)
     poss = _possession_times(src)
     errs = []
-    for p in sorted(src.glob("coach_part*.json")):
+    for p in by_part(src.glob("coach_part*.json")):
         try:
             trips = json.loads(p.read_text(encoding="utf8"))
         except ValueError as ex:
@@ -405,7 +406,7 @@ def main(argv=None):
     if a.migrate:
         errs += migrate_dir(folder, Path(a.migrate))
         folder = Path(a.migrate)
-    parts = sorted(folder.glob("coach_part*.json"))
+    parts = by_part(folder.glob("coach_part*.json"))
     if not parts:
         errs.append(f"no coach_part*.json in {folder}")
     n = 0

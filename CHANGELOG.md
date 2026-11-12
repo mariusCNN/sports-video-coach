@@ -11,6 +11,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Basketball film review costs far fewer tokens. `coach-sheets` now splits a game into parts of whole
+  possessions with at most 20 sheets each (`--max-sheets N` to change it, `--parts N` for the old balanced
+  split; a possession with more sheets gets a part of its own), so one reviewer finishes its part without its
+  context being summarised; a full game (670 sheets) gives about 42 parts instead of 6. The split is saved in
+  `review_partition.json`, and `run` keeps the split a review folder was made with (folders from before count
+  as six parts), so finished games are not re-split. Part files sort as part2 before part10 everywhere.
+- The film review briefs (game and training) tell the reviewer to open up to about 8 sheets per step instead
+  of one, and to save trips, notes and the read ledger after each batch. The docs and the run's film-review
+  message say to start each reviewer with an explicitly chosen, cheaper vision-capable model and effort
+  instead of the session's.
 - The repo now lives at github.com/mariusCNN/sports-video-coach (the owner's account was renamed). Every link,
   install command, badge, Codespaces button and the demo site (now https://mariuscnn.github.io/sports-video-coach/;
   the old mariusding.github.io address returns 404) point there. Benchmark runs submitted under the old name still
@@ -83,8 +93,8 @@ All notable changes to this project are documented here. The format follows [Kee
   for freshness. `coach-eval --baseline DIR --gate` rejects regressions for either team, including player
   attribution, total points, fouls and matched events. Official roster conflicts still require film review.
 
-- Opt-in `coach-sheets --max-sheets N` partitions reviews by sheet workload while keeping
-  each possession intact. The default remains six parts pending controlled quality validation.
+- `coach-sheets --max-sheets N` partitions reviews by sheet workload while keeping
+  each possession intact (the default since the 20-sheet change above).
   Reviewers now save trips and progress after each possession to support interrupted work.
 - A real training-review showcase on the homepage and in both READMEs, with English landscape/vertical
   video downloads and explicit limits on what the selected example demonstrates. Media is hosted separately.

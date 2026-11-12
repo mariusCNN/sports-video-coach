@@ -33,6 +33,7 @@ import pandas as pd
 from . import court
 from .coach_review import compose
 from .review import annotate, draw_ball_trail, use_game
+from .review_progress import by_part
 from sports_video_coach.timefmt import mmss
 
 TILE_OFFSETS = (-1.8, -1.2, -0.8, -0.4, 0.0, 0.3)   # s from the reviewed release time (often ~1 s late)
@@ -64,12 +65,12 @@ def shot_list(review: Path) -> list[dict]:
     """Every trip with a shot in R/coach_part*.json, in part order: part file, pid, trip, release t, shooter,
     offence, zone, made and the attacked half (part*.json possession `side`, None when unknown)."""
     sides = {}
-    for p in sorted(review.glob("part*.json")):
+    for p in by_part(review.glob("part*.json")):
         d = json.loads(p.read_text(encoding="utf8"))
         for x in d if isinstance(d, list) else d.get("possessions", []):
             sides[x.get("pid")] = x.get("side")
     out = []
-    for p in sorted(review.glob("coach_part*.json")):
+    for p in by_part(review.glob("coach_part*.json")):
         for x in json.loads(p.read_text(encoding="utf8")):
             s = x.get("shot") if isinstance(x, dict) else None
             if not isinstance(s, dict):
@@ -329,7 +330,7 @@ def merge(review: Path, locate: Path | None = None) -> list[str]:
         for a in json.loads(p.read_text(encoding="utf8")):
             if isinstance(a, dict) and isinstance(a.get("n"), int):
                 answers[a["n"]] = a
-    parts = {p.name: json.loads(p.read_text(encoding="utf8")) for p in sorted(review.glob("coach_part*.json"))}
+    parts = {p.name: json.loads(p.read_text(encoding="utf8")) for p in by_part(review.glob("coach_part*.json"))}
     log = []
     for n, s in sorted(meta.items()):
         x = next((x for x in parts.get(s["part"], []) if isinstance(x, dict) and x.get("pid") == s["pid"]
@@ -372,7 +373,7 @@ def merge(review: Path, locate: Path | None = None) -> list[str]:
 def missing(review: Path) -> list[str]:
     """Shots in R/coach_part*.json with neither "xy" (a spot or null) nor, for null, an "xy_note"."""
     out = []
-    for p in sorted(review.glob("coach_part*.json")):
+    for p in by_part(review.glob("coach_part*.json")):
         for x in json.loads(p.read_text(encoding="utf8")):
             s = x.get("shot") if isinstance(x, dict) else None
             if isinstance(s, dict) and ("xy" not in s or (s["xy"] is None and not s.get("xy_note"))):
@@ -383,7 +384,7 @@ def missing(review: Path) -> list[str]:
 def conflicts(review: Path) -> list[str]:
     """Shots whose "zone_flag" asks for a decision ("confirm: ..."): fix the trip from the sheet, drop the flag."""
     out = []
-    for p in sorted(review.glob("coach_part*.json")):
+    for p in by_part(review.glob("coach_part*.json")):
         for x in json.loads(p.read_text(encoding="utf8")):
             s = x.get("shot") if isinstance(x, dict) else None
             if isinstance(s, dict) and str(s.get("zone_flag") or "").startswith("confirm"):

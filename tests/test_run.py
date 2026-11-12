@@ -31,7 +31,7 @@ VALID_TRIP = {"schema": 2, "pid": 1, "trip": 1, "t0": 1.0, "t1": 9.0, "offence":
               "shot": None, "fts": None, "foul": None, "evidence": {}, "confidence": "low"}
 
 
-@pytest.mark.parametrize("config,expected", [({}, {"parts": 6}), ({"parts": 4}, {"parts": 4}),
+@pytest.mark.parametrize("config,expected", [({}, {"max_sheets": 20}), ({"parts": 4}, {"parts": 4}),
                                            ({"max_sheets": 35}, {"max_sheets": 35})])
 def test_run_uses_review_partition_and_tracks_settings(game, config, expected):
     g = R.Game.load(game)
@@ -41,6 +41,20 @@ def test_run_uses_review_partition_and_tracks_settings(game, config, expected):
     key, value = next(iter(expected.items()))
     command = step.args(g)[0]
     assert command[command.index("--" + key.replace("_", "-")) + 1] == str(value)
+
+
+def test_default_partition_follows_the_review_folder(game):
+    """A finished game keeps the split its review was made with, so the new default never re-splits it."""
+    g = R.Game.load(game)
+    g.review.mkdir(parents=True, exist_ok=True)
+    (g.review / "part1.json").write_text("[]", encoding="utf8")          # from before review_partition.json
+    assert R.review_partition(g) == {"parts": 6}
+    (g.review / "review_partition.json").write_text('{"max_sheets": 20}', encoding="utf8")
+    assert R.review_partition(g) == {"max_sheets": 20}
+    (g.review / "review_partition.json").write_text('{"parts": 3}', encoding="utf8")
+    assert R.review_partition(g) == {"parts": 3}
+    g.game["review"] = {"max_sheets": 20}                                # an explicit choice still wins
+    assert R.review_partition(g) == {"max_sheets": 20}
 
 
 @pytest.mark.parametrize("config", [{"parts": 0}, {"max_sheets": -1}, {"parts": True},
@@ -321,6 +335,53 @@ def test_parts_done_requires_valid(game):
     assert not R.parts_done(g)
     touch(game, "run/review_v1/coach_part1.json")
     assert R.parts_done(g)
+
+
+def test_film_review_errors_follow_the_part_numbers(game):
+    # past nine parts the errors still list part2 before part10 (a text sort puts part10 first)
+    touch(game, "run/review_v1/manifest.json", *(f"run/review_v1/brief_part{n}.md" for n in range(1, 12)))
+    bad = json.dumps([dict(VALID_TRIP, result="made2 + FT 1/1 (and-one)")])
+    for n in (10, 2):
+        (game / f"run/review_v1/coach_part{n}.json").write_text(bad, encoding="utf8")
+    names = list(dict.fromkeys(e.split(":")[0] for e in R.parts_errors(R.Game.load(game))))
+    assert names == ["coach_part2.json", "coach_part10.json",                      # invalid, then missing
+                     *(f"coach_part{n}.json" for n in (1, 3, 4, 5, 6, 7, 8, 9, 11))]
+
+
+def test_summary_names_stale_parts_in_part_order(game):
+    touch(game, "run/review_v1/summary.json", "run/review_v1/coach_part10.json", "run/review_v1/coach_part2.json")
+    t = time.time()
+    for n in (2, 10):
+        os.utime(game / f"run/review_v1/coach_part{n}.json", (t + 60, t + 60))
+    assert R.summary_errors(R.Game.load(game))[0].startswith("coach_part2.json, coach_part10.json changed after")
+
+
+def test_resuming_a_six_part_review_keeps_its_files(game):
+    """A review split before review_partition.json (the old six parts, recorded by the code before the sheet cap)
+    resumes as it is: coach-sheets does not run again, and the parts, briefs and checkpoints keep their contents."""
+    from sports_video_coach import pipeline as P
+    touch(game, "run/calib/keyframes.json", "run/detections.pkl", "run/camera.npz", "run/embeddings.npz",
+          "run/cluster_names.json", "run/tracks.pkl", "run/jersey.json", "run/possessions.pkl",
+          "run/possession_metrics.pkl", "run/official.json", "run/review_v1/manifest.json")
+    review = game / "run/review_v1"
+    for n in range(1, 7):
+        a, b = 10.0 * n + 1, 10.0 * n + 9
+        (review / f"part{n}.json").write_text(json.dumps([{"pid": n, "start": a, "end": b, "sheets": []}]),
+                                              encoding="utf8")
+        (review / f"brief_part{n}.md").write_text(f"# Part {n}\n", encoding="utf8")
+        (review / f"coach_part{n}.json").write_text(json.dumps([dict(VALID_TRIP, pid=n, t0=a, t1=b)]),
+                                                    encoding="utf8")
+        (review / f"memo_part{n}.md").write_text(f"memo {n}\n", encoding="utf8")
+    store = P.Store(game)
+    P.adopt(R.STEPS, R.Game.load(game), store)
+    store.steps["coach-sheets"]["params"] = {"parts": 6}           # the default before review_partition.json
+    store.save()
+    before = {p.name: p.read_bytes() for p in review.iterdir()}
+    resplit = [f"run/review_v1/{f}{n}.{x}" for n in range(1, 7) for f, x in (("part", "json"), ("brief_part", "md"))]
+    runner = Runner(game, {"coach-sheets": [*resplit, "run/review_v1/review_partition.json"]})
+    assert R.drive(R.Game.load(game), until="film-review", runner=runner) == 0
+    assert runner.calls == []                                       # coach-sheets did not split the review again
+    assert {p.name: p.read_bytes() for p in review.iterdir()} == before
 
 
 def finished_until_html(folder: Path):

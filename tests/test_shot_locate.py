@@ -139,6 +139,19 @@ def test_check_lists_made_shots_to_confirm(tmp_path):
     assert L.missing(r) == [] and len(L.conflicts(r)) == 1
 
 
+def test_check_lists_parts_in_number_order(tmp_path):
+    # a game splits into dozens of parts: coach_part2.json comes before coach_part10.json, not after it
+    r = tmp_path / "review_v1"
+    r.mkdir()
+    for n in (10, 2, 1):
+        shot = {"t": 15.0, "shooter": "7", "made": True, "points": 2, "zone": "midrange",
+                "zone_flag": "confirm: made 2-pointer but the spot reads three"}
+        (r / f"coach_part{n}.json").write_text(json.dumps([trip(n, shot, result="made2")]), encoding="utf8")
+    order = ["coach_part1.json", "coach_part2.json", "coach_part10.json"]
+    assert [x.split(":")[0] for x in L.missing(r)] == order
+    assert [x.split(":")[0] for x in L.conflicts(r)] == order
+
+
 def test_run_waits_for_shot_locate_after_film_review(tmp_path):
     from hoop_tape_miner import run as R
     names = R.NAMES

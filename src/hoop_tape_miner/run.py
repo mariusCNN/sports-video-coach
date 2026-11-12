@@ -24,6 +24,7 @@ from sports_video_coach import pipeline, lessons
 from . import game_config, workspace
 from . import perception
 from . import perception_media
+from .review_progress import by_part
 from sports_video_coach.pipeline import (LANGS, QA_STAMP, WAITING, Step, Unit, clips_done, film_done, html_done,  # noqa: F401
                        listen_done, localised, profile_langs, published, qa_done, qa_hash, readme, reports_done,
                        tail_steps)
@@ -146,12 +147,12 @@ def parts_errors(g: Game) -> list[str]:
     from .coach_schema import validate_part
     parts = {p.stem.removeprefix("brief_") for p in g.review.glob("brief_part*.md")}
     parts |= {p.stem for p in g.review.glob("part*.json")}
-    files = sorted(g.review.glob("coach_part*.json"))
+    files = by_part(g.review.glob("coach_part*.json"))
     if not files:
         return ["no coach_part*.json yet"]
     errs = [f"{p.name}: {e}" for p in files for e in validate_part(p)]
     have = {p.stem.removeprefix("coach_") for p in files}
-    errs += [f"coach_{p}.json: missing" for p in sorted(parts - have)]
+    errs += [f"coach_{p}.json: missing" for p in sorted(parts - have, key=lambda s: (len(s), s))]   # part2 < part10
     return errs or part_coverage(g.review)
 
 
@@ -168,12 +169,23 @@ def parts_listed(g: Game) -> bool:
 
 
 def review_partition(g: Game) -> dict:
-    """The normal run and standalone sheet command share the same partition controls."""
+    """The normal run and standalone sheet command share the same partition controls: game.json review.parts or
+    review.max_sheets when set; else the split the review folder was made with (review_partition.json, or the old
+    six balanced parts for a folder with parts from before it), so finished games are not re-split; else the
+    default sheet cap (coach_review.DEFAULT_MAX_SHEETS)."""
+    from .coach_review import DEFAULT_MAX_SHEETS, LEGACY_PARTS, partition_of
     config = g.game.get("review") or {}
     if "parts" in config and "max_sheets" in config:
         raise ValueError("review.parts and review.max_sheets are mutually exclusive")
+    if "parts" not in config and "max_sheets" not in config:
+        made = partition_of(g.review)
+        if made:
+            return made
+        if any(g.review.glob("part[0-9]*.json")) or any(g.review.glob("brief_part[0-9]*.md")):
+            return {"parts": LEGACY_PARTS}
+        return {"max_sheets": DEFAULT_MAX_SHEETS}
     key = "max_sheets" if "max_sheets" in config else "parts"
-    value = config.get(key, 6)
+    value = config[key]
     if type(value) is not int or value < 1:
         raise ValueError(f"review.{key} must be a positive integer")
     return {key: value}
@@ -214,7 +226,7 @@ def summary_errors(g: Game) -> list[str]:
     if not isinstance(allv, dict) or not isinstance(allv.get("four_factors"), dict):
         return [f"{p.as_posix()} has no all.four_factors (written before the Four Factors): re-run coach-summary "
                 "--official with the same --segments"]
-    moved = [c.name for c in sorted(g.review.glob("coach_part*.json")) if not _newer(p, c)]
+    moved = [c.name for c in by_part(g.review.glob("coach_part*.json")) if not _newer(p, c)]
     if moved:
         return [f"{', '.join(moved)} changed after {p.as_posix()} was written (its trip splits are stale): re-run "
                 "coach-summary --official with the same --segments"]
@@ -425,8 +437,9 @@ STEPS = [
          inputs=lambda g: [g.run / "possessions.pkl", g.run / "possession_metrics.pkl"], after=("analyze",),
          params=review_partition),
     Step("film-review", "agent", parts_done,
-         how="Film review (playbook step 7): launch one subagent per {review}/brief_part<N>.md, at most 3 at once; "
-             "each writes coach_part<N>.json, memo_part<N>.md and notes_part<N>.txt there. Do not read the sheets "
+         how="Film review (playbook step 7): launch one subagent per {review}/brief_part<N>.md, at most 3 at once, "
+             "each started with an explicitly chosen model and effort (a cheaper vision-capable model) instead of "
+             "inheriting this session's; each writes coach_part<N>.json, memo_part<N>.md and notes_part<N>.txt there. Do not read the sheets "
              "yourself. A part counts as done when `hoop-tape-miner coach-check --review {review}` passes for it "
              "(schema, every pid of the part covered without gaps over 20 s, scoring and foul jerseys written or "
              "marked unknown, and all assigned sheets recorded with coach-sheets progress for new reviews); "
@@ -448,11 +461,11 @@ STEPS = [
          errors=locate_errors),
     Step("features", "cmd", lambda g: (g.review / "features.json").exists(),
          lambda g: [["coach-features", "--run", str(g.run), "--review", str(g.review)]],
-         inputs=lambda g: [g.review / "manifest.json", *sorted(g.review.glob("coach_part*.json"))], after=("analyze",)),
+         inputs=lambda g: [g.review / "manifest.json", *by_part(g.review.glob("coach_part*.json"))], after=("analyze",)),
     Step("coach-eval", "cmd", eval_done,
          lambda g: [["coach-eval", "--review", str(g.review), "--official", str(g.official), "--label", "run",
                      "--gate"]],
-         inputs=lambda g: [g.official, *sorted(g.review.glob("coach_part*.json"))] if g.official.exists() else None),
+         inputs=lambda g: [g.official, *by_part(g.review.glob("coach_part*.json"))] if g.official.exists() else None),
     Step("summary", "agent", lambda g: not summary_errors(g),
          how="Choose the game's stretches from the score flow, then run {coach_summary} and `plusminus` "
              "into {review}/summary.json and {review}/plusminus.json (playbook step 7.4).",
@@ -491,12 +504,12 @@ STEPS = [
          inputs=lambda g: [g.gj, *([g.lineup] if g.lineup.exists() else [])], after=("analyze",)),
     Step("matchups", "cmd", lambda g: _exists("matchups.json")(g) or _pages_built(g),
          lambda g: [["matchups", "--run", str(g.run), "--review", str(g.review), "--game", str(g.gj)]],
-         inputs=lambda g: [g.gj, *sorted(g.review.glob("coach_part*.json")),
+         inputs=lambda g: [g.gj, *by_part(g.review.glob("coach_part*.json")),
                            *([g.run / "shot_proposals.json"] if (g.run / "shot_proposals.json").exists() else [])],
          after=("analyze",)),
     Step("facts", "agent", lambda g: all(p.exists() for p in facts_files(g)),
          derives=lambda g: [(p, [g.review / "insights.json", g.review / "critic.json",
-                                *sorted(g.review.glob("coach_part*.json")), g.review / "summary.json"])
+                                *by_part(g.review.glob("coach_part*.json")), g.review / "summary.json"])
                             for p in facts_files(g)],
          how="Write the fact sheets (playbook step 9): {review}/players_facts.md and {review}/player{focus}_facts.md."),
     # a corrected fact sheet makes the READMEs written from it out of date (and through them the scripts)

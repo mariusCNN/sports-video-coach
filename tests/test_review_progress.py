@@ -117,6 +117,27 @@ def test_progress_cli_is_machine_readable_and_bad_ledger_blocks(review, capsys):
     assert P.errors(review)
 
 
+def test_parts_past_nine_check_and_load_in_part_order(tmp_path, capsys):
+    from hoop_tape_miner.coach_eval import load_trips
+    write(tmp_path / P.POLICY, {"sheet_coverage": 1})
+    for n in range(1, 12):
+        write(tmp_path / f"part{n}.json", [{"pid": n, "start": n * 10, "end": n * 10 + 5, "sheets": [f"s{n}.jpg"]}])
+        (tmp_path / f"s{n}.jpg").write_bytes(b"x")
+    assert [p.name for p in P.by_part(tmp_path.glob("part*.json"))][8:] == ["part9.json", "part10.json", "part11.json"]
+    for n in (2, 10):
+        write(tmp_path / f"coach_part{n}.json", [
+            {"schema": 2, "pid": n, "trip": 1, "t0": n * 10, "t1": n * 10 + 5, "offence": "none",
+             "result": "dead_ball", "shot": None, "fts": None, "foul": None,
+             "evidence": {"result": [n * 10 + 1]}, "confidence": "low"}])
+        P.progress(tmp_path, n, [f"s{n}.jpg"])
+    assert [x["pid"] for x in load_trips(tmp_path)] == [2, 10]
+    coach_schema.main(["--review", str(tmp_path), "--part", "10"])      # only part 10's errors: passes
+    assert "coach-check ok" in capsys.readouterr().out
+    with pytest.raises(SystemExit):
+        coach_schema.main(["--review", str(tmp_path), "--part", "11"])  # part 11 not reviewed yet
+    assert "coach_part11.json: missing" in capsys.readouterr().out
+
+
 def test_interrupted_sheet_generation_cannot_pass_as_a_legacy_review(review):
     from types import SimpleNamespace
     from hoop_tape_miner.run import parts_listed

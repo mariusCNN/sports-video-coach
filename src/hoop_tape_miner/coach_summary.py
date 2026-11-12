@@ -349,13 +349,14 @@ def main(argv=None):
     ap.add_argument("--out")
     ap.add_argument("--official", help="official.json: makes, free throws and points for the whole-game Four Factors")
     a = ap.parse_args(argv)
+    from .review_progress import by_part
     pid_start = {}  # fallback when a reviewer omitted trip times: possession start from part*.json
-    for p in sorted(Path(a.review).glob("part*.json")):
+    for p in by_part(Path(a.review).glob("part*.json")):
         d = json.loads(p.read_text(encoding="utf8"))
         for poss in d if isinstance(d, list) else d.get("possessions", []):
             pid_start[poss["pid"]] = poss["start"]
     trips = []
-    for p in sorted(Path(a.review).glob("coach_part*.json")):
+    for p in by_part(Path(a.review).glob("coach_part*.json")):   # trips in part order (part2 before part10)
         for x in json.loads(p.read_text(encoding="utf8")):
             if _t0(x) is None and x.get("pid") in pid_start:
                 x["start"] = pid_start[x["pid"]]

@@ -36,7 +36,9 @@ STATUSES = ("seen", "hypothesis", "not_seen", "not_visible")
 
 
 def load_reviews(review_dir: Path) -> list[dict]:
-    return [json.loads(p.read_text(encoding="utf8")) for p in sorted(review_dir.glob("review_*.json"))]
+    """The group reviews review_g<k>.json in group order (g2 before g10)."""
+    from .review_progress import by_part
+    return [json.loads(p.read_text(encoding="utf8")) for p in by_part(review_dir.glob("review_*.json"))]
 
 
 # ---- validation ----------------------------------------------------------------------------------------------

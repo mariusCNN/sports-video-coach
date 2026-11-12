@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 from .events import event_summary, reviewed_events
+from .review_progress import by_part
 
 
 def main(argv=None):
@@ -22,7 +23,7 @@ def main(argv=None):
     manifest = json.loads((source / "manifest.json").read_text(encoding="utf8"))
     expected = {p["pid"]: p for p in manifest}
     rows, coverage = [], []
-    for events_file in sorted(source.glob("events_part*.json")):
+    for events_file in by_part(source.glob("events_part*.json")):
         suffix = events_file.stem.removeprefix("events_")
         rows.extend(json.loads(events_file.read_text(encoding="utf8")))
         coverage.extend(json.loads((source / f"coverage_{suffix}.json").read_text(encoding="utf8")))

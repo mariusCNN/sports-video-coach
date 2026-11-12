@@ -22,6 +22,10 @@ Part {{part}}: session video {{from}} to {{to}} (times are mm:ss.s of the joined
 Sheets (open each with your image viewer, in order):
 {{sheets}}
 
+Open the sheets in batches of up to about 8 per step (several image reads issued in the same step), in order and
+skipping none, then write before the next batch. Opening one sheet per step re-sends your whole context for every
+image and multiplies the cost of the review.
+
 - `overview_*.jpg`: one frame every 10 s, timestamp in the top-left corner. Use them to split the part into
   blocks (warm-up, shooting from a spot, finishing, dribbling, rest) and to see where the player stands.
 - `reps_*.jpg`: one row per candidate attempt. Left panel: id, time and the pose numbers. Then three crops of the
