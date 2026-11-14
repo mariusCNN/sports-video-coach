@@ -3,7 +3,7 @@
 Input everywhere: t (N,) source seconds, kp (N,17,2) COCO keypoints in px, conf (N,17). Image y grows downward.
 Signed metrics follow the running direction (direction()), so a player running right-to-left gets the same signs.
 Lengths are in leg lengths (leg_length()). Missing = None, never 0. Contact times only at >= 100 fps: below that
-one frame is too coarse (spec: the movement-lab design in docs/superpowers/specs/).
+one frame is too coarse.
 """
 from __future__ import annotations
 

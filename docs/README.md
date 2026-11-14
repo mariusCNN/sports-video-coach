@@ -19,5 +19,6 @@ Start with the [project README](../README.md) ([中文](../README.zh.md)) and, f
 | [privacy.md](privacy.md) | everyone | What stays in `workspace/`, sharing reports, minors and consent |
 | [research.md](research.md) | contributors | Open-source projects and papers this builds on, and what was adapted |
 | [optimization-backlog.md](optimization-backlog.md) | contributors | Measured speed and cost improvements, done and to do |
+| [changelog-archive.md](changelog-archive.md) | everyone | Full release notes up to 0.4.0 (the short version is [CHANGELOG.md](../CHANGELOG.md)) |
 
 Basketball writing guides and the coaching knowledge bases ([knowledge-base.md](knowledge-base.md)) are in [`prompts/`](../prompts/). To contribute, see [CONTRIBUTING.md](../CONTRIBUTING.md).

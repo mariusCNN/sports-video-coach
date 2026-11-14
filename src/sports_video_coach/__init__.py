@@ -6,9 +6,9 @@ in plugins (see `plugin.py`): basketball (`hoop_tape_miner`) and the built-in `g
 """
 
 REPO_URL = "https://github.com/mariusCNN/sports-video-coach"
-# The revision every install command in the docs, the skill and the demo site pins (tests/test_install_pin.py
-# checks they all name this one, and that it is a commit of this repo). Move it to a release tag when one is cut.
-INSTALL_REF = "74b517fc410944fefeac2979810656ed77fb8f1a"
+# The release tag every install command in the docs, the skill and the demo site pins (tests/test_install_pin.py
+# checks they all name this one, and that it matches the package version). Move it when a new release is tagged.
+INSTALL_REF = "v0.4.0"
 INSTALL = f"uv tool install git+{REPO_URL}@{INSTALL_REF}"
 CLONE = f"git clone {REPO_URL} && cd sports-video-coach && git checkout {INSTALL_REF}"
 # The one prompt a user pastes into their agent (README, README.zh, START.md and the demo site show it word for word;
@@ -36,5 +36,5 @@ def installed_commit() -> str:
 
 def installed_ref() -> str:
     """The commit this tool was installed from (installed_commit), else INSTALL_REF. Text that tells an installed
-    user what to check out names this: a pinned commit's own INSTALL_REF is the commit before it."""
+    user what to check out names this, so a clone matches the installed code exactly."""
     return installed_commit() or INSTALL_REF

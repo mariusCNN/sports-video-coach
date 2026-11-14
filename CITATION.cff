@@ -5,8 +5,8 @@ title: "sports-video-coach: agent-first sports video analysis and coaching"
 abstract: "An agent-first framework that turns a person's own game or training video into a coach's film review, a coaching page with narration and clips, and an explained video. A sport-agnostic core with a step driver for coding agents, a generic plugin for any sport and a basketball plugin with computer-vision tracking. It also ships a public, reproducible benchmark of coding agents as sports film reviewers."
 authors:
   - alias: mariusDing
-version: 0.3.0
-date-released: 2026-10-23
+version: 0.4.0
+date-released: 2026-11-14
 license: MIT
 repository-code: "https://github.com/mariusCNN/sports-video-coach"
 url: "https://mariuscnn.github.io/sports-video-coach/"

@@ -6,10 +6,18 @@ so every number is measured, not judged.
 - **Leaderboard:** <https://mariuscnn.github.io/sports-video-coach/benchmark/> (in Chinese: <https://mariuscnn.github.io/sports-video-coach/benchmark/zh/>, built from the same result files)
 - **Result files:** [`benchmark/results/`](../benchmark/results/)
 - **Commands:** `sports-video-coach bench run | prepare | score | validate | page | baseline`
-- **Install** (needs ffmpeg on PATH; the command pins one commit, so you install what you read):
-  `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`,
+- **Install** (needs ffmpeg on PATH; the command pins one release tag, so you install what you read):
+  `uv tool install git+https://github.com/mariusCNN/sports-video-coach@v0.4.0`,
   then [run your agent in one command](#add-your-agent-in-one-command).
 - **Findings in short:** <https://mariuscnn.github.io/sports-video-coach/benchmark/findings/> (what effort changed, the blind floor, local models, cost)
+
+**The fresh-seed board in one line** (frames only, a new unseen seed per run, mean score above a blind guess,
+1 = perfect): Codex gpt-6-astra 1.000 · Claude Opus 5.5 0.997 (0.778 at low effort) · Claude Sonnet 5.5 0.419 at
+default effort, 0.931 at high (4 runs, 0.856–0.994; max effort timed out) · qwen3-vl 4B on a local GPU 0.000.
+One to four runs per setting; all runs so far are the author's. Rows: [fresh seeds](#fresh-seeds---seed) and on the leaderboard.
+
+Rerun it: install (above), then `sports-video-coach bench run --agent claude --suite svc-bench-3 --track frames --seed`
+(`--seed` draws a new seed; add `--model claude-sonnet-5-5 --effort high` for the Sonnet 5.5 high setting).
 
 ## Suites
 

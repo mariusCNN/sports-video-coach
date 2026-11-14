@@ -24,8 +24,8 @@ def test_each_readme_shows_its_prompt_in_a_code_block_and_links_start_md():
         text = (ROOT / name).read_text(encoding="utf8")
         assert f"```text\n{svc.ONE_PROMPT[lang]}\n```" in text, name
         assert "](START.md)" in text, name
-        # right after the author's "why" section, before the try-it and benchmark sections
-        assert re.findall(r"^## (.+)$", text, re.M)[1] == heading, name
+        # the first section, right under the real run at the top, before "is it for you" and the install routes
+        assert re.findall(r"^## (.+)$", text, re.M)[0] == heading, name
 
 
 def test_start_md_quotes_the_prompt_and_installs_the_pinned_revision():

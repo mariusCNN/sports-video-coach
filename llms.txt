@@ -1,7 +1,7 @@
 # sports-video-coach
 
-> Open-source, agent-first sports video analysis and basketball analytics. Turn a game or training video into
-> timestamped film review, coaching reports with clips/narration, drills and explained MP4s.
+> Turn your coding agent into your sports coach. Film your own game or training session on a phone (any sport);
+> the agent writes a timestamped film review, a coaching page with clips, drills and narration, and an explained MP4.
 
 ## Start here
 
@@ -11,16 +11,18 @@
 - [README](README.md): overview, demo, setup and limitations.
 - [Chinese README](README.zh.md): Chinese overview and setup.
 - [AGENTS.md](AGENTS.md): repository and runtime contract for coding agents.
+- [Agent skill](skills/sports-video-coach/SKILL.md): the self-contained skill (Claude Code plugin, `npx skills add`, Gemini CLI extension).
 - [Full capability catalog](docs/features.md): implemented features, commands, prerequisites and advantages.
 - [Documentation index](docs/README.md): detailed guides.
 
 ## Runtime entry points
 
 - `sports-video-coach plugins --json`: discover installed plugins and requirements.
-- `sports-video-coach run <video> --sport <sport> --lang en`: generic sports coaching; no GPU required.
-- `hoop-tape-miner run <league-link-or-game-folder>`: basketball game workflow.
-- `hoop-tape-miner train <videos-or-session-folder>`: basketball training review.
-- `hoop-tape-miner move <session-input>`: movement-session workflow; inspect `--help` for inputs.
+- `sports-video-coach run <video> --sport <sport> --lang en`: coaching for any sport; no GPU required.
+- Basketball from a phone, a pickup game or no league link: `sports-video-coach run <video> --sport basketball`
+  (the generic plugin), the same as any other sport.
+- The `basketball` plugin (`hoop-tape-miner run|train|move`) only for a Glory League game link (the one league
+  supported today) or player/ball tracking from a clone with a GPU; see the basketball guide.
 - Exit 3 requests a named agent artifact and guide; complete it and resume the same unit. Exit 0 means done.
 
 ## Basketball and perception
@@ -47,4 +49,4 @@
 - [Contributing](CONTRIBUTING.md): tests, PR workflow and no real player data in public contributions.
 
 Automatic detections are candidates. Never promote model scores to official results, invent unseen actions,
-or publish private video/report data without authorization. This index aids navigation; it is not a search-ranking guarantee.
+or publish private video/report data without authorization.

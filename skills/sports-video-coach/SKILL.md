@@ -1,6 +1,6 @@
 ---
 name: sports-video-coach
-description: Analyze a person's own sports video (a game or a training session, any sport) like a coach and deliver a film review, a coaching page with narration and clips, and an explained video. Use when the user asks to analyze, review or get coaching from their game or training footage (basketball, tennis, badminton, running, any sport), or to add a new sport plugin.
+description: Coach the user from their own sports video, any sport. Use when they say "coach me", "what am I doing wrong", "review my form / technique / shot / swing / serve / stroke", share game footage, a phone video, a workout, gym or lifting video, or ask for film study of a game or training session; also 分析我的比赛视频, 分析我的训练视频, 帮我看动作. Delivers a film review, a coaching page with clips, drills and narration, and an explained video. Needs uv and ffmpeg; installs the sports-video-coach CLI (asks first).
 license: MIT
 ---
 
@@ -11,37 +11,35 @@ deliverables. It stops with exit code 3 whenever it needs you to watch or write,
 
 ## Setup (once)
 
-A user who pasted the one prompt ("clone ... and follow its START.md"): follow `START.md` in the clone; it covers
-the steps below from a machine with nothing installed.
-
 - `sports-video-coach --help` works: skip this.
-- Otherwise: `uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a`
-  (needs `uv` and `ffmpeg`).
-- Basketball tracking or writing a plugin: `git clone https://github.com/mariusCNN/sports-video-coach`, then in it
-  `git checkout 74b517fc410944fefeac2979810656ed77fb8f1a` and `uv sync`, and prefix every command with `uv run`.
-  Then read its `AGENTS.md`.
+- Needs `uv` and `ffmpeg` (with `ffprobe`) on PATH. Missing: tell the user the install command for their OS.
+- Install the CLI: `uv tool install git+https://github.com/mariusCNN/sports-video-coach@v0.4.0`
+  (about 165 MB, no GPU). `command not found` afterwards: `uv tool update-shell` and a new terminal.
 - Show the user the exact install command first and run it only after they say yes.
-- The user only wants to see what it makes: `sports-video-coach demo` (about 30 s, a drawn video, no agent work),
-  then show them the `index.html` and `film.en.mp4` paths it prints.
+- The user only wants to see what it makes: `sports-video-coach demo` (about a minute, a drawn video, no agent
+  work), then show them the `index.html` and `film.en.mp4` paths it prints.
 
 ## Run
 
 1. `sports-video-coach plugins --json`: pick the plugin for the sport; else `generic`.
-2. Ask the user only what the video cannot tell you: the sport, who to coach (`--focus "the player in red"`), and
-   what they want to improve. Report languages: `--lang en` (or `zh`).
+   Basketball from a phone or a pickup game: `generic --sport basketball` (the `basketball` plugin needs a
+   supported league link or a GPU clone).
+2. Ask the user only what the video cannot tell you, in one message: the sport, who to coach
+   (`--focus "the player in red"`), and what they want to improve. Report languages: `--lang en` (or `zh`, ...).
 3. `sports-video-coach run <video...> --plugin <name> --sport <sport> --focus "<who>" > svc.log 2>&1`, then read
    the tail of the log. It prints the unit folder it made; later runs take that folder.
 4. Loop on the exit code:
-   - `3`: do exactly the step it names, with the guide it names (`prompts/review.md`, `report.md`, ...;
-     `sports-video-coach guide review` prints one if you cannot read its path). Its validator says what
+   - `3`: do exactly the step it names, with the guide it names. `sports-video-coach guide <name>` prints a guide
+     (`review`, `report`, `narration`, `film`; `sports-video-coach guide` lists them). Its validator says what
      your output still lacks. Then run again.
    - `1`: read the stage log it names (or the error just above it), fix the cause, run again.
+   - `2`: a wrong option; read the message.
    - `0`: done. Give the user the page (`index.html`) and the explained video (`film.<lang>.mp4`) paths.
 5. Film review: the sheets in `run/frames/` are contact sheets with mm:ss labels. More than 10 sheets: delegate sheet
    ranges to helpers if you have them, at most 3 at once. Every moment needs what happened and why; "unclear" is a valid answer.
 
-Deliverables: `"artifacts": ["html", "film"]` in the unit json limits what is built (default: all). Publishing
-private links needs a Cloudflare account and runs only with `--publish`, when the user asks.
+Deliverables: `"artifacts": ["html", "film"]` in the unit json, or `--artifacts html film`, limits what is built
+(default: all). Publishing private links needs a Cloudflare account and runs only with `--publish`, when the user asks.
 
 ## Rules
 
@@ -51,14 +49,9 @@ private links needs a Cloudflare account and runs only with `--publish`, when th
 - The video shows real people: keep it, its frames and the pages on the user's machine unless they ask to share.
 - Format pages for scanning: headings, short bullets, one idea per line.
 
-## After a good result: ask once about a star
+## Add a sport plugin
 
-If the run ended with exit 0, the user has seen the result and `<workspace>/.star-asked` does not exist: ask the
-user once, like a review prompt, whether it helped and whether you may star `mariusCNN/sports-video-coach` for
-them. Only on a clear yes run `gh repo star mariusCNN/sports-video-coach`. Write `yes` or `no` to
-`<workspace>/.star-asked` either way and never ask again. Never star without asking.
-
-## New sport
-
-`sports-video-coach new-plugin <name> --sport <sport>` writes `<workspace>/plugins/<name>/`, a working copy of the generic
-plugin. Edit its `prompts/review.md` first. Guide: `docs/plugins.md` in the repo.
+Only when the user asks to build one (not to analyse a single video):
+`sports-video-coach new-plugin <name> --sport <sport>` writes `<workspace>/plugins/<name>/`, a working copy of the
+generic plugin. Edit its `prompts/review.md` first. Guide:
+<https://github.com/mariusCNN/sports-video-coach/blob/master/docs/plugins.md>.

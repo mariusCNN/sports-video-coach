@@ -7,6 +7,17 @@ availability depends on the selected sport, installed dependencies, footage and 
 [English README](../README.md) · [中文 README](../README.zh.md) · [Agent contract](../AGENTS.md) ·
 [One-prompt start](../START.md)
 
+## In short
+
+| Capability | What it gives you |
+|---|---|
+| **A complete coaching workflow** | Film review, actions, drills, targets, source clips, narrated reports and explained videos in one resumable run. |
+| **Works with your coding agent** | Claude Code, Codex and other agents use explicit exit codes, JSON artifacts, writing guides and `AGENTS.md`; no proprietary agent orchestration service required. |
+| **Any sport, optional basketball depth** | The generic workflow needs no GPU. Basketball adds team/player reports, tracking, league stats (Glory League today), Four Factors, possessions, lineups, shot charts and scouting. |
+| **Evidence you can inspect** | Timestamped source footage, review states, calibration quality gates, source/model hashes and independent labelled evaluation; automatic guesses stay separate from reviewed facts. |
+| **More than a game report** | Personal shooting sessions, movement review, practice plans, cue audio, season summaries, opponent dossiers, tactics replays and phone reels. |
+| **Extensible and reproducible** | Sport plugins, local model adapters, cached stages and a synthetic film-review benchmark with exact ground truth. |
+
 ## Video to coaching, for any sport
 
 | Feature | Benefit | Entry point / requirement |

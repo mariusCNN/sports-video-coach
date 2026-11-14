@@ -3,6 +3,13 @@
 For ball-localization and court-model experiments, see the separate
 [WASB / SAHI / KaliCalib perception lab](perception-lab.md). Its candidates never replace reviewed facts.
 
+**Status: opt-in experiments, not a promise of improved accuracy.** The adapters are implemented and have been
+exercised on private amateur footage. In one 45-frame diagnostic, SAHI improved top-1 ball recall from 20/35 to
+22/35 while increasing false-positive frames from 11 to 13 and inference cost by about 4.2×; WASB missed most
+visible balls, and KaliCalib remained unsuitable for automatic calibration (method and results:
+[perception lab](perception-lab.md)). Basketball vision needs the tracking environment (a clone with `uv sync`);
+check the entry point with `hoop-tape-miner perception-lab --help`.
+
 OpenHoopVision can supply visual shot, pass, dribble, rebound and possession-change
 candidates alongside the existing basketball analysis. Its detector, RTMPose pose,
 SVTRv2 jersey OCR, OSNet identity association and learned court mapper run in an

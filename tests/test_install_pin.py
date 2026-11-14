@@ -1,9 +1,10 @@
-"""Every install command a user or an agent copies pins one revision (sports_video_coach.INSTALL_REF), so what gets
-installed is what was read: the docs, the skill, the demo site and the plugin's install hint all name it, and it is
-a commit of this repo's history."""
+"""Every install command a user or an agent copies pins one release tag (sports_video_coach.INSTALL_REF), so what
+gets installed is what was read: the docs, the skill, the demo site and the plugin's install hint all name it, and it
+matches the package version."""
 import json
 import re
 import shutil
+import tomllib
 import subprocess
 from pathlib import Path
 
@@ -24,8 +25,11 @@ def doc(request):
     return request.param, (ROOT / request.param).read_text(encoding="utf8")
 
 
-def test_the_ref_is_a_full_commit_sha():
-    assert re.fullmatch(r"[0-9a-f]{40}", svc.INSTALL_REF)
+def test_the_ref_is_the_release_tag_of_this_version():
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf8"))["project"]["version"]
+    assert svc.INSTALL_REF == f"v{version}"
+    for name in (".claude-plugin/plugin.json", "gemini-extension.json"):
+        assert json.loads((ROOT / name).read_text(encoding="utf8"))["version"] == version, name
     assert svc.INSTALL == f"uv tool install git+{svc.REPO_URL}@{svc.INSTALL_REF}"
 
 
@@ -36,7 +40,9 @@ def test_every_install_command_pins_the_ref(doc):
     for m in re.finditer(rf"{REPO}/archive/(\S+?)\.zip", text):
         assert m.group(1) == svc.INSTALL_REF, f"{name}: archive of {m.group(1)}"
     for sha in re.findall(r"(?:@|checkout |archive/)([0-9a-f]{7,40})\b", text):
-        assert sha == svc.INSTALL_REF, f"{name}: names another revision {sha}"
+        assert False, f"{name}: names commit {sha}, not the release tag {svc.INSTALL_REF}"
+    for tag in re.findall(r"(?:@|checkout |archive/)(v\d+\.\d+\.\d+)", text):
+        assert tag == svc.INSTALL_REF, f"{name}: names another release {tag}"
 
 
 def test_every_clone_is_followed_by_a_checkout_of_the_ref(doc):
@@ -67,7 +73,7 @@ def test_the_ref_is_in_this_repos_history():
     git = shutil.which("git")
     if not git or subprocess.run([git, "cat-file", "-e", f"{svc.INSTALL_REF}^{{commit}}"], cwd=ROOT,
                                  capture_output=True).returncode != 0:
-        pytest.skip("no git, or a shallow clone without that commit")
+        pytest.skip("no git, a shallow clone, or the release tag is not created yet")
     assert subprocess.run([git, "merge-base", "--is-ancestor", svc.INSTALL_REF, "HEAD"], cwd=ROOT).returncode == 0
 
 

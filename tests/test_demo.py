@@ -103,7 +103,8 @@ def test_search_engine_files_and_structured_data():
     assert data["codeRepository"] == demo.REPO_URL and "MIT" in data["license"]
     assert not {"aggregateRating", "review", "offers", "interactionStatistic"} & data.keys()   # no invented numbers
     title = re.search(r"<title>(.*?)</title>", home).group(1)
-    assert all(p in title for p in ("sports video analysis", "basketball film review", "Claude Code", "Codex"))
+    assert all(p in title for p in ("coding agent", "sports coach", "Claude Code", "Codex"))
+    assert "basketball" not in title   # any sport first, not one plugin
 
 
 def test_indexnow_key_and_body():

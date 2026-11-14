@@ -80,9 +80,9 @@ SITE_URL = "https://mariuscnn.github.io/sports-video-coach/"
 REPO_URL = "https://github.com/mariusCNN/sports-video-coach"
 TRAINING_MEDIA = f"{REPO_URL}/releases/download/showcase-2026-10-29"
 TAGLINE = "Turn your coding agent into your sports coach."
-PITCH = ("Open-source sports video analysis for adults who train on their own: film a session or a game on your phone "
-         "(basketball, running, the gym ...), and your coding agent gives you a coaching page, clips, drills and an "
-         "explained video.")
+PITCH = ("For people who already use Claude Code, Codex or a similar coding agent and play or train a sport: film "
+         "yourself on your phone, paste one prompt, and your agent gives you a coaching page, clips, drills and an "
+         "explained video. Open source, any sport.")
 CARDS = (("Athletes", "One session in: what to fix, one drill, a check for next time."),
          ("Coaches", "A team report and focus-player deep dive, with clips, audio and optional unlisted sharing links."),
          ("Developers", "A resumable CLI that pauses (exit 3) whenever it needs the agent's eyes or words, with a "
@@ -119,7 +119,7 @@ for (const b of document.querySelectorAll("button.copy")) {
 }
 """
 PLUGINS_URL = f"{REPO_URL}/blob/master/docs/plugins.md"
-TITLE = "sports-video-coach - sports video analysis and basketball film review with Claude Code or Codex"
+TITLE = "sports-video-coach - turn your coding agent (Claude Code, Codex) into your sports coach"
 BENCH_URL = f"{SITE_URL}benchmark/"  # written by `bench page` in the demo-site workflow, not by build_site
 SITE_PAGES = (SITE_URL, f"{SITE_URL}demo/", BENCH_URL, f"{BENCH_URL}zh/",   # zh/: the Chinese leaderboard
               f"{BENCH_URL}findings/", f"{BENCH_URL}zh/findings/")       # the findings article, en and zh

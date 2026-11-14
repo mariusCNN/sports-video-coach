@@ -1,0 +1,5 @@
+{
+  "name": "sports-video-coach",
+  "version": "0.4.0",
+  "description": "Turn your coding agent into your sports coach: review your own game or training video and get a coaching page, clips, drills and an explained video. Needs uv and ffmpeg."
+}

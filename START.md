@@ -40,7 +40,7 @@ sports-video-coach --help
 
 Send one message, then wait for the reply. It holds:
 
-1. **The plan, in three lines:** install a command-line tool (about 170 MB, no GPU); it cuts the video into
+1. **The plan, in three lines:** install a command-line tool (about 165 MB, no GPU); it cuts the video into
    timed frame sheets; you (the agent) review them and write the report; the tool renders a phone page with clips,
    a spoken version and an explained video. In one of our test runs a 40-second clip took about 2-3 minutes of
    tool time and 5 agent steps (review, report, narration script, QA, film script); your own writing time comes on
@@ -58,10 +58,10 @@ Send one message, then wait for the reply. It holds:
    Other Linux: the same packages from the distribution's package manager. No Homebrew on macOS:
    `curl -LsSf https://astral.sh/uv/install.sh | sh` for uv, and ask the user how they want ffmpeg.
 
-   Then the tool itself, pinned to a tested commit (skip it if `sports-video-coach --help` worked):
+   Then the tool itself, pinned to a release (skip it if `sports-video-coach --help` worked):
 
    ```bash
-   uv tool install git+https://github.com/mariusCNN/sports-video-coach@74b517fc410944fefeac2979810656ed77fb8f1a
+   uv tool install git+https://github.com/mariusCNN/sports-video-coach@v0.4.0
    ```
 
 4. **Questions, only those the prompt and the video do not answer:** the video path(s) if none was given; the
@@ -76,6 +76,7 @@ terminal, or call the tool by its full path (`~/.local/bin/sports-video-coach`; 
 `%USERPROFILE%\.local\bin\sports-video-coach.exe`; when `$UV_TOOL_BIN_DIR` is set, the tool is in that folder:
 `uv tool dir --bin` prints it). If `ffmpeg` is still not found after winget, a new terminal
 (or restarting the agent session) picks it up. Check with `sports-video-coach plugins` before going on.
+No git, or git blocked by a proxy: `uv tool install https://github.com/mariusCNN/sports-video-coach/archive/v0.4.0.zip`.
 
 ## 3. Choose the plugin and the language
 
@@ -149,7 +150,7 @@ Ask which of these they want, if any:
 - **Basketball, deeper (heavy install):** per-rep shooting session pages (`hoop-tape-miner train`) and movement
   reviews of running, layups and stops with a training, fuel and recovery plan (`hoop-tape-miner move`) need the
   tracking install: Windows or Linux with an NVIDIA GPU and several GB of downloads. In this clone:
-  `git checkout 74b517fc410944fefeac2979810656ed77fb8f1a`, then `uv sync`, then prefix commands with `uv run`
+  `git checkout v0.4.0`, then `uv sync`, then prefix commands with `uv run`
   and follow `docs/playbook.md` ("Personal training sessions", "Movement sessions"). Show these commands and wait
   for the yes, as in step 2.
 
