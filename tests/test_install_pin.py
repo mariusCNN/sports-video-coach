@@ -28,9 +28,24 @@ def doc(request):
 def test_the_ref_is_the_release_tag_of_this_version():
     version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf8"))["project"]["version"]
     assert svc.INSTALL_REF == f"v{version}"
-    for name in (".claude-plugin/plugin.json", "gemini-extension.json"):
+    for name in (".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"):
         assert json.loads((ROOT / name).read_text(encoding="utf8"))["version"] == version, name
     assert svc.INSTALL == f"uv tool install git+{svc.REPO_URL}@{svc.INSTALL_REF}"
+
+
+def test_every_agent_manifest_installs_the_one_skill_from_the_repo_root():
+    """Claude Code, Codex, Cursor and Gemini CLI each read their own manifest; all name the same plugin, and the
+    plugin root is the repo root, whose skills/ holds the skill (Gemini CLI and Cursor find skills/ by default)."""
+    def load(name):
+        return json.loads((ROOT / name).read_text(encoding="utf8"))
+    assert (ROOT / "skills/sports-video-coach/SKILL.md").is_file()
+    for name in (".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"):
+        assert load(name)["name"] == "sports-video-coach", name
+    claude, codex = load(".claude-plugin/marketplace.json"), load(".agents/plugins/marketplace.json")
+    assert [(p["name"], p["source"]) for p in claude["plugins"]] == [("sports-video-coach", "./")]
+    [entry] = codex["plugins"]
+    assert entry["name"] == "sports-video-coach" and entry["source"] == {"source": "local", "path": "./"}
+    assert entry["policy"]["installation"] == "AVAILABLE" and entry["category"]
 
 
 def test_every_install_command_pins_the_ref(doc):

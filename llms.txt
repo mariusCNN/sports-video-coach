@@ -11,7 +11,7 @@
 - [README](README.md): overview, demo, setup and limitations.
 - [Chinese README](README.zh.md): Chinese overview and setup.
 - [AGENTS.md](AGENTS.md): repository and runtime contract for coding agents.
-- [Agent skill](skills/sports-video-coach/SKILL.md): the self-contained skill (Claude Code plugin, `npx skills add`, Gemini CLI extension).
+- [Agent skill](skills/sports-video-coach/SKILL.md): the self-contained skill (Claude Code and Codex plugin, `npx skills add`, Gemini CLI extension, Cursor plugin manifest).
 - [Full capability catalog](docs/features.md): implemented features, commands, prerequisites and advantages.
 - [Documentation index](docs/README.md): detailed guides.
 

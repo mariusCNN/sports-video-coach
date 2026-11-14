@@ -1,0 +1,11 @@
+{
+  "name": "sports-video-coach",
+  "displayName": "sports-video-coach",
+  "version": "0.4.0",
+  "description": "Turn your coding agent into your sports coach: review your own game or training video (basketball film review built in, any sport via the generic plugin) and get a coaching page with clips, drills and narration, and an explained video. Needs uv and ffmpeg.",
+  "author": { "name": "mariusCNN" },
+  "homepage": "https://github.com/mariusCNN/sports-video-coach",
+  "repository": "https://github.com/mariusCNN/sports-video-coach",
+  "license": "MIT",
+  "keywords": ["sports", "video-analysis", "coaching", "film-review", "basketball", "skills"]
+}

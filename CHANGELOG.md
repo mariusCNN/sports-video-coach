@@ -5,6 +5,12 @@ The full notes of every release up to 0.4.0 are in the [changelog archive](docs/
 
 ## Unreleased
 
+- Install routes for more agents: a Codex plugin marketplace file (`.agents/plugins/marketplace.json`, so
+  `codex plugin marketplace add mariusCNN/sports-video-coach` works) and a Cursor plugin manifest
+  (`.cursor-plugin/plugin.json`, for the Cursor Marketplace). The Gemini CLI extension is now tested: it installs
+  and loads the skill. A test keeps every manifest's version equal to the package version.
+- The demo coaching page on the site carries a meta description, like the landing page.
+
 ## 0.4.0 - 2026-11-14
 
 ### Front door

@@ -67,9 +67,11 @@
 
 - **Claude Code 插件**：`/plugin marketplace add mariusCNN/sports-video-coach`，然后
   `/plugin install sports-video-coach@sports-video-coach`。
-- **任何支持 Agent Skills 的客户端**（Codex、Cursor……）：`npx skills add mariusCNN/sports-video-coach`。
-- **Gemini CLI**：`gemini extensions install https://github.com/mariusCNN/sports-video-coach --ref v0.4.0`
-  （0.4.0 新加的清单，作者还没实测）。
+- **Codex 插件**：`codex plugin marketplace add mariusCNN/sports-video-coach`，然后
+  `codex plugin add sports-video-coach@sports-video-coach`。
+- **Gemini CLI**：`gemini extensions install https://github.com/mariusCNN/sports-video-coach --ref v0.4.0`。
+- **任何支持 Agent Skills 的客户端**（Cursor、Codex……）：`npx skills add mariusCNN/sports-video-coach`。
+  仓库里也有给 Cursor Marketplace 用的 Cursor 插件清单（还没在 Cursor 里实测）。
 - **skill 驱动的命令行工具**（PATH 上要有 ffmpeg；约 165 MB，不需要 GPU）：
 
   ```bash
@@ -108,7 +110,7 @@
 |---|---|
 | `generic`（内置） | 任何运动：跑步、健身、HYROX、足球、网球、手机拍的篮球……；由 agent 看录像复盘 |
 | `fitness` | 健身房和力量训练：每一组对上动作库里的动作，用姿态测每次的深度、躯干前倾和节奏（[文档](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/fitness.md)） |
-| `basketball` | 球队和球员页面、球员和球的跟踪、投篮分布图（[文档](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.zh.md)） |
+| `basketball` | 联赛比赛的篮球录像复盘：球队和球员页面、球员和球的跟踪、投篮分布图（[文档](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.zh.md)） |
 | 你的 | `sports-video-coach new-plugin <你的运动>` 生成一个能跑的插件作起点（[指南](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/plugins.md)） |
 
 **篮球说清楚**：联赛链接这条路目前只支持 Glory League 的比赛。野球、手机拍的片段或其他联赛：

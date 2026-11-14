@@ -75,6 +75,9 @@ def test_site_opens_on_an_english_landing_page(tmp_path, monkeypatch):
     assert demo.version() and demo.version_note(demo.version()) in home
     page = (site / "demo" / "index.html").read_text(encoding="utf8")
     assert "noindex" not in page   # meant to be found
+    for html_ in (home, page):     # search results and link previews show the pitch
+        assert html_.count('<meta name="description"') == 1 and f'content="{demo.PITCH}"' in html_
+        assert '<meta property="og:description"' in html_
     assert f'<link rel="canonical" href="{demo.SITE_URL}demo/">' in page and '<link rel="canonical"' in home
     assert (site / "robots.txt").read_text(encoding="utf8") == demo.robots_txt()
     assert (site / "sitemap.xml").read_text(encoding="utf8") == demo.sitemap_xml()

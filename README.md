@@ -69,9 +69,11 @@ The one prompt above does all of this for you. To set it up yourself:
 
 - **Claude Code plugin:** `/plugin marketplace add mariusCNN/sports-video-coach`, then
   `/plugin install sports-video-coach@sports-video-coach`.
-- **Any Agent Skills client** (Codex, Cursor ...): `npx skills add mariusCNN/sports-video-coach`.
-- **Gemini CLI:** `gemini extensions install https://github.com/mariusCNN/sports-video-coach --ref v0.4.0`
-  (manifest new in 0.4.0, not yet tested by the author).
+- **Codex plugin:** `codex plugin marketplace add mariusCNN/sports-video-coach`, then
+  `codex plugin add sports-video-coach@sports-video-coach`.
+- **Gemini CLI:** `gemini extensions install https://github.com/mariusCNN/sports-video-coach --ref v0.4.0`.
+- **Any Agent Skills client** (Cursor, Codex ...): `npx skills add mariusCNN/sports-video-coach`.
+  A Cursor plugin manifest is in the repo too, for the Cursor Marketplace (not yet tested in Cursor).
 - **The CLI the skill drives** (needs ffmpeg on PATH; about 165 MB, no GPU):
 
   ```bash
@@ -111,7 +113,7 @@ Or just look: the [demo coaching page](https://mariuscnn.github.io/sports-video-
 |---|---|
 | `generic` (built in) | any sport: running, the gym, HYROX, soccer, tennis, basketball from a phone ...; the agent reviews the film |
 | `fitness` | gym and strength sessions: sets named from an exercise library, per-rep depth, trunk lean and tempo from pose ([docs](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/fitness.md)) |
-| `basketball` | team and player pages, player and ball tracking, shot charts ([docs](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.md)) |
+| `basketball` | basketball film review of a league game: team and player pages, player and ball tracking, shot charts ([docs](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/basketball.md)) |
 | yours | `sports-video-coach new-plugin <your-sport>` writes a working plugin to start from ([guide](https://github.com/mariusCNN/sports-video-coach/blob/master/docs/plugins.md)) |
 
 **Basketball, plainly:** the league-link route works for Glory League games only today. A pickup game, a phone

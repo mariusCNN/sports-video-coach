@@ -362,6 +362,7 @@ def build_site(folder: Path, site: Path) -> list[str]:
     # the demo is synthetic and meant to be found and shared; real report pages keep noindex and no preview
     card = "\n".join([
         canonical(f"{SITE_URL}demo/"),
+        f'<meta name="description" content="{PITCH}">',
         '<meta property="og:title" content="sports-video-coach demo: a coaching page made from one video">',
         f'<meta property="og:description" content="{PITCH}">',
         f'<meta property="og:image" content="{SITE_URL}film.en.jpg">',
