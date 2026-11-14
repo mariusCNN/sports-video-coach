@@ -61,7 +61,7 @@ jobs:
           test -s _site/benchmark/leaderboard.json
       - name: Page check
         run: sports-video-coach page-check _site _site/demo _site/benchmark _site/benchmark/zh _site/benchmark/findings _site/benchmark/zh/findings
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -73,4 +73,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

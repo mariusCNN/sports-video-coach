@@ -29,7 +29,7 @@ jobs:
           uv venv "$RUNNER_TEMP/try"
           VIRTUAL_ENV="$RUNNER_TEMP/try" uv pip install dist/*.whl
           "$RUNNER_TEMP/try/bin/sports-video-coach" plugins
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
@@ -44,7 +44,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
